@@ -12,7 +12,12 @@
 <meta property="og:title" content="Lixiang Nick Studio · 立庠工作室">
 <meta property="og:description" content="Android App · Firebase 雲端後端 · 網站開發 — 把想法做成產品。">
 <meta property="og:url" content="https://classy-beignet-781d38.netlify.app/">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://classy-beignet-781d38.netlify.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://classy-beignet-781d38.netlify.app/og.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Organization","name":"Lixiang Nick Studio","alternateName":"立庠工作室","url":"https://classy-beignet-781d38.netlify.app/","founder":{"@type":"Person","name":"Lixiang Nick"},"areaServed":"Worldwide","sameAs":["https://github.com/Black-tea666888"]}
 </script>
@@ -93,6 +98,12 @@ h2{font-family:"Space Grotesk","Noto Sans TC";font-size:clamp(30px,4vw,42px);lin
 .more:hover{text-decoration:underline}
 .label{position:absolute;top:22px;right:22px;font-size:11px;padding:3px 9px;border-radius:999px;background:rgba(129,140,248,.15);color:#c7cbff}
 
+.thumb{margin:-30px -30px 24px;height:170px;border-bottom:1px solid var(--line);overflow:hidden;background:#0e1118}
+.thumb svg{width:100%;height:100%;display:block;transition:transform .5s}
+.card:hover .thumb svg{transform:scale(1.04)}
+#projects .label{z-index:2}
+#projects .icon{display:none}
+
 /* about */
 .about{display:grid;grid-template-columns:1.3fr 1fr;gap:56px;align-items:center}
 .about p{color:var(--mute);margin-bottom:16px;font-size:16.5px}
@@ -158,7 +169,7 @@ footer a:hover{color:var(--text)}
 
 <nav id="nav"><div class="wrap">
   <a href="#top" class="logo" aria-label="Lixiang Nick Studio">
-    <svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#818cf8"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg)"/><path d="M9 23V9l14 14V9" fill="none" stroke="#0b0d12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#818cf8"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg)"/><path d="M11 8v16h11" fill="none" stroke="#0b0d12" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     Lixiang Nick Studio
   </a>
   <button class="burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="links"><span></span><span></span><span></span></button>
@@ -208,7 +219,7 @@ footer a:hover{color:var(--text)}
   <p class="sub reveal" data-i18n="proj_s">工作室親手打造、持續改進的作品。</p>
   <div class="grid">
     <article class="card reveal">
-      <span class="label">IoT</span>
+      <div class="thumb" aria-hidden="true"><svg viewBox="0 0 320 170" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="t1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10233a"/><stop offset="1" stop-color="#0e1118"/></linearGradient></defs><rect width="320" height="170" fill="url(#t1)"/><g stroke="#2a3550" stroke-width="2"><path d="M40 40v100M90 40v100M140 40v100M190 40v100M240 40v100M290 40v100"/></g><g><rect x="50" y="52" width="30" height="48" rx="7" fill="#818cf8"/><rect x="150" y="52" width="30" height="48" rx="7" fill="#818cf8"/><rect x="200" y="82" width="30" height="48" rx="7" fill="#818cf8" opacity=".85"/><rect x="250" y="52" width="30" height="48" rx="7" fill="#818cf8"/></g><g><circle cx="115" cy="76" r="7" fill="#5eead4"/><circle cx="65" cy="118" r="7" fill="#5eead4"/><circle cx="115" cy="118" r="7" fill="#5eead4"/><circle cx="165" cy="118" r="7" fill="#5eead4"/><circle cx="265" cy="118" r="7" fill="#5eead4"/><circle cx="215" cy="64" r="7" fill="#5eead4"/></g><path d="M262 30a12 12 0 1 0-4-23 16 16 0 0 0-30 5 9 9 0 0 0 4 18z" fill="none" stroke="#5eead4" stroke-width="2" transform="translate(-70 6)"/><path d="M175 36v10M175 46l-6-5M175 46l6-5" stroke="#5eead4" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div><span class="label">IoT</span>
       <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg></div>
       <h3 data-i18n="p1_t">雲端載重智慧車位偵測</h3>
       <p data-i18n="p1_d">雙 ESP32 搭配光敏與重量感測器偵測車位，資料即時上傳 Firebase；包含 Android App 與使用者／管理員／業主三種網頁，支援 iOS、iPadOS、macOS，中英切換。</p>
@@ -216,7 +227,7 @@ footer a:hover{color:var(--text)}
       <a class="more" href="https://github.com/Black-tea666888/smart-parking-web" target="_blank" rel="noopener" data-i18n="code">查看原始碼 ↗</a>
     </article>
     <article class="card reveal">
-      <span class="label">Web</span>
+      <div class="thumb" aria-hidden="true"><svg viewBox="0 0 320 170" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="t2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#312e81"/><stop offset=".6" stop-color="#7c3aed" stop-opacity=".55"/><stop offset="1" stop-color="#f472b6" stop-opacity=".5"/></linearGradient></defs><rect width="320" height="170" fill="url(#t2)"/><circle cx="230" cy="100" r="34" fill="#fbbf24" opacity=".85"/><g fill="#0b0d12"><path d="M0 170V118h22v-20h18v72zM46 170V80h26v90zM78 170V105h14V60h20v110zM118 170V96h30v74zM154 170V70l14-14 14 14v100zM188 170v-58h24v58zM218 170V88h20V74h14v96zM258 170v-50h22v50zM286 170V92h34v78z"/></g><g fill="#fde68a" opacity=".7"><rect x="52" y="92" width="4" height="5"/><rect x="62" y="92" width="4" height="5"/><rect x="52" y="108" width="4" height="5"/><rect x="88" y="74" width="4" height="5"/><rect x="98" y="88" width="4" height="5"/><rect x="162" y="84" width="4" height="5"/><rect x="170" y="100" width="4" height="5"/><rect x="226" y="100" width="4" height="5"/><rect x="294" y="104" width="4" height="5"/><rect x="306" y="118" width="4" height="5"/></g></svg></div><span class="label">Web</span>
       <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l4-3v14M9 21V4l6 3v14M15 21v-8l4-2v10"/></svg></div>
       <h3>Skyline Daily Boost</h3>
       <p data-i18n="p2_d">每日鼓勵網站：城市景色、科技公司資訊與讀書工具，為全球使用者設計，GitHub 連動自動部署。</p>
@@ -224,7 +235,7 @@ footer a:hover{color:var(--text)}
       <a class="more" href="https://shiny-kleicha-085187.netlify.app" target="_blank" rel="noopener" data-i18n="visit">前往網站 ↗</a>
     </article>
     <article class="card reveal">
-      <span class="label">Game</span>
+      <div class="thumb" aria-hidden="true"><svg viewBox="0 0 320 170" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="t3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#818cf8"/></linearGradient><radialGradient id="t3b"><stop offset="0" stop-color="#3b2a6b"/><stop offset="1" stop-color="#0e1118"/></radialGradient></defs><rect width="320" height="170" fill="url(#t3b)"/><g transform="translate(160 98)"><rect x="-34" y="-50" width="68" height="96" rx="9" fill="#1c2130" stroke="#2a3550" stroke-width="2" transform="rotate(-18) translate(-34 4)"/><rect x="-34" y="-50" width="68" height="96" rx="9" fill="#1c2130" stroke="#2a3550" stroke-width="2" transform="rotate(18) translate(34 4)"/><rect x="-36" y="-58" width="72" height="104" rx="10" fill="url(#t3)"/><path d="M0 -30l7 15 16 2-12 11 3 16-14-8-14 8 3-16-12-11 16-2z" fill="#0b0d12"/></g><g fill="#fde68a"><circle cx="60" cy="40" r="2"/><circle cx="240" cy="40" r="2.5"/><circle cx="250" cy="130" r="1.6"/><circle cx="80" cy="132" r="1.8"/><circle cx="110" cy="28" r="1.4"/></g></svg></div><span class="label">Game</span>
       <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg></div>
       <h3>LuckyDraw</h3>
       <p data-i18n="p3_d">以 Java 在 Android Studio 開發的抽卡風格手機遊戲，涵蓋遊戲邏輯、機率設計與 UI 動畫。</p>
