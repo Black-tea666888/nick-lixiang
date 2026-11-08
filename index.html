@@ -4,164 +4,338 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nick Su Studio · 蘇立庠工作室</title>
-<meta name="description" content="Nick Su Studio — Android apps, Firebase backends and websites, built by Nick Su (蘇立庠).">
+<meta name="description" content="Nick Su Studio：個人軟體工作室，提供 Android App、Firebase 雲端後端與網站開發。Independent software studio building Android apps, Firebase backends and websites.">
+<meta name="theme-color" content="#0b0d12">
+<link rel="canonical" href="https://classy-beignet-781d38.netlify.app/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Nick Su Studio · 蘇立庠工作室">
+<meta property="og:description" content="Android App · Firebase 雲端後端 · 網站開發 — 把想法做成產品。">
+<meta property="og:url" content="https://classy-beignet-781d38.netlify.app/">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Organization","name":"Nick Su Studio","alternateName":"蘇立庠工作室","url":"https://classy-beignet-781d38.netlify.app/","founder":{"@type":"Person","name":"Nick Su"},"areaServed":"Worldwide","sameAs":["https://github.com/Black-tea666888"]}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0b0d12;--card:#141821;--line:#232838;--text:#e8eaf0;--mute:#9aa1b2;--accent:#5eead4;--accent2:#818cf8}
+:root{--bg:#0b0d12;--bg2:#0f121a;--card:#141821;--line:#232838;--text:#e8eaf0;--mute:#9aa1b2;--accent:#5eead4;--accent2:#818cf8;--r:16px}
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans TC",system-ui,sans-serif;line-height:1.65}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans TC",system-ui,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit;text-decoration:none}
-.wrap{max-width:1040px;margin:0 auto;padding:0 24px}
-nav{position:sticky;top:0;z-index:10;background:rgba(11,13,18,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
-.logo{font-family:"Space Grotesk";font-weight:700;font-size:20px}
-.logo span{color:var(--accent)}
-.links{display:flex;gap:28px;align-items:center;font-size:14px;color:var(--mute)}
-.links a:hover{color:var(--text)}
-.lang{border:1px solid var(--line);background:none;color:var(--text);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+.skip{position:absolute;left:-999px;top:8px;background:var(--accent);color:#06221d;padding:8px 14px;border-radius:8px;z-index:100}
+.skip:focus{left:8px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+/* nav */
+nav{position:fixed;inset:0 0 auto;z-index:50;transition:background .3s,border-color .3s;border-bottom:1px solid transparent}
+nav.scrolled{background:rgba(11,13,18,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-color:var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:68px}
+.logo{display:flex;align-items:center;gap:10px;font-family:"Space Grotesk";font-weight:700;font-size:19px}
+.logo svg{width:30px;height:30px}
+.links{display:flex;gap:6px;align-items:center;font-size:14px}
+.links a{color:var(--mute);padding:8px 12px;border-radius:8px;transition:color .2s,background .2s}
+.links a:hover,.links a.active{color:var(--text);background:rgba(255,255,255,.05)}
+.lang{border:1px solid var(--line);background:none;color:var(--text);padding:7px 12px;border-radius:8px;cursor:pointer;font:inherit;font-size:13px;margin-left:8px}
 .lang:hover{border-color:var(--accent)}
-header{padding:120px 0 96px;position:relative;overflow:hidden}
-header::before{content:"";position:absolute;width:520px;height:520px;right:-120px;top:-80px;background:radial-gradient(circle,rgba(129,140,248,.25),transparent 65%);pointer-events:none}
-.tag{display:inline-block;font-size:13px;color:var(--accent);border:1px solid rgba(94,234,212,.35);padding:4px 12px;border-radius:999px;margin-bottom:24px}
-h1{font-family:"Space Grotesk","Noto Sans TC";font-size:clamp(40px,7vw,72px);line-height:1.05;letter-spacing:-.02em;margin-bottom:20px}
-h1 .grad{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
-.lead{font-size:clamp(17px,2vw,20px);color:var(--mute);max-width:620px;margin-bottom:36px}
+.burger{display:none;background:none;border:0;color:var(--text);cursor:pointer;width:40px;height:40px}
+.burger span{display:block;width:22px;height:2px;background:currentColor;margin:5px auto;transition:.3s}
+nav.open .burger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+nav.open .burger span:nth-child(2){opacity:0}
+nav.open .burger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* hero */
+header{min-height:100vh;min-height:100svh;display:flex;align-items:center;padding:120px 0 80px;position:relative;overflow:hidden}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000 30%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 40%,#000 30%,transparent 75%);opacity:.5}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.45;animation:float 14s ease-in-out infinite}
+.orb.a{width:460px;height:460px;background:var(--accent2);right:-120px;top:-60px}
+.orb.b{width:360px;height:360px;background:var(--accent);left:-140px;bottom:-80px;opacity:.25;animation-delay:-7s}
+@keyframes float{50%{transform:translate(30px,40px) scale(1.08)}}
+.hero{position:relative;max-width:760px}
+.tag{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--accent);border:1px solid rgba(94,234,212,.35);background:rgba(94,234,212,.06);padding:5px 14px;border-radius:999px;margin-bottom:28px}
+.tag i{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(94,234,212,.6);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 8px rgba(94,234,212,0)}100%{box-shadow:0 0 0 0 rgba(94,234,212,0)}}
+h1{font-family:"Space Grotesk","Noto Sans TC";font-size:clamp(44px,8vw,84px);line-height:1.04;letter-spacing:-.03em;margin-bottom:24px}
+.grad{background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent));background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite}
+@keyframes shine{to{background-position:200% center}}
+.lead{font-size:clamp(17px,2vw,20px);color:var(--mute);max-width:620px;margin-bottom:40px}
 .btns{display:flex;gap:12px;flex-wrap:wrap}
-.btn{padding:12px 22px;border-radius:10px;font-weight:500;font-size:15px;transition:.2s}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 24px;border-radius:12px;font-weight:600;font-size:15px;transition:transform .2s,box-shadow .2s,border-color .2s;border:1px solid transparent;cursor:pointer;font-family:inherit}
 .btn.primary{background:var(--accent);color:#06221d}
-.btn.primary:hover{transform:translateY(-2px)}
-.btn.ghost{border:1px solid var(--line)}
+.btn.primary:hover{transform:translateY(-2px);box-shadow:0 10px 30px -10px rgba(94,234,212,.6)}
+.btn.ghost{border-color:var(--line);background:rgba(255,255,255,.02);color:var(--text)}
 .btn.ghost:hover{border-color:var(--accent)}
-section{padding:80px 0;border-top:1px solid var(--line)}
-h2{font-family:"Space Grotesk","Noto Sans TC";font-size:32px;margin-bottom:12px}
-.sub{color:var(--mute);margin-bottom:40px}
+.stats{display:flex;gap:48px;margin-top:64px;flex-wrap:wrap}
+.stat b{display:block;font-family:"Space Grotesk";font-size:34px;line-height:1}
+.stat span{font-size:13px;color:var(--mute)}
+
+/* sections */
+section{padding:110px 0;position:relative}
+section.alt{background:var(--bg2);border-block:1px solid var(--line)}
+.eyebrow{font-size:13px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;font-weight:600}
+h2{font-family:"Space Grotesk","Noto Sans TC";font-size:clamp(30px,4vw,42px);line-height:1.15;letter-spacing:-.02em;margin-bottom:14px}
+.sub{color:var(--mute);margin-bottom:48px;max-width:560px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px;transition:.25s;display:flex;flex-direction:column}
-.card:hover{border-color:rgba(94,234,212,.5);transform:translateY(-4px)}
-.icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;margin-bottom:18px;background:rgba(94,234,212,.1)}
-.card h3{font-size:19px;margin-bottom:8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:30px;transition:transform .3s,border-color .3s;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;inset:0;background:radial-gradient(400px circle at var(--mx,50%) var(--my,0%),rgba(94,234,212,.09),transparent 40%);opacity:0;transition:opacity .3s;pointer-events:none}
+.card:hover{transform:translateY(-4px);border-color:rgba(94,234,212,.45)}
+.card:hover::before{opacity:1}
+.icon{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;margin-bottom:20px;background:linear-gradient(135deg,rgba(94,234,212,.15),rgba(129,140,248,.15));color:var(--accent)}
+.icon svg{width:24px;height:24px}
+.card h3{font-size:19px;margin-bottom:10px;line-height:1.35}
 .card p{color:var(--mute);font-size:15px;flex:1}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
-.chip{font-size:12px;padding:4px 10px;border-radius:6px;background:#1c2130;color:#c3c8d6}
-.more{margin-top:18px;font-size:14px;color:var(--accent)}
-.about{display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:start}
-.about p{color:var(--mute);margin-bottom:16px}
-.facts{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px}
-.facts div{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.chip{font-size:12px;padding:4px 10px;border-radius:6px;background:#1c2130;color:#c3c8d6;border:1px solid var(--line)}
+.more{margin-top:20px;font-size:14px;color:var(--accent);font-weight:500;display:inline-flex;gap:6px}
+.more:hover{text-decoration:underline}
+.label{position:absolute;top:22px;right:22px;font-size:11px;padding:3px 9px;border-radius:999px;background:rgba(129,140,248,.15);color:#c7cbff}
+
+/* about */
+.about{display:grid;grid-template-columns:1.3fr 1fr;gap:56px;align-items:center}
+.about p{color:var(--mute);margin-bottom:16px;font-size:16.5px}
+.facts{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:8px 26px}
+.facts div{display:flex;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid var(--line);font-size:14.5px}
 .facts div:last-child{border:none}
 .facts span:first-child{color:var(--mute)}
-.skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
-.skill h4{font-size:14px;color:var(--accent);margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em}
-.contact{text-align:center}
-.contact .btns{justify-content:center}
-footer{padding:32px 0;text-align:center;color:var(--mute);font-size:13px;border-top:1px solid var(--line)}
-@media(max-width:720px){.links a{display:none}.about{grid-template-columns:1fr}header{padding:80px 0 64px}}
+.facts span:last-child{text-align:right;font-weight:500}
+
+/* process */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;counter-reset:s}
+.step{padding:26px;border-radius:var(--r);border:1px solid var(--line);background:var(--card);position:relative}
+.step::before{counter-increment:s;content:"0" counter(s);font-family:"Space Grotesk";font-size:13px;color:var(--accent);display:block;margin-bottom:14px;font-weight:700}
+.step h3{font-size:17px;margin-bottom:6px}
+.step p{font-size:14px;color:var(--mute)}
+
+/* skills */
+.skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px}
+.skill{padding:24px;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+.skill h4{font-size:13px;color:var(--accent);margin-bottom:6px;text-transform:uppercase;letter-spacing:.1em}
+.skill .chips{margin-top:12px}
+
+/* contact */
+.contact{display:grid;grid-template-columns:1fr 1.2fr;gap:56px;align-items:start}
+.contact p{color:var(--mute);margin-bottom:24px}
+form{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:28px;display:grid;gap:16px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+label{display:grid;gap:6px;font-size:13px;color:var(--mute)}
+input,textarea,select{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:12px 14px;font:inherit;font-size:15px;transition:border-color .2s}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+textarea{min-height:130px;resize:vertical}
+.hp{display:none}
+.msg{font-size:14px;min-height:20px}
+.msg.ok{color:var(--accent)}.msg.err{color:#fca5a5}
+
+footer{padding:36px 0;color:var(--mute);font-size:13px;border-top:1px solid var(--line)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a:hover{color:var(--text)}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+.no-js .reveal{opacity:1;transform:none}
+
+@media(max-width:900px){.steps{grid-template-columns:repeat(2,1fr)}.about,.contact{grid-template-columns:1fr;gap:36px}}
+@media(max-width:760px){
+  .burger{display:block}
+  .links{position:fixed;top:68px;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;padding:12px 24px 24px;background:#0b0d12;border-bottom:1px solid var(--line);transform:translateY(-120%);transition:transform .35s;z-index:-1}
+  nav.open .links{transform:none}
+  nav.open{background:#0b0d12}
+  .links a{padding:14px 4px;font-size:16px;border-bottom:1px solid var(--line);border-radius:0}
+  .lang{margin:16px 0 0;align-self:flex-start}
+  .stats{gap:32px}
+  section{padding:80px 0}
+  .row{grid-template-columns:1fr}
+}
+@media(max-width:480px){.steps{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}html{scroll-behavior:auto}}
 </style>
 </head>
-<body>
-<nav><div class="wrap">
-  <a href="#top" class="logo">Nick Su<span>.</span>Studio</a>
-  <div class="links">
-    <a href="#about" data-i18n="nav_about">關於</a>
+<body class="no-js">
+<a href="#main" class="skip" data-i18n="skip">跳到主要內容</a>
+
+<nav id="nav"><div class="wrap">
+  <a href="#top" class="logo" aria-label="Nick Su Studio">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#818cf8"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg)"/><path d="M9 23V9l14 14V9" fill="none" stroke="#0b0d12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Nick Su Studio
+  </a>
+  <button class="burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="links"><span></span><span></span><span></span></button>
+  <div class="links" id="links">
     <a href="#services" data-i18n="nav_services">服務</a>
     <a href="#projects" data-i18n="nav_projects">作品</a>
-    <a href="#skills" data-i18n="nav_skills">技能</a>
+    <a href="#process" data-i18n="nav_process">流程</a>
+    <a href="#about" data-i18n="nav_about">關於</a>
     <a href="#contact" data-i18n="nav_contact">聯絡</a>
-    <button class="lang" id="lang">EN</button>
+    <button class="lang" id="lang" aria-label="Switch language">EN</button>
   </div>
 </div></nav>
 
-<header id="top"><div class="wrap">
-  <div class="tag" data-i18n="tag">個人軟體工作室 · 台灣</div>
-  <h1><span class="grad">Nick Su Studio</span><br><span data-i18n="hi">把想法做成產品</span></h1>
-  <p class="lead" data-i18n="lead">個人軟體工作室，提供 Android App、Firebase 雲端後端與網站開發——把硬體、資料和使用者連在一起。</p>
-  <div class="btns">
-    <a href="#services" class="btn primary" data-i18n="cta1">我們的服務</a>
-    <a href="https://github.com/Black-tea666888" class="btn ghost" target="_blank" rel="noopener">GitHub ↗</a>
-  </div>
-</div></header>
+<header id="top">
+  <div class="bg-grid"></div><div class="orb a"></div><div class="orb b"></div>
+  <div class="wrap"><div class="hero">
+    <div class="tag"><i></i><span data-i18n="tag">個人軟體工作室 · 接受新專案</span></div>
+    <h1><span class="grad">Nick Su Studio</span><br><span data-i18n="hi">把想法做成產品</span></h1>
+    <p class="lead" data-i18n="lead">個人軟體工作室，提供 Android App、Firebase 雲端後端與網站開發——把硬體、資料和使用者連在一起。</p>
+    <div class="btns">
+      <a href="#contact" class="btn primary" data-i18n="cta1">開始合作</a>
+      <a href="#projects" class="btn ghost" data-i18n="cta2">看作品 →</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>3+</b><span data-i18n="st1">上線作品</span></div>
+      <div class="stat"><b>3</b><span data-i18n="st2">平台：Android · Web · IoT</span></div>
+      <div class="stat"><b>2</b><span data-i18n="st3">語言：中文 · English</span></div>
+    </div>
+  </div></div>
+</header>
 
-<section id="about"><div class="wrap about">
-  <div>
+<main id="main">
+<section id="services"><div class="wrap">
+  <div class="eyebrow reveal" data-i18n="sv_e">Services</div>
+  <h2 class="reveal" data-i18n="sv_t">服務項目</h2>
+  <p class="sub reveal" data-i18n="sv_s">從點子到上線，一站完成。</p>
+  <div class="grid">
+    <article class="card reveal"><div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg></div><h3 data-i18n="sv1_t">Android App 開發</h3><p data-i18n="sv1_d">以 Java 與 Android Studio 打造原生 App，從介面設計、功能開發到上架準備。</p></article>
+    <article class="card reveal"><div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 0 0 4.5 12 3.5 3.5 0 0 0 6 19z"/></svg></div><h3 data-i18n="sv2_t">Firebase 雲端後端</h3><p data-i18n="sv2_d">即時資料庫、使用者驗證與 IoT 裝置資料串接，讓 App、網頁與硬體即時同步。</p></article>
+    <article class="card reveal"><div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg></div><h3 data-i18n="sv3_t">網站開發與部署</h3><p data-i18n="sv3_d">響應式、多語系網站，GitHub 連動自動部署，手機、平板、電腦都好看。</p></article>
+  </div>
+</div></section>
+
+<section id="projects" class="alt"><div class="wrap">
+  <div class="eyebrow reveal" data-i18n="pj_e">Work</div>
+  <h2 class="reveal" data-i18n="proj_t">精選作品</h2>
+  <p class="sub reveal" data-i18n="proj_s">工作室親手打造、持續改進的作品。</p>
+  <div class="grid">
+    <article class="card reveal">
+      <span class="label">IoT</span>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg></div>
+      <h3 data-i18n="p1_t">雲端載重智慧車位偵測</h3>
+      <p data-i18n="p1_d">雙 ESP32 搭配光敏與重量感測器偵測車位，資料即時上傳 Firebase；包含 Android App 與使用者／管理員／業主三種網頁，支援 iOS、iPadOS、macOS，中英切換。</p>
+      <div class="chips"><span class="chip">Firebase</span><span class="chip">Android</span><span class="chip">ESP32</span><span class="chip">Web</span></div>
+      <a class="more" href="https://github.com/Black-tea666888/smart-parking-web" target="_blank" rel="noopener" data-i18n="code">查看原始碼 ↗</a>
+    </article>
+    <article class="card reveal">
+      <span class="label">Web</span>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l4-3v14M9 21V4l6 3v14M15 21v-8l4-2v10"/></svg></div>
+      <h3>Skyline Daily Boost</h3>
+      <p data-i18n="p2_d">每日鼓勵網站：城市景色、科技公司資訊與讀書工具，為全球使用者設計，GitHub 連動自動部署。</p>
+      <div class="chips"><span class="chip">HTML/CSS/JS</span><span class="chip">Netlify</span><span class="chip">GitHub</span></div>
+      <a class="more" href="https://shiny-kleicha-085187.netlify.app" target="_blank" rel="noopener" data-i18n="visit">前往網站 ↗</a>
+    </article>
+    <article class="card reveal">
+      <span class="label">Game</span>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg></div>
+      <h3>LuckyDraw</h3>
+      <p data-i18n="p3_d">以 Java 在 Android Studio 開發的抽卡風格手機遊戲，涵蓋遊戲邏輯、機率設計與 UI 動畫。</p>
+      <div class="chips"><span class="chip">Java</span><span class="chip">Android</span><span class="chip">Game</span></div>
+    </article>
+  </div>
+</div></section>
+
+<section id="process"><div class="wrap">
+  <div class="eyebrow reveal" data-i18n="pr_e">Process</div>
+  <h2 class="reveal" data-i18n="pr_t">合作流程</h2>
+  <p class="sub reveal" data-i18n="pr_s">清楚的步驟，每個階段都看得到進度。</p>
+  <div class="steps">
+    <div class="step reveal"><h3 data-i18n="pr1_t">需求討論</h3><p data-i18n="pr1_d">了解目標、使用者與預算，訂出範圍。</p></div>
+    <div class="step reveal"><h3 data-i18n="pr2_t">設計規劃</h3><p data-i18n="pr2_d">畫出介面與系統架構，確認後再開工。</p></div>
+    <div class="step reveal"><h3 data-i18n="pr3_t">開發測試</h3><p data-i18n="pr3_d">分階段交付，每一版都能實際試用。</p></div>
+    <div class="step reveal"><h3 data-i18n="pr4_t">上線維護</h3><p data-i18n="pr4_d">部署上線，持續修正與功能更新。</p></div>
+  </div>
+</div></section>
+
+<section id="about" class="alt"><div class="wrap about">
+  <div class="reveal">
+    <div class="eyebrow" data-i18n="ab_e">About</div>
     <h2 data-i18n="about_t">關於工作室</h2>
     <p data-i18n="about_p1">Nick Su Studio 專注把想法做成真的能用的產品。從手機 App、雲端資料庫到跨平台網頁，一手包辦軟體端完整流程。</p>
     <p data-i18n="about_p2">目前正開發「雲端載重智慧車位偵測」系統，並持續經營自有網站與 Android 遊戲產品。</p>
   </div>
-  <div class="facts">
+  <div class="facts reveal">
     <div><span data-i18n="f_founder">創辦人</span><span data-i18n="f_founder_v">蘇立庠 Nick Su</span></div>
-    <div><span data-i18n="f_school">學校</span><span data-i18n="f_school_v">國立臺中科技大學</span></div>
-    <div><span data-i18n="f_dept">科系</span><span data-i18n="f_dept_v">資訊工程科</span></div>
-    <div><span data-i18n="f_focus">專長</span><span data-i18n="f_focus_v">Android · Firebase · Web</span></div>
-    <div><span data-i18n="f_loc">所在地</span><span data-i18n="f_loc_v">台灣</span></div>
-  </div>
-</div></section>
-
-<section id="services"><div class="wrap">
-  <h2 data-i18n="sv_t">服務項目</h2>
-  <p class="sub" data-i18n="sv_s">從點子到上線，一站完成。</p>
-  <div class="grid">
-    <div class="card"><div class="icon">📱</div><h3 data-i18n="sv1_t">Android App 開發</h3><p data-i18n="sv1_d">以 Java 與 Android Studio 打造原生 App，從介面設計到上架準備。</p></div>
-    <div class="card"><div class="icon">☁️</div><h3 data-i18n="sv2_t">Firebase 雲端後端</h3><p data-i18n="sv2_d">即時資料庫、使用者驗證與 IoT 裝置資料串接，讓 App 與硬體即時同步。</p></div>
-    <div class="card"><div class="icon">🌐</div><h3 data-i18n="sv3_t">網站開發與部署</h3><p data-i18n="sv3_d">響應式、多語系網站，GitHub 連動 Netlify 自動部署，支援各種裝置。</p></div>
-  </div>
-</div></section>
-
-<section id="projects"><div class="wrap">
-  <h2 data-i18n="proj_t">精選作品</h2>
-  <p class="sub" data-i18n="proj_s">工作室親手打造、持續改進的作品。</p>
-  <div class="grid">
-    <div class="card">
-      <div class="icon">🅿️</div>
-      <h3 data-i18n="p1_t">雲端載重智慧車位偵測</h3>
-      <p data-i18n="p1_d">以雙 ESP32、光敏與重量感測器偵測車位，資料即時上傳 Firebase；包含 Android App 與使用者／管理員／業主三種網頁（支援 iOS、iPadOS、macOS，中英切換）。</p>
-      <div class="chips"><span class="chip">Firebase</span><span class="chip">Android Studio</span><span class="chip">ESP32</span><span class="chip">Web</span></div>
-      <a class="more" href="https://github.com/Black-tea666888/smart-parking-web" target="_blank" rel="noopener" data-i18n="code">查看原始碼 ↗</a>
-    </div>
-    <div class="card">
-      <div class="icon">🌆</div>
-      <h3>Skyline Daily Boost</h3>
-      <p data-i18n="p2_d">每日鼓勵網站：城市景色、科技公司資訊與讀書工具，為全球使用者設計，GitHub 連動 Netlify 自動部署。</p>
-      <div class="chips"><span class="chip">HTML/CSS/JS</span><span class="chip">Netlify</span><span class="chip">GitHub</span></div>
-      <a class="more" href="https://shiny-kleicha-085187.netlify.app" target="_blank" rel="noopener" data-i18n="visit">前往網站 ↗</a>
-    </div>
-    <div class="card">
-      <div class="icon">🎲</div>
-      <h3>LuckyDraw</h3>
-      <p data-i18n="p3_d">用 Java 在 Android Studio 開發的抽卡風格手機遊戲，練習遊戲邏輯、機率設計與 UI。</p>
-      <div class="chips"><span class="chip">Java</span><span class="chip">Android</span><span class="chip">Game</span></div>
-    </div>
+    <div><span data-i18n="f_focus">專長</span><span>Android · Firebase · Web</span></div>
+    <div><span data-i18n="f_area">服務範圍</span><span data-i18n="f_area_v">台灣 · 全球遠端</span></div>
+    <div><span data-i18n="f_lang">溝通語言</span><span data-i18n="f_lang_v">中文 · English</span></div>
   </div>
 </div></section>
 
 <section id="skills"><div class="wrap">
-  <h2 data-i18n="skill_t">技能</h2>
-  <p class="sub" data-i18n="skill_s">工作室使用的技術。</p>
+  <div class="eyebrow reveal" data-i18n="sk_e">Stack</div>
+  <h2 class="reveal" data-i18n="skill_t">技術</h2>
+  <p class="sub reveal" data-i18n="skill_s">工作室使用的技術。</p>
   <div class="skills">
-    <div class="skill"><h4 data-i18n="s1">程式語言</h4><div class="chips"><span class="chip">Java</span><span class="chip">Python</span><span class="chip">JavaScript</span><span class="chip">HTML/CSS</span></div></div>
-    <div class="skill"><h4 data-i18n="s2">行動與後端</h4><div class="chips"><span class="chip">Android Studio</span><span class="chip">Firebase</span><span class="chip">ESP32</span></div></div>
-    <div class="skill"><h4 data-i18n="s3">工具</h4><div class="chips"><span class="chip">Git / GitHub</span><span class="chip">Netlify</span><span class="chip">VS Code</span></div></div>
-    <div class="skill"><h4 data-i18n="s4">基礎</h4><div class="chips"><span class="chip" data-i18n="c1">網路</span><span class="chip" data-i18n="c2">計算機組織</span><span class="chip" data-i18n="c3">離散數學</span><span class="chip" data-i18n="c4">系統分析</span></div></div>
+    <div class="skill reveal"><h4 data-i18n="s1">程式語言</h4><div class="chips"><span class="chip">Java</span><span class="chip">Python</span><span class="chip">JavaScript</span><span class="chip">HTML/CSS</span></div></div>
+    <div class="skill reveal"><h4 data-i18n="s2">行動與後端</h4><div class="chips"><span class="chip">Android Studio</span><span class="chip">Firebase</span><span class="chip">ESP32</span></div></div>
+    <div class="skill reveal"><h4 data-i18n="s3">工具</h4><div class="chips"><span class="chip">Git / GitHub</span><span class="chip">Netlify</span><span class="chip">VS Code</span></div></div>
+    <div class="skill reveal"><h4 data-i18n="s4">基礎</h4><div class="chips"><span class="chip" data-i18n="c1">網路</span><span class="chip" data-i18n="c2">計算機組織</span><span class="chip" data-i18n="c3">離散數學</span><span class="chip" data-i18n="c4">系統分析</span></div></div>
   </div>
 </div></section>
 
-<section id="contact" class="contact"><div class="wrap">
-  <h2 data-i18n="ct_t">有專案想合作？</h2>
-  <p class="sub" data-i18n="ct_s">歡迎透過 GitHub 找到我。</p>
-  <div class="btns"><a href="https://github.com/Black-tea666888" class="btn primary" target="_blank" rel="noopener">GitHub ↗</a></div>
+<section id="contact" class="alt"><div class="wrap contact">
+  <div class="reveal">
+    <div class="eyebrow" data-i18n="ct_e">Contact</div>
+    <h2 data-i18n="ct_t">有專案想合作？</h2>
+    <p data-i18n="ct_s">留下你的需求，通常 1–2 天內回覆。</p>
+    <a href="https://github.com/Black-tea666888" class="btn ghost" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+  <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="reveal" id="form">
+    <input type="hidden" name="form-name" value="contact">
+    <p class="hp"><label>Don't fill this: <input name="bot-field"></label></p>
+    <div class="row">
+      <label><span data-i18n="fm_name">名字</span><input name="name" required autocomplete="name"></label>
+      <label><span data-i18n="fm_email">Email</span><input type="email" name="email" required autocomplete="email"></label>
+    </div>
+    <label><span data-i18n="fm_type">需求類型</span>
+      <select name="type">
+        <option data-i18n="fm_o1">Android App</option>
+        <option data-i18n="fm_o2">Firebase 後端</option>
+        <option data-i18n="fm_o3">網站</option>
+        <option data-i18n="fm_o4">其他</option>
+      </select>
+    </label>
+    <label><span data-i18n="fm_msg">專案內容</span><textarea name="message" required></textarea></label>
+    <button class="btn primary" type="submit" data-i18n="fm_send">送出</button>
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+  </form>
 </div></section>
+</main>
 
-<footer>© <span id="yr"></span> Nick Su Studio · 蘇立庠工作室</footer>
+<footer><div class="wrap">
+  <span>© <span id="yr"></span> Nick Su Studio · 蘇立庠工作室</span>
+  <a href="#top" data-i18n="top">回到頂部 ↑</a>
+</div></footer>
 
 <script>
-const en={nav_about:"About",nav_services:"Services",nav_projects:"Projects",nav_skills:"Skills",nav_contact:"Contact",tag:"Independent software studio · Taiwan",hi:"Turning ideas into products",lead:"An independent software studio building Android apps, Firebase backends and websites — connecting hardware, data and people.",cta1:"Our services",about_t:"About the studio",about_p1:"Nick Su Studio turns ideas into products people actually use — from mobile apps to cloud databases to cross-platform web pages.",about_p2:"Currently building a cloud-based, weight-sensing smart parking system, alongside our own website and Android game.",f_founder:"Founder",f_founder_v:"Nick Su",f_school:"School",f_school_v:"NTCUST",f_dept:"Major",f_dept_v:"CS & Information Eng.",f_focus:"Focus",f_focus_v:"Android · Firebase · Web",f_loc:"Location",f_loc_v:"Taiwan",proj_t:"Featured projects",proj_s:"Products we built and keep improving.",sv_t:"Services",sv_s:"From idea to launch, all in one place.",sv1_t:"Android App Development",sv1_d:"Native apps in Java with Android Studio, from UI design to release.",sv2_t:"Firebase Cloud Backend",sv2_d:"Realtime database, authentication and IoT data pipelines that keep apps and hardware in sync.",sv3_t:"Website Development",sv3_d:"Responsive, multilingual websites with GitHub-to-Netlify auto-deploy, on every device.",p1_t:"Cloud Smart Parking Detection",p1_d:"Dual-ESP32 hardware with light and weight sensors detects parking spots and streams data to Firebase in real time. Includes an Android app and three web clients (user / admin / owner) with iOS, iPadOS and macOS support and a Chinese/English switch.",code:"View source ↗",p2_d:"A daily-encouragement site with city scenes, tech-company info and study tools, designed for users worldwide and auto-deployed from GitHub to Netlify.",visit:"Visit site ↗",p3_d:"A gacha-style mobile game built in Java with Android Studio — practicing game logic, probability design and UI.",skill_t:"Skills",skill_s:"Tech the studio works with.",s1:"Languages",s2:"Mobile & Backend",s3:"Tools",s4:"Foundations",c1:"Networking",c2:"Computer Organization",c3:"Discrete Math",c4:"Systems Analysis",ct_t:"Have a project in mind?",ct_s:"Find me on GitHub."};
-const zh={};document.querySelectorAll("[data-i18n]").forEach(e=>zh[e.dataset.i18n]=e.textContent);
+document.body.classList.remove("no-js");
+const en={skip:"Skip to content",nav_services:"Services",nav_projects:"Work",nav_process:"Process",nav_about:"About",nav_contact:"Contact",tag:"Independent software studio · Open for projects",hi:"Turning ideas into products",lead:"An independent software studio building Android apps, Firebase backends and websites — connecting hardware, data and people.",cta1:"Start a project",cta2:"See work →",st1:"Live projects",st2:"Platforms: Android · Web · IoT",st3:"Languages: 中文 · English",sv_e:"Services",sv_t:"What we do",sv_s:"From idea to launch, all in one place.",sv1_t:"Android App Development",sv1_d:"Native apps in Java with Android Studio — from UI design and features to release.",sv2_t:"Firebase Cloud Backend",sv2_d:"Realtime database, authentication and IoT data pipelines that keep apps, web and hardware in sync.",sv3_t:"Website Development",sv3_d:"Responsive, multilingual websites with Git-based auto-deploy that look great on every device.",pj_e:"Work",proj_t:"Featured work",proj_s:"Products we built and keep improving.",p1_t:"Cloud Smart Parking Detection",p1_d:"Dual-ESP32 hardware with light and weight sensors detects parking spots and streams data to Firebase in real time. Includes an Android app and three web clients (user / admin / owner) with iOS, iPadOS and macOS support and a Chinese/English switch.",code:"View source ↗",p2_d:"A daily-encouragement site with city scenes, tech-company info and study tools, designed for users worldwide with Git-based auto-deploy.",visit:"Visit site ↗",p3_d:"A gacha-style mobile game built in Java with Android Studio, covering game logic, probability design and UI animation.",pr_e:"Process",pr_t:"How we work",pr_s:"Clear steps, with visible progress at every stage.",pr1_t:"Discover",pr1_d:"Understand goals, users and budget, then set the scope.",pr2_t:"Design",pr2_d:"Sketch the UI and system architecture, and agree before building.",pr3_t:"Build & test",pr3_d:"Deliver in stages, with every version ready to try.",pr4_t:"Launch & support",pr4_d:"Deploy, then keep fixing and improving.",ab_e:"About",about_t:"About the studio",about_p1:"Nick Su Studio turns ideas into products people actually use — from mobile apps to cloud databases to cross-platform web pages, covering the full software side.",about_p2:"Currently building a cloud-based, weight-sensing smart parking system, alongside our own website and Android game.",f_founder:"Founder",f_founder_v:"Nick Su",f_focus:"Focus",f_area:"Serving",f_area_v:"Taiwan · Remote worldwide",f_lang:"Languages",f_lang_v:"Chinese · English",sk_e:"Stack",skill_t:"Tech stack",skill_s:"Tech the studio works with.",s1:"Languages",s2:"Mobile & Backend",s3:"Tools",s4:"Foundations",c1:"Networking",c2:"Computer Organization",c3:"Discrete Math",c4:"Systems Analysis",ct_e:"Contact",ct_t:"Have a project in mind?",ct_s:"Tell us what you need — we usually reply within 1–2 days.",fm_name:"Name",fm_email:"Email",fm_type:"Project type",fm_o1:"Android App",fm_o2:"Firebase backend",fm_o3:"Website",fm_o4:"Other",fm_msg:"Project details",fm_send:"Send",top:"Back to top ↑",ok:"Thanks! Your message was sent.",err:"Couldn't send. Please try again or reach us on GitHub."};
+const zh={ok:"謝謝！訊息已送出。",err:"送出失敗，請再試一次，或透過 GitHub 聯絡。"};
+document.querySelectorAll("[data-i18n]").forEach(e=>zh[e.dataset.i18n]=e.textContent);
 let cur="zh";const btn=document.getElementById("lang");
-function set(l){const d=l==="en"?en:zh;document.querySelectorAll("[data-i18n]").forEach(e=>{if(d[e.dataset.i18n])e.textContent=d[e.dataset.i18n]});document.documentElement.lang=l==="en"?"en":"zh-Hant";btn.textContent=l==="en"?"中文":"EN";cur=l;try{localStorage.setItem("lang",l)}catch(e){}}
+function set(l){const d=l==="en"?en:zh;document.querySelectorAll("[data-i18n]").forEach(e=>{const v=d[e.dataset.i18n];if(v)e.textContent=v});document.documentElement.lang=l==="en"?"en":"zh-Hant";btn.textContent=l==="en"?"中文":"EN";cur=l;try{localStorage.setItem("lang",l)}catch(e){}}
 btn.onclick=()=>set(cur==="zh"?"en":"zh");
-try{if(localStorage.getItem("lang")==="en")set("en")}catch(e){}
+let saved=null;try{saved=localStorage.getItem("lang")}catch(e){}
+if(saved==="en"||(!saved&&!/^zh/i.test(navigator.language||"")))set("en");
 document.getElementById("yr").textContent=new Date().getFullYear();
+
+const nav=document.getElementById("nav"),burger=document.getElementById("burger");
+const onScroll=()=>nav.classList.toggle("scrolled",scrollY>10);onScroll();addEventListener("scroll",onScroll,{passive:true});
+burger.onclick=()=>{const o=nav.classList.toggle("open");burger.setAttribute("aria-expanded",o)};
+document.querySelectorAll(".links a").forEach(a=>a.onclick=()=>{nav.classList.remove("open");burger.setAttribute("aria-expanded",false)});
+
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.12});
+document.querySelectorAll(".reveal").forEach((el,i)=>{el.style.transitionDelay=(i%4)*70+"ms";io.observe(el)});
+
+const links=[...document.querySelectorAll(".links a[href^='#']")];
+const so=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)links.forEach(a=>a.classList.toggle("active",a.getAttribute("href")==="#"+e.target.id))}),{rootMargin:"-45% 0px -50% 0px"});
+document.querySelectorAll("section[id]").forEach(s=>so.observe(s));
+
+document.querySelectorAll(".card").forEach(c=>c.addEventListener("pointermove",e=>{const r=c.getBoundingClientRect();c.style.setProperty("--mx",e.clientX-r.left+"px");c.style.setProperty("--my",e.clientY-r.top+"px")}));
+
+const form=document.getElementById("form"),msg=document.getElementById("msg");
+form.addEventListener("submit",async e=>{e.preventDefault();const b=form.querySelector("button");b.disabled=true;msg.className="msg";msg.textContent="…";
+  try{const r=await fetch("/",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(new FormData(form)).toString()});if(!r.ok)throw 0;form.reset();msg.className="msg ok";msg.textContent=(cur==="en"?en:zh).ok}
+  catch(_){msg.className="msg err";msg.textContent=(cur==="en"?en:zh).err}finally{b.disabled=false}});
 </script>
 </body>
 </html>

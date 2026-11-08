@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://classy-beignet-781d38.netlify.app/sitemap.xml
