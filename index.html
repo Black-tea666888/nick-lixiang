@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nick Su Studio · 蘇立庠工作室</title>
+<meta name="description" content="Nick Su Studio — Android apps, Firebase backends and websites, built by Nick Su (蘇立庠).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0d12;--card:#141821;--line:#232838;--text:#e8eaf0;--mute:#9aa1b2;--accent:#5eead4;--accent2:#818cf8}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans TC",system-ui,sans-serif;line-height:1.65}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+nav{position:sticky;top:0;z-index:10;background:rgba(11,13,18,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{font-family:"Space Grotesk";font-weight:700;font-size:20px}
+.logo span{color:var(--accent)}
+.links{display:flex;gap:28px;align-items:center;font-size:14px;color:var(--mute)}
+.links a:hover{color:var(--text)}
+.lang{border:1px solid var(--line);background:none;color:var(--text);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+.lang:hover{border-color:var(--accent)}
+header{padding:120px 0 96px;position:relative;overflow:hidden}
+header::before{content:"";position:absolute;width:520px;height:520px;right:-120px;top:-80px;background:radial-gradient(circle,rgba(129,140,248,.25),transparent 65%);pointer-events:none}
+.tag{display:inline-block;font-size:13px;color:var(--accent);border:1px solid rgba(94,234,212,.35);padding:4px 12px;border-radius:999px;margin-bottom:24px}
+h1{font-family:"Space Grotesk","Noto Sans TC";font-size:clamp(40px,7vw,72px);line-height:1.05;letter-spacing:-.02em;margin-bottom:20px}
+h1 .grad{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:clamp(17px,2vw,20px);color:var(--mute);max-width:620px;margin-bottom:36px}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{padding:12px 22px;border-radius:10px;font-weight:500;font-size:15px;transition:.2s}
+.btn.primary{background:var(--accent);color:#06221d}
+.btn.primary:hover{transform:translateY(-2px)}
+.btn.ghost{border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent)}
+section{padding:80px 0;border-top:1px solid var(--line)}
+h2{font-family:"Space Grotesk","Noto Sans TC";font-size:32px;margin-bottom:12px}
+.sub{color:var(--mute);margin-bottom:40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px;transition:.25s;display:flex;flex-direction:column}
+.card:hover{border-color:rgba(94,234,212,.5);transform:translateY(-4px)}
+.icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;margin-bottom:18px;background:rgba(94,234,212,.1)}
+.card h3{font-size:19px;margin-bottom:8px}
+.card p{color:var(--mute);font-size:15px;flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{font-size:12px;padding:4px 10px;border-radius:6px;background:#1c2130;color:#c3c8d6}
+.more{margin-top:18px;font-size:14px;color:var(--accent)}
+.about{display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:start}
+.about p{color:var(--mute);margin-bottom:16px}
+.facts{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px}
+.facts div{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.facts div:last-child{border:none}
+.facts span:first-child{color:var(--mute)}
+.skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.skill h4{font-size:14px;color:var(--accent);margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em}
+.contact{text-align:center}
+.contact .btns{justify-content:center}
+footer{padding:32px 0;text-align:center;color:var(--mute);font-size:13px;border-top:1px solid var(--line)}
+@media(max-width:720px){.links a{display:none}.about{grid-template-columns:1fr}header{padding:80px 0 64px}}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a href="#top" class="logo">Nick Su<span>.</span>Studio</a>
+  <div class="links">
+    <a href="#about" data-i18n="nav_about">關於</a>
+    <a href="#services" data-i18n="nav_services">服務</a>
+    <a href="#projects" data-i18n="nav_projects">作品</a>
+    <a href="#skills" data-i18n="nav_skills">技能</a>
+    <a href="#contact" data-i18n="nav_contact">聯絡</a>
+    <button class="lang" id="lang">EN</button>
+  </div>
+</div></nav>
+
+<header id="top"><div class="wrap">
+  <div class="tag" data-i18n="tag">個人軟體工作室 · 台灣</div>
+  <h1><span class="grad">Nick Su Studio</span><br><span data-i18n="hi">把想法做成產品</span></h1>
+  <p class="lead" data-i18n="lead">個人軟體工作室，提供 Android App、Firebase 雲端後端與網站開發——把硬體、資料和使用者連在一起。</p>
+  <div class="btns">
+    <a href="#services" class="btn primary" data-i18n="cta1">我們的服務</a>
+    <a href="https://github.com/Black-tea666888" class="btn ghost" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</div></header>
+
+<section id="about"><div class="wrap about">
+  <div>
+    <h2 data-i18n="about_t">關於工作室</h2>
+    <p data-i18n="about_p1">Nick Su Studio 創立於國立臺中科技大學資訊工程科，專注把想法做成真的能用的產品。從手機 App、雲端資料庫到跨平台網頁，一手包辦軟體端完整流程。</p>
+    <p data-i18n="about_p2">目前正開發「雲端載重智慧車位偵測」系統，並持續經營自有網站與 Android 遊戲產品。</p>
+  </div>
+  <div class="facts">
+    <div><span data-i18n="f_founder">創辦人</span><span data-i18n="f_founder_v">蘇立庠 Nick Su</span></div>
+    <div><span data-i18n="f_school">學校</span><span data-i18n="f_school_v">國立臺中科技大學</span></div>
+    <div><span data-i18n="f_dept">科系</span><span data-i18n="f_dept_v">資訊工程科</span></div>
+    <div><span data-i18n="f_focus">專長</span><span data-i18n="f_focus_v">Android · Firebase · Web</span></div>
+    <div><span data-i18n="f_loc">所在地</span><span data-i18n="f_loc_v">台灣</span></div>
+  </div>
+</div></section>
+
+<section id="services"><div class="wrap">
+  <h2 data-i18n="sv_t">服務項目</h2>
+  <p class="sub" data-i18n="sv_s">從點子到上線，一站完成。</p>
+  <div class="grid">
+    <div class="card"><div class="icon">📱</div><h3 data-i18n="sv1_t">Android App 開發</h3><p data-i18n="sv1_d">以 Java 與 Android Studio 打造原生 App，從介面設計到上架準備。</p></div>
+    <div class="card"><div class="icon">☁️</div><h3 data-i18n="sv2_t">Firebase 雲端後端</h3><p data-i18n="sv2_d">即時資料庫、使用者驗證與 IoT 裝置資料串接，讓 App 與硬體即時同步。</p></div>
+    <div class="card"><div class="icon">🌐</div><h3 data-i18n="sv3_t">網站開發與部署</h3><p data-i18n="sv3_d">響應式、多語系網站，GitHub 連動 Netlify 自動部署，支援各種裝置。</p></div>
+  </div>
+</div></section>
+
+<section id="projects"><div class="wrap">
+  <h2 data-i18n="proj_t">精選作品</h2>
+  <p class="sub" data-i18n="proj_s">工作室親手打造、持續改進的作品。</p>
+  <div class="grid">
+    <div class="card">
+      <div class="icon">🅿️</div>
+      <h3 data-i18n="p1_t">雲端載重智慧車位偵測</h3>
+      <p data-i18n="p1_d">以雙 ESP32、光敏與重量感測器偵測車位，資料即時上傳 Firebase；包含 Android App 與使用者／管理員／業主三種網頁（支援 iOS、iPadOS、macOS，中英切換）。</p>
+      <div class="chips"><span class="chip">Firebase</span><span class="chip">Android Studio</span><span class="chip">ESP32</span><span class="chip">Web</span></div>
+      <a class="more" href="https://github.com/Black-tea666888/smart-parking-web" target="_blank" rel="noopener" data-i18n="code">查看原始碼 ↗</a>
+    </div>
+    <div class="card">
+      <div class="icon">🌆</div>
+      <h3>Skyline Daily Boost</h3>
+      <p data-i18n="p2_d">每日鼓勵網站：城市景色、科技公司資訊與讀書工具，為全球使用者設計，GitHub 連動 Netlify 自動部署。</p>
+      <div class="chips"><span class="chip">HTML/CSS/JS</span><span class="chip">Netlify</span><span class="chip">GitHub</span></div>
+      <a class="more" href="https://shiny-kleicha-085187.netlify.app" target="_blank" rel="noopener" data-i18n="visit">前往網站 ↗</a>
+    </div>
+    <div class="card">
+      <div class="icon">🎲</div>
+      <h3>LuckyDraw</h3>
+      <p data-i18n="p3_d">用 Java 在 Android Studio 開發的抽卡風格手機遊戲，練習遊戲邏輯、機率設計與 UI。</p>
+      <div class="chips"><span class="chip">Java</span><span class="chip">Android</span><span class="chip">Game</span></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="skills"><div class="wrap">
+  <h2 data-i18n="skill_t">技能</h2>
+  <p class="sub" data-i18n="skill_s">工作室使用的技術。</p>
+  <div class="skills">
+    <div class="skill"><h4 data-i18n="s1">程式語言</h4><div class="chips"><span class="chip">Java</span><span class="chip">Python</span><span class="chip">JavaScript</span><span class="chip">HTML/CSS</span></div></div>
+    <div class="skill"><h4 data-i18n="s2">行動與後端</h4><div class="chips"><span class="chip">Android Studio</span><span class="chip">Firebase</span><span class="chip">ESP32</span></div></div>
+    <div class="skill"><h4 data-i18n="s3">工具</h4><div class="chips"><span class="chip">Git / GitHub</span><span class="chip">Netlify</span><span class="chip">VS Code</span></div></div>
+    <div class="skill"><h4 data-i18n="s4">基礎</h4><div class="chips"><span class="chip" data-i18n="c1">網路</span><span class="chip" data-i18n="c2">計算機組織</span><span class="chip" data-i18n="c3">離散數學</span><span class="chip" data-i18n="c4">系統分析</span></div></div>
+  </div>
+</div></section>
+
+<section id="contact" class="contact"><div class="wrap">
+  <h2 data-i18n="ct_t">有專案想合作？</h2>
+  <p class="sub" data-i18n="ct_s">歡迎透過 GitHub 找到我。</p>
+  <div class="btns"><a href="https://github.com/Black-tea666888" class="btn primary" target="_blank" rel="noopener">GitHub ↗</a></div>
+</div></section>
+
+<footer>© <span id="yr"></span> Nick Su Studio · 蘇立庠工作室</footer>
+
+<script>
+const en={nav_about:"About",nav_services:"Services",nav_projects:"Projects",nav_skills:"Skills",nav_contact:"Contact",tag:"Independent software studio · Taiwan",hi:"Turning ideas into products",lead:"An independent software studio building Android apps, Firebase backends and websites — connecting hardware, data and people.",cta1:"Our services",about_t:"About the studio",about_p1:"Nick Su Studio was founded at the Department of Computer Science & Information Engineering, National Taichung University of Science and Technology. We turn ideas into products people actually use — from mobile apps to cloud databases to cross-platform web pages.",about_p2:"Currently building a cloud-based, weight-sensing smart parking system, alongside our own website and Android game.",f_founder:"Founder",f_founder_v:"Nick Su",f_school:"School",f_school_v:"NTCUST",f_dept:"Major",f_dept_v:"CS & Information Eng.",f_focus:"Focus",f_focus_v:"Android · Firebase · Web",f_loc:"Location",f_loc_v:"Taiwan",proj_t:"Featured projects",proj_s:"Products we built and keep improving.",sv_t:"Services",sv_s:"From idea to launch, all in one place.",sv1_t:"Android App Development",sv1_d:"Native apps in Java with Android Studio, from UI design to release.",sv2_t:"Firebase Cloud Backend",sv2_d:"Realtime database, authentication and IoT data pipelines that keep apps and hardware in sync.",sv3_t:"Website Development",sv3_d:"Responsive, multilingual websites with GitHub-to-Netlify auto-deploy, on every device.",p1_t:"Cloud Smart Parking Detection",p1_d:"Dual-ESP32 hardware with light and weight sensors detects parking spots and streams data to Firebase in real time. Includes an Android app and three web clients (user / admin / owner) with iOS, iPadOS and macOS support and a Chinese/English switch.",code:"View source ↗",p2_d:"A daily-encouragement site with city scenes, tech-company info and study tools, designed for users worldwide and auto-deployed from GitHub to Netlify.",visit:"Visit site ↗",p3_d:"A gacha-style mobile game built in Java with Android Studio — practicing game logic, probability design and UI.",skill_t:"Skills",skill_s:"Tech the studio works with.",s1:"Languages",s2:"Mobile & Backend",s3:"Tools",s4:"Foundations",c1:"Networking",c2:"Computer Organization",c3:"Discrete Math",c4:"Systems Analysis",ct_t:"Have a project in mind?",ct_s:"Find me on GitHub."};
+const zh={};document.querySelectorAll("[data-i18n]").forEach(e=>zh[e.dataset.i18n]=e.textContent);
+let cur="zh";const btn=document.getElementById("lang");
+function set(l){const d=l==="en"?en:zh;document.querySelectorAll("[data-i18n]").forEach(e=>{if(d[e.dataset.i18n])e.textContent=d[e.dataset.i18n]});document.documentElement.lang=l==="en"?"en":"zh-Hant";btn.textContent=l==="en"?"中文":"EN";cur=l;try{localStorage.setItem("lang",l)}catch(e){}}
+btn.onclick=()=>set(cur==="zh"?"en":"zh");
+try{if(localStorage.getItem("lang")==="en")set("en")}catch(e){}
+document.getElementById("yr").textContent=new Date().getFullYear();
+</script>
+</body>
+</html>
