@@ -7,7 +7,7 @@
 <meta name="description" content="Lixiang Nick Studio：個人軟體工作室，提供 Android App、Firebase 雲端後端與網站開發。Independent software studio building Android apps, Firebase backends and websites.">
 <meta name="theme-color" content="#0b0d12">
 <link rel="canonical" href="https://classy-beignet-781d38.netlify.app/">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Lixiang Nick Studio · 立庠工作室">
 <meta property="og:description" content="Android App · Firebase 雲端後端 · 網站開發 — 把想法做成產品。">
@@ -17,7 +17,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://classy-beignet-781d38.netlify.app/og.png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Organization","name":"Lixiang Nick Studio","alternateName":"立庠工作室","url":"https://classy-beignet-781d38.netlify.app/","founder":{"@type":"Person","name":"Lixiang Nick"},"areaServed":"Worldwide","sameAs":["https://github.com/Black-tea666888"]}
 </script>
@@ -104,6 +104,30 @@ h2{font-family:"Space Grotesk","Noto Sans TC";font-size:clamp(30px,4vw,42px);lin
 #projects .label{z-index:2}
 #projects .icon{display:none}
 
+.logo .lt{font-weight:500;color:var(--mute)}
+
+/* manifesto */
+.manifesto{padding:120px 0;text-align:center;position:relative;overflow:hidden}
+.manifesto::before{content:"";position:absolute;inset:auto 0 0;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent)}
+.manifesto blockquote{font-family:"Space Grotesk","Noto Sans TC";font-size:clamp(30px,5vw,56px);line-height:1.15;letter-spacing:-.02em;max-width:900px;margin:0 auto}
+.manifesto blockquote em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.manifesto p{color:var(--mute);margin-top:20px;font-size:17px}
+.principles{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:64px;text-align:left}
+.pr{padding:28px;border-top:2px solid var(--accent);background:linear-gradient(180deg,rgba(94,234,212,.05),transparent 70%);border-radius:0 0 var(--r) var(--r)}
+.pr b{font-family:"Space Grotesk";font-size:13px;color:var(--accent);letter-spacing:.1em}
+.pr h3{font-size:20px;margin:10px 0 8px}
+.pr p{margin:0;font-size:15px}
+@media(max-width:760px){.principles{grid-template-columns:1fr}}
+
+/* footer */
+.fgrid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:32px;padding:56px 0 40px}
+.fgrid h5{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--text);margin-bottom:14px}
+.fgrid ul{list-style:none;display:grid;gap:10px;font-size:14px}
+.fgrid .logo{margin-bottom:14px;color:var(--text)}
+.fgrid p{font-size:14px;max-width:280px}
+.fbar{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px 0;border-top:1px solid var(--line)}
+@media(max-width:760px){.fgrid{grid-template-columns:1fr 1fr}.fgrid>div:first-child{grid-column:1/-1}}
+
 /* about */
 .about{display:grid;grid-template-columns:1.3fr 1fr;gap:56px;align-items:center}
 .about p{color:var(--mute);margin-bottom:16px;font-size:16.5px}
@@ -139,8 +163,7 @@ textarea{min-height:130px;resize:vertical}
 .msg{font-size:14px;min-height:20px}
 .msg.ok{color:var(--accent)}.msg.err{color:#fca5a5}
 
-footer{padding:36px 0;color:var(--mute);font-size:13px;border-top:1px solid var(--line)}
-footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer{color:var(--mute);font-size:13px;border-top:1px solid var(--line);background:var(--bg2)}
 footer a:hover{color:var(--text)}
 
 /* reveal */
@@ -170,7 +193,7 @@ footer a:hover{color:var(--text)}
 <nav id="nav"><div class="wrap">
   <a href="#top" class="logo" aria-label="Lixiang Nick Studio">
     <svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#818cf8"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg)"/><path d="M11 8v16h11" fill="none" stroke="#0b0d12" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    Lixiang Nick Studio
+    <span>Lixiang Nick<span class="lt"> Studio</span></span>
   </a>
   <button class="burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="links"><span></span><span></span><span></span></button>
   <div class="links" id="links">
@@ -244,6 +267,16 @@ footer a:hover{color:var(--text)}
   </div>
 </div></section>
 
+<section class="manifesto"><div class="wrap">
+  <blockquote class="reveal"><span data-i18n="mf1">不做華而不實的東西，</span><br><em data-i18n="mf2">只做真正有用的產品。</em></blockquote>
+  <p class="reveal" data-i18n="mf_s">Build what matters — 這是工作室做每個決定的標準。</p>
+  <div class="principles">
+    <div class="pr reveal"><b>01</b><h3 data-i18n="pp1_t">實用優先</h3><p data-i18n="pp1_d">先解決真正的問題，再談花俏的功能。每個畫面都要有存在的理由。</p></div>
+    <div class="pr reveal"><b>02</b><h3 data-i18n="pp2_t">全端打通</h3><p data-i18n="pp2_d">硬體、雲端、App、網頁一手串起，不用在多個外包之間來回溝通。</p></div>
+    <div class="pr reveal"><b>03</b><h3 data-i18n="pp3_t">透明溝通</h3><p data-i18n="pp3_d">進度、問題、取捨都說清楚，分階段交付，隨時看得到成果。</p></div>
+  </div>
+</div></section>
+
 <section id="process"><div class="wrap">
   <div class="eyebrow reveal" data-i18n="pr_e">Process</div>
   <h2 class="reveal" data-i18n="pr_t">合作流程</h2>
@@ -313,13 +346,18 @@ footer a:hover{color:var(--text)}
 </main>
 
 <footer><div class="wrap">
-  <span>© <span id="yr"></span> Lixiang Nick Studio · 立庠工作室</span>
-  <a href="#top" data-i18n="top">回到頂部 ↑</a>
+  <div class="fgrid">
+    <div><a href="#top" class="logo"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#818cf8"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg2)"/><path d="M11 8v16h11" fill="none" stroke="#0b0d12" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Lixiang Nick<span class="lt"> Studio</span></span></a><p data-i18n="f_tag">立庠工作室——把想法做成真正有用的產品。</p></div>
+    <div><h5 data-i18n="f_h1">工作室</h5><ul><li><a href="#services" data-i18n="nav_services">服務</a></li><li><a href="#process" data-i18n="nav_process">流程</a></li><li><a href="#about" data-i18n="nav_about">關於</a></li></ul></div>
+    <div><h5 data-i18n="f_h2">作品</h5><ul><li><a href="#projects" data-i18n="f_p1">智慧車位</a></li><li><a href="https://shiny-kleicha-085187.netlify.app" target="_blank" rel="noopener">Skyline</a></li><li><a href="#projects">LuckyDraw</a></li></ul></div>
+    <div><h5 data-i18n="f_h3">連結</h5><ul><li><a href="https://github.com/Black-tea666888" target="_blank" rel="noopener">GitHub</a></li><li><a href="brand.html" data-i18n="f_brand">品牌資源</a></li><li><a href="#contact" data-i18n="nav_contact">聯絡</a></li></ul></div>
+  </div>
+  <div class="fbar"><span>© <span id="yr"></span> Lixiang Nick Studio · 立庠工作室</span><a href="#top" data-i18n="top">回到頂部 ↑</a></div>
 </div></footer>
 
 <script>
 document.body.classList.remove("no-js");
-const en={skip:"Skip to content",nav_services:"Services",nav_projects:"Work",nav_process:"Process",nav_about:"About",nav_contact:"Contact",tag:"Independent software studio · Open for projects",hi:"Turning ideas into products",lead:"An independent software studio building Android apps, Firebase backends and websites — connecting hardware, data and people.",cta1:"Start a project",cta2:"See work →",st1:"Live projects",st2:"Platforms: Android · Web · IoT",st3:"Languages: 中文 · English",sv_e:"Services",sv_t:"What we do",sv_s:"From idea to launch, all in one place.",sv1_t:"Android App Development",sv1_d:"Native apps in Java with Android Studio — from UI design and features to release.",sv2_t:"Firebase Cloud Backend",sv2_d:"Realtime database, authentication and IoT data pipelines that keep apps, web and hardware in sync.",sv3_t:"Website Development",sv3_d:"Responsive, multilingual websites with Git-based auto-deploy that look great on every device.",pj_e:"Work",proj_t:"Featured work",proj_s:"Products we built and keep improving.",p1_t:"Cloud Smart Parking Detection",p1_d:"Dual-ESP32 hardware with light and weight sensors detects parking spots and streams data to Firebase in real time. Includes an Android app and three web clients (user / admin / owner) with iOS, iPadOS and macOS support and a Chinese/English switch.",code:"View source ↗",p2_d:"A daily-encouragement site with city scenes, tech-company info and study tools, designed for users worldwide with Git-based auto-deploy.",visit:"Visit site ↗",p3_d:"A gacha-style mobile game built in Java with Android Studio, covering game logic, probability design and UI animation.",pr_e:"Process",pr_t:"How we work",pr_s:"Clear steps, with visible progress at every stage.",pr1_t:"Discover",pr1_d:"Understand goals, users and budget, then set the scope.",pr2_t:"Design",pr2_d:"Sketch the UI and system architecture, and agree before building.",pr3_t:"Build & test",pr3_d:"Deliver in stages, with every version ready to try.",pr4_t:"Launch & support",pr4_d:"Deploy, then keep fixing and improving.",ab_e:"About",about_t:"About the studio",about_p1:"Lixiang Nick Studio turns ideas into products people actually use — from mobile apps to cloud databases to cross-platform web pages, covering the full software side.",about_p2:"Currently building a cloud-based, weight-sensing smart parking system, alongside our own website and Android game.",f_founder:"Founder",f_founder_v:"Lixiang Nick",f_focus:"Focus",f_area:"Serving",f_area_v:"Taiwan · Remote worldwide",f_lang:"Languages",f_lang_v:"Chinese · English",sk_e:"Stack",skill_t:"Tech stack",skill_s:"Tech the studio works with.",s1:"Languages",s2:"Mobile & Backend",s3:"Tools",s4:"Foundations",c1:"Networking",c2:"Computer Organization",c3:"Discrete Math",c4:"Systems Analysis",ct_e:"Contact",ct_t:"Have a project in mind?",ct_s:"Tell us what you need — we usually reply within 1–2 days.",fm_name:"Name",fm_email:"Email",fm_type:"Project type",fm_o1:"Android App",fm_o2:"Firebase backend",fm_o3:"Website",fm_o4:"Other",fm_msg:"Project details",fm_send:"Send",top:"Back to top ↑",ok:"Thanks! Your message was sent.",err:"Couldn't send. Please try again or reach us on GitHub."};
+const en={skip:"Skip to content",nav_services:"Services",nav_projects:"Work",nav_process:"Process",nav_about:"About",nav_contact:"Contact",tag:"Independent software studio · Open for projects",hi:"Turning ideas into products",lead:"An independent software studio building Android apps, Firebase backends and websites — connecting hardware, data and people.",cta1:"Start a project",cta2:"See work →",st1:"Live projects",st2:"Platforms: Android · Web · IoT",st3:"Languages: 中文 · English",sv_e:"Services",sv_t:"What we do",sv_s:"From idea to launch, all in one place.",sv1_t:"Android App Development",sv1_d:"Native apps in Java with Android Studio — from UI design and features to release.",sv2_t:"Firebase Cloud Backend",sv2_d:"Realtime database, authentication and IoT data pipelines that keep apps, web and hardware in sync.",sv3_t:"Website Development",sv3_d:"Responsive, multilingual websites with Git-based auto-deploy that look great on every device.",pj_e:"Work",proj_t:"Featured work",proj_s:"Products we built and keep improving.",p1_t:"Cloud Smart Parking Detection",p1_d:"Dual-ESP32 hardware with light and weight sensors detects parking spots and streams data to Firebase in real time. Includes an Android app and three web clients (user / admin / owner) with iOS, iPadOS and macOS support and a Chinese/English switch.",code:"View source ↗",p2_d:"A daily-encouragement site with city scenes, tech-company info and study tools, designed for users worldwide with Git-based auto-deploy.",visit:"Visit site ↗",p3_d:"A gacha-style mobile game built in Java with Android Studio, covering game logic, probability design and UI animation.",pr_e:"Process",pr_t:"How we work",pr_s:"Clear steps, with visible progress at every stage.",pr1_t:"Discover",pr1_d:"Understand goals, users and budget, then set the scope.",pr2_t:"Design",pr2_d:"Sketch the UI and system architecture, and agree before building.",pr3_t:"Build & test",pr3_d:"Deliver in stages, with every version ready to try.",pr4_t:"Launch & support",pr4_d:"Deploy, then keep fixing and improving.",ab_e:"About",about_t:"About the studio",about_p1:"Lixiang Nick Studio turns ideas into products people actually use — from mobile apps to cloud databases to cross-platform web pages, covering the full software side.",about_p2:"Currently building a cloud-based, weight-sensing smart parking system, alongside our own website and Android game.",f_founder:"Founder",f_founder_v:"Lixiang Nick",f_focus:"Focus",f_area:"Serving",f_area_v:"Taiwan · Remote worldwide",f_lang:"Languages",f_lang_v:"Chinese · English",sk_e:"Stack",skill_t:"Tech stack",skill_s:"Tech the studio works with.",s1:"Languages",s2:"Mobile & Backend",s3:"Tools",s4:"Foundations",c1:"Networking",c2:"Computer Organization",c3:"Discrete Math",c4:"Systems Analysis",ct_e:"Contact",ct_t:"Have a project in mind?",ct_s:"Tell us what you need — we usually reply within 1–2 days.",fm_name:"Name",fm_email:"Email",fm_type:"Project type",fm_o1:"Android App",fm_o2:"Firebase backend",fm_o3:"Website",fm_o4:"Other",fm_msg:"Project details",fm_send:"Send",top:"Back to top ↑",mf1:"No fluff, no gimmicks —",mf2:"only products that truly matter.",mf_s:"Build what matters — the standard behind every decision we make.",pp1_t:"Useful first",pp1_d:"Solve the real problem before adding flashy features. Every screen has to earn its place.",pp2_t:"Full-stack, end to end",pp2_d:"Hardware, cloud, app and web wired together by one team — no juggling multiple vendors.",pp3_t:"Clear communication",pp3_d:"Progress, problems and trade-offs stated plainly, delivered in stages you can try anytime.",f_tag:"Lixiang Nick Studio — turning ideas into products that truly matter.",f_h1:"Studio",f_h2:"Work",f_h3:"Links",f_p1:"Smart Parking",f_brand:"Brand kit",ok:"Thanks! Your message was sent.",err:"Couldn't send. Please try again or reach us on GitHub."};
 const zh={ok:"謝謝！訊息已送出。",err:"送出失敗，請再試一次，或透過 GitHub 聯絡。"};
 document.querySelectorAll("[data-i18n]").forEach(e=>zh[e.dataset.i18n]=e.textContent);
 let cur="zh";const btn=document.getElementById("lang");

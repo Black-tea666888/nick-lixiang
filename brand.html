@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>品牌資源 · Lixiang Nick Studio</title>
+<meta name="description" content="Lixiang Nick Studio 品牌資源：Logo、色彩、字體與語氣。">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0d12;--card:#141821;--line:#232838;--text:#e8eaf0;--mute:#9aa1b2;--accent:#5eead4;--accent2:#818cf8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans TC",system-ui,sans-serif;line-height:1.7}
+a{color:var(--accent);text-decoration:none}
+.wrap{max-width:1000px;margin:0 auto;padding:0 24px}
+header{padding:56px 0 32px;border-bottom:1px solid var(--line)}
+.back{font-size:14px;color:var(--mute)}
+h1{font-family:"Space Grotesk","Noto Sans TC";font-size:clamp(36px,6vw,56px);letter-spacing:-.02em;margin:18px 0 8px}
+.lead{color:var(--mute)}
+section{padding:56px 0;border-bottom:1px solid var(--line)}
+h2{font-family:"Space Grotesk","Noto Sans TC";font-size:26px;margin-bottom:6px}
+.sub{color:var(--mute);margin-bottom:28px;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.tile{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card)}
+.tile .pv{height:170px;display:grid;place-items:center}
+.tile .pv.light{background:#f6f7fb}
+.tile .meta{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-size:14px;gap:8px}
+.tile .meta span{color:var(--mute)}
+.sw{height:120px}
+.copy{background:none;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer}
+.copy:hover{border-color:var(--accent)}
+.type{display:grid;gap:16px}
+.type div{border:1px solid var(--line);border-radius:16px;padding:24px;background:var(--card)}
+.type small{color:var(--mute);display:block;margin-bottom:8px}
+.voice{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.voice div{border-radius:16px;padding:24px;background:var(--card);border:1px solid var(--line)}
+.voice h3{font-size:15px;margin-bottom:12px}
+.voice .do h3{color:var(--accent)}.voice .dont h3{color:#fca5a5}
+.voice ul{padding-left:18px;color:var(--mute);font-size:15px;display:grid;gap:6px}
+footer{padding:32px 0;color:var(--mute);font-size:13px}
+@media(max-width:640px){.voice{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <a href="index.html" class="back">← Lixiang Nick Studio</a>
+  <h1>品牌資源 Brand Kit</h1>
+  <p class="lead">立庠工作室的 Logo、色彩、字體與語氣。讓每一次露出都一致。</p>
+</div></header>
+
+<section><div class="wrap">
+  <h2>Logo</h2>
+  <p class="sub">圓角方塊加上字母 L，代表「把想法框成產品」。周圍至少保留 Logo 高度 1/4 的空白。</p>
+  <div class="grid">
+    <div class="tile"><div class="pv"><img src="favicon.svg" width="88" height="88" alt="Logo mark"></div><div class="meta">標誌 Mark<a href="favicon.svg" download>SVG ↓</a></div></div>
+    <div class="tile"><div class="pv"><img src="logo-wordmark.svg" style="width:85%" alt="Wordmark"></div><div class="meta">完整標誌 Wordmark<a href="logo-wordmark.svg" download>SVG ↓</a></div></div>
+    <div class="tile"><div class="pv light"><img src="favicon.svg" width="88" height="88" alt="Logo on light"></div><div class="meta">淺色背景<span>可直接使用</span></div></div>
+    <div class="tile"><div class="pv" style="background:#000"><img src="og.png" width="100%" alt="Social image"></div><div class="meta">分享預覽圖<a href="og.png" download>PNG ↓</a></div></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>色彩 Colors</h2>
+  <p class="sub">深色為底，青綠到靛藍的漸層是品牌的記憶點，只用在重點上。</p>
+  <div class="grid" id="colors"></div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>字體 Typography</h2>
+  <p class="sub">全部來自 Google Fonts，免費可商用。</p>
+  <div class="type">
+    <div><small>標題 · Space Grotesk 700</small><span style="font-family:'Space Grotesk';font-size:40px;font-weight:700;letter-spacing:-.02em">Build what matters</span></div>
+    <div><small>內文 · Inter 400 / 500</small><span style="font-size:18px">Android apps, Firebase backends and websites — built end to end.</span></div>
+    <div><small>中文 · Noto Sans TC 400 / 700</small><span style="font-size:20px;font-weight:700">把想法做成真正有用的產品。</span></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>語氣 Voice</h2>
+  <p class="sub">標語：<b>Build what matters · 把想法做成產品</b></p>
+  <div class="voice">
+    <div class="do"><h3>✓ 這樣說</h3><ul><li>直接、具體：「三週內交付可試用版本」</li><li>用「我們」代表工作室</li><li>中英並列時，各自說得自然，不逐字翻譯</li></ul></div>
+    <div class="dont"><h3>✕ 不要這樣說</h3><ul><li>空泛誇大：「業界頂尖」「顛覆傳統」</li><li>堆砌術語，讓客戶看不懂</li><li>承諾做不到的時程或功能</li></ul></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">© <span id="yr"></span> Lixiang Nick Studio · 立庠工作室</div></footer>
+<script>
+const C=[["Ink","#0B0D12","背景"],["Panel","#141821","卡片"],["Line","#232838","分隔線"],["Paper","#E8EAF0","主要文字"],["Mist","#9AA1B2","次要文字"],["Mint","#5EEAD4","主色"],["Indigo","#818CF8","輔色"]];
+const g=document.getElementById("colors");
+C.forEach(([n,h,u])=>{const d=document.createElement("div");d.className="tile";d.innerHTML=`<div class="sw" style="background:${h}"></div><div class="meta"><div><b>${n}</b> <span>${u}</span><br><span>${h}</span></div><button class="copy">複製</button></div>`;d.querySelector("button").onclick=async e=>{try{await navigator.clipboard.writeText(h);e.target.textContent="已複製"}catch(_){e.target.textContent=h}setTimeout(()=>e.target.textContent="複製",1500)};g.appendChild(d)});
+const gd=document.createElement("div");gd.className="tile";gd.innerHTML='<div class="sw" style="background:linear-gradient(90deg,#5EEAD4,#818CF8)"></div><div class="meta"><div><b>Signature</b> <span>品牌漸層</span><br><span>#5EEAD4 → #818CF8</span></div></div>';g.appendChild(gd);
+document.getElementById("yr").textContent=new Date().getFullYear();
+</script>
+</body></html>
