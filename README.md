@@ -30,6 +30,9 @@ My personal website — who I am, what I've built, my skills and what I'm workin
 - ⚡ **Perfect scores** — Lighthouse 100 in Performance, Accessibility, Best Practices and SEO
 - ♿ **Accessible** — passes axe, keyboard-friendly, respects `prefers-reduced-motion`
 - ✉️ **Contact form** — Netlify Forms with a honeypot, no backend needed
+- 🪐 **3D solar system** — real planet textures, tap a planet to fly to it
+- ✨ **Interactive backgrounds** — every section reacts to the cursor
+- 🌗 **Light / dark mode**
 - 🚀 **Continuous deployment** — every push to `main` goes live on Netlify in ~30 seconds
 
 ### 🗂 Structure
@@ -73,6 +76,14 @@ python3 -m http.server 8000
 ```
 
 Then open <http://localhost:8000>.
+
+### 🪐 Interactive 3D solar system
+
+<img src="docs/preview-space.png" alt="3D solar system section" width="760">
+
+### 🧩 Skills
+
+<img src="docs/preview-skills.png" alt="Skills bento grid" width="760">
 
 ### 📱 Mobile
 
