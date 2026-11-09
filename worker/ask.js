@@ -41,16 +41,20 @@ export default {
       { role: 'user', parts: [{ text: msg }] },
     ];
     try {
-      // fall back to the lighter model when the main one is overloaded
-      let r;
-      for (const model of [env.GEMINI_MODEL || 'gemini-flash-latest', 'gemini-flash-lite-latest']) {
-        r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      // flash-lite answers in ~1s; fall back to full flash if it is overloaded or hangs
+      let r = null;
+      for (const model of [env.GEMINI_MODEL || 'gemini-flash-lite-latest', 'gemini-flash-latest']) {
+        try {
+          r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          signal: AbortSignal.timeout(12000),
           method: 'POST',
           headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
           body: JSON.stringify({ systemInstruction: { parts: [{ text: PROFILE }] }, contents, generationConfig: { temperature: 0.6, maxOutputTokens: 400 } }),
         });
+        } catch { r = null; continue; }
         if (r.status !== 503) break;
       }
+      if (!r) return json(504, { error: 'timeout' });
       if (r.status === 429) return json(429, { error: 'busy' });
       if (!r.ok) return json(502, { error: 'upstream', status: r.status });
       const data = await r.json();
