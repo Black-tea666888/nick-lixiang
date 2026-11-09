@@ -60,7 +60,9 @@ function init() {
     ['uranus', 3.6, 94, 46, 'uranus.jpg'],
     ['neptune', 3.5, 108, 60, 'neptune.jpg'],
   ];
-  const bodies = [sun]; const planets = {};
+  const bodies = [sun]; const planets = {}; const extras = {}; const spin = [];
+  const addHit = (obj, rad) => { const h = new THREE.Mesh(new THREE.SphereGeometry(rad, 10, 8), new THREE.MeshBasicMaterial({ visible: false })); h.userData = obj.userData; obj.userData.mesh = obj; obj.add(h); bodies.push(h); };
+  const smallMoon = (parent, r, dist, speed, color, tilt = 0) => { const piv = new THREE.Object3D(); piv.rotation.z = tilt; piv.rotation.y = Math.random() * 6; const mo = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 14), new THREE.MeshStandardMaterial({ color, roughness: 1 })); mo.position.x = dist; piv.add(mo); parent.add(piv); spin.push([piv, speed]); return mo; };
   P.forEach(([id, r, d, period, map], i) => {
     const pivot = new THREE.Object3D(); pivot.rotation.y = i * 1.7 + 0.6; scene.add(pivot);
     const mat = new THREE.MeshStandardMaterial({ map: tex(map), roughness: 1, metalness: 0 });
@@ -71,7 +73,7 @@ function init() {
       const clouds = new THREE.Mesh(new THREE.SphereGeometry(r * 1.02, 64, 48), new THREE.MeshStandardMaterial({ color: 0xffffff, alphaMap: tl.load('tex/clouds.jpg'), transparent: true, depthWrite: false }));
       m.add(clouds); m.userData.clouds = clouds;
       const moon = new THREE.Mesh(new THREE.SphereGeometry(0.65, 32, 24), new THREE.MeshStandardMaterial({ map: tex('moon.jpg') }));
-      const mp = new THREE.Object3D(); mp.add(moon); moon.position.x = 3.4; mp.rotation.z = 0.35; m.add(mp); m.userData.moon = mp;
+      const mp = new THREE.Object3D(); mp.add(moon); moon.position.x = 3.4; mp.rotation.z = 0.35; m.add(mp); m.userData.moon = mp; moon.userData = { id: 'moon', r: 0.65, parent: 'earth' }; extras.moon = moon;
     }
     if (id === 'saturn') {
       const ring = new THREE.Mesh(new THREE.PlaneGeometry(r * 4.6, r * 4.6), new THREE.MeshStandardMaterial({ map: tex('saturn_ring.png'), transparent: true, side: THREE.DoubleSide, depthWrite: false, roughness: 1 }));
@@ -86,6 +88,42 @@ function init() {
     hit.userData = m.userData; hit.userData.mesh = m; m.add(hit);
     planets[id] = { mesh: m, pivot, period, orbit }; bodies.push(hit);
   });
+
+  // --- ISS (simple model) orbiting Earth
+  const E = planets.earth.mesh;
+  { const iss = new THREE.Group(); const metal = new THREE.MeshStandardMaterial({ color: 0xd9dde3, metalness: 0.6, roughness: 0.35 });
+    const pc = document.createElement('canvas'); pc.width = 64; pc.height = 256; const pg = pc.getContext('2d'); pg.fillStyle = '#1b2f6b'; pg.fillRect(0, 0, 64, 256); pg.strokeStyle = '#c9a24a'; pg.lineWidth = 2; for (let y = 0; y <= 256; y += 16) { pg.beginPath(); pg.moveTo(0, y); pg.lineTo(64, y); pg.stroke(); } pg.beginPath(); pg.moveTo(32, 0); pg.lineTo(32, 256); pg.stroke();
+    const ptex = new THREE.CanvasTexture(pc); ptex.colorSpace = THREE.SRGBColorSpace;
+    const panel = new THREE.MeshStandardMaterial({ map: ptex, metalness: 0.5, roughness: 0.35, emissive: 0x0d1d4a, emissiveIntensity: 0.5, side: THREE.DoubleSide });
+    const truss = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.05), metal); iss.add(truss);
+    const mod = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.55, 12), metal); mod.rotation.x = Math.PI / 2; mod.position.z = -0.08; iss.add(mod);
+    const mod2 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.3, 12), metal); mod2.rotation.z = Math.PI / 2; mod2.position.z = 0.22; iss.add(mod2);
+    for (const x of [-0.56, -0.42, 0.42, 0.56]) for (const y of [-1, 1]) { const pnl = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.44), panel); pnl.position.set(x, y * 0.27, 0); iss.add(pnl); }
+    const rad = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.12), new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide })); rad.position.set(0.15, 0.08, 0); iss.add(rad);
+    iss.scale.setScalar(0.42); const piv = new THREE.Object3D(); piv.rotation.z = 0.9; iss.position.x = 2.95; piv.add(iss); E.add(piv); spin.push([piv, 0.9]);
+    iss.userData = { id: 'iss', r: 0.62, parent: 'earth' }; extras.iss = iss; addHit(iss, 0.9); }
+  addHit(extras.moon, 1.3);
+  // --- satellite constellation around Earth (glinting points)
+  { const n = 140, pos = new Float32Array(n * 3); const sats = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ color: 0xcfe8ff, size: 0.06, sizeAttenuation: true, transparent: true, opacity: 0.9 }));
+    const data = Array.from({ length: n }, (_, i) => ({ r: 2.65 + Math.random() * 0.35, inc: (i % 7) * 0.45 + Math.random() * 0.1, ph: Math.random() * 6.28, sp: 0.6 + Math.random() * 0.5 }));
+    sats.geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3)); E.add(sats); extras.sats = sats;
+    extras.satTick = (t) => { data.forEach((d, i) => { const a = d.ph + t * d.sp; const x = Math.cos(a) * d.r, z = Math.sin(a) * d.r; pos[i * 3] = x; pos[i * 3 + 1] = z * Math.sin(d.inc); pos[i * 3 + 2] = z * Math.cos(d.inc); }); sats.geometry.attributes.position.needsUpdate = true; }; }
+  // --- other moons
+  const J = planets.jupiter.mesh; [[0.32, 8.4, 1.8, 0xd9c27a], [0.28, 9.6, 1.3, 0xbfae9e], [0.42, 11.0, 0.9, 0x8f8a83], [0.38, 12.6, 0.6, 0x6f6a64]].forEach(([r, d, sp, c]) => smallMoon(J, r, d, sp, c));
+  smallMoon(planets.saturn.mesh, 0.45, 12.5, 0.6, 0xd9a85b, 0.47);
+  smallMoon(planets.mars.mesh, 0.18, 2.5, 2.2, 0x8a7f74); smallMoon(planets.mars.mesh, 0.12, 3.4, 1.4, 0x9a9087);
+  smallMoon(planets.neptune.mesh, 0.3, 6.5, -0.8, 0xc9c4bd, 0.4);
+  // --- asteroid belt between Mars and Jupiter
+  { const n = 900, geo = new THREE.IcosahedronGeometry(0.22, 0), belt = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: 0x8d8478, roughness: 1, flatShading: true }), n); const M = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), v = new THREE.Vector3();
+    for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, r = 49 + Math.random() * 6; v.set(Math.cos(a) * r, (Math.random() - 0.5) * 1.4, Math.sin(a) * r); q.setFromEuler(new THREE.Euler(Math.random() * 3, Math.random() * 3, Math.random() * 3)); const k = 0.4 + Math.random() * 1.4; sc.set(k, k * (0.6 + Math.random() * 0.6), k); M.compose(v, q, sc); belt.setMatrixAt(i, M); }
+    const bp = new THREE.Object3D(); bp.add(belt); scene.add(bp); spin.push([bp, 0.012]); extras.belt = bp; }
+  // --- comet with a tail pointing away from the Sun
+  { const head = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 12), new THREE.MeshBasicMaterial({ color: 0xdff6ff })); scene.add(head);
+    const n = 160, tp = new Float32Array(n * 3), tail = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ color: 0x9fdcff, size: 0.9, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+    tail.geometry.setAttribute('position', new THREE.BufferAttribute(tp, 3)); scene.add(tail); const off = Array.from({ length: n }, () => [Math.random(), (Math.random() - .5), (Math.random() - .5)]);
+    extras.comet = { head, tail }; extras.cometTick = (t) => { const a = t * 0.05, rx = 120, rz = 46; const x = Math.cos(a) * rx - 60, z = Math.sin(a) * rz; head.position.set(x, 6 + Math.sin(a) * 4, z);
+      const away = head.position.clone().normalize(), len = 10 + 26 * Math.max(0, 1 - head.position.length() / 160);
+      off.forEach(([u, j, k], i) => { const d = u * len, spread = u * 1.6; tp[i * 3] = head.position.x + away.x * d + j * spread; tp[i * 3 + 1] = head.position.y + away.y * d + k * spread; tp[i * 3 + 2] = head.position.z + away.z * d + (j - k) * spread; }); tail.geometry.attributes.position.needsUpdate = true; }; }
 
   // sizing
   const resize = () => { const w = box.clientWidth, h = box.clientHeight || w; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); };
@@ -125,7 +163,7 @@ function init() {
     };
   }
   const overView = () => () => { const n = isNarrow(); return [new THREE.Vector3(n ? 0 : -60, n ? 170 : 115, n ? 260 : 205), new THREE.Vector3(n ? 0 : -60, 0, 0)]; };
-  const isolate = (m) => { for (const id in planets) { const q = planets[id]; const show = !m || q.mesh === m; q.mesh.visible = show; q.orbit.visible = !m; } sun.visible = !m || m === sun || true; };
+  const isolate = (m0) => { const m = m0 && m0.userData.parent ? planets[m0.userData.parent].mesh : m0; if (extras.belt) extras.belt.visible = !m0; if (extras.sats) extras.sats.visible = !m0 || m0 === planets.earth.mesh; if (extras.comet) { extras.comet.head.visible = extras.comet.tail.visible = !m0; } for (const id in planets) { const q = planets[id]; const show = !m || q.mesh === m; q.mesh.visible = show; q.orbit.visible = !m; } sun.visible = !m || m === sun || true; };
   function go(v, dur = 1800) { const [p1, t1] = v(); fly = { t0: performance.now(), dur, p0: camera.position.clone(), q0: controls.target.clone(), v }; view = v; }
   function focus(m) {
     sel = m; label.style.opacity = 0; box.classList.add('zoom'); controls.enabled = false;
@@ -134,9 +172,10 @@ function init() {
   function home() { sel = null; selP = null; box.classList.remove('zoom'); showInfo(null); isolate(null); go(overView()); controls.enabled = !matchMedia('(pointer:coarse)').matches; }
   document.getElementById('back').onclick = (e) => { e.stopPropagation(); home(); };
   document.getElementById('overview').onclick = () => home();
-  document.querySelectorAll('.psel').forEach((b) => b.onclick = () => focus(b.dataset.p === 'sun' ? sun : planets[b.dataset.p].mesh));
+  document.querySelectorAll('.psel').forEach((b) => b.onclick = () => focus(b.dataset.p === 'sun' ? sun : (extras[b.dataset.p] || planets[b.dataset.p].mesh)));
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && sel) home(); });
-  window.__space3d = { focus: (id) => focus(id === 'sun' ? sun : planets[id].mesh), home, screen: (id) => { const v = (id === 'sun' ? sun : planets[id].mesh).getWorldPosition(new THREE.Vector3()).project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; } };
+  const byId = (id) => id === 'sun' ? sun : (extras[id] || planets[id].mesh);
+  window.__space3d = { focus: (id) => focus(byId(id)), home, screen: (id) => { const v = (id === 'sun' ? sun : planets[id].mesh).getWorldPosition(new THREE.Vector3()).project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; } };
   // start featured on Earth, already framed
   { const v = featureView(planets.earth.mesh); sel = planets.earth.mesh; selP = 'earth'; box.classList.add('zoom'); controls.enabled = false; view = v; isolate(planets.earth.mesh); const [p0, t0] = v(); camera.position.copy(p0); controls.target.copy(t0); showInfo('earth'); }
 
@@ -151,6 +190,9 @@ function init() {
     simT += dt * speed;
     for (const id in planets) { const p = planets[id]; p.pivot.rotation.y += dt * speed * (0.3 / Math.sqrt(p.period)); p.mesh.rotation.y += dt * 0.25; if (p.mesh.userData.clouds) p.mesh.userData.clouds.rotation.y += dt * 0.05; if (p.mesh.userData.moon) p.mesh.userData.moon.rotation.y += dt * speed * 1.2; }
     sun.rotation.y += dt * 0.03;
+    for (const [o, sp] of spin) o.rotation.y += dt * sp * (sel ? 0.4 : 1);
+    if (extras.iss) { extras.iss.lookAt(camera.position); extras.iss.rotateY(0.55); extras.iss.rotateX(-0.25); }
+    if (extras.satTick) extras.satTick(simT); if (extras.cometTick) extras.cometTick(simT);
     if (fly) { const t = Math.min(1, (now - fly.t0) / fly.dur), k = ease(t); const [p1, t1] = fly.v(); camera.position.lerpVectors(fly.p0, p1, k); controls.target.lerpVectors(fly.q0, t1, k); camera.lookAt(controls.target); if (t >= 1) fly = null; }
     else if (sel && view) { const [p1, t1] = view(); camera.position.copy(p1); controls.target.copy(t1); camera.lookAt(t1); }
     else controls.update();
