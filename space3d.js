@@ -132,7 +132,11 @@ function init() {
   // picking
   const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
   const label = document.createElement('div'); label.className = 'gl-label'; box.appendChild(label);
-  const pick = (e) => { const r = renderer.domElement.getBoundingClientRect(); ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ptr, camera); const h = ray.intersectObjects(bodies, false)[0]; return h && (h.object.userData.mesh || h.object); };
+  const pick = (e) => { const r = renderer.domElement.getBoundingClientRect(); ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ptr, camera); const real = [sun, ...Object.values(planets).map((q) => q.mesh), extras.moon, extras.iss].filter((o) => o && o.visible !== false);
+    const rh = ray.intersectObjects(real, true).find((h) => h.object.visible !== false && !(h.object.material && h.object.material.visible === false));
+    if (rh) { let o = rh.object; while (o && !(o.userData && o.userData.id)) o = o.parent; if (o) return o.userData.mesh || o; }
+    const hs = ray.intersectObjects(bodies, false).sort((a, b) => a.object.geometry.parameters.radius - b.object.geometry.parameters.radius);
+    return hs[0] && (hs[0].object.userData.mesh || hs[0].object); };
   const nameOf = (id) => PL[id][cur][0];
   renderer.domElement.addEventListener('pointermove', (e) => { hovering = true; const o = pick(e); hoverObj = o; renderer.domElement.style.cursor = o ? 'pointer' : 'grab'; if (o && !sel) { const r = box.getBoundingClientRect(); label.textContent = nameOf(o.userData.id); label.style.transform = `translate(${e.clientX - r.left + 14}px,${e.clientY - r.top - 10}px)`; label.style.opacity = 1; } else label.style.opacity = 0; });
   renderer.domElement.addEventListener('pointerleave', () => { label.style.opacity = 0; hovering = false; });
@@ -175,7 +179,7 @@ function init() {
   document.querySelectorAll('.psel').forEach((b) => b.onclick = () => focus(b.dataset.p === 'sun' ? sun : (extras[b.dataset.p] || planets[b.dataset.p].mesh)));
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && sel) home(); });
   const byId = (id) => id === 'sun' ? sun : (extras[id] || planets[id].mesh);
-  window.__space3d = { focus: (id) => focus(byId(id)), home, screen: (id) => { const v = (id === 'sun' ? sun : planets[id].mesh).getWorldPosition(new THREE.Vector3()).project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; } };
+  window.__space3d = { focus: (id) => focus(byId(id)), home, screen: (id) => { const v = byId(id).getWorldPosition(new THREE.Vector3()).project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; } };
   // start featured on Earth, already framed
   { const v = featureView(planets.earth.mesh); sel = planets.earth.mesh; selP = 'earth'; box.classList.add('zoom'); controls.enabled = false; view = v; isolate(planets.earth.mesh); const [p0, t0] = v(); camera.position.copy(p0); controls.target.copy(t0); showInfo('earth'); }
 
