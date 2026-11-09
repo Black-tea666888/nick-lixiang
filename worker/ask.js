@@ -41,11 +41,16 @@ export default {
       { role: 'user', parts: [{ text: msg }] },
     ];
     try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL || 'gemini-2.5-flash'}:generateContent`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({ systemInstruction: { parts: [{ text: PROFILE }] }, contents, generationConfig: { temperature: 0.6, maxOutputTokens: 400 } }),
-      });
+      // fall back to the lighter model when the main one is overloaded
+      let r;
+      for (const model of [env.GEMINI_MODEL || 'gemini-flash-latest', 'gemini-flash-lite-latest']) {
+        r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify({ systemInstruction: { parts: [{ text: PROFILE }] }, contents, generationConfig: { temperature: 0.6, maxOutputTokens: 400 } }),
+        });
+        if (r.status !== 503) break;
+      }
       if (r.status === 429) return json(429, { error: 'busy' });
       if (!r.ok) return json(502, { error: 'upstream', status: r.status });
       const data = await r.json();
