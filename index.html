@@ -949,7 +949,12 @@ addEventListener("resize",()=>{if(selP){const b=document.querySelector(".orrery 
 })();
 const form=document.getElementById("form"),msg=document.getElementById("msg");
 form.addEventListener("submit",async e=>{e.preventDefault();const b=form.querySelector("button");b.disabled=true;msg.className="msg";msg.textContent="…";
-  try{const r=await fetch("/",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(new FormData(form)).toString()});if(!r.ok)throw 0;form.reset();msg.className="msg ok";msg.textContent=(cur==="en"?en:zh).ok}
+  // Netlify Forms on Netlify; Web3Forms (emails lixiangsu6@gmail.com) everywhere else, e.g. GitHub Pages
+  try{const fd=new FormData(form);let r;
+    if(location.hostname.endsWith("netlify.app"))r=await fetch("/",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(fd).toString()});
+    else{if(fd.get("bot-field"))throw 0;r=await fetch("https://api.web3forms.com/submit",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({access_key:"5d30887f-5b58-4dcf-9770-2dbd02e876d5",subject:"New message from Lixiang Nick Studio",from_name:"Lixiang Nick Studio",name:fd.get("name"),email:fd.get("email"),message:fd.get("message")})});
+      if(r.ok&&!(await r.json()).success)throw 0}
+    if(!r.ok)throw 0;form.reset();msg.className="msg ok";msg.textContent=(cur==="en"?en:zh).ok}
   catch(_){msg.className="msg err";msg.textContent=(cur==="en"?en:zh).err}finally{b.disabled=false}});
 </script>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
