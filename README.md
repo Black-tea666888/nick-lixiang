@@ -45,6 +45,10 @@ My personal website — who I am, what I've built, my skills and what I'm workin
 ├── logo-wordmark.svg   # Full logo
 ├── og.png              # Social share image
 ├── robots.txt / sitemap.xml
+├── space3d.js         # Interactive 3D solar system (three.js)
+├── tex/               # Planet textures (Solar System Scope, CC BY 4.0)
+├── media/             # Violin and swimming videos
+├── vendor/            # three.js (MIT)
 ├── netlify.toml        # Deploy and security headers
 └── docs/               # README screenshots
 ```
@@ -81,6 +85,6 @@ Then open <http://localhost:8000>.
 
 ### 📄 License
 
-The **code** is released under the [MIT License](LICENSE). The **content** — text, logo, brand assets and project descriptions — © Lixiang Nick, all rights reserved.
+The **code** is released under the [MIT License](LICENSE). Planet textures: [Solar System Scope](https://www.solarsystemscope.com/textures/) (CC BY 4.0). 3D rendering: [three.js](https://threejs.org) (MIT). The **content** — text, logo, brand assets and project descriptions — © Lixiang Nick, all rights reserved.
 
 <div align="center"><sub>Built with ☕ by Lixiang Nick</sub></div>
