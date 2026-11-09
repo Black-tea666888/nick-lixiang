@@ -3,29 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lixiang Nick Studio · 立庠工作室</title>
-<meta name="description" content="Lixiang Nick Studio：個人軟體工作室，提供 Android App、Firebase 雲端後端與網站開發。Independent software studio building Android apps, Firebase backends and websites.">
+<title>Lixiang Nick Studio · 立庠</title>
+<meta name="description" content="我是立庠（Lixiang Nick），在台灣學資訊工程，喜歡做 Android App、Firebase 雲端和網頁。這裡是我的作品與介紹。">
 <meta name="theme-color" content="#0b0d12">
 <link rel="canonical" href="https://classy-beignet-781d38.netlify.app/">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Lixiang Nick Studio · 立庠工作室">
-<meta property="og:description" content="Android App · Firebase 雲端後端 · 網站開發 — 把想法做成產品。">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="profile">
+<meta property="og:title" content="Lixiang Nick Studio · 立庠">
+<meta property="og:description" content="Android App · Firebase · Web — 我的作品與介紹。">
 <meta property="og:url" content="https://classy-beignet-781d38.netlify.app/">
 <meta property="og:image" content="https://classy-beignet-781d38.netlify.app/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://classy-beignet-781d38.netlify.app/og.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Organization","name":"Lixiang Nick Studio","alternateName":"立庠工作室","url":"https://classy-beignet-781d38.netlify.app/","founder":{"@type":"Person","name":"Lixiang Nick"},"areaServed":"Worldwide","email":"lixiangsu6@gmail.com","sameAs":["https://github.com/Black-tea666888"]}
-</script>
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-{"@type":"Question","name":"一個專案大概要多久？","acceptedAnswer":{"@type":"Answer","text":"依規模而定。小型網站通常幾週內可以上線，App 或含硬體串接的系統會先拆成幾個階段，每階段都有可試用的版本。"}},
-{"@type":"Question","name":"費用怎麼計算？","acceptedAnswer":{"@type":"Answer","text":"先免費討論需求，確認範圍後提供逐項報價。不會在中途追加沒說好的費用。"}},
-{"@type":"Question","name":"接受海外客戶嗎？","acceptedAnswer":{"@type":"Answer","text":"接受。全程遠端合作，可用中文或英文溝通。"}}]}
+{"@context":"https://schema.org","@type":"Person","name":"Lixiang Nick","alternateName":"立庠","url":"https://classy-beignet-781d38.netlify.app/","email":"lixiangsu6@gmail.com","knowsAbout":["Android","Firebase","Web development","ESP32"],"sameAs":["https://github.com/Black-tea666888"]}
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -211,6 +205,10 @@ footer a:hover{color:var(--text)}
 }
 @media(max-width:480px){.steps{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}html{scroll-behavior:auto}}
+
+.now{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.now .card p{margin:0}
+@media(max-width:760px){.now{grid-template-columns:1fr}}
 </style>
 </head>
 <body class="no-js">
@@ -223,10 +221,10 @@ footer a:hover{color:var(--text)}
   </a>
   <button class="burger" id="burger" aria-label="Menu" aria-expanded="false" aria-controls="links"><span></span><span></span><span></span></button>
   <div class="links" id="links">
-    <a href="#services" data-i18n="nav_services">服務</a>
+    <a href="#about" data-i18n="nav_about">關於我</a>
     <a href="#projects" data-i18n="nav_projects">作品</a>
-    <a href="#process" data-i18n="nav_process">流程</a>
-    <a href="#about" data-i18n="nav_about">關於</a>
+    <a href="#skills" data-i18n="nav_skills">技能</a>
+    <a href="#now" data-i18n="nav_now">近況</a>
     <a href="#contact" data-i18n="nav_contact">聯絡</a>
     <button class="lang" id="lang" title="Switch language / 切換語言">EN</button>
   </div>
@@ -235,105 +233,65 @@ footer a:hover{color:var(--text)}
 <header id="top">
   <div class="bg-grid"></div><div class="orb a"></div><div class="orb b"></div>
   <div class="wrap"><div class="hero">
-    <div class="tag"><i></i><span data-i18n="tag">個人軟體工作室 · 接受新專案</span></div>
-    <h1><span class="grad">Lixiang Nick Studio</span><br><span data-i18n="hi">把想法做成產品</span></h1>
-    <p class="lead" data-i18n="lead">個人軟體工作室，提供 Android App、Firebase 雲端後端與網站開發——把硬體、資料和使用者連在一起。</p>
+    <div class="tag"><i></i><span data-i18n="tag">資訊工程學生 · 台灣</span></div>
+    <h1><span data-i18n="hi">你好，我是</span><br><span class="grad">立庠 Lixiang Nick</span></h1>
+    <p class="lead" data-i18n="lead">我喜歡把想法做成真的能用的東西——從 Android App、Firebase 雲端資料庫到網頁，把硬體、資料和使用者連在一起。</p>
     <div class="btns">
-      <a href="#contact" class="btn primary" data-i18n="cta1">開始合作</a>
-      <a href="#projects" class="btn ghost" data-i18n="cta2">看作品 →</a>
-    </div>
-    <div class="stats">
-      <div class="stat"><b>3+</b><span data-i18n="st1">上線作品</span></div>
-      <div class="stat"><b>3</b><span data-i18n="st2">平台：Android · Web · IoT</span></div>
-      <div class="stat"><b>2</b><span data-i18n="st3">語言：中文 · English</span></div>
+      <a href="#projects" class="btn primary" data-i18n="cta1">看我的作品</a>
+      <a href="https://github.com/Black-tea666888" class="btn ghost" target="_blank" rel="noopener">GitHub ↗</a>
     </div>
   </div></div>
 </header>
 
 <main id="main">
-<section id="services"><div class="wrap">
-  <div class="eyebrow reveal" data-i18n="sv_e">Services</div>
-  <h2 class="reveal" data-i18n="sv_t">服務項目</h2>
-  <p class="sub reveal" data-i18n="sv_s">從點子到上線，一站完成。</p>
-  <div class="grid">
-    <article class="card reveal"><div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg></div><h3 data-i18n="sv1_t">Android App 開發</h3><p data-i18n="sv1_d">以 Java 與 Android Studio 打造原生 App，從介面設計、功能開發到上架準備。</p></article>
-    <article class="card reveal"><div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 0 0 4.5 12 3.5 3.5 0 0 0 6 19z"/></svg></div><h3 data-i18n="sv2_t">Firebase 雲端後端</h3><p data-i18n="sv2_d">即時資料庫、使用者驗證與 IoT 裝置資料串接，讓 App、網頁與硬體即時同步。</p></article>
-    <article class="card reveal"><div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg></div><h3 data-i18n="sv3_t">網站開發與部署</h3><p data-i18n="sv3_d">響應式、多語系網站，GitHub 連動自動部署，手機、平板、電腦都好看。</p></article>
+<section id="about"><div class="wrap about">
+  <div class="reveal">
+    <div class="eyebrow" data-i18n="ab_e">About</div>
+    <h2 data-i18n="about_t">關於我</h2>
+    <p data-i18n="about_p1">我是立庠，目前在台灣讀資訊工程。比起只寫作業，我更喜歡做出別人真的會用的東西，所以常常一個人從資料庫、App 一路做到網頁。</p>
+    <p data-i18n="about_p2">Lixiang Nick Studio 是我放個人作品和實驗的地方，記錄我做過的專案和正在學的東西。</p>
+  </div>
+  <div class="facts reveal">
+    <div><span data-i18n="f_name">名字</span><span data-i18n="f_name_v">立庠 Lixiang Nick</span></div>
+    <div><span data-i18n="f_study">主修</span><span data-i18n="f_study_v">資訊工程</span></div>
+    <div><span data-i18n="f_focus">喜歡做</span><span>Android · Firebase · Web</span></div>
+    <div><span data-i18n="f_loc">所在地</span><span data-i18n="f_loc_v">台灣</span></div>
+    <div><span data-i18n="f_lang">語言</span><span data-i18n="f_lang_v">中文 · English</span></div>
   </div>
 </div></section>
 
 <section id="projects" class="alt"><div class="wrap">
-  <div class="eyebrow reveal" data-i18n="pj_e">Work</div>
-  <h2 class="reveal" data-i18n="proj_t">精選作品</h2>
-  <p class="sub reveal" data-i18n="proj_s">工作室親手打造、持續改進的作品。</p>
+  <div class="eyebrow reveal" data-i18n="pj_e">Projects</div>
+  <h2 class="reveal" data-i18n="proj_t">我的作品</h2>
+  <p class="sub reveal" data-i18n="proj_s">我做過、也還在持續改進的專案。</p>
   <div class="grid">
     <article class="card reveal">
       <div class="thumb" aria-hidden="true"><svg viewBox="0 0 320 170" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="t1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10233a"/><stop offset="1" stop-color="#0e1118"/></linearGradient></defs><rect width="320" height="170" fill="url(#t1)"/><g stroke="#2a3550" stroke-width="2"><path d="M40 40v100M90 40v100M140 40v100M190 40v100M240 40v100M290 40v100"/></g><g><rect x="50" y="52" width="30" height="48" rx="7" fill="#818cf8"/><rect x="150" y="52" width="30" height="48" rx="7" fill="#818cf8"/><rect x="200" y="82" width="30" height="48" rx="7" fill="#818cf8" opacity=".85"/><rect x="250" y="52" width="30" height="48" rx="7" fill="#818cf8"/></g><g><circle cx="115" cy="76" r="7" fill="#5eead4"/><circle cx="65" cy="118" r="7" fill="#5eead4"/><circle cx="115" cy="118" r="7" fill="#5eead4"/><circle cx="165" cy="118" r="7" fill="#5eead4"/><circle cx="265" cy="118" r="7" fill="#5eead4"/><circle cx="215" cy="64" r="7" fill="#5eead4"/></g><path d="M262 30a12 12 0 1 0-4-23 16 16 0 0 0-30 5 9 9 0 0 0 4 18z" fill="none" stroke="#5eead4" stroke-width="2" transform="translate(-70 6)"/><path d="M175 36v10M175 46l-6-5M175 46l6-5" stroke="#5eead4" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div><span class="label">IoT</span>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg></div>
       <h3 data-i18n="p1_t">雲端載重智慧車位偵測</h3>
-      <p data-i18n="p1_d">雙 ESP32 搭配光敏與重量感測器偵測車位，資料即時上傳 Firebase；包含 Android App 與使用者／管理員／業主三種網頁，支援 iOS、iPadOS、macOS，中英切換。</p>
+      <p data-i18n="p1_d">團隊專題，我負責軟體端：Firebase 資料庫、Android App，以及使用者／管理員／業主三種網頁。硬體用雙 ESP32 搭配光敏與重量感測器，資料即時上傳雲端；網頁支援 iOS、iPadOS、macOS 與中英切換。</p>
       <div class="chips"><span class="chip">Firebase</span><span class="chip">Android</span><span class="chip">ESP32</span><span class="chip">Web</span></div>
       <a class="more" href="https://github.com/Black-tea666888/smart-parking-web" target="_blank" rel="noopener" data-i18n="code">查看原始碼 ↗</a>
     </article>
     <article class="card reveal">
       <div class="thumb" aria-hidden="true"><svg viewBox="0 0 320 170" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="t2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#312e81"/><stop offset=".6" stop-color="#7c3aed" stop-opacity=".55"/><stop offset="1" stop-color="#f472b6" stop-opacity=".5"/></linearGradient></defs><rect width="320" height="170" fill="url(#t2)"/><circle cx="230" cy="100" r="34" fill="#fbbf24" opacity=".85"/><g fill="#0b0d12"><path d="M0 170V118h22v-20h18v72zM46 170V80h26v90zM78 170V105h14V60h20v110zM118 170V96h30v74zM154 170V70l14-14 14 14v100zM188 170v-58h24v58zM218 170V88h20V74h14v96zM258 170v-50h22v50zM286 170V92h34v78z"/></g><g fill="#fde68a" opacity=".7"><rect x="52" y="92" width="4" height="5"/><rect x="62" y="92" width="4" height="5"/><rect x="52" y="108" width="4" height="5"/><rect x="88" y="74" width="4" height="5"/><rect x="98" y="88" width="4" height="5"/><rect x="162" y="84" width="4" height="5"/><rect x="170" y="100" width="4" height="5"/><rect x="226" y="100" width="4" height="5"/><rect x="294" y="104" width="4" height="5"/><rect x="306" y="118" width="4" height="5"/></g></svg></div><span class="label">Web</span>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l4-3v14M9 21V4l6 3v14M15 21v-8l4-2v10"/></svg></div>
       <h3>Skyline Daily Boost</h3>
-      <p data-i18n="p2_d">每日鼓勵網站：城市景色、科技公司資訊與讀書工具，為全球使用者設計，GitHub 連動自動部署。</p>
+      <p data-i18n="p2_d">我自己做的每日鼓勵網站：城市景色、科技公司資訊和讀書工具，設計給全世界的人使用，GitHub 連動自動部署。</p>
       <div class="chips"><span class="chip">HTML/CSS/JS</span><span class="chip">Netlify</span><span class="chip">GitHub</span></div>
       <a class="more" href="https://shiny-kleicha-085187.netlify.app" target="_blank" rel="noopener" data-i18n="visit">前往網站 ↗</a>
     </article>
     <article class="card reveal">
       <div class="thumb" aria-hidden="true"><svg viewBox="0 0 320 170" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="t3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#818cf8"/></linearGradient><radialGradient id="t3b"><stop offset="0" stop-color="#3b2a6b"/><stop offset="1" stop-color="#0e1118"/></radialGradient></defs><rect width="320" height="170" fill="url(#t3b)"/><g transform="translate(160 98)"><rect x="-34" y="-50" width="68" height="96" rx="9" fill="#1c2130" stroke="#2a3550" stroke-width="2" transform="rotate(-18) translate(-34 4)"/><rect x="-34" y="-50" width="68" height="96" rx="9" fill="#1c2130" stroke="#2a3550" stroke-width="2" transform="rotate(18) translate(34 4)"/><rect x="-36" y="-58" width="72" height="104" rx="10" fill="url(#t3)"/><path d="M0 -30l7 15 16 2-12 11 3 16-14-8-14 8 3-16-12-11 16-2z" fill="#0b0d12"/></g><g fill="#fde68a"><circle cx="60" cy="40" r="2"/><circle cx="240" cy="40" r="2.5"/><circle cx="250" cy="130" r="1.6"/><circle cx="80" cy="132" r="1.8"/><circle cx="110" cy="28" r="1.4"/></g></svg></div><span class="label">Game</span>
-      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg></div>
       <h3>LuckyDraw</h3>
-      <p data-i18n="p3_d">以 Java 在 Android Studio 開發的抽卡風格手機遊戲，涵蓋遊戲邏輯、機率設計與 UI 動畫。</p>
+      <p data-i18n="p3_d">用 Java 在 Android Studio 寫的抽卡風格手機遊戲，練習遊戲邏輯、機率設計和 UI。</p>
       <div class="chips"><span class="chip">Java</span><span class="chip">Android</span><span class="chip">Game</span></div>
     </article>
   </div>
 </div></section>
 
-<section class="manifesto"><div class="wrap">
-  <blockquote class="reveal"><span data-i18n="mf1">不做華而不實的東西，</span><br><em data-i18n="mf2">只做真正有用的產品。</em></blockquote>
-  <p class="reveal" data-i18n="mf_s">Build what matters — 這是工作室做每個決定的標準。</p>
-  <div class="principles">
-    <div class="pr reveal"><b>01</b><h3 data-i18n="pp1_t">實用優先</h3><p data-i18n="pp1_d">先解決真正的問題，再談花俏的功能。每個畫面都要有存在的理由。</p></div>
-    <div class="pr reveal"><b>02</b><h3 data-i18n="pp2_t">全端打通</h3><p data-i18n="pp2_d">硬體、雲端、App、網頁一手串起，不用在多個外包之間來回溝通。</p></div>
-    <div class="pr reveal"><b>03</b><h3 data-i18n="pp3_t">透明溝通</h3><p data-i18n="pp3_d">進度、問題、取捨都說清楚，分階段交付，隨時看得到成果。</p></div>
-  </div>
-</div></section>
-
-<section id="process"><div class="wrap">
-  <div class="eyebrow reveal" data-i18n="pr_e">Process</div>
-  <h2 class="reveal" data-i18n="pr_t">合作流程</h2>
-  <p class="sub reveal" data-i18n="pr_s">清楚的步驟，每個階段都看得到進度。</p>
-  <div class="steps">
-    <div class="step reveal"><h3 data-i18n="pr1_t">需求討論</h3><p data-i18n="pr1_d">了解目標、使用者與預算，訂出範圍。</p></div>
-    <div class="step reveal"><h3 data-i18n="pr2_t">設計規劃</h3><p data-i18n="pr2_d">畫出介面與系統架構，確認後再開工。</p></div>
-    <div class="step reveal"><h3 data-i18n="pr3_t">開發測試</h3><p data-i18n="pr3_d">分階段交付，每一版都能實際試用。</p></div>
-    <div class="step reveal"><h3 data-i18n="pr4_t">上線維護</h3><p data-i18n="pr4_d">部署上線，持續修正與功能更新。</p></div>
-  </div>
-</div></section>
-
-<section id="about" class="alt"><div class="wrap about">
-  <div class="reveal">
-    <div class="eyebrow" data-i18n="ab_e">About</div>
-    <h2 data-i18n="about_t">關於工作室</h2>
-    <p data-i18n="about_p1">Lixiang Nick Studio 專注把想法做成真的能用的產品。從手機 App、雲端資料庫到跨平台網頁，一手包辦軟體端完整流程。</p>
-    <p data-i18n="about_p2">目前正開發「雲端載重智慧車位偵測」系統，並持續經營自有網站與 Android 遊戲產品。</p>
-  </div>
-  <div class="facts reveal">
-    <div><span data-i18n="f_founder">創辦人</span><span data-i18n="f_founder_v">立庠 Lixiang Nick</span></div>
-    <div><span data-i18n="f_focus">專長</span><span>Android · Firebase · Web</span></div>
-    <div><span data-i18n="f_area">服務範圍</span><span data-i18n="f_area_v">台灣 · 全球遠端</span></div>
-    <div><span data-i18n="f_lang">溝通語言</span><span data-i18n="f_lang_v">中文 · English</span></div>
-  </div>
-</div></section>
-
 <section id="skills"><div class="wrap">
-  <div class="eyebrow reveal" data-i18n="sk_e">Stack</div>
-  <h2 class="reveal" data-i18n="skill_t">技術</h2>
-  <p class="sub reveal" data-i18n="skill_s">工作室使用的技術。</p>
+  <div class="eyebrow reveal" data-i18n="sk_e">Skills</div>
+  <h2 class="reveal" data-i18n="skill_t">技能</h2>
+  <p class="sub reveal" data-i18n="skill_s">我常用的工具和技術。</p>
   <div class="skills">
     <div class="skill reveal"><h3 class="sk" data-i18n="s1">程式語言</h3><div class="chips"><span class="chip">Java</span><span class="chip">Python</span><span class="chip">JavaScript</span><span class="chip">HTML/CSS</span></div></div>
     <div class="skill reveal"><h3 class="sk" data-i18n="s2">行動與後端</h3><div class="chips"><span class="chip">Android Studio</span><span class="chip">Firebase</span><span class="chip">ESP32</span></div></div>
@@ -342,24 +300,22 @@ footer a:hover{color:var(--text)}
   </div>
 </div></section>
 
-<section id="faq"><div class="wrap">
-  <div class="eyebrow reveal" data-i18n="fq_e">FAQ</div>
-  <h2 class="reveal" data-i18n="fq_t">常見問題</h2>
-  <p class="sub reveal" data-i18n="fq_s">合作前大家最常問的事。</p>
-  <div class="faq">
-    <details class="reveal"><summary data-i18n="q1">一個專案大概要多久？</summary><p data-i18n="a1">依規模而定。小型網站通常幾週內可以上線，App 或含硬體串接的系統會先拆成幾個階段，每階段都有可試用的版本。</p></details>
-    <details class="reveal"><summary data-i18n="q2">費用怎麼計算？</summary><p data-i18n="a2">先免費討論需求，確認範圍後提供逐項報價。不會在中途追加沒說好的費用。</p></details>
-    <details class="reveal"><summary data-i18n="q3">只有想法、沒有規格書可以嗎？</summary><p data-i18n="a3">可以。我們會一起把想法整理成功能清單與畫面草圖，確認後再開始開發。</p></details>
-    <details class="reveal"><summary data-i18n="q4">上線之後還能修改嗎？</summary><p data-i18n="a4">可以。網站採自動部署，修改後幾分鐘內就會更新；App 與後端也提供後續維護。</p></details>
-    <details class="reveal"><summary data-i18n="q5">接受海外客戶嗎？</summary><p data-i18n="a5">接受。全程遠端合作，可用中文或英文溝通。</p></details>
+<section id="now" class="alt"><div class="wrap">
+  <div class="eyebrow reveal" data-i18n="nw_e">Now</div>
+  <h2 class="reveal" data-i18n="nw_t">最近在做什麼</h2>
+  <p class="sub reveal" data-i18n="nw_s">我現在的重心。</p>
+  <div class="now">
+    <div class="card reveal"><h3 data-i18n="n1_t">完成智慧車位專題</h3><p data-i18n="n1_d">把 App、網頁和 Firebase 串得更穩定。</p></div>
+    <div class="card reveal"><h3 data-i18n="n2_t">準備轉學考</h3><p data-i18n="n2_d">目標是進入資工系，繼續往軟體深入。</p></div>
+    <div class="card reveal"><h3 data-i18n="n3_t">打磨自己的網站</h3><p data-i18n="n3_d">持續改進 Skyline Daily Boost 和這個網站。</p></div>
   </div>
 </div></section>
 
-<section id="contact" class="alt"><div class="wrap contact">
+<section id="contact"><div class="wrap contact">
   <div class="reveal">
     <div class="eyebrow" data-i18n="ct_e">Contact</div>
-    <h2 data-i18n="ct_t">有專案想合作？</h2>
-    <p data-i18n="ct_s">寄信或填表單，通常 1–2 天內回覆。</p>
+    <h2 data-i18n="ct_t">跟我聊聊</h2>
+    <p data-i18n="ct_s">想交流技術、討論作品或只是打聲招呼，都歡迎寄信或留言給我。</p>
     <div class="mail">
       <a href="mailto:lixiangsu6@gmail.com" class="mail-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m22 7-10 6L2 7"/></svg>lixiangsu6@gmail.com</a>
       <button class="copy-mail" id="copyMail" type="button" data-i18n="cp">複製</button>
@@ -373,35 +329,27 @@ footer a:hover{color:var(--text)}
       <label><span data-i18n="fm_name">名字</span><input name="name" required autocomplete="name"></label>
       <label><span data-i18n="fm_email">Email</span><input type="email" name="email" required autocomplete="email"></label>
     </div>
-    <label><span data-i18n="fm_type">需求類型</span>
-      <select name="type">
-        <option data-i18n="fm_o1">Android App</option>
-        <option data-i18n="fm_o2">Firebase 後端</option>
-        <option data-i18n="fm_o3">網站</option>
-        <option data-i18n="fm_o4">其他</option>
-      </select>
-    </label>
-    <label><span data-i18n="fm_msg">專案內容</span><textarea name="message" required></textarea></label>
+    <label><span data-i18n="fm_msg">想說的話</span><textarea name="message" required></textarea></label>
     <button class="btn primary" type="submit" data-i18n="fm_send">送出</button>
     <div class="msg" id="msg" role="status" aria-live="polite"></div>
-    <p class="legal"><span data-i18n="lg1">送出即表示你同意我們依</span> <a href="privacy.html" data-i18n="lg2">隱私權政策</a> <span data-i18n="lg3">處理你的資料。</span></p>
+    <p class="legal"><span data-i18n="lg1">送出即表示你同意我依</span> <a href="privacy.html" data-i18n="lg2">隱私權政策</a> <span data-i18n="lg3">處理你的資料。</span></p>
   </form>
 </div></section>
 </main>
 
 <footer><div class="wrap">
   <div class="fgrid">
-    <div><a href="#top" class="logo"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#818cf8"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg2)"/><path d="M11 8v16h11" fill="none" stroke="#0b0d12" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Lixiang Nick<span class="lt"> Studio</span></span></a><p data-i18n="f_tag">立庠工作室——把想法做成真正有用的產品。</p></div>
-    <div><h3 class="fh" data-i18n="f_h1">工作室</h3><ul><li><a href="#services" data-i18n="nav_services">服務</a></li><li><a href="#process" data-i18n="nav_process">流程</a></li><li><a href="#about" data-i18n="nav_about">關於</a></li><li><a href="#faq">FAQ</a></li></ul></div>
+    <div><a href="#top" class="logo"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#818cf8"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg2)"/><path d="M11 8v16h11" fill="none" stroke="#0b0d12" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Lixiang Nick<span class="lt"> Studio</span></span></a><p data-i18n="f_tag">立庠的個人網站——作品、技能與近況。</p></div>
+    <div><h3 class="fh" data-i18n="f_h1">網站</h3><ul><li><a href="#about" data-i18n="nav_about">關於我</a></li><li><a href="#skills" data-i18n="nav_skills">技能</a></li><li><a href="#now" data-i18n="nav_now">近況</a></li></ul></div>
     <div><h3 class="fh" data-i18n="f_h2">作品</h3><ul><li><a href="#projects" data-i18n="f_p1">智慧車位</a></li><li><a href="https://shiny-kleicha-085187.netlify.app" target="_blank" rel="noopener">Skyline</a></li><li><a href="#projects">LuckyDraw</a></li></ul></div>
-    <div><h3 class="fh" data-i18n="f_h3">連結</h3><ul><li><a href="mailto:lixiangsu6@gmail.com">Email</a></li><li><a href="https://github.com/Black-tea666888" target="_blank" rel="noopener">GitHub</a></li><li><a href="brand.html" data-i18n="f_brand">品牌資源</a></li><li><a href="privacy.html" data-i18n="lg2">隱私權政策</a></li><li><a href="#contact" data-i18n="nav_contact">聯絡</a></li></ul></div>
+    <div><h3 class="fh" data-i18n="f_h3">連結</h3><ul><li><a href="mailto:lixiangsu6@gmail.com">Email</a></li><li><a href="https://github.com/Black-tea666888" target="_blank" rel="noopener">GitHub</a></li><li><a href="brand.html" data-i18n="f_brand">品牌資源</a></li><li><a href="privacy.html" data-i18n="lg2">隱私權政策</a></li></ul></div>
   </div>
-  <div class="fbar"><span>© <span id="yr"></span> Lixiang Nick Studio · 立庠工作室</span><a href="#top" data-i18n="top">回到頂部 ↑</a></div>
+  <div class="fbar"><span>© <span id="yr"></span> Lixiang Nick Studio · 立庠</span><a href="#top" data-i18n="top">回到頂部 ↑</a></div>
 </div></footer>
 
 <script>
 document.body.classList.remove("no-js");
-const en={skip:"Skip to content",nav_services:"Services",nav_projects:"Work",nav_process:"Process",nav_about:"About",nav_contact:"Contact",tag:"Independent software studio · Open for projects",hi:"Turning ideas into products",lead:"An independent software studio building Android apps, Firebase backends and websites — connecting hardware, data and people.",cta1:"Start a project",cta2:"See work →",st1:"Live projects",st2:"Platforms: Android · Web · IoT",st3:"Languages: 中文 · English",sv_e:"Services",sv_t:"What we do",sv_s:"From idea to launch, all in one place.",sv1_t:"Android App Development",sv1_d:"Native apps in Java with Android Studio — from UI design and features to release.",sv2_t:"Firebase Cloud Backend",sv2_d:"Realtime database, authentication and IoT data pipelines that keep apps, web and hardware in sync.",sv3_t:"Website Development",sv3_d:"Responsive, multilingual websites with Git-based auto-deploy that look great on every device.",pj_e:"Work",proj_t:"Featured work",proj_s:"Products we built and keep improving.",p1_t:"Cloud Smart Parking Detection",p1_d:"Dual-ESP32 hardware with light and weight sensors detects parking spots and streams data to Firebase in real time. Includes an Android app and three web clients (user / admin / owner) with iOS, iPadOS and macOS support and a Chinese/English switch.",code:"View source ↗",p2_d:"A daily-encouragement site with city scenes, tech-company info and study tools, designed for users worldwide with Git-based auto-deploy.",visit:"Visit site ↗",p3_d:"A gacha-style mobile game built in Java with Android Studio, covering game logic, probability design and UI animation.",pr_e:"Process",pr_t:"How we work",pr_s:"Clear steps, with visible progress at every stage.",pr1_t:"Discover",pr1_d:"Understand goals, users and budget, then set the scope.",pr2_t:"Design",pr2_d:"Sketch the UI and system architecture, and agree before building.",pr3_t:"Build & test",pr3_d:"Deliver in stages, with every version ready to try.",pr4_t:"Launch & support",pr4_d:"Deploy, then keep fixing and improving.",ab_e:"About",about_t:"About the studio",about_p1:"Lixiang Nick Studio turns ideas into products people actually use — from mobile apps to cloud databases to cross-platform web pages, covering the full software side.",about_p2:"Currently building a cloud-based, weight-sensing smart parking system, alongside our own website and Android game.",f_founder:"Founder",f_founder_v:"Lixiang Nick",f_focus:"Focus",f_area:"Serving",f_area_v:"Taiwan · Remote worldwide",f_lang:"Languages",f_lang_v:"Chinese · English",sk_e:"Stack",skill_t:"Tech stack",skill_s:"Tech the studio works with.",s1:"Languages",s2:"Mobile & Backend",s3:"Tools",s4:"Foundations",c1:"Networking",c2:"Computer Organization",c3:"Discrete Math",c4:"Systems Analysis",ct_e:"Contact",ct_t:"Have a project in mind?",ct_s:"Email us or use the form — we usually reply within 1–2 days.",fm_name:"Name",fm_email:"Email",fm_type:"Project type",fm_o1:"Android App",fm_o2:"Firebase backend",fm_o3:"Website",fm_o4:"Other",fm_msg:"Project details",fm_send:"Send",top:"Back to top ↑",fq_e:"FAQ",fq_t:"Frequently asked questions",fq_s:"What people usually ask before we start.",q1:"How long does a project take?",a1:"It depends on scope. A small website can usually launch within a few weeks; apps or systems with hardware are split into stages, each with a version you can try.",q2:"How is pricing calculated?",a2:"We start with a free consultation, then give an itemized quote once the scope is clear. No surprise charges along the way.",q3:"I only have an idea, no spec. Is that OK?",a3:"Yes. We will turn your idea into a feature list and screen sketches together before any development starts.",q4:"Can things be changed after launch?",a4:"Yes. Websites auto-deploy, so updates go live within minutes; apps and backends come with ongoing maintenance.",q5:"Do you work with overseas clients?",a5:"Yes. We work fully remote, in Chinese or English.",lg1:"By sending, you agree we handle your data under our",lg2:"Privacy Policy",lg3:".",mf1:"No fluff, no gimmicks —",mf2:"only products that truly matter.",mf_s:"Build what matters — the standard behind every decision we make.",pp1_t:"Useful first",pp1_d:"Solve the real problem before adding flashy features. Every screen has to earn its place.",pp2_t:"Full-stack, end to end",pp2_d:"Hardware, cloud, app and web wired together by one team — no juggling multiple vendors.",pp3_t:"Clear communication",pp3_d:"Progress, problems and trade-offs stated plainly, delivered in stages you can try anytime.",f_tag:"Lixiang Nick Studio — turning ideas into products that truly matter.",f_h1:"Studio",f_h2:"Work",f_h3:"Links",f_p1:"Smart Parking",f_brand:"Brand kit",ok:"Thanks! Your message was sent.",err:"Couldn't send. Please try again or email lixiangsu6@gmail.com.",cp:"Copy",cpd:"Copied"};
+const en={skip:"Skip to content",nav_about:"About",nav_projects:"Projects",nav_skills:"Skills",nav_now:"Now",nav_contact:"Contact",tag:"CS student · Taiwan",hi:"Hi, I'm",lead:"I love turning ideas into things people actually use — Android apps, Firebase cloud databases and websites that connect hardware, data and people.",cta1:"See my projects",ab_e:"About",about_t:"About me",about_p1:"I'm Lixiang, studying Computer Science & Information Engineering in Taiwan. I'd rather build things people really use than just finish assignments, so I often take a project all the way from the database and app to the website.",about_p2:"Lixiang Nick Studio is where I keep my personal projects and experiments — what I've built and what I'm learning.",f_name:"Name",f_name_v:"Lixiang Nick",f_study:"Major",f_study_v:"CS & Information Eng.",f_focus:"I build",f_loc:"Based in",f_loc_v:"Taiwan",f_lang:"Languages",f_lang_v:"Chinese · English",pj_e:"Projects",proj_t:"My projects",proj_s:"Things I've built and keep improving.",p1_t:"Cloud Smart Parking Detection",p1_d:"A team project where I own the software side: the Firebase database, the Android app, and three web clients (user / admin / owner). The hardware uses dual ESP32s with light and weight sensors streaming to the cloud in real time; the web supports iOS, iPadOS, macOS and a Chinese/English switch.",code:"View source ↗",p2_d:"My own daily-encouragement site with city scenes, tech-company info and study tools, designed for people worldwide and auto-deployed from GitHub.",visit:"Visit site ↗",p3_d:"A gacha-style mobile game I wrote in Java with Android Studio to practice game logic, probability design and UI.",sk_e:"Skills",skill_t:"Skills",skill_s:"Tools and tech I use often.",s1:"Languages",s2:"Mobile & Backend",s3:"Tools",s4:"Foundations",c1:"Networking",c2:"Computer Organization",c3:"Discrete Math",c4:"Systems Analysis",nw_e:"Now",nw_t:"What I'm doing now",nw_s:"Where my focus is these days.",n1_t:"Finishing the smart parking project",n1_d:"Making the app, web and Firebase work together more reliably.",n2_t:"Preparing for a transfer exam",n2_d:"Aiming for a CS department to go deeper into software.",n3_t:"Polishing my own sites",n3_d:"Improving Skyline Daily Boost and this website.",ct_e:"Contact",ct_t:"Say hello",ct_s:"Want to talk tech, chat about a project, or just say hi? Email me or leave a message.",fm_name:"Name",fm_email:"Email",fm_msg:"Message",fm_send:"Send",lg1:"By sending, you agree I handle your data under the",lg2:"Privacy Policy",lg3:".",f_tag:"Lixiang's personal site — projects, skills and what I'm up to.",f_h1:"Site",f_h2:"Projects",f_h3:"Links",f_p1:"Smart Parking",f_brand:"Brand kit",top:"Back to top ↑",ok:"Thanks! Your message was sent.",err:"Couldn't send. Please try again or email lixiangsu6@gmail.com.",cp:"Copy",cpd:"Copied"};
 const zh={ok:"謝謝！訊息已送出。",err:"送出失敗，請再試一次，或直接寄信到 lixiangsu6@gmail.com。",cpd:"已複製"};
 document.querySelectorAll("[data-i18n]").forEach(e=>zh[e.dataset.i18n]=e.textContent);
 let cur="zh";const btn=document.getElementById("lang");
@@ -410,21 +358,16 @@ btn.onclick=()=>set(cur==="zh"?"en":"zh");
 let saved=null;try{saved=localStorage.getItem("lang")}catch(e){}
 if(saved==="en"||(!saved&&!/^zh/i.test(navigator.language||"")))set("en");
 document.getElementById("yr").textContent=new Date().getFullYear();
-
 const nav=document.getElementById("nav"),burger=document.getElementById("burger");
 const onScroll=()=>nav.classList.toggle("scrolled",scrollY>10);onScroll();addEventListener("scroll",onScroll,{passive:true});
 burger.onclick=()=>{const o=nav.classList.toggle("open");burger.setAttribute("aria-expanded",o)};
 document.querySelectorAll(".links a").forEach(a=>a.onclick=()=>{nav.classList.remove("open");burger.setAttribute("aria-expanded",false)});
-
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.12});
 document.querySelectorAll(".reveal").forEach((el,i)=>{el.style.transitionDelay=(i%4)*70+"ms";io.observe(el)});
-
 const links=[...document.querySelectorAll(".links a[href^='#']")];
 const so=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)links.forEach(a=>a.classList.toggle("active",a.getAttribute("href")==="#"+e.target.id))}),{rootMargin:"-45% 0px -50% 0px"});
 document.querySelectorAll("section[id]").forEach(s=>so.observe(s));
-
 document.querySelectorAll(".card").forEach(c=>c.addEventListener("pointermove",e=>{const r=c.getBoundingClientRect();c.style.setProperty("--mx",e.clientX-r.left+"px");c.style.setProperty("--my",e.clientY-r.top+"px")}));
-
 document.getElementById("copyMail").onclick=async e=>{const d=cur==="en"?en:zh;try{await navigator.clipboard.writeText("lixiangsu6@gmail.com");e.target.textContent=d.cpd}catch(_){e.target.textContent="lixiangsu6@gmail.com"}setTimeout(()=>e.target.textContent=d.cp,1600)};
 const form=document.getElementById("form"),msg=document.getElementById("msg");
 form.addEventListener("submit",async e=>{e.preventDefault();const b=form.querySelector("button");b.disabled=true;msg.className="msg";msg.textContent="…";
