@@ -32,6 +32,7 @@ My personal website — who I am, what I've built, my skills and what I'm workin
 - ✉️ **Contact form** — Netlify Forms with a honeypot, no backend needed
 - 🪐 **3D solar system** — real planet textures, tap a planet to fly to it
 - ✨ **Interactive backgrounds** — every section reacts to the cursor
+- 🤖 **Ask Lixiang** — AI chat about Lixiang, powered by Gemini's free tier through a Netlify Function (key stays server-side)
 - 🌗 **Light / dark mode**
 - 🚀 **Continuous deployment** — every push to `main` goes live on Netlify in ~30 seconds
 
@@ -52,6 +53,7 @@ My personal website — who I am, what I've built, my skills and what I'm workin
 ├── tex/               # Planet textures (Solar System Scope, CC BY 4.0)
 ├── media/             # Violin and swimming videos
 ├── vendor/            # three.js (MIT)
+├── netlify/functions/ask.mjs  # Serverless proxy to Gemini (needs GEMINI_API_KEY)
 ├── netlify.toml        # Deploy and security headers
 └── docs/               # README screenshots
 ```
