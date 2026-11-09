@@ -71,7 +71,7 @@ function init() {
       const clouds = new THREE.Mesh(new THREE.SphereGeometry(r * 1.02, 64, 48), new THREE.MeshStandardMaterial({ color: 0xffffff, alphaMap: tl.load('tex/clouds.jpg'), transparent: true, depthWrite: false }));
       m.add(clouds); m.userData.clouds = clouds;
       const moon = new THREE.Mesh(new THREE.SphereGeometry(0.65, 32, 24), new THREE.MeshStandardMaterial({ map: tex('moon.jpg') }));
-      const mp = new THREE.Object3D(); mp.add(moon); moon.position.x = 4.5; m.add(mp); m.userData.moon = mp;
+      const mp = new THREE.Object3D(); mp.add(moon); moon.position.x = 3.4; mp.rotation.z = 0.35; m.add(mp); m.userData.moon = mp;
     }
     if (id === 'saturn') {
       const ring = new THREE.Mesh(new THREE.PlaneGeometry(r * 4.6, r * 4.6), new THREE.MeshStandardMaterial({ map: tex('saturn_ring.png'), transparent: true, side: THREE.DoubleSide, depthWrite: false, roughness: 1 }));
@@ -137,8 +137,8 @@ function init() {
   document.querySelectorAll('.psel').forEach((b) => b.onclick = () => focus(b.dataset.p === 'sun' ? sun : planets[b.dataset.p].mesh));
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && sel) home(); });
   window.__space3d = { focus: (id) => focus(id === 'sun' ? sun : planets[id].mesh), home, screen: (id) => { const v = (id === 'sun' ? sun : planets[id].mesh).getWorldPosition(new THREE.Vector3()).project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; } };
-  // start featured on Mars, already framed
-  { const v = featureView(planets.mars.mesh); sel = planets.mars.mesh; selP = 'mars'; box.classList.add('zoom'); controls.enabled = false; view = v; isolate(planets.mars.mesh); const [p0, t0] = v(); camera.position.copy(p0); controls.target.copy(t0); showInfo('mars'); }
+  // start featured on Earth, already framed
+  { const v = featureView(planets.earth.mesh); sel = planets.earth.mesh; selP = 'earth'; box.classList.add('zoom'); controls.enabled = false; view = v; isolate(planets.earth.mesh); const [p0, t0] = v(); camera.position.copy(p0); controls.target.copy(t0); showInfo('earth'); }
 
   // render loop (only while visible)
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
