@@ -82,7 +82,9 @@ function init() {
     if (AC[id]) m.add(atmo(r, AC[id], 4.0, id === 'earth' ? 0.9 : 0.45));
     const orbit = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 180 }, (_, k) => new THREE.Vector3(Math.cos(k / 180 * Math.PI * 2) * d, 0, Math.sin(k / 180 * Math.PI * 2) * d))), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.12 }));
     scene.add(orbit);
-    planets[id] = { mesh: m, pivot, period, orbit }; bodies.push(m);
+    const hit = new THREE.Mesh(new THREE.SphereGeometry(Math.max(r * 2.2, 4.5), 12, 8), new THREE.MeshBasicMaterial({ visible: false }));
+    hit.userData = m.userData; hit.userData.mesh = m; m.add(hit);
+    planets[id] = { mesh: m, pivot, period, orbit }; bodies.push(hit);
   });
 
   // sizing
@@ -92,11 +94,12 @@ function init() {
   // picking
   const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
   const label = document.createElement('div'); label.className = 'gl-label'; box.appendChild(label);
-  const pick = (e) => { const r = renderer.domElement.getBoundingClientRect(); ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ptr, camera); const hit = ray.intersectObjects(bodies, false)[0]; return hit && hit.object; };
+  const pick = (e) => { const r = renderer.domElement.getBoundingClientRect(); ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ptr, camera); const h = ray.intersectObjects(bodies, false)[0]; return h && (h.object.userData.mesh || h.object); };
   const nameOf = (id) => PL[id][cur][0];
-  renderer.domElement.addEventListener('pointermove', (e) => { const o = pick(e); renderer.domElement.style.cursor = o ? 'pointer' : 'grab'; if (o && !sel) { const r = box.getBoundingClientRect(); label.textContent = nameOf(o.userData.id); label.style.transform = `translate(${e.clientX - r.left + 14}px,${e.clientY - r.top - 10}px)`; label.style.opacity = 1; } else label.style.opacity = 0; });
-  renderer.domElement.addEventListener('pointerleave', () => label.style.opacity = 0);
-  let down = null;
+  renderer.domElement.addEventListener('pointermove', (e) => { hovering = true; const o = pick(e); hoverObj = o; renderer.domElement.style.cursor = o ? 'pointer' : 'grab'; if (o && !sel) { const r = box.getBoundingClientRect(); label.textContent = nameOf(o.userData.id); label.style.transform = `translate(${e.clientX - r.left + 14}px,${e.clientY - r.top - 10}px)`; label.style.opacity = 1; } else label.style.opacity = 0; });
+  renderer.domElement.addEventListener('pointerleave', () => { label.style.opacity = 0; hovering = false; });
+  let hovering = false; renderer.domElement.addEventListener('pointerenter', () => hovering = true);
+  let down = null, hoverObj = null;
   renderer.domElement.addEventListener('pointerdown', (e) => down = [e.clientX, e.clientY]);
   renderer.domElement.addEventListener('pointerup', (e) => { if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6) return; const o = pick(e); if (o && o !== sel) focus(o.userData.id === 'sun' ? sun : o); });
 
@@ -133,7 +136,7 @@ function init() {
   document.getElementById('overview').onclick = () => home();
   document.querySelectorAll('.psel').forEach((b) => b.onclick = () => focus(b.dataset.p === 'sun' ? sun : planets[b.dataset.p].mesh));
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && sel) home(); });
-  window.__space3d = { focus: (id) => focus(id === 'sun' ? sun : planets[id].mesh), home };
+  window.__space3d = { focus: (id) => focus(id === 'sun' ? sun : planets[id].mesh), home, screen: (id) => { const v = (id === 'sun' ? sun : planets[id].mesh).getWorldPosition(new THREE.Vector3()).project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; } };
   // start featured on Mars, already framed
   { const v = featureView(planets.mars.mesh); sel = planets.mars.mesh; selP = 'mars'; box.classList.add('zoom'); controls.enabled = false; view = v; isolate(planets.mars.mesh); const [p0, t0] = v(); camera.position.copy(p0); controls.target.copy(t0); showInfo('mars'); }
 
@@ -144,9 +147,9 @@ function init() {
   function loop(now) {
     if (!visible) return;
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
-    const speed = reduce ? 0.15 : (sel ? 0.25 : 1);
+    const speed = reduce ? 0.05 : (sel ? 0.25 : (hoverObj ? 0 : (hovering ? 0.35 : 1)));
     simT += dt * speed;
-    for (const id in planets) { const p = planets[id]; p.pivot.rotation.y += dt * speed * (2.2 / p.period); p.mesh.rotation.y += dt * 0.25; if (p.mesh.userData.clouds) p.mesh.userData.clouds.rotation.y += dt * 0.05; if (p.mesh.userData.moon) p.mesh.userData.moon.rotation.y += dt * speed * 1.2; }
+    for (const id in planets) { const p = planets[id]; p.pivot.rotation.y += dt * speed * (0.3 / Math.sqrt(p.period)); p.mesh.rotation.y += dt * 0.25; if (p.mesh.userData.clouds) p.mesh.userData.clouds.rotation.y += dt * 0.05; if (p.mesh.userData.moon) p.mesh.userData.moon.rotation.y += dt * speed * 1.2; }
     sun.rotation.y += dt * 0.03;
     if (fly) { const t = Math.min(1, (now - fly.t0) / fly.dur), k = ease(t); const [p1, t1] = fly.v(); camera.position.lerpVectors(fly.p0, p1, k); controls.target.lerpVectors(fly.q0, t1, k); camera.lookAt(controls.target); if (t >= 1) fly = null; }
     else if (sel && view) { const [p1, t1] = view(); camera.position.copy(p1); controls.target.copy(t1); camera.lookAt(t1); }
