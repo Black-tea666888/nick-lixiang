@@ -803,12 +803,13 @@ typeCode();
 const spot=document.getElementById("spot"),hdr=document.getElementById("top");
 hdr.addEventListener("pointermove",e=>{const r=hdr.getBoundingClientRect();spot.style.setProperty("--sx",e.clientX-r.left+"px");spot.style.setProperty("--sy",e.clientY-r.top+"px")});
 document.querySelectorAll(".tile").forEach(c=>c.addEventListener("pointermove",e=>{const r=c.getBoundingClientRect();c.style.setProperty("--mx",e.clientX-r.left+"px");c.style.setProperty("--my",e.clientY-r.top+"px")}));
-(function heroFx(){const c=document.getElementById("heroFx"),hdr=document.getElementById("top");if(!c)return;const x=c.getContext("2d");let W,H,dpr,P=[],mx=-9999,my=-9999,vis=true,raf,ev=null,cap=LOWFX?1:1.5,slowFx=LOWFX,fn=0,ft=0,lt=0;
+(function heroFx(){const c=document.getElementById("heroFx"),hdr=document.getElementById("top");if(!c)return;const x=c.getContext("2d");let W,H,dpr,P=[],mx=-9999,my=-9999,vis=true,raf,ev=null,cap=LOWFX?1:1.5,slowFx=LOWFX,fn=0,ft=0,lt=0,lh=0;
   const red=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const col=()=>document.documentElement.dataset.theme==="light"?["15,118,110","79,70,229"]:["94,234,212","129,140,248"];
   function size(){dpr=Math.min(devicePixelRatio,cap);W=hdr.clientWidth;H=hdr.clientHeight;c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0);const n=Math.round(Math.min(slowFx?(LOWFX?36:70):140,W*H/(LOWFX?18000:9000)));P=Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,z:Math.random()*0.9+0.1,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25}))}
   const NB=5,bk=()=>Array.from({length:NB},()=>new Path2D());
-  function draw(t){if(ev){const r=hdr.getBoundingClientRect();mx=ev.clientX-r.left;my=ev.clientY-r.top;ev=null}
+  function draw(t){if(t&&t-lh<15){if(vis&&!red)raf=requestAnimationFrame(draw);return}if(t)lh=t;
+    if(ev){const r=hdr.getBoundingClientRect();mx=ev.clientX-r.left;my=ev.clientY-r.top;ev=null}
     // adaptive: if this machine can't keep up, drop resolution, then particle count and frame rate
     if(!slowFx&&t){if(lt){fn++;ft+=t-lt}lt=t;if(fn===90){if(ft/90>22){if(cap>1)cap=1;else slowFx=true;size()}fn=ft=0}}
     const [a,b]=col();x.clearRect(0,0,W,H);const dots=[bk(),bk()],lines=bk(),ptr=bk();
@@ -852,14 +853,15 @@ document.querySelectorAll(".tile").forEach(c=>c.addEventListener("pointermove",e
         for(const p of st.p){p.y-=p.v;p.x+=Math.sin(t*.001+p.ph)*.3;if(p.y<-30){p.y=H+30;p.x=R()*W}const dx=p.x-m.x,dy=p.y-m.y,d=Math.hypot(dx,dy);if(d<140&&d>0){p.x+=dx/d*1.8;p.y+=dy/d*1.8}
         x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.strokeStyle=`rgba(${c.a},${(.16+Math.max(0,1-d/220)*.4)*c.k})`;x.lineWidth=1.2;x.stroke()}}}
   };
-  document.querySelectorAll(".sfx").forEach(cv=>{const sec=cv.parentElement,x=cv.getContext("2d"),st={};const draw=FX[cv.dataset.fx](st);let W,H,vis=false,raf,m={x:-999,y:-999};
-    const size=()=>{const d=Math.min(devicePixelRatio,LOWFX?1:2);W=sec.clientWidth;H=sec.clientHeight;cv.width=W*d;cv.height=H*d;x.setTransform(d,0,0,d,0,0);st.p=null};
-    const frame=t=>{x.clearRect(0,0,W,H);draw(x,W,H,m,t,C());if(vis&&!red)raf=requestAnimationFrame(frame)};
-    sec.addEventListener("pointermove",e=>{const r=sec.getBoundingClientRect();m={x:e.clientX-r.left,y:e.clientY-r.top};if(red)frame(performance.now())},{passive:true});
-    sec.addEventListener("pointerleave",()=>m={x:-999,y:-999});
-    new ResizeObserver(()=>{size();frame(performance.now())}).observe(sec);
+  document.querySelectorAll(".sfx").forEach(cv=>{const sec=cv.parentElement,x=cv.getContext("2d"),st={};const draw=FX[cv.dataset.fx](st);let W,H,vis=false,raf,m={x:-999,y:-999},ev=null,lt=0;const q=cv.dataset.fx.startsWith("aurora")?.5:1;
+    const size=()=>{const d=q;W=sec.clientWidth;H=sec.clientHeight;cv.width=W*d;cv.height=H*d;x.setTransform(d,0,0,d,0,0);st.p=null};
+    const paint=t=>{if(ev){const r=sec.getBoundingClientRect();m={x:ev.clientX-r.left,y:ev.clientY-r.top};ev=null}x.clearRect(0,0,W,H);draw(x,W,H,m,t,C())};
+    const frame=t=>{if(t-lt>=30){lt=t;paint(t)}if(vis&&!red)raf=requestAnimationFrame(frame)};
+    sec.addEventListener("pointermove",e=>{ev=e;if(red)paint(performance.now())},{passive:true});
+    sec.addEventListener("pointerleave",()=>{ev=null;m={x:-999,y:-999}});
+    new ResizeObserver(()=>{size();paint(performance.now())}).observe(sec);
     new IntersectionObserver(es=>{vis=es[0].isIntersecting;cancelAnimationFrame(raf);if(vis)raf=requestAnimationFrame(frame)},{rootMargin:"100px"}).observe(sec);
-    document.getElementById("theme").addEventListener("click",()=>frame(performance.now()))})
+    document.getElementById("theme").addEventListener("click",()=>paint(performance.now()))})
 })();
 const prog=document.getElementById("progress");
 addEventListener("scroll",()=>{const h=document.documentElement;prog.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+"%"},{passive:true});

@@ -205,7 +205,7 @@ function init() {
   let lastDraw = 0; const slow = { n: 0, t: 0, cap: false };
   function loop(now) {
     if (!visible) return;
-    if ((LOW || slow.cap) && (scrolling || now - lastDraw < 32)) { requestAnimationFrame(loop); return; } lastDraw = now;
+    if (now - lastDraw < 15 || ((LOW || slow.cap) && (scrolling || now - lastDraw < 32))) { requestAnimationFrame(loop); return; } lastDraw = now;
     if (!LOW && !slow.cap) { slow.n++; slow.t += now - last; if (slow.n === 90) { if (slow.t / 90 > 22) { if (pr > 1) { pr = Math.max(1, pr - 0.25); renderer.setPixelRatio(pr); resize(); } else slow.cap = true; } slow.n = slow.t = 0; } }
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     const speed = reduce ? 0.05 : (sel ? 0.25 : (hoverObj ? 0 : (hovering ? 0.35 : 1)));
