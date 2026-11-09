@@ -29,10 +29,10 @@ My personal website — who I am, what I've built, my skills and what I'm workin
 - 📱 **Mobile-first** — responsive layout with a dedicated mobile menu
 - ⚡ **Perfect scores** — Lighthouse 100 in Performance, Accessibility, Best Practices and SEO
 - ♿ **Accessible** — passes axe, keyboard-friendly, respects `prefers-reduced-motion`
-- ✉️ **Contact form** — Netlify Forms with a honeypot, no backend needed
+- ✉️ **Contact form** — Web3Forms on GitHub Pages (Netlify Forms on Netlify), with a honeypot
 - 🪐 **3D solar system** — real planet textures, tap a planet to fly to it
 - ✨ **Interactive backgrounds** — every section reacts to the cursor
-- 🤖 **Ask Lixiang** — AI chat about Lixiang, powered by Gemini's free tier through a Netlify Function (key stays server-side)
+- 🤖 **Ask Lixiang** — AI chat about Lixiang, powered by Gemini's free tier through a Cloudflare Worker (key stays server-side)
 - 🌗 **Light / dark mode**
 - 🚀 **Continuous deployment** — every push to `main` goes live on GitHub Pages in about a minute
 
@@ -53,8 +53,9 @@ My personal website — who I am, what I've built, my skills and what I'm workin
 ├── tex/               # Planet textures (Solar System Scope, CC BY 4.0)
 ├── media/             # Violin and swimming videos
 ├── vendor/            # three.js (MIT)
-├── netlify/functions/ask.mjs  # Serverless proxy to Gemini (needs GEMINI_API_KEY)
-├── netlify.toml        # Deploy and security headers
+├── worker/             # Cloudflare Worker "nick-ask" — Gemini proxy for Ask Lixiang
+├── netlify/functions/  # Same proxy as a Netlify Function (legacy host)
+├── netlify.toml        # Netlify config (legacy host)
 └── docs/               # README screenshots
 ```
 
@@ -68,6 +69,11 @@ My personal website — who I am, what I've built, my skills and what I'm workin
 | Paper | `#E8EAF0` | Text |
 
 Fonts: Space Grotesk (headings), Inter (body), Noto Sans TC (Chinese). Full guide: [Brand kit](https://black-tea666888.github.io/nick-lixiang/brand.html).
+
+### 📚 Docs
+
+- [Development notes](docs/DEVELOPMENT.md) — architecture, deployment, AI chat, forms, performance work
+- [Changelog](CHANGELOG.md)
 
 ### 🛠 Run locally
 
