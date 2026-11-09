@@ -137,6 +137,16 @@ h2{font-family:"Space Grotesk","Noto Sans TC";font-size:clamp(30px,4vw,42px);lin
 .copy-mail{background:none;border:1px solid var(--line);color:var(--mute);border-radius:10px;padding:10px 14px;font:inherit;font-size:13px;cursor:pointer}
 .copy-mail:hover{border-color:var(--accent);color:var(--text)}
 
+/* timeline */
+.tl{position:relative;max-width:760px;padding-left:28px}
+.tl::before{content:"";position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:linear-gradient(var(--accent),var(--accent2))}
+.tl-item{position:relative;padding:0 0 36px}
+.tl-item:last-child{padding-bottom:0}
+.tl-item::before{content:"";position:absolute;left:-28px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:3px solid var(--accent)}
+.tl-item time{font-family:"Space Grotesk";font-size:13px;color:var(--accent);font-weight:700;letter-spacing:.06em}
+.tl-item h3{font-size:18px;margin:4px 0 6px}
+.tl-item p{color:var(--mute);font-size:15px}
+
 /* faq */
 .faq{max-width:760px}
 .faq details{border-bottom:1px solid var(--line);padding:20px 0}
@@ -223,6 +233,7 @@ footer a:hover{color:var(--text)}
   <div class="links" id="links">
     <a href="#about" data-i18n="nav_about">關於我</a>
     <a href="#projects" data-i18n="nav_projects">作品</a>
+    <a href="#journey" data-i18n="nav_journey">歷程</a>
     <a href="#skills" data-i18n="nav_skills">技能</a>
     <a href="#now" data-i18n="nav_now">近況</a>
     <a href="#contact" data-i18n="nav_contact">聯絡</a>
@@ -288,7 +299,19 @@ footer a:hover{color:var(--text)}
   </div>
 </div></section>
 
-<section id="skills"><div class="wrap">
+<section id="journey"><div class="wrap">
+  <div class="eyebrow reveal" data-i18n="jr_e">Journey</div>
+  <h2 class="reveal" data-i18n="jr_t">我的歷程</h2>
+  <p class="sub reveal" data-i18n="jr_s">一路做過的事。</p>
+  <div class="tl">
+    <div class="tl-item reveal"><time>2026.11</time><h3 data-i18n="t1_t">架設這個個人網站</h3><p data-i18n="t1_d">從設計到部署一手完成，GitHub 連動自動上線，中英雙語、手機電腦都適用。</p></div>
+    <div class="tl-item reveal"><time>2026</time><h3 data-i18n="t2_t">專題展發表智慧車位系統</h3><p data-i18n="t2_d">擔任組長，以「雲端載重智慧車位偵測」參加嵌入式系統與行動計算組，負責整個軟體端。</p></div>
+    <div class="tl-item reveal"><time>2026</time><h3 data-i18n="t3_t">上線 Skyline Daily Boost</h3><p data-i18n="t3_d">第一個給全世界使用者的個人網站，學會從 GitHub 到 Netlify 的自動部署。</p></div>
+    <div class="tl-item reveal"><time data-i18n="t4_y">更早</time><h3 data-i18n="t4_t">開始寫 Android</h3><p data-i18n="t4_d">用 Java 做出抽卡遊戲 LuckyDraw，從此迷上把程式變成真的能玩、能用的東西。</p></div>
+  </div>
+</div></section>
+
+<section id="skills" class="alt"><div class="wrap">
   <div class="eyebrow reveal" data-i18n="sk_e">Skills</div>
   <h2 class="reveal" data-i18n="skill_t">技能</h2>
   <p class="sub reveal" data-i18n="skill_s">我常用的工具和技術。</p>
@@ -300,18 +323,18 @@ footer a:hover{color:var(--text)}
   </div>
 </div></section>
 
-<section id="now" class="alt"><div class="wrap">
+<section id="now"><div class="wrap">
   <div class="eyebrow reveal" data-i18n="nw_e">Now</div>
   <h2 class="reveal" data-i18n="nw_t">最近在做什麼</h2>
   <p class="sub reveal" data-i18n="nw_s">我現在的重心。</p>
   <div class="now">
     <div class="card reveal"><h3 data-i18n="n1_t">完成智慧車位專題</h3><p data-i18n="n1_d">把 App、網頁和 Firebase 串得更穩定。</p></div>
-    <div class="card reveal"><h3 data-i18n="n2_t">準備轉學考</h3><p data-i18n="n2_d">目標是進入資工系，繼續往軟體深入。</p></div>
+    <div class="card reveal"><h3 data-i18n="n2_t">練演算法</h3><p data-i18n="n2_d">用 Python 解 UVa 題目，把基本功打紮實。</p></div>
     <div class="card reveal"><h3 data-i18n="n3_t">打磨自己的網站</h3><p data-i18n="n3_d">持續改進 Skyline Daily Boost 和這個網站。</p></div>
   </div>
 </div></section>
 
-<section id="contact"><div class="wrap contact">
+<section id="contact" class="alt"><div class="wrap contact">
   <div class="reveal">
     <div class="eyebrow" data-i18n="ct_e">Contact</div>
     <h2 data-i18n="ct_t">跟我聊聊</h2>
@@ -349,7 +372,7 @@ footer a:hover{color:var(--text)}
 
 <script>
 document.body.classList.remove("no-js");
-const en={skip:"Skip to content",nav_about:"About",nav_projects:"Projects",nav_skills:"Skills",nav_now:"Now",nav_contact:"Contact",tag:"CS student · Taiwan",hi:"Hi, I'm",lead:"I love turning ideas into things people actually use — Android apps, Firebase cloud databases and websites that connect hardware, data and people.",cta1:"See my projects",ab_e:"About",about_t:"About me",about_p1:"I'm Lixiang, studying Computer Science & Information Engineering in Taiwan. I'd rather build things people really use than just finish assignments, so I often take a project all the way from the database and app to the website.",about_p2:"Lixiang Nick Studio is where I keep my personal projects and experiments — what I've built and what I'm learning.",f_name:"Name",f_name_v:"Lixiang Nick",f_study:"Major",f_study_v:"CS & Information Eng.",f_focus:"I build",f_loc:"Based in",f_loc_v:"Taiwan",f_lang:"Languages",f_lang_v:"Chinese · English",pj_e:"Projects",proj_t:"My projects",proj_s:"Things I've built and keep improving.",p1_t:"Cloud Smart Parking Detection",p1_d:"A team project where I own the software side: the Firebase database, the Android app, and three web clients (user / admin / owner). The hardware uses dual ESP32s with light and weight sensors streaming to the cloud in real time; the web supports iOS, iPadOS, macOS and a Chinese/English switch.",code:"View source ↗",p2_d:"My own daily-encouragement site with city scenes, tech-company info and study tools, designed for people worldwide and auto-deployed from GitHub.",visit:"Visit site ↗",p3_d:"A gacha-style mobile game I wrote in Java with Android Studio to practice game logic, probability design and UI.",sk_e:"Skills",skill_t:"Skills",skill_s:"Tools and tech I use often.",s1:"Languages",s2:"Mobile & Backend",s3:"Tools",s4:"Foundations",c1:"Networking",c2:"Computer Organization",c3:"Discrete Math",c4:"Systems Analysis",nw_e:"Now",nw_t:"What I'm doing now",nw_s:"Where my focus is these days.",n1_t:"Finishing the smart parking project",n1_d:"Making the app, web and Firebase work together more reliably.",n2_t:"Preparing for a transfer exam",n2_d:"Aiming for a CS department to go deeper into software.",n3_t:"Polishing my own sites",n3_d:"Improving Skyline Daily Boost and this website.",ct_e:"Contact",ct_t:"Say hello",ct_s:"Want to talk tech, chat about a project, or just say hi? Email me or leave a message.",fm_name:"Name",fm_email:"Email",fm_msg:"Message",fm_send:"Send",lg1:"By sending, you agree I handle your data under the",lg2:"Privacy Policy",lg3:".",f_tag:"Lixiang's personal site — projects, skills and what I'm up to.",f_h1:"Site",f_h2:"Projects",f_h3:"Links",f_p1:"Smart Parking",f_brand:"Brand kit",top:"Back to top ↑",ok:"Thanks! Your message was sent.",err:"Couldn't send. Please try again or email lixiangsu6@gmail.com.",cp:"Copy",cpd:"Copied"};
+const en={skip:"Skip to content",nav_about:"About",nav_projects:"Projects",nav_skills:"Skills",nav_journey:"Journey",jr_e:"Journey",jr_t:"My journey",jr_s:"What I've done along the way.",t1_t:"Built this personal website",t1_d:"Designed and deployed it myself — auto-deployed from GitHub, bilingual, and works on phone and desktop.",t2_t:"Presented the smart parking system",t2_d:"As team lead, entered \"Cloud Smart Parking Detection\" in the Embedded Systems & Mobile Computing category at a project exhibition, owning the whole software side.",t3_t:"Launched Skyline Daily Boost",t3_d:"My first site built for users worldwide, where I learned GitHub-to-Netlify auto-deploy.",t4_y:"Earlier",t4_t:"Started writing Android",t4_d:"Built the gacha game LuckyDraw in Java — and got hooked on turning code into things people can play and use.",nav_now:"Now",nav_contact:"Contact",tag:"CS student · Taiwan",hi:"Hi, I'm",lead:"I love turning ideas into things people actually use — Android apps, Firebase cloud databases and websites that connect hardware, data and people.",cta1:"See my projects",ab_e:"About",about_t:"About me",about_p1:"I'm Lixiang, studying Computer Science & Information Engineering in Taiwan. I'd rather build things people really use than just finish assignments, so I often take a project all the way from the database and app to the website.",about_p2:"Lixiang Nick Studio is where I keep my personal projects and experiments — what I've built and what I'm learning.",f_name:"Name",f_name_v:"Lixiang Nick",f_study:"Major",f_study_v:"CS & Information Eng.",f_focus:"I build",f_loc:"Based in",f_loc_v:"Taiwan",f_lang:"Languages",f_lang_v:"Chinese · English",pj_e:"Projects",proj_t:"My projects",proj_s:"Things I've built and keep improving.",p1_t:"Cloud Smart Parking Detection",p1_d:"A team project where I own the software side: the Firebase database, the Android app, and three web clients (user / admin / owner). The hardware uses dual ESP32s with light and weight sensors streaming to the cloud in real time; the web supports iOS, iPadOS, macOS and a Chinese/English switch.",code:"View source ↗",p2_d:"My own daily-encouragement site with city scenes, tech-company info and study tools, designed for people worldwide and auto-deployed from GitHub.",visit:"Visit site ↗",p3_d:"A gacha-style mobile game I wrote in Java with Android Studio to practice game logic, probability design and UI.",sk_e:"Skills",skill_t:"Skills",skill_s:"Tools and tech I use often.",s1:"Languages",s2:"Mobile & Backend",s3:"Tools",s4:"Foundations",c1:"Networking",c2:"Computer Organization",c3:"Discrete Math",c4:"Systems Analysis",nw_e:"Now",nw_t:"What I'm doing now",nw_s:"Where my focus is these days.",n1_t:"Finishing the smart parking project",n1_d:"Making the app, web and Firebase work together more reliably.",n2_t:"Practicing algorithms",n2_d:"Solving UVa problems in Python to sharpen the fundamentals.",n3_t:"Polishing my own sites",n3_d:"Improving Skyline Daily Boost and this website.",ct_e:"Contact",ct_t:"Say hello",ct_s:"Want to talk tech, chat about a project, or just say hi? Email me or leave a message.",fm_name:"Name",fm_email:"Email",fm_msg:"Message",fm_send:"Send",lg1:"By sending, you agree I handle your data under the",lg2:"Privacy Policy",lg3:".",f_tag:"Lixiang's personal site — projects, skills and what I'm up to.",f_h1:"Site",f_h2:"Projects",f_h3:"Links",f_p1:"Smart Parking",f_brand:"Brand kit",top:"Back to top ↑",ok:"Thanks! Your message was sent.",err:"Couldn't send. Please try again or email lixiangsu6@gmail.com.",cp:"Copy",cpd:"Copied"};
 const zh={ok:"謝謝！訊息已送出。",err:"送出失敗，請再試一次，或直接寄信到 lixiangsu6@gmail.com。",cpd:"已複製"};
 document.querySelectorAll("[data-i18n]").forEach(e=>zh[e.dataset.i18n]=e.textContent);
 let cur="zh";const btn=document.getElementById("lang");
