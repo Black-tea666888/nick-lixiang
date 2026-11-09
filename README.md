@@ -6,9 +6,9 @@
 
 **Personal website of Lixiang Nick**
 
-[![Live](https://img.shields.io/badge/Live-classy--beignet--781d38.netlify.app-5eead4?style=for-the-badge&logo=netlify&logoColor=white)](https://classy-beignet-781d38.netlify.app)
+[![Live](https://img.shields.io/badge/Live-black--tea666888.github.io%2Fnick--lixiang-5eead4?style=for-the-badge&logo=github&logoColor=white)](https://black-tea666888.github.io/nick-lixiang/)
 
-[![Netlify Status](https://img.shields.io/badge/deploy-auto%20from%20main-818cf8?logo=netlify&logoColor=white)](https://classy-beignet-781d38.netlify.app)
+[![Deploy](https://img.shields.io/badge/deploy-GitHub%20Pages%20from%20main-818cf8?logo=github&logoColor=white)](https://black-tea666888.github.io/nick-lixiang/)
 ![Lighthouse](https://img.shields.io/badge/Lighthouse-100%20%C2%B7%20100%20%C2%B7%20100%20%C2%B7%20100-5eead4?logo=lighthouse&logoColor=white)
 ![HTML](https://img.shields.io/badge/HTML%20%2F%20CSS%20%2F%20JS-no%20framework-e8eaf0)
 ![License](https://img.shields.io/badge/code-MIT-9aa1b2)
@@ -34,7 +34,7 @@ My personal website — who I am, what I've built, my skills and what I'm workin
 - ✨ **Interactive backgrounds** — every section reacts to the cursor
 - 🤖 **Ask Lixiang** — AI chat about Lixiang, powered by Gemini's free tier through a Netlify Function (key stays server-side)
 - 🌗 **Light / dark mode**
-- 🚀 **Continuous deployment** — every push to `main` goes live on Netlify in ~30 seconds
+- 🚀 **Continuous deployment** — every push to `main` goes live on GitHub Pages in about a minute
 
 ### 🗂 Structure
 
@@ -67,7 +67,7 @@ My personal website — who I am, what I've built, my skills and what I'm workin
 | Indigo | `#818CF8` | Secondary |
 | Paper | `#E8EAF0` | Text |
 
-Fonts: Space Grotesk (headings), Inter (body), Noto Sans TC (Chinese). Full guide: [Brand kit](https://classy-beignet-781d38.netlify.app/brand.html).
+Fonts: Space Grotesk (headings), Inter (body), Noto Sans TC (Chinese). Full guide: [Brand kit](https://black-tea666888.github.io/nick-lixiang/brand.html).
 
 ### 🛠 Run locally
 
