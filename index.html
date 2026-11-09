@@ -103,8 +103,10 @@ h1{font-family:"Space Grotesk","Noto Sans TC",system-ui,sans-serif;font-size:cla
 /* sections */
 section{padding:110px 0;position:relative}
 section.alt{background:var(--bg2);border-block:1px solid var(--line)}
+main{counter-reset:sec}
+main section > .wrap > .eyebrow:not(.nonum)::before,main section > .wrap > div > .eyebrow:not(.nonum)::before{counter-increment:sec;content:counter(sec,decimal-leading-zero) "  —  ";color:var(--mute)}
 .eyebrow{font-size:13px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;font-weight:600}
-h2{font-family:"Space Grotesk","Noto Sans TC",system-ui,sans-serif;font-size:clamp(30px,4vw,42px);line-height:1.15;letter-spacing:-.02em;margin-bottom:14px}
+h2{font-family:"Space Grotesk","Noto Sans TC",system-ui,sans-serif;font-size:clamp(32px,4.6vw,52px);line-height:1.08;letter-spacing:-.03em;margin-bottom:14px}
 .sub{color:var(--mute);margin-bottom:48px;max-width:560px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:30px;transition:transform .3s,border-color .3s;display:flex;flex-direction:column;position:relative;overflow:hidden}
@@ -236,6 +238,44 @@ dialog.case::backdrop{background:rgba(5,7,12,.7);backdrop-filter:blur(4px)}
 .hb h3 a{color:inherit}
 @media(max-width:860px){.space-grid{grid-template-columns:1fr}}
 
+/* marquee (Vercel/Stripe style) */
+.marquee{position:relative;border-block:1px solid var(--line);overflow:hidden;padding:22px 0}
+.marquee::before,.marquee::after{content:"";position:absolute;top:0;bottom:0;width:12%;z-index:1;pointer-events:none}
+.marquee::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
+.marquee::after{right:0;background:linear-gradient(270deg,var(--bg),transparent)}
+.track{display:flex;gap:56px;width:max-content;animation:scroll 38s linear infinite}
+.marquee:hover .track{animation-play-state:paused}
+.track span{font-family:"Space Grotesk",system-ui,sans-serif;font-size:20px;font-weight:500;color:var(--mute);white-space:nowrap;display:flex;align-items:center;gap:56px}
+.track span::after{content:"✦";font-size:12px;color:var(--accent)}
+@keyframes scroll{to{transform:translateX(-50%)}}
+
+/* bento (Linear/Apple style) */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(170px,auto);gap:16px}
+.tile{position:relative;padding:26px;border-radius:20px;background:var(--card);border:1px solid var(--line);overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end}
+.tile h3{font-size:20px;margin-bottom:6px;letter-spacing:-.01em}
+.tile p{color:var(--mute);font-size:14.5px}
+.tile .chips{margin-top:14px}
+.tile .big{position:absolute;top:22px;left:26px;font-family:"Space Grotesk",system-ui,sans-serif;font-size:13px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.tile .art{position:absolute;right:-20px;top:-20px;width:180px;height:180px;opacity:.9;pointer-events:none}
+.t-a{grid-column:span 4;grid-row:span 2;background:radial-gradient(600px circle at 100% 0%,rgba(94,234,212,.14),transparent 50%),var(--card)}
+.t-a .art{width:300px;height:300px;right:-40px;top:-40px}
+.t-b{grid-column:span 2}.t-c{grid-column:span 2}
+.t-d{grid-column:span 2}.t-e{grid-column:span 2}.t-f{grid-column:span 2}
+@media(max-width:900px){.bento{grid-template-columns:repeat(2,1fr)}.t-a{grid-column:span 2;grid-row:span 1;min-height:280px}.t-b,.t-c,.t-d,.t-e,.t-f{grid-column:span 1}}
+@media(max-width:520px){.bento{grid-template-columns:1fr}.t-a,.t-b,.t-c,.t-d,.t-e,.t-f{grid-column:span 1}}
+
+/* gradient border on hover (Linear style) */
+.card,.tile,.hb,.repo,.panel{isolation:isolate}
+.tile::after,.hb::after,.card::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,var(--accent),transparent 40%,transparent 60%,var(--accent2));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .35s;pointer-events:none}
+.tile:hover::after,.hb:hover::after,.card:hover::after{opacity:1}
+.hb{position:relative}
+
+/* hero spotlight (Linear style) */
+.spot{position:absolute;inset:0;background:radial-gradient(500px circle at var(--sx,70%) var(--sy,30%),rgba(129,140,248,.12),transparent 60%);pointer-events:none;transition:background .1s}
+
+/* giant footer wordmark (Vercel/Framer style) */
+.giant{font-family:"Space Grotesk",system-ui,sans-serif;font-weight:700;font-size:clamp(56px,13vw,190px);line-height:.9;letter-spacing:-.05em;text-align:center;background:linear-gradient(180deg,var(--line),transparent 90%);-webkit-background-clip:text;background-clip:text;color:transparent;user-select:none;padding-top:24px;white-space:nowrap;overflow:hidden}
+
 /* faq */
 .faq{max-width:760px}
 .faq details{border-bottom:1px solid var(--line);padding:20px 0}
@@ -333,7 +373,7 @@ footer a:hover{color:var(--text)}
 </div></nav>
 
 <header id="top">
-  <div class="bg-grid"></div><div class="orb a"></div><div class="orb b"></div>
+  <div class="bg-grid"></div><div class="spot" id="spot"></div><div class="orb a"></div><div class="orb b"></div>
   <div class="wrap hero-grid"><div class="hero">
     <div class="tag"><i></i><span data-i18n="tag">資訊工程學生 · 台灣</span></div>
     <h1><span data-i18n="hi">你好，我是</span><br><span class="grad">Lixiang Nick</span></h1>
@@ -349,6 +389,7 @@ footer a:hover{color:var(--text)}
   </div>
 </div>
 </header>
+<div class="marquee" aria-hidden="true"><div class="track"><span>Android</span><span>Java</span><span>Firebase</span><span>Python</span><span>JavaScript</span><span>HTML / CSS</span><span>ESP32</span><span>IoT</span><span>Git</span><span>GitHub</span><span>Netlify</span><span>Android Studio</span><span>AI</span><span>Android</span><span>Java</span><span>Firebase</span><span>Python</span><span>JavaScript</span><span>HTML / CSS</span><span>ESP32</span><span>IoT</span><span>Git</span><span>GitHub</span><span>Netlify</span><span>Android Studio</span><span>AI</span></div></div>
 
 <main id="main">
 <section id="about"><div class="wrap about">
@@ -414,11 +455,14 @@ footer a:hover{color:var(--text)}
   <div class="eyebrow reveal" data-i18n="sk_e">Skills</div>
   <h2 class="reveal" data-i18n="skill_t">技能</h2>
   <p class="sub reveal" data-i18n="skill_s">我常用的工具和技術。</p>
-  <div class="skills">
-    <div class="skill reveal"><h3 class="sk" data-i18n="s1">程式語言</h3><div class="chips"><span class="chip">Java</span><span class="chip">Python</span><span class="chip">JavaScript</span><span class="chip">HTML/CSS</span></div></div>
-    <div class="skill reveal"><h3 class="sk" data-i18n="s2">行動與後端</h3><div class="chips"><span class="chip">Android Studio</span><span class="chip">Firebase</span><span class="chip">ESP32</span></div></div>
-    <div class="skill reveal"><h3 class="sk" data-i18n="s3">工具</h3><div class="chips"><span class="chip">Git / GitHub</span><span class="chip">Netlify</span><span class="chip">VS Code</span></div></div>
-    <div class="skill reveal"><h3 class="sk" data-i18n="s4">基礎</h3><div class="chips"><span class="chip" data-i18n="c1">網路</span><span class="chip" data-i18n="c2">計算機組織</span><span class="chip" data-i18n="c3">離散數學</span><span class="chip" data-i18n="c4">系統分析</span></div></div>
+  <div class="bento">
+    <div class="tile t-a reveal"><svg class="art" viewBox="0 0 200 200" aria-hidden="true"><defs><linearGradient id="ba" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#818cf8"/></linearGradient></defs><rect x="62" y="30" width="76" height="140" rx="16" fill="none" stroke="url(#ba)" stroke-width="3"/><rect x="74" y="50" width="52" height="34" rx="6" fill="url(#ba)" opacity=".35"/><rect x="74" y="92" width="52" height="8" rx="4" fill="url(#ba)" opacity=".5"/><rect x="74" y="106" width="36" height="8" rx="4" fill="url(#ba)" opacity=".35"/><circle cx="100" cy="152" r="5" fill="url(#ba)"/></svg>
+      <span class="big" data-i18n="b1_k">Mobile</span><h3 data-i18n="b1_t">Android App 開發</h3><p data-i18n="b1_d">用 Java 和 Android Studio 從零做出完整 App：介面、資料、連網，到能真的上手使用。</p><div class="chips"><span class="chip">Java</span><span class="chip">Android Studio</span><span class="chip">XML</span></div></div>
+    <div class="tile t-b reveal"><span class="big">Cloud</span><h3>Firebase</h3><p data-i18n="b2_d">即時資料庫、裝置資料串接，讓 App、網頁和硬體同步。</p></div>
+    <div class="tile t-c reveal"><span class="big">Web</span><h3 data-i18n="b3_t">網頁</h3><p data-i18n="b3_d">HTML、CSS、JavaScript，響應式、雙語、自動部署。</p></div>
+    <div class="tile t-d reveal"><span class="big">IoT</span><h3>ESP32</h3><p data-i18n="b4_d">感測器資料上雲，把硬體和軟體接起來。</p></div>
+    <div class="tile t-e reveal"><span class="big" data-i18n="b5_k">Algorithms</span><h3>Python</h3><p data-i18n="b5_d">解 UVa 題目，練資料結構與演算法。</p></div>
+    <div class="tile t-f reveal"><span class="big" data-i18n="b6_k">Foundations</span><h3 data-i18n="b6_t">資工基礎</h3><p data-i18n="b6_d">網路、計算機組織、離散數學、系統分析。</p></div>
   </div>
 </div></section>
 
@@ -509,7 +553,7 @@ footer a:hover{color:var(--text)}
 <dialog class="case" id="case" aria-labelledby="caseTitle">
   <div class="case-in">
     <button class="x" id="closeCase" aria-label="Close">×</button>
-    <div class="eyebrow">Case study</div>
+    <div class="eyebrow nonum">Case study</div>
     <h2 id="caseTitle" data-i18n="cs_t">雲端載重智慧車位偵測</h2>
     <p class="sub" data-i18n="cs_s">團隊專題 · 我負責軟體端</p>
     <h3 data-i18n="cs_h1">要解決的問題</h3>
@@ -535,12 +579,13 @@ footer a:hover{color:var(--text)}
     <div><h3 class="fh" data-i18n="f_h2">作品</h3><ul><li><a href="#projects" data-i18n="f_p1">智慧車位</a></li><li><a href="https://shiny-kleicha-085187.netlify.app" target="_blank" rel="noopener">Skyline</a></li><li><a href="#projects">LuckyDraw</a></li></ul></div>
     <div><h3 class="fh" data-i18n="f_h3">連結</h3><ul><li><a href="mailto:lixiangsu6@gmail.com">Email</a></li><li><a href="https://github.com/Black-tea666888" target="_blank" rel="noopener">GitHub</a></li><li><a href="brand.html" data-i18n="f_brand">品牌資源</a></li><li><a href="privacy.html" data-i18n="lg2">隱私權政策</a></li></ul></div>
   </div>
+  <div class="giant" aria-hidden="true">Lixiang Nick</div>
   <div class="fbar"><span>© <span id="yr"></span> Lixiang Nick Studio</span><a href="#top" data-i18n="top">回到頂部 ↑</a></div>
 </div></footer>
 
 <script>
 document.body.classList.remove("no-js");
-const en={skip:"Skip to content",nav_about:"About",nav_projects:"Projects",nav_skills:"Skills",nav_journey:"Journey",jr_e:"Journey",jr_t:"My journey",jr_s:"What I've done along the way.",t1_t:"Built this personal website",t1_d:"Designed and deployed it myself — auto-deployed from GitHub, bilingual, and works on phone and desktop.",t2_t:"Presented the smart parking system",t2_d:"As team lead, entered \"Cloud Smart Parking Detection\" in the Embedded Systems & Mobile Computing category at a project exhibition, owning the whole software side.",t3_t:"Launched Skyline Daily Boost",t3_d:"My first site built for users worldwide, where I learned GitHub-to-Netlify auto-deploy.",t4_y:"Earlier",t4_t:"Started writing Android",t4_d:"Built the gacha game LuckyDraw in Java — and got hooked on turning code into things people can play and use.",nav_now:"Now",nav_beyond:"Interests",nav_space:"Space corner",nav_contact:"Contact",tag:"CS student · Taiwan",hi:"Hi, I'm",lead_a:"Currently focused on",lead_b:".",lead:"I love turning ideas into things people actually use — Android apps, Firebase cloud databases and websites that connect hardware, data and people.",cta1:"See my projects",ab_e:"About",about_t:"About me",about_p1:"I'm Lixiang, studying Computer Science & Information Engineering in Taiwan. I'd rather build things people really use than just finish assignments, so I often take a project all the way from the database and app to the website.",about_p2:"Lixiang Nick Studio is where I keep my personal projects and experiments — what I've built and what I'm learning.",f_name:"Name",f_name_v:"Lixiang Nick",f_study:"Major",f_study_v:"CS & Information Eng.",f_focus:"I build",f_int:"Interests",f_int_v:"AI · Space · Economics · Swimming · Violin · Travel",about_p3:"Outside of coding projects, I spend a lot of time exploring AI — following new models and tools, and trying to bring them into my own projects.",f_loc:"Based in",f_loc_v:"Taiwan",f_lang:"Languages",f_lang_v:"Chinese · English",pj_e:"Projects",proj_t:"My projects",proj_s:"Things I've built and keep improving.",p1_t:"Cloud Smart Parking Detection",p1_d:"A team project where I own the software side: the Firebase database, the Android app, and three web clients (user / admin / owner). The hardware uses dual ESP32s with light and weight sensors streaming to the cloud in real time; the web supports iOS, iPadOS, macOS and a Chinese/English switch.",code:"View source ↗",p2_d:"My own daily-encouragement site with city scenes, tech-company info and study tools, designed for people worldwide and auto-deployed from GitHub.",visit:"Visit site ↗",p3_d:"A gacha-style mobile game I wrote in Java with Android Studio to practice game logic, probability design and UI.",sk_e:"Skills",skill_t:"Skills",skill_s:"Tools and tech I use often.",s1:"Languages",s2:"Mobile & Backend",s3:"Tools",s4:"Foundations",c1:"Networking",c2:"Computer Organization",c3:"Discrete Math",c4:"Systems Analysis",nw_e:"Now",nw_t:"What I'm doing now",nw_s:"Where my focus is these days.",n1_t:"Finishing the smart parking project",n1_d:"Making the app, web and Firebase work together more reliably.",n2_t:"Practicing algorithms",n2_d:"Solving UVa problems in Python to sharpen the fundamentals.",n3_t:"Polishing my own sites",n3_d:"Improving Skyline Daily Boost and this website.",ct_e:"Contact",ct_t:"Say hello",ct_s:"Want to talk tech, chat about a project, or just say hi? Email me or leave a message.",fm_name:"Name",fm_email:"Email",fm_msg:"Message",fm_send:"Send",lg1:"By sending, you agree I handle your data under the",lg2:"Privacy Policy",lg3:".",f_tag:"Lixiang's personal site — projects, skills and what I'm up to.",f_h1:"Site",f_h2:"Projects",f_h3:"Links",f_p1:"Smart Parking",f_brand:"Brand kit",top:"Back to top ↑",h5_more:"Visit my space corner →",sp_e:"Space corner",sp_t:"My space corner",sp_s:"The universe always makes me ask more questions. Here are a few things I think are cool.",iss_t:"The ISS is right here, right now",iss_lat:"Latitude",iss_lon:"Longitude",iss_alt:"Altitude",iss_vel:"Speed",iss_note:"Live, updated every 5 seconds · data from wheretheiss.at",iss_fail:"Live data unavailable right now — the ISS orbits Earth about every 90 minutes.",fact_t:"Space fact",fact_btn:"Another one ✦",by_e:"Beyond code",by_t:"Beyond the code",by_s:"Outside of programming, these keep me curious and inspired.",h1_t:"Exploring AI",h1_d:"Following new models and tools, and trying them in my own projects.",h2_t:"Swimming",h2_d:"Time in the water is how I clear my head and recharge.",h3_t:"Violin",h3_d:"Playing takes patience and attention to detail — a lot like coding.",h4_t:"Travel",h4_d:"I love exploring new places, and I dream of seeing the whole world.",h6_t:"Economics",h6_d:"I like understanding how the economy works and following markets and the tech industry.",h5_t:"Space & the universe",h5_d:"Endlessly curious about the universe and outer space — I keep up with space exploration and astronomy news.",case_btn:"See how it was built →",gh_t:"Recent code",gh_s:"Pulled live from GitHub — the projects I updated most recently.",gh_load:"Loading…",gh_fail:"Couldn't load GitHub right now.",gh_open:"See all on GitHub ↗",gh_upd:"Updated",cs_t:"Cloud Smart Parking Detection",cs_s:"Team project · I own the software side",cs_h1:"The problem",cs_p1:"Finding a parking spot wastes time. The goal: push every spot's status to the cloud in real time so drivers, admins and owners can see it on any phone or computer.",cs_h2:"Architecture",cs_a1:"Sensors",cs_a2:"App + 3 web clients",cs_h3:"Key decisions",cs_l1:"Switched the hardware from MSP430 to a dual-ESP32 setup with built-in Wi-Fi for a more direct path to the cloud.",cs_l2:"Light sensors alone gave false readings, so we added weight sensors and combine both signals to decide if a spot is taken.",cs_l3:"Split the web into user, admin and owner roles, each seeing only what they need.",cs_l4:"Treated Apple support as a real feature: smooth on iOS, iPadOS and macOS, with a Chinese/English switch.",cs_h4:"What I learned",cs_p4:"Every layer, from sensor to screen, has to line up. Agreeing on the data format first and then building in parallel made integration painless.",ok:"Thanks! Your message was sent.",err:"Couldn't send. Please try again or email lixiangsu6@gmail.com.",cp:"Copy",cpd:"Copied"};
+const en={skip:"Skip to content",nav_about:"About",nav_projects:"Projects",nav_skills:"Skills",nav_journey:"Journey",jr_e:"Journey",jr_t:"My journey",jr_s:"What I've done along the way.",t1_t:"Built this personal website",t1_d:"Designed and deployed it myself — auto-deployed from GitHub, bilingual, and works on phone and desktop.",t2_t:"Presented the smart parking system",t2_d:"As team lead, entered \"Cloud Smart Parking Detection\" in the Embedded Systems & Mobile Computing category at a project exhibition, owning the whole software side.",t3_t:"Launched Skyline Daily Boost",t3_d:"My first site built for users worldwide, where I learned GitHub-to-Netlify auto-deploy.",t4_y:"Earlier",t4_t:"Started writing Android",t4_d:"Built the gacha game LuckyDraw in Java — and got hooked on turning code into things people can play and use.",nav_now:"Now",nav_beyond:"Interests",nav_space:"Space corner",nav_contact:"Contact",tag:"CS student · Taiwan",hi:"Hi, I'm",lead_a:"Currently focused on",lead_b:".",lead:"I love turning ideas into things people actually use — Android apps, Firebase cloud databases and websites that connect hardware, data and people.",cta1:"See my projects",ab_e:"About",about_t:"About me",about_p1:"I'm Lixiang, studying Computer Science & Information Engineering in Taiwan. I'd rather build things people really use than just finish assignments, so I often take a project all the way from the database and app to the website.",about_p2:"Lixiang Nick Studio is where I keep my personal projects and experiments — what I've built and what I'm learning.",f_name:"Name",f_name_v:"Lixiang Nick",f_study:"Major",f_study_v:"CS & Information Eng.",f_focus:"I build",f_int:"Interests",f_int_v:"AI · Space · Economics · Swimming · Violin · Travel",about_p3:"Outside of coding projects, I spend a lot of time exploring AI — following new models and tools, and trying to bring them into my own projects.",f_loc:"Based in",f_loc_v:"Taiwan",f_lang:"Languages",f_lang_v:"Chinese · English",pj_e:"Projects",proj_t:"My projects",proj_s:"Things I've built and keep improving.",p1_t:"Cloud Smart Parking Detection",p1_d:"A team project where I own the software side: the Firebase database, the Android app, and three web clients (user / admin / owner). The hardware uses dual ESP32s with light and weight sensors streaming to the cloud in real time; the web supports iOS, iPadOS, macOS and a Chinese/English switch.",code:"View source ↗",p2_d:"My own daily-encouragement site with city scenes, tech-company info and study tools, designed for people worldwide and auto-deployed from GitHub.",visit:"Visit site ↗",p3_d:"A gacha-style mobile game I wrote in Java with Android Studio to practice game logic, probability design and UI.",sk_e:"Skills",skill_t:"Skills",skill_s:"Tools and tech I use often.",b1_k:"Mobile",b1_t:"Android app development",b1_d:"Building complete apps from scratch in Java with Android Studio — UI, data, networking, all the way to something you can actually use.",b2_d:"Realtime database and device data pipelines that keep apps, web and hardware in sync.",b3_t:"Web",b3_d:"HTML, CSS and JavaScript — responsive, bilingual, auto-deployed.",b4_d:"Sending sensor data to the cloud, connecting hardware with software.",b5_k:"Algorithms",b5_d:"Solving UVa problems to practice data structures and algorithms.",b6_k:"Foundations",b6_t:"CS fundamentals",b6_d:"Networking, computer organization, discrete math, systems analysis.",s1:"Languages",s2:"Mobile & Backend",s3:"Tools",s4:"Foundations",c1:"Networking",c2:"Computer Organization",c3:"Discrete Math",c4:"Systems Analysis",nw_e:"Now",nw_t:"What I'm doing now",nw_s:"Where my focus is these days.",n1_t:"Finishing the smart parking project",n1_d:"Making the app, web and Firebase work together more reliably.",n2_t:"Practicing algorithms",n2_d:"Solving UVa problems in Python to sharpen the fundamentals.",n3_t:"Polishing my own sites",n3_d:"Improving Skyline Daily Boost and this website.",ct_e:"Contact",ct_t:"Say hello",ct_s:"Want to talk tech, chat about a project, or just say hi? Email me or leave a message.",fm_name:"Name",fm_email:"Email",fm_msg:"Message",fm_send:"Send",lg1:"By sending, you agree I handle your data under the",lg2:"Privacy Policy",lg3:".",f_tag:"Lixiang's personal site — projects, skills and what I'm up to.",f_h1:"Site",f_h2:"Projects",f_h3:"Links",f_p1:"Smart Parking",f_brand:"Brand kit",top:"Back to top ↑",h5_more:"Visit my space corner →",sp_e:"Space corner",sp_t:"My space corner",sp_s:"The universe always makes me ask more questions. Here are a few things I think are cool.",iss_t:"The ISS is right here, right now",iss_lat:"Latitude",iss_lon:"Longitude",iss_alt:"Altitude",iss_vel:"Speed",iss_note:"Live, updated every 5 seconds · data from wheretheiss.at",iss_fail:"Live data unavailable right now — the ISS orbits Earth about every 90 minutes.",fact_t:"Space fact",fact_btn:"Another one ✦",by_e:"Beyond code",by_t:"Beyond the code",by_s:"Outside of programming, these keep me curious and inspired.",h1_t:"Exploring AI",h1_d:"Following new models and tools, and trying them in my own projects.",h2_t:"Swimming",h2_d:"Time in the water is how I clear my head and recharge.",h3_t:"Violin",h3_d:"Playing takes patience and attention to detail — a lot like coding.",h4_t:"Travel",h4_d:"I love exploring new places, and I dream of seeing the whole world.",h6_t:"Economics",h6_d:"I like understanding how the economy works and following markets and the tech industry.",h5_t:"Space & the universe",h5_d:"Endlessly curious about the universe and outer space — I keep up with space exploration and astronomy news.",case_btn:"See how it was built →",gh_t:"Recent code",gh_s:"Pulled live from GitHub — the projects I updated most recently.",gh_load:"Loading…",gh_fail:"Couldn't load GitHub right now.",gh_open:"See all on GitHub ↗",gh_upd:"Updated",cs_t:"Cloud Smart Parking Detection",cs_s:"Team project · I own the software side",cs_h1:"The problem",cs_p1:"Finding a parking spot wastes time. The goal: push every spot's status to the cloud in real time so drivers, admins and owners can see it on any phone or computer.",cs_h2:"Architecture",cs_a1:"Sensors",cs_a2:"App + 3 web clients",cs_h3:"Key decisions",cs_l1:"Switched the hardware from MSP430 to a dual-ESP32 setup with built-in Wi-Fi for a more direct path to the cloud.",cs_l2:"Light sensors alone gave false readings, so we added weight sensors and combine both signals to decide if a spot is taken.",cs_l3:"Split the web into user, admin and owner roles, each seeing only what they need.",cs_l4:"Treated Apple support as a real feature: smooth on iOS, iPadOS and macOS, with a Chinese/English switch.",cs_h4:"What I learned",cs_p4:"Every layer, from sensor to screen, has to line up. Agreeing on the data format first and then building in parallel made integration painless.",ok:"Thanks! Your message was sent.",err:"Couldn't send. Please try again or email lixiangsu6@gmail.com.",cp:"Copy",cpd:"Copied"};
 const zh={iss_fail:"現在抓不到即時資料——國際太空站大約每 90 分鐘繞地球一圈。",gh_fail:"現在連不上 GitHub。",gh_open:"在 GitHub 看全部 ↗",gh_upd:"更新於",ok:"謝謝！訊息已送出。",err:"送出失敗，請再試一次，或直接寄信到 lixiangsu6@gmail.com。",cpd:"已複製"};
 document.querySelectorAll("[data-i18n]").forEach(e=>zh[e.dataset.i18n]=e.textContent);
 let cur="zh";const btn=document.getElementById("lang");
@@ -585,6 +630,9 @@ document.querySelectorAll("section[id]").forEach(s=>so.observe(s));
 document.querySelectorAll(".card").forEach(c=>c.addEventListener("pointermove",e=>{const r=c.getBoundingClientRect();c.style.setProperty("--mx",e.clientX-r.left+"px");c.style.setProperty("--my",e.clientY-r.top+"px")}));
 document.getElementById("copyMail").onclick=async e=>{const d=cur==="en"?en:zh;try{await navigator.clipboard.writeText("lixiangsu6@gmail.com");e.target.textContent=d.cpd}catch(_){e.target.textContent="lixiangsu6@gmail.com"}setTimeout(()=>e.target.textContent=d.cp,1600)};
 typeCode();
+const spot=document.getElementById("spot"),hdr=document.getElementById("top");
+hdr.addEventListener("pointermove",e=>{const r=hdr.getBoundingClientRect();spot.style.setProperty("--sx",e.clientX-r.left+"px");spot.style.setProperty("--sy",e.clientY-r.top+"px")});
+document.querySelectorAll(".tile").forEach(c=>c.addEventListener("pointermove",e=>{const r=c.getBoundingClientRect();c.style.setProperty("--mx",e.clientX-r.left+"px");c.style.setProperty("--my",e.clientY-r.top+"px")}));
 const prog=document.getElementById("progress");
 addEventListener("scroll",()=>{const h=document.documentElement;prog.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+"%"},{passive:true});
 const dlg=document.getElementById("case");
