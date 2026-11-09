@@ -16,7 +16,7 @@ if (renderer && box) {
 
 function init() {
   box.classList.add('gl');
-  renderer.setPixelRatio(Math.min(devicePixelRatio, LOW ? 1 : 2));
+  let pr = Math.min(devicePixelRatio, LOW ? 1 : 1.5); renderer.setPixelRatio(pr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
@@ -201,10 +201,11 @@ function init() {
   warm.catch(() => {}).then(() => { renderer.render(scene, camera); ready = true; kick(); });
   // phones: skip drawing while the page is being scrolled so the GPU stays free for scrolling
   let scrolling = 0; if (LOW) addEventListener('scroll', () => { clearTimeout(scrolling); scrolling = setTimeout(() => { scrolling = 0; }, 150); }, { passive: true });
-  let lastDraw = 0;
+  let lastDraw = 0; const slow = { n: 0, t: 0 };
   function loop(now) {
     if (!visible) return;
     if (LOW && (scrolling || now - lastDraw < 32)) { requestAnimationFrame(loop); return; } lastDraw = now;
+    if (!LOW && pr > 1) { slow.n++; slow.t += now - last; if (slow.n === 90) { if (slow.t / 90 > 22) { pr = Math.max(1, pr - 0.25); renderer.setPixelRatio(pr); resize(); } slow.n = slow.t = 0; } }
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     const speed = reduce ? 0.05 : (sel ? 0.25 : (hoverObj ? 0 : (hovering ? 0.35 : 1)));
     simT += dt * speed;
