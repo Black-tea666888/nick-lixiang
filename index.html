@@ -370,6 +370,10 @@ dialog.vdlg::backdrop{background:rgba(5,7,12,.85);backdrop-filter:blur(6px)}
   .space-hero .hint{right:50%;transform:translateX(50%);bottom:auto;top:84px}
 }
 
+/* hero fx */
+.fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+header .bg-grid{opacity:.25}
+
 /* faq */
 .faq{max-width:760px}
 .faq details{border-bottom:1px solid var(--line);padding:20px 0}
@@ -468,7 +472,7 @@ footer a:hover{color:var(--text)}
 </div></nav>
 
 <header id="top">
-  <div class="bg-grid"></div><div class="spot" id="spot"></div><div class="orb a"></div><div class="orb b"></div>
+  <canvas class="fx" id="heroFx" aria-hidden="true"></canvas><div class="bg-grid"></div><div class="spot" id="spot"></div><div class="orb a"></div><div class="orb b"></div>
   <div class="wrap hero-grid"><div class="hero">
     <div class="tag"><i></i><span data-i18n="tag">資訊工程學生 · 台灣</span></div>
     <h1><span data-i18n="hi">你好，我是</span><br><span class="grad">Lixiang Nick</span></h1>
@@ -755,6 +759,21 @@ typeCode();
 const spot=document.getElementById("spot"),hdr=document.getElementById("top");
 hdr.addEventListener("pointermove",e=>{const r=hdr.getBoundingClientRect();spot.style.setProperty("--sx",e.clientX-r.left+"px");spot.style.setProperty("--sy",e.clientY-r.top+"px")});
 document.querySelectorAll(".tile").forEach(c=>c.addEventListener("pointermove",e=>{const r=c.getBoundingClientRect();c.style.setProperty("--mx",e.clientX-r.left+"px");c.style.setProperty("--my",e.clientY-r.top+"px")}));
+(function heroFx(){const c=document.getElementById("heroFx"),hdr=document.getElementById("top");if(!c)return;const x=c.getContext("2d");let W,H,dpr,P=[],mx=-9999,my=-9999,vis=true,raf;
+  const red=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const col=()=>document.documentElement.dataset.theme==="light"?["15,118,110","79,70,229"]:["94,234,212","129,140,248"];
+  function size(){dpr=Math.min(devicePixelRatio,2);W=hdr.clientWidth;H=hdr.clientHeight;c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0);const n=Math.round(Math.min(140,W*H/9000));P=Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,z:Math.random()*0.9+0.1,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25}))}
+  function draw(){const [a,b]=col();x.clearRect(0,0,W,H);
+    for(const p of P){if(!red){p.x+=p.vx*p.z;p.y+=p.vy*p.z;if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0}
+      const dx=p.x-mx,dy=p.y-my,d=Math.hypot(dx,dy);if(d<140&&d>0){p.x+=dx/d*0.6;p.y+=dy/d*0.6}
+      x.beginPath();x.arc(p.x,p.y,p.z*1.6,0,7);x.fillStyle=`rgba(${p.z>.6?a:b},${.25+p.z*.6})`;x.fill()}
+    for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){const p=P[i],q=P[j],d=Math.hypot(p.x-q.x,p.y-q.y);if(d<110){x.strokeStyle=`rgba(${a},${(1-d/110)*.18})`;x.lineWidth=1;x.beginPath();x.moveTo(p.x,p.y);x.lineTo(q.x,q.y);x.stroke()}}
+    if(mx>0)for(const p of P){const d=Math.hypot(p.x-mx,p.y-my);if(d<180){x.strokeStyle=`rgba(${b},${(1-d/180)*.35})`;x.beginPath();x.moveTo(p.x,p.y);x.lineTo(mx,my);x.stroke()}}
+    if(vis&&!red)raf=requestAnimationFrame(draw)}
+  hdr.addEventListener("pointermove",e=>{const r=hdr.getBoundingClientRect();mx=e.clientX-r.left;my=e.clientY-r.top;if(red)draw()});hdr.addEventListener("pointerleave",()=>{mx=my=-9999});
+  new ResizeObserver(()=>{size();if(red)draw()}).observe(hdr);size();
+  new IntersectionObserver(es=>{vis=es[0].isIntersecting;cancelAnimationFrame(raf);if(vis)draw()}).observe(hdr);
+  document.getElementById("theme").addEventListener("click",()=>{if(red)draw()});draw()})();
 const prog=document.getElementById("progress");
 addEventListener("scroll",()=>{const h=document.documentElement;prog.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+"%"},{passive:true});
 const dlg=document.getElementById("case");
