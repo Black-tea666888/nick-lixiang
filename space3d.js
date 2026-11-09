@@ -7,7 +7,12 @@ const LOW = matchMedia('(pointer:coarse)').matches || innerWidth < 760 || (navig
 const SEG = LOW ? 32 : 64;
 let renderer;
 try { renderer = new THREE.WebGLRenderer({ antialias: !LOW, alpha: false, powerPreference: 'high-performance' }); } catch (e) { renderer = null; }
-if (renderer && box) { const lazy = new IntersectionObserver((es) => { if (es[0].isIntersecting) { lazy.disconnect(); init(); } }, { rootMargin: '600px' }); lazy.observe(box); }
+if (renderer && box) {
+  let started = false; const start = () => { if (started) return; started = true; lazy.disconnect(); init(); };
+  const lazy = new IntersectionObserver((es) => { if (es[0].isIntersecting) start(); }, { rootMargin: '1500px' }); lazy.observe(box);
+  const idle = window.requestIdleCallback || ((f) => setTimeout(f, 1500));
+  addEventListener('load', () => idle(start, { timeout: 4000 }), { once: true });
+}
 
 function init() {
   box.classList.add('gl');
@@ -28,7 +33,7 @@ function init() {
   if (matchMedia('(pointer:coarse)').matches) controls.enabled = false; // keep page scroll on phones
 
   const tl = new THREE.TextureLoader();
-  const tex = (f) => { const t = tl.load('tex/' + f); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
+  const tex = (f) => { const t = tl.load('tex/' + f, (t) => renderer.initTexture(t)); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
 
   const atmo = (r, color, power = 3.0, k = 1.2) => new THREE.Mesh(new THREE.SphereGeometry(r * 1.06, SEG, SEG * 0.75), new THREE.ShaderMaterial({
     uniforms: { c: { value: new THREE.Color(color) }, p: { value: power }, k: { value: k } },
@@ -128,7 +133,8 @@ function init() {
       off.forEach(([u, j, k], i) => { const d = u * len, spread = u * 1.6; tp[i * 3] = head.position.x + away.x * d + j * spread; tp[i * 3 + 1] = head.position.y + away.y * d + k * spread; tp[i * 3 + 2] = head.position.z + away.z * d + (j - k) * spread; }); tail.geometry.attributes.position.needsUpdate = true; }; }
 
   // sizing
-  const resize = () => { const w = box.clientWidth, h = box.clientHeight || w; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); };
+  let narrow = false;
+  const resize = () => { const w = box.clientWidth, h = box.clientHeight || w; narrow = w < 700; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); };
   new ResizeObserver(resize).observe(box); resize();
 
   // picking
@@ -150,7 +156,7 @@ function init() {
   // camera views
   let sel = null, fly = null, view = null;
   const ease = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  const isNarrow = () => box.clientWidth < 700;
+  const isNarrow = () => narrow;
   function featureView(m) {
     const id = m.userData.id, r = id === 'sun' ? 10 : m.userData.r * (id === 'saturn' ? 1.9 : 1);
     return () => {
@@ -187,8 +193,10 @@ function init() {
 
   // render loop (only while visible)
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let visible = false, last = performance.now(), simT = 0;
-  new IntersectionObserver((es) => { visible = es[0].isIntersecting; if (visible) { last = performance.now(); requestAnimationFrame(loop); } }).observe(box);
+  let visible = false, ready = false, last = performance.now(), simT = 0;
+  const kick = () => { if (visible && ready) { last = performance.now(); requestAnimationFrame(loop); } };
+  new IntersectionObserver((es) => { visible = es[0].isIntersecting; kick(); }).observe(box);
+  renderer.compileAsync(scene, camera).catch(() => {}).then(() => { ready = true; kick(); });
   let lastDraw = 0;
   function loop(now) {
     if (!visible) return;
