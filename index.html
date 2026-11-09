@@ -257,14 +257,13 @@ dialog.case::backdrop{background:rgba(5,7,12,.7);backdrop-filter:blur(4px)}
 .tile h3{font-size:20px;margin-bottom:6px;letter-spacing:-.01em}
 .tile p{color:var(--mute);font-size:14.5px}
 .tile .chips{margin-top:14px}
-.tile .big{position:absolute;top:22px;left:26px;font-family:"Space Grotesk",system-ui,sans-serif;font-size:13px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.tile .big{display:block;margin-bottom:auto;padding-bottom:18px;font-family:"Space Grotesk",system-ui,sans-serif;font-size:13px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;font-weight:600}
 .tile .art{position:absolute;right:-20px;top:-20px;width:180px;height:180px;opacity:.9;pointer-events:none}
 .t-a{grid-column:span 4;grid-row:span 2;background:radial-gradient(600px circle at 100% 0%,rgba(94,234,212,.14),transparent 50%),var(--card)}
 .t-a .art{width:300px;height:300px;right:-40px;top:-40px}
 .t-b{grid-column:span 2}.t-c{grid-column:span 2}
 .t-d{grid-column:span 2}.t-e{grid-column:span 2}.t-f{grid-column:span 2}
-.tile>*:not(.art):not(.big){position:relative;z-index:1}
-.tile .big{z-index:1}
+.tile>*:not(.art){position:relative;z-index:1}
 @media(max-width:900px){.t-a .art{width:170px;height:170px;right:-14px;top:-14px;opacity:.45}.bento{grid-template-columns:repeat(2,1fr)}.t-a{grid-column:span 2;grid-row:span 1;min-height:300px}.t-b,.t-c,.t-d,.t-e,.t-f{grid-column:span 1}}
 @media(max-width:520px){.bento{grid-template-columns:1fr}.t-a,.t-b,.t-c,.t-d,.t-e,.t-f{grid-column:span 1}}
 
