@@ -196,11 +196,15 @@ function init() {
   let visible = false, ready = false, last = performance.now(), simT = 0;
   const kick = () => { if (visible && ready) { last = performance.now(); requestAnimationFrame(loop); } };
   new IntersectionObserver((es) => { visible = es[0].isIntersecting; kick(); }).observe(box);
-  renderer.compileAsync(scene, camera).catch(() => {}).then(() => { ready = true; kick(); });
+  const hidden = []; scene.traverse((o) => { if (!o.visible) { hidden.push(o); o.visible = true; } });
+  const warm = renderer.compileAsync(scene, camera); hidden.forEach((o) => { o.visible = false; });
+  warm.catch(() => {}).then(() => { renderer.render(scene, camera); ready = true; kick(); });
+  // phones: skip drawing while the page is being scrolled so the GPU stays free for scrolling
+  let scrolling = 0; if (LOW) addEventListener('scroll', () => { clearTimeout(scrolling); scrolling = setTimeout(() => { scrolling = 0; }, 150); }, { passive: true });
   let lastDraw = 0;
   function loop(now) {
     if (!visible) return;
-    if (LOW && now - lastDraw < 32) { requestAnimationFrame(loop); return; } lastDraw = now;
+    if (LOW && (scrolling || now - lastDraw < 32)) { requestAnimationFrame(loop); return; } lastDraw = now;
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     const speed = reduce ? 0.05 : (sel ? 0.25 : (hoverObj ? 0 : (hovering ? 0.35 : 1)));
     simT += dt * speed;

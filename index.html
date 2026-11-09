@@ -382,7 +382,7 @@ main section{position:relative;overflow:hidden}
 main section>.wrap,main section>.space-hero{position:relative;z-index:1}
 
 /* low-power */
-@media (pointer:coarse),(max-width:760px){nav.scrolled,.photo figcaption,.vlab{backdrop-filter:none;-webkit-backdrop-filter:none}nav.scrolled{background:var(--solid)}.orb{animation:none;filter:blur(60px)}.grad{animation:none}.card::before{display:none}}
+@media (pointer:coarse),(max-width:760px){nav.scrolled,.photo figcaption,.vlab{backdrop-filter:none;-webkit-backdrop-filter:none}nav.scrolled{background:var(--solid)}.orb{animation:none;filter:none}.orb.a{background:radial-gradient(closest-side,var(--accent2),transparent)}.orb.b{background:radial-gradient(closest-side,var(--accent),transparent)}.grad{animation:none}.card::before{display:none}}
 
 /* ask lixiang */
 .ask-fab{position:fixed;right:20px;bottom:20px;z-index:70;display:flex;align-items:center;gap:8px;padding:13px 18px;border-radius:999px;border:0;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#06221d;font:inherit;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 12px 30px -10px rgba(94,234,212,.6);transition:transform .2s}
@@ -785,9 +785,9 @@ const codeHTML=()=>{const en=cur==="en";return `<span class="k">const</span> lix
 const codeEl=document.getElementById("code");let typing=0;
 function typeCode(){const html=codeHTML();const id=++typing;if(reduce){codeEl.innerHTML=html;return}
   const tmp=document.createElement("div");tmp.innerHTML=html;const full=tmp.textContent;let i=0;
-  (function step(){if(id!==typing)return;i+=2;
+  (function step(){if(id!==typing)return;i+=LOWFX?10:2;
     let n=0,out="";const walk=(node)=>{for(const c of node.childNodes){if(n>=i)break;if(c.nodeType===3){const t=c.textContent.slice(0,i-n);n+=t.length;out+=t.replace(/[<>&]/g,m=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[m]))}else{out+=`<span class="${c.className}">`;walk(c);out+="</span>"}}};
-    walk(tmp);codeEl.innerHTML=out+'<span class="caret"></span>';if(i<full.length)setTimeout(step,22)})()}
+    walk(tmp);codeEl.innerHTML=out+'<span class="caret"></span>';if(i<full.length)setTimeout(step,LOWFX?40:22)})()}
 const nav=document.getElementById("nav"),burger=document.getElementById("burger");
 const onScroll=()=>nav.classList.toggle("scrolled",scrollY>10);onScroll();addEventListener("scroll",onScroll,{passive:true});
 burger.onclick=()=>{const o=nav.classList.toggle("open");burger.setAttribute("aria-expanded",o)};
