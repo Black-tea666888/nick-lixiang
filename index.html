@@ -936,7 +936,7 @@ addEventListener("resize",()=>{if(selP){const b=document.querySelector(".orrery 
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!box.hidden)open(false)});
   const add=(t,c)=>{const m=document.createElement("div");m.className="am "+c;m.textContent=t;log.appendChild(m);log.scrollTop=log.scrollHeight;return m};
   async function send(q){q=q.trim();if(!q||busy)return;busy=true;add(q,"me");inp.value="";const w=add("","bot dots");
-    try{const r=await fetch("/api/ask",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({message:q,history:hist,lang:cur})});
+    try{const r=await fetch(location.hostname.endsWith("netlify.app")?"/api/ask":"https://nick-ask.nick-lixiang.workers.dev",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({message:q,history:hist,lang:cur})});
       const j=await r.json().catch(()=>({}));w.classList.remove("dots");
       if(r.ok&&j.reply){w.textContent=j.reply;hist.push({role:"user",text:q},{role:"model",text:j.reply})}
       else{w.classList.add("err");w.textContent=r.status===429?D().ask_busy:(r.status===503||r.status===404||r.status===405)?D().ask_off:D().ask_fail}}
