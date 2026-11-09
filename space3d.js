@@ -146,7 +146,8 @@ function init() {
     const hs = ray.intersectObjects(bodies, false).sort((a, b) => a.object.geometry.parameters.radius - b.object.geometry.parameters.radius);
     return hs[0] && (hs[0].object.userData.mesh || hs[0].object); };
   const nameOf = (id) => PL[id][cur][0];
-  renderer.domElement.addEventListener('pointermove', (e) => { hovering = true; const o = pick(e); hoverObj = o; renderer.domElement.style.cursor = o ? 'pointer' : 'grab'; if (o && !sel) { const r = box.getBoundingClientRect(); label.textContent = nameOf(o.userData.id); label.style.transform = `translate(${e.clientX - r.left + 14}px,${e.clientY - r.top - 10}px)`; label.style.opacity = 1; } else label.style.opacity = 0; });
+  let hoverEv = null; const hover = () => { const e = hoverEv; hoverEv = null; const o = pick(e); hoverObj = o; renderer.domElement.style.cursor = o ? 'pointer' : 'grab'; if (o && !sel) { const r = box.getBoundingClientRect(); label.textContent = nameOf(o.userData.id); label.style.transform = `translate(${e.clientX - r.left + 14}px,${e.clientY - r.top - 10}px)`; label.style.opacity = 1; } else label.style.opacity = 0; };
+  renderer.domElement.addEventListener('pointermove', (e) => { hovering = true; if (!hoverEv) requestAnimationFrame(hover); hoverEv = e; });
   renderer.domElement.addEventListener('pointerleave', () => { label.style.opacity = 0; hovering = false; });
   let hovering = false; renderer.domElement.addEventListener('pointerenter', () => hovering = true);
   let down = null, hoverObj = null;
@@ -201,11 +202,11 @@ function init() {
   warm.catch(() => {}).then(() => { renderer.render(scene, camera); ready = true; kick(); });
   // phones: skip drawing while the page is being scrolled so the GPU stays free for scrolling
   let scrolling = 0; if (LOW) addEventListener('scroll', () => { clearTimeout(scrolling); scrolling = setTimeout(() => { scrolling = 0; }, 150); }, { passive: true });
-  let lastDraw = 0; const slow = { n: 0, t: 0 };
+  let lastDraw = 0; const slow = { n: 0, t: 0, cap: false };
   function loop(now) {
     if (!visible) return;
-    if (LOW && (scrolling || now - lastDraw < 32)) { requestAnimationFrame(loop); return; } lastDraw = now;
-    if (!LOW && pr > 1) { slow.n++; slow.t += now - last; if (slow.n === 90) { if (slow.t / 90 > 22) { pr = Math.max(1, pr - 0.25); renderer.setPixelRatio(pr); resize(); } slow.n = slow.t = 0; } }
+    if ((LOW || slow.cap) && (scrolling || now - lastDraw < 32)) { requestAnimationFrame(loop); return; } lastDraw = now;
+    if (!LOW && !slow.cap) { slow.n++; slow.t += now - last; if (slow.n === 90) { if (slow.t / 90 > 22) { if (pr > 1) { pr = Math.max(1, pr - 0.25); renderer.setPixelRatio(pr); resize(); } else slow.cap = true; } slow.n = slow.t = 0; } }
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     const speed = reduce ? 0.05 : (sel ? 0.25 : (hoverObj ? 0 : (hovering ? 0.35 : 1)));
     simT += dt * speed;

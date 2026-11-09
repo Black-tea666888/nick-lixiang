@@ -803,12 +803,15 @@ typeCode();
 const spot=document.getElementById("spot"),hdr=document.getElementById("top");
 hdr.addEventListener("pointermove",e=>{const r=hdr.getBoundingClientRect();spot.style.setProperty("--sx",e.clientX-r.left+"px");spot.style.setProperty("--sy",e.clientY-r.top+"px")});
 document.querySelectorAll(".tile").forEach(c=>c.addEventListener("pointermove",e=>{const r=c.getBoundingClientRect();c.style.setProperty("--mx",e.clientX-r.left+"px");c.style.setProperty("--my",e.clientY-r.top+"px")}));
-(function heroFx(){const c=document.getElementById("heroFx"),hdr=document.getElementById("top");if(!c)return;const x=c.getContext("2d");let W,H,dpr,P=[],mx=-9999,my=-9999,vis=true,raf;
+(function heroFx(){const c=document.getElementById("heroFx"),hdr=document.getElementById("top");if(!c)return;const x=c.getContext("2d");let W,H,dpr,P=[],mx=-9999,my=-9999,vis=true,raf,ev=null,cap=LOWFX?1:1.5,slowFx=LOWFX,fn=0,ft=0,lt=0;
   const red=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const col=()=>document.documentElement.dataset.theme==="light"?["15,118,110","79,70,229"]:["94,234,212","129,140,248"];
-  function size(){dpr=Math.min(devicePixelRatio,LOWFX?1:1.5);W=hdr.clientWidth;H=hdr.clientHeight;c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0);const n=Math.round(Math.min(LOWFX?36:140,W*H/(LOWFX?18000:9000)));P=Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,z:Math.random()*0.9+0.1,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25}))}
+  function size(){dpr=Math.min(devicePixelRatio,cap);W=hdr.clientWidth;H=hdr.clientHeight;c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0);const n=Math.round(Math.min(slowFx?(LOWFX?36:70):140,W*H/(LOWFX?18000:9000)));P=Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,z:Math.random()*0.9+0.1,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25}))}
   const NB=5,bk=()=>Array.from({length:NB},()=>new Path2D());
-  function draw(){const [a,b]=col();x.clearRect(0,0,W,H);const dots=[bk(),bk()],lines=bk(),ptr=bk();
+  function draw(t){if(ev){const r=hdr.getBoundingClientRect();mx=ev.clientX-r.left;my=ev.clientY-r.top;ev=null}
+    // adaptive: if this machine can't keep up, drop resolution, then particle count and frame rate
+    if(!slowFx&&t){if(lt){fn++;ft+=t-lt}lt=t;if(fn===90){if(ft/90>22){if(cap>1)cap=1;else slowFx=true;size()}fn=ft=0}}
+    const [a,b]=col();x.clearRect(0,0,W,H);const dots=[bk(),bk()],lines=bk(),ptr=bk();
     for(const p of P){if(!red){p.x+=p.vx*p.z;p.y+=p.vy*p.z;if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0}
       const dx=p.x-mx,dy=p.y-my,d=Math.hypot(dx,dy);if(d<140&&d>0){p.x+=dx/d*0.6;p.y+=dy/d*0.6}
       const g=dots[p.z>.6?0:1][Math.min(NB-1,p.z*NB|0)],r=p.z*1.6;g.moveTo(p.x+r,p.y);g.arc(p.x,p.y,r,0,7)}
@@ -818,10 +821,10 @@ document.querySelectorAll(".tile").forEach(c=>c.addEventListener("pointermove",e
     for(let k=0;k<NB;k++){const z=(k+.5)/NB;
       x.fillStyle=`rgba(${a},${.25+z*.6})`;x.fill(dots[0][k]);x.fillStyle=`rgba(${b},${.25+z*.6})`;x.fill(dots[1][k]);
       x.strokeStyle=`rgba(${a},${z*.18})`;x.stroke(lines[k]);if(mx>0){x.strokeStyle=`rgba(${b},${z*.35})`;x.stroke(ptr[k])}}
-    if(vis&&!red)raf=LOWFX?setTimeout(()=>requestAnimationFrame(draw),33):requestAnimationFrame(draw)}
-  hdr.addEventListener("pointermove",e=>{const r=hdr.getBoundingClientRect();mx=e.clientX-r.left;my=e.clientY-r.top;if(red)draw()});hdr.addEventListener("pointerleave",()=>{mx=my=-9999});
+    if(vis&&!red)raf=slowFx?setTimeout(()=>requestAnimationFrame(draw),33):requestAnimationFrame(draw)}
+  hdr.addEventListener("pointermove",e=>{ev=e;if(red)draw()});hdr.addEventListener("pointerleave",()=>{ev=null;mx=my=-9999});
   new ResizeObserver(()=>{size();if(red)draw()}).observe(hdr);size();
-  new IntersectionObserver(es=>{vis=es[0].isIntersecting;cancelAnimationFrame(raf);clearTimeout(raf);if(vis)draw()}).observe(hdr);
+  new IntersectionObserver(es=>{vis=es[0].isIntersecting;cancelAnimationFrame(raf);clearTimeout(raf);lt=0;if(vis)draw()}).observe(hdr);
   document.getElementById("theme").addEventListener("click",()=>{if(red)draw()});draw()})();
 (function sectionFx(){
   if(LOWFX){document.querySelectorAll(".sfx").forEach(c=>c.remove());return}
