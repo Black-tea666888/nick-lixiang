@@ -3,13 +3,15 @@ import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 
 const box = document.getElementById('orrery');
+const LOW = matchMedia('(pointer:coarse)').matches || innerWidth < 760 || (navigator.hardwareConcurrency || 8) <= 4;
+const SEG = LOW ? 32 : 64;
 let renderer;
-try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false }); } catch (e) { renderer = null; }
-if (renderer && box) init();
+try { renderer = new THREE.WebGLRenderer({ antialias: !LOW, alpha: false, powerPreference: 'high-performance' }); } catch (e) { renderer = null; }
+if (renderer && box) { const lazy = new IntersectionObserver((es) => { if (es[0].isIntersecting) { lazy.disconnect(); init(); } }, { rootMargin: '600px' }); lazy.observe(box); }
 
 function init() {
   box.classList.add('gl');
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, LOW ? 1 : 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
@@ -28,17 +30,17 @@ function init() {
   const tl = new THREE.TextureLoader();
   const tex = (f) => { const t = tl.load('tex/' + f); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
 
-  const atmo = (r, color, power = 3.0, k = 1.2) => new THREE.Mesh(new THREE.SphereGeometry(r * 1.06, 64, 48), new THREE.ShaderMaterial({
+  const atmo = (r, color, power = 3.0, k = 1.2) => new THREE.Mesh(new THREE.SphereGeometry(r * 1.06, SEG, SEG * 0.75), new THREE.ShaderMaterial({
     uniforms: { c: { value: new THREE.Color(color) }, p: { value: power }, k: { value: k } },
     vertexShader: 'varying vec3 vN; varying vec3 vV; varying vec3 vW; varying vec3 vC; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vV=normalize(-mv.xyz); vC=(modelMatrix*vec4(0.,0.,0.,1.)).xyz; vW=normalize((modelMatrix*vec4(position,1.0)).xyz - vC); gl_Position=projectionMatrix*mv; }',
     fragmentShader: 'uniform vec3 c; uniform float p; uniform float k; varying vec3 vN; varying vec3 vV; varying vec3 vW; varying vec3 vC; void main(){ float f=pow(1.0-max(dot(vN,vV),0.0),p); float lit=smoothstep(-0.2,0.45,dot(vW,normalize(-vC))); gl_FragColor=vec4(c, f*k*lit); }',
     blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }));
   // Milky Way backdrop
-  const sky = new THREE.Mesh(new THREE.SphereGeometry(2000, 48, 32), new THREE.MeshBasicMaterial({ map: tex('stars.jpg'), side: THREE.BackSide, color: 0x8899aa }));
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(2000, 32, 20), new THREE.MeshBasicMaterial({ map: tex('stars.jpg'), side: THREE.BackSide, color: 0x8899aa }));
   scene.add(sky);
 
   // Sun
-  const sun = new THREE.Mesh(new THREE.SphereGeometry(10, 64, 48), new THREE.MeshBasicMaterial({ map: tex('sun.jpg') }));
+  const sun = new THREE.Mesh(new THREE.SphereGeometry(10, SEG, SEG * 0.75), new THREE.MeshBasicMaterial({ map: tex('sun.jpg') }));
   sun.userData.id = 'sun'; scene.add(sun);
   const glowC = document.createElement('canvas'); glowC.width = glowC.height = 256;
   const g = glowC.getContext('2d'); const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
@@ -67,10 +69,10 @@ function init() {
     const pivot = new THREE.Object3D(); pivot.rotation.y = i * 1.7 + 0.6; scene.add(pivot);
     const mat = new THREE.MeshStandardMaterial({ map: tex(map), roughness: 1, metalness: 0 });
     if (id === 'earth') { mat.normalMap = tl.load('tex/earth_n.jpg'); mat.normalScale.set(0.6, 0.6); }
-    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 64, 48), mat);
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, SEG, SEG * 0.75), mat);
     m.position.x = d; m.userData = { id, r, period }; pivot.add(m);
     if (id === 'earth') {
-      const clouds = new THREE.Mesh(new THREE.SphereGeometry(r * 1.02, 64, 48), new THREE.MeshStandardMaterial({ color: 0xffffff, alphaMap: tl.load('tex/clouds.jpg'), transparent: true, depthWrite: false }));
+      const clouds = new THREE.Mesh(new THREE.SphereGeometry(r * 1.02, SEG, SEG * 0.75), new THREE.MeshStandardMaterial({ color: 0xffffff, alphaMap: tl.load('tex/clouds.jpg'), transparent: true, depthWrite: false }));
       m.add(clouds); m.userData.clouds = clouds;
       const moon = new THREE.Mesh(new THREE.SphereGeometry(0.65, 32, 24), new THREE.MeshStandardMaterial({ map: tex('moon.jpg') }));
       const mp = new THREE.Object3D(); mp.add(moon); moon.position.x = 3.4; mp.rotation.z = 0.35; m.add(mp); m.userData.moon = mp; moon.userData = { id: 'moon', r: 0.65, parent: 'earth' }; extras.moon = moon;
@@ -104,7 +106,7 @@ function init() {
     iss.userData = { id: 'iss', r: 0.62, parent: 'earth' }; extras.iss = iss; addHit(iss, 0.9); }
   addHit(extras.moon, 1.3);
   // --- satellite constellation around Earth (glinting points)
-  { const n = 140, pos = new Float32Array(n * 3); const sats = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ color: 0xcfe8ff, size: 0.06, sizeAttenuation: true, transparent: true, opacity: 0.9 }));
+  { const n = LOW ? 60 : 140, pos = new Float32Array(n * 3); const sats = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ color: 0xcfe8ff, size: 0.06, sizeAttenuation: true, transparent: true, opacity: 0.9 }));
     const data = Array.from({ length: n }, (_, i) => ({ r: 2.65 + Math.random() * 0.35, inc: (i % 7) * 0.45 + Math.random() * 0.1, ph: Math.random() * 6.28, sp: 0.6 + Math.random() * 0.5 }));
     sats.geometry.setAttribute('position', new THREE.BufferAttribute(pos, 3)); E.add(sats); extras.sats = sats;
     extras.satTick = (t) => { data.forEach((d, i) => { const a = d.ph + t * d.sp; const x = Math.cos(a) * d.r, z = Math.sin(a) * d.r; pos[i * 3] = x; pos[i * 3 + 1] = z * Math.sin(d.inc); pos[i * 3 + 2] = z * Math.cos(d.inc); }); sats.geometry.attributes.position.needsUpdate = true; }; }
@@ -114,12 +116,12 @@ function init() {
   smallMoon(planets.mars.mesh, 0.18, 2.5, 2.2, 0x8a7f74); smallMoon(planets.mars.mesh, 0.12, 3.4, 1.4, 0x9a9087);
   smallMoon(planets.neptune.mesh, 0.3, 6.5, -0.8, 0xc9c4bd, 0.4);
   // --- asteroid belt between Mars and Jupiter
-  { const n = 900, geo = new THREE.IcosahedronGeometry(0.22, 0), belt = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: 0x8d8478, roughness: 1, flatShading: true }), n); const M = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), v = new THREE.Vector3();
+  { const n = LOW ? 280 : 900, geo = new THREE.IcosahedronGeometry(0.22, 0), belt = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: 0x8d8478, roughness: 1, flatShading: true }), n); const M = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), v = new THREE.Vector3();
     for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, r = 49 + Math.random() * 6; v.set(Math.cos(a) * r, (Math.random() - 0.5) * 1.4, Math.sin(a) * r); q.setFromEuler(new THREE.Euler(Math.random() * 3, Math.random() * 3, Math.random() * 3)); const k = 0.4 + Math.random() * 1.4; sc.set(k, k * (0.6 + Math.random() * 0.6), k); M.compose(v, q, sc); belt.setMatrixAt(i, M); }
     const bp = new THREE.Object3D(); bp.add(belt); scene.add(bp); spin.push([bp, 0.012]); extras.belt = bp; }
   // --- comet with a tail pointing away from the Sun
   { const head = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 12), new THREE.MeshBasicMaterial({ color: 0xdff6ff })); scene.add(head);
-    const n = 160, tp = new Float32Array(n * 3), tail = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ color: 0x9fdcff, size: 0.9, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const n = LOW ? 70 : 160, tp = new Float32Array(n * 3), tail = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ color: 0x9fdcff, size: 0.9, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
     tail.geometry.setAttribute('position', new THREE.BufferAttribute(tp, 3)); scene.add(tail); const off = Array.from({ length: n }, () => [Math.random(), (Math.random() - .5), (Math.random() - .5)]);
     extras.comet = { head, tail }; extras.cometTick = (t) => { const a = t * 0.05, rx = 120, rz = 46; const x = Math.cos(a) * rx - 60, z = Math.sin(a) * rz; head.position.set(x, 6 + Math.sin(a) * 4, z);
       const away = head.position.clone().normalize(), len = 10 + 26 * Math.max(0, 1 - head.position.length() / 160);
@@ -187,8 +189,10 @@ function init() {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let visible = false, last = performance.now(), simT = 0;
   new IntersectionObserver((es) => { visible = es[0].isIntersecting; if (visible) { last = performance.now(); requestAnimationFrame(loop); } }).observe(box);
+  let lastDraw = 0;
   function loop(now) {
     if (!visible) return;
+    if (LOW && now - lastDraw < 32) { requestAnimationFrame(loop); return; } lastDraw = now;
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     const speed = reduce ? 0.05 : (sel ? 0.25 : (hoverObj ? 0 : (hovering ? 0.35 : 1)));
     simT += dt * speed;
