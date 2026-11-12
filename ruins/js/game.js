@@ -426,6 +426,7 @@ function atmosphere(L, dt) {
   }
   let danger = Math.max(0, 1 - dist / 30);
   if (chase && danger > 0) danger = Math.min(1, danger + 0.35);
+  RR.Music.setMood(chase ? 'chase' : danger > 0.4 ? 'tense' : 'calm');
   $('vig').style.opacity = (danger * danger * 0.9).toFixed(2);
   beatT -= dt;
   if (danger > 0.12 && beatT <= 0) { Sfx.tone(58, 0.16, 'sine', 0.1 + danger * 0.3, 38); beatT = 1.15 - danger * 0.8; }
@@ -509,7 +510,9 @@ function frame(nowMs) {
     miniT -= dt; if (miniT <= 0) { miniT = 0.08; drawMini(L); }
   } else if (active) {
     interpolate(dt, now);
+    RR.Music.setMood('lobby');
   } else {
+    RR.Music.setMood('menu');
     camera.position.set(W.VAN[0], 1.65, W.VAN[1]);
     camera.rotation.set(0, -Math.PI * 0.75 + Math.sin(now * 0.3) * 0.5, 0);
     torch.intensity = 1.7;
@@ -701,7 +704,7 @@ RR.Game = {
         $('warn').style.opacity = 1; setTimeout(function () { $('warn').style.opacity = 0; }, 1400);
       } else Sfx.tone(110, 0.6, 'sawtooth', 0.04, 220);
     } else if (e.t === 'end') {
-      view.phase = e.win ? 'won' : 'lost'; Sfx.drone(false); releaseTouch();
+      view.phase = e.win ? 'won' : 'lost'; RR.Music.sting(e.win ? 'win' : 'lose'); releaseTouch();
       try { if (document.exitPointerLock) document.exitPointerLock(); } catch (err) {}
       $('vig').style.opacity = 0;
     }

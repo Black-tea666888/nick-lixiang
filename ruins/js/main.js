@@ -381,14 +381,15 @@ function bind() {
   showLook();
   // 設定
   const sens = parseFloat(ls('rr_sens') || '1'), sfx = parseFloat(ls('rr_sfx') || '0.8'), vv = parseFloat(ls('rr_voice') || '1');
-  $('setSens').value = sens; $('setSfx').value = sfx; $('setVoice').value = vv;
+  $('setSens').value = sens; $('setSfx').value = sfx; $('setVoice').value = vv; $('setMusic').value = ls('rr_music') || '0.6';
   Game.settings.sens = sens;
   const apply = function () {
     Game.settings.sens = parseFloat($('setSens').value); lsSet('rr_sens', $('setSens').value);
     Sfx.setVolume(parseFloat($('setSfx').value)); lsSet('rr_sfx', $('setSfx').value);
     Voice.setVolume(parseFloat($('setVoice').value)); lsSet('rr_voice', $('setVoice').value);
+    RR.Music.setVolume(parseFloat($('setMusic').value)); lsSet('rr_music', $('setMusic').value);
   };
-  ['setSens', 'setSfx', 'setVoice'].forEach(function (id) { $(id).addEventListener('input', apply); });
+  ['setSens', 'setSfx', 'setVoice', 'setMusic'].forEach(function (id) { $(id).addEventListener('input', apply); });
   document.addEventListener('click', function once() { document.removeEventListener('click', once); apply(); });
   window.addEventListener('pagehide', function () { Net.leave(); });
 }

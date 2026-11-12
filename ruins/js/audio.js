@@ -162,5 +162,92 @@ const Voice = {
   }
 };
 
+/* ---------- 背景音樂（程式即時合成，不需要音檔） ---------- */
+const Music = (function () {
+  const LEVEL = { off: 0, menu: 0.55, lobby: 0.6, calm: 0.7, tense: 0.85, chase: 1 };
+  const CHORDS = [[110, 130.81, 164.81], [87.31, 110, 130.81], [98, 123.47, 146.83], [82.41, 103.83, 123.47]]; // Am F G E
+  const BEAT = 60 / 76;
+  let mood = 'off', vol = 0.6, out = null, lpf = null, timer = null, step = 0, nextT = 0, noiseBuf = null;
+
+  function ensure() {
+    const c = ctx();
+    if (!c) return false;
+    if (!out) {
+      lpf = c.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 750;
+      out = c.createGain(); out.gain.value = 0;
+      lpf.connect(out); out.connect(master);
+      nextT = c.currentTime + 0.2;
+      timer = setInterval(tick, 120);
+    }
+    return true;
+  }
+  function note(f, t, dur, type, v, atk, dest) {
+    try {
+      const o = ac.createOscillator(), g = ac.createGain();
+      const a = Math.min(atk, dur * 0.5);
+      o.type = type; o.frequency.setValueAtTime(f, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(v, t + a);
+      g.gain.setValueAtTime(v, t + Math.max(a, dur - 0.4));
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(dest || lpf); o.start(t); o.stop(t + dur + 0.05);
+    } catch (e) {}
+  }
+  function kick(t) {
+    try {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.25);
+      g.gain.setValueAtTime(0.28, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      o.connect(g); g.connect(lpf); o.start(t); o.stop(t + 0.32);
+    } catch (e) {}
+  }
+  function hat(t) {
+    try {
+      if (!noiseBuf) {
+        noiseBuf = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.1), ac.sampleRate);
+        const d = noiseBuf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+      s.buffer = noiseBuf; f.type = 'highpass'; f.frequency.value = 6000;
+      g.gain.setValueAtTime(0.05, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+      s.connect(f); f.connect(g); g.connect(out); s.start(t); s.stop(t + 0.1);
+    } catch (e) {}
+  }
+  function bar(n, t) {
+    const ch = CHORDS[n % 4], len = BEAT * 4;
+    const tense = mood === 'tense' || mood === 'chase', chase = mood === 'chase';
+    ch.forEach(function (f) { note(f, t, len * 2, 'triangle', 0.035, 2.5); });        // 鋪底音
+    note(ch[0] / 2, t, len, 'sine', 0.14, 0.4);                                        // 低音
+    note(ch[0] / 2, t + len / 2, len / 2, 'sine', 0.09, 0.3);
+    if (tense) for (let b = 0; b < 4; b++) { kick(t + b * BEAT); if (b % 2 === 1) hat(t + b * BEAT + BEAT / 2); }
+    if (chase) {                                                                       // 追逐：不協和刺音
+      note(ch[1] * 2, t + BEAT * 2, BEAT * 1.6, 'sawtooth', 0.025, 0.05);
+      note(ch[1] * 2 * 1.0595, t + BEAT * 2, BEAT * 1.6, 'sawtooth', 0.02, 0.05);
+      note(ch[2] * 2, t + BEAT * 3.5, BEAT * 0.4, 'sawtooth', 0.02, 0.02);
+    }
+  }
+  function tick() {
+    if (!ac || !out) return;
+    const now = ac.currentTime;
+    out.gain.setTargetAtTime(mood === 'off' ? 0 : vol * (LEVEL[mood] || 0) * 0.45, now, 0.5);
+    lpf.frequency.setTargetAtTime(mood === 'chase' ? 1700 : mood === 'tense' ? 1100 : 750, now, 0.8);
+    if (nextT < now) nextT = now + 0.1;   // 分頁被暫停後不要一次補播
+    while (nextT < now + 0.5) { bar(step, nextT); step++; nextT += BEAT * 4; }
+  }
+
+  return {
+    setMood: function (m) { mood = m; if (ac) ensure(); },
+    setVolume: function (v) { vol = Math.max(0, Math.min(1, +v)); },
+    sting: function (kind) {
+      if (!ensure()) return;
+      const t = ac.currentTime + 0.05;
+      if (kind === 'win') [220, 277.18, 329.63, 440].forEach(function (f, i) { note(f, t + i * 0.14, 2.4, 'triangle', 0.09, 0.03, master); });
+      else { note(55, t, 2.8, 'sawtooth', 0.12, 0.02, master); note(58.27, t, 2.8, 'sawtooth', 0.1, 0.02, master); }
+    }
+  };
+})();
+Sfx.drone = function () {};   // 舊的低頻嗡嗡聲改由背景音樂負責
+RR.Music = Music;
 RR.Sfx = Sfx; RR.Voice = Voice;
 })();
