@@ -1,0 +1,10 @@
+{
+  "name": "ruins-peer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PeerJS signaling server for 廢墟回收隊 (matchmaking only; game and voice data go peer to peer)",
+  "main": "index.js",
+  "scripts": { "start": "node index.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "peer": "^1.0.2" }
+}
