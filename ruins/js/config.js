@@ -23,7 +23,7 @@ RR.CONFIG = {
 
   // 4) PeerJS 選項。留空 = 使用 PeerJS 免費公用配對伺服器。
   //    自架範例：{ host: 'peer.example.com', port: 443, path: '/', secure: true }
-  peer: {},
+  peer: { host: 'nick-lixiang.onrender.com', port: 443, path: '/', secure: true },
 
   // 5) 自訂 STUN/TURN（選填）。有玩家連不上時再加 TURN 伺服器。
   //    範例：[{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'turn:turn.example.com:3478', username: 'u', credential: 'p' }]
