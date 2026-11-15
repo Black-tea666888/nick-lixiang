@@ -57,12 +57,12 @@ body.solo #micBtn, body.solo #chatBtn { display: none; }
 #rescue:active, #rescue.on { background: rgba(125,255,176,.4); }
 #smoke:active { background: rgba(200,200,190,.45); }
 body.touch.playing #rescue, body.touch.playing #smoke, body.touch.playing #skill { display: block; }
-body.solo #rescue, body.solo #smoke { display: none !important; }
+body.solo #rescue { display: none !important; }
 body.touch.playing #run { display: block; }
 body.touch.playing #atk { display: block; }
 body.solo #atk { display: none !important; }
 body.touch #toast { bottom: 196px; }
-#skill.cd { color: #9fb3c8; background: rgba(0,0,0,.45); }
+#skill.cd, #smoke.cd { color: #9fb3c8; background: rgba(0,0,0,.45); }
 
 /* ---------- 聊天 ---------- */
 #chat { position: fixed; left: 10px; bottom: 10px; width: min(300px, calc(100vw - 20px)); z-index: 20; font-size: 13px; pointer-events: none; }

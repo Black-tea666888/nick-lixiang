@@ -130,7 +130,7 @@ function quotaFor(day, n) { return 200 + 100 * day + 120 * (n - 1); }
 function Sim(rng) {
   this.rng = rng || Math.random;
   this.players = [];
-  this.phase = 'lobby';
+  this.phase = 'lobby'; this.smokes = [];
   this.day = 1; this.money = 0; this.quota = 0; this.time = 0;
   this.items = []; this.monsters = []; this.events = [];
   this.pvp = true;   // 互相傷害（房主可在大廳開關）
@@ -170,6 +170,7 @@ Sim.prototype.startDay = function (day) {
   this.tt = newTT();
   this.trophy = this._spotAt(VAN[0], VAN[1], 12, 25);   // 搶獎盃：地圖上一座獎盃，按住 E 3 秒的人拿走
   this.quota = quotaFor(day, n); this.events = [];
+  this.smokes = [];
   this.players.forEach(function (p) { p.skCd = 0; p.smCd = 0; p.shieldT = 0; p.hideT = 0; p.stealthT = 0; p.rallyT = 0; });   // 每天開始技能冷卻歸零
   // 物品：隨機放在離起點有段距離的格子
   const cands = floorCells.filter(function (c) {
@@ -219,7 +220,7 @@ Sim.prototype.setInput = function (id, m) {
   p.spk = !!m.spk;
   p.rs = !!m.rs;   // 按住 E 救援
   if (this.phase !== 'play' || !p.alive) return;
-  if (m.sm && (p.smCd || 0) <= 0) { p.smCd = 20; this.events.push({ t: 'smoke', id: p.id, x: p.x, z: p.z }); }   // 煙霧彈：冷卻 20 秒，不影響金額
+  if (m.sm && (p.smCd || 0) <= 0) { p.smCd = 20; this.smokes.push({ x: p.x, z: p.z, t: 6 }); this.events.push({ t: 'smoke', id: p.id, x: p.x, z: p.z }); }   // 煙霧彈：冷卻 20 秒，不影響金額
   // 太空人技能「月光波」：7 公尺內怪物暫停 3 秒，冷卻 25 秒
   if (m.sk && (p.skCd || 0) <= 0) this._skill(p);
   if (typeof m.tt === 'number') this._ttMove(p, m.tt);
@@ -355,7 +356,8 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   let best = null, bd = 1e9, bestSees = false;
   for (let i = 0; i < alive.length; i++) {
     const p = alive[i], d = Math.hypot(p.x - m.x, p.z - m.z) * (p.c === 5 ? 1.33 : 1) * (p.stealthT > 0 ? 2 : 1);   // 紙箱人較難被發現
-    const sees = !(p.hideT > 0) && d < 30 && los(m.x, m.z, p.x, p.z);
+    const inSmoke = (this.smokes || []).some(function (k) { return Math.hypot(k.x - p.x, k.z - p.z) < 3; });   // 站在煙裡怪物看不到
+    const sees = !(p.hideT > 0) && !inSmoke && d < 30 && los(m.x, m.z, p.x, p.z);
     const hears = (p.run && d < 22) || (p.loud && d < 18) || (p.bag.length >= 3 && d < 40);   // 身上集滿 3 件會把怪物引過來
     if ((sees || hears) && d < bd) { best = p; bd = d; bestSees = sees; }
   }
@@ -415,6 +417,7 @@ Sim.prototype.step = function (dt) {
   if (this.phase !== 'play') return;
   dt = Math.min(dt, 0.1);
   this.time -= dt;
+  if (this.smokes && this.smokes.length) { this.smokes.forEach(function (k) { k.t -= dt; }); this.smokes = this.smokes.filter(function (k) { return k.t > 0; }); }
   const alive = this.players.filter(function (p) { return p.alive; });
   for (let k = 0; k < alive.length; k++) {
     const p = alive[k];
