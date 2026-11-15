@@ -111,7 +111,7 @@ function dispatch(msg) {
   if (!msg || typeof msg !== 'object') return;
   switch (msg.t) {
     case 'roster':
-      S.roster = msg.players || []; S.hostId = msg.hostId; S.pvp = msg.pvp !== false; S.map = msg.map || 0;
+      S.roster = msg.players || []; S.hostId = msg.hostId; S.pvp = msg.pvp !== false; S.map = msg.map || 0; S.gmode = msg.mode || 'coop';
       if (!document.body.classList.contains('playing')) Game.showMap(S.map);
       Game.setRoster(S.roster); renderLobby(msg.code); voiceSync();
       break;
@@ -151,7 +151,7 @@ function voiceSync() {
 }
 
 /* ---------- 房主端 ---------- */
-function rosterMsg() { return { t: 'roster', code: Net.code(), hostId: S.myId, pvp: S.sim.pvp, map: S.sim.map, players: S.sim.roster() }; }
+function rosterMsg() { return { t: 'roster', code: Net.code(), hostId: S.myId, pvp: S.sim.pvp, map: S.sim.map, mode: S.sim.mode, players: S.sim.roster() }; }
 function flushEvents() { const evs = S.sim.events.splice(0); for (let i = 0; i < evs.length; i++) hostBroadcast({ t: 'ev', e: evs[i] }); }
 function hostRemove(id) {
   const p = S.sim && S.sim.player(id);
@@ -181,14 +181,14 @@ function startHostLoop() {
 function hostStart(day) { hostBroadcast(S.sim.startDay(day || 1)); }
 
 /* ---------- 進入各種模式 ---------- */
-function startSolo() {
+function startSolo(gmode) {
   Sfx.unlock();
-  S.mode = 'solo'; S.myId = 'me'; S.sim = new W.Sim();
+  S.mode = 'solo'; S.myId = 'me'; S.sim = new W.Sim(); S.sim.mode = gmode === 'hunt' ? 'hunt' : 'coop'; S.gmode = S.sim.mode;
   document.body.classList.add('solo');
   S.sim.map = myMap();
   S.sim.addPlayer('me', myName(), myLook());
   Game.setMe('me');
-  dispatch({ t: 'roster', code: null, hostId: 'me', players: S.sim.roster() });
+  dispatch({ t: 'roster', code: null, hostId: 'me', mode: S.sim.mode, players: S.sim.roster() });
   startHostLoop();
   hostStart(1);
 }
@@ -221,6 +221,7 @@ function wireNet() {
       if (d.t === 'i') S.sim.setInput(from, d);
       else if (d.t === 'chat') hostChat(from, d.text);
       else if (d.t === 'atk') S.sim.attack(from, d.yaw);
+      else if (d.t === 'gun') S.sim.shoot(from, d.yaw);
       else if (d.t === 'bye') { Net.drop(from); hostRemove(from); }
     } else if (S.mode === 'client') { S.lastHost = Date.now(); dispatch(d); }
   });
@@ -340,6 +341,7 @@ function tickLobby() {
   const pv = $('pvpBtn');
   pv.textContent = '互相傷害：' + (S.pvp ? '開' : '關') + (S.mode === 'host' ? '' : '（房主設定）');
   pv.classList.toggle('off', !S.pvp);
+  $('modeBtn').textContent = '模式：' + (S.gmode === 'hunt' ? '獵殺（用槍打怪物）' : '回收（撿廢料賣錢）') + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
   $('mapBtn').textContent = '地圖：' + W.MAPS[S.map || 0].name + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
 }
 // 新手教學：第一次開始遊戲時出現，之後可從「設定與說明」重看
@@ -366,7 +368,11 @@ function showResult(e) {
   for (let k = 0; k < 3; k++) { const x = document.createElement(k < stars ? 'span' : 'i'); x.textContent = '★'; sb.appendChild(x); }
   $('resGain').textContent = progOnResult(e, stars);
   let top = null; if (e.stats) e.stats.forEach(function (p) { if (p.earned > 0 && (!top || p.earned > top.earned)) top = p; });
-  $('resText').textContent = e.win
+  const hunt = S.gmode === 'hunt';
+  if (hunt) $('resTitle').textContent = e.win ? '獵殺第 ' + e.day + ' 關完成！' : '獵殺失敗';
+  $('resText').textContent = hunt ? (e.win
+    ? '擊倒 ' + (e.money / 50) + ' 隻怪物（目標 ' + (e.quota / 50) + ' 隻），還剩 ' + e.time + ' 秒。下一關目標更多、怪物更快。'
+    : (e.why === 'time' ? '時間到，只擊倒 ' + (e.money / 50) + ' / ' + (e.quota / 50) + ' 隻。' : '全員被抓，擊倒 ' + (e.money / 50) + ' / ' + (e.quota / 50) + ' 隻。') + ' 止步第 ' + e.day + ' 關。') : e.win
     ? '賺到 $' + e.money + '（目標 $' + e.quota + '），還剩 ' + e.time + ' 秒。明天目標更高，怪物也更快。'
     : (e.why === 'time' ? '時間到，只賺到 $' + e.money + ' / $' + e.quota + '。' : '全員被抓。帶回 $' + e.money + ' / $' + e.quota + '。') + ' 止步第 ' + e.day + ' 天。';
   const st = $('resStats'); st.textContent = '';
@@ -374,7 +380,7 @@ function showResult(e) {
     const row = document.createElement('div'); row.className = 'prow' + (p.alive ? '' : ' dead');
     const dot = document.createElement('i'); dot.style.background = CSSCOL[p.slot % 4];
     const nm = document.createElement('span'); nm.textContent = p.name;
-    const sm = document.createElement('small'); sm.textContent = '賣出 $' + p.earned + ' · 擊殺 ' + p.kills;
+    const sm = document.createElement('small'); sm.textContent = hunt ? '擊倒怪物 ' + (p.mk || 0) + ' 隻' : '賣出 $' + p.earned + ' · 擊殺 ' + p.kills;
     row.appendChild(dot); row.appendChild(nm);
     if (top && top.id === p.id) { const mv = document.createElement('span'); mv.className = 'mvp'; mv.textContent = 'MVP'; row.appendChild(mv); }
     row.appendChild(sm); st.appendChild(row);
@@ -402,7 +408,7 @@ function bind() {
   $('guestBtn').addEventListener('click', function () { Sfx.unlock(); Auth.guest(); });
   $('logoutBtn').addEventListener('click', function () { Auth.signOut(); });
   $('nick').addEventListener('change', function () { Auth.setNick($('nick').value); });
-  $('soloBtn').addEventListener('click', startSolo);
+  $('soloBtn').addEventListener('click', function () { startSolo('coop'); });
   $('createBtn').addEventListener('click', createRoom);
   $('joinBtn').addEventListener('click', joinRoom);
   $('codeInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') joinRoom(); });
@@ -413,6 +419,8 @@ function bind() {
     S.sim.map = (S.sim.map + 1) % W.MAPS.length; lsSet('rr_map', String(S.sim.map));
     hostBroadcast(rosterMsg()); tickLobby(); showMapName();
   });
+  $('modeBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.mode = S.sim.mode === 'hunt' ? 'coop' : 'hunt'; hostBroadcast(rosterMsg()); tickLobby(); });
+  $('huntBtn').addEventListener('click', function () { startSolo('hunt'); });
   $('pvpBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.pvp = !S.sim.pvp; hostBroadcast(rosterMsg()); tickLobby(); });
   $('lobbyMic').addEventListener('click', function () { if (Voice.hasMic()) Voice.setMuted(!Voice.isMuted()); else say('沒有麥克風權限。請在瀏覽器允許麥克風後，重新進入房間。'); tickLobby(); });
   $('copyBtn').addEventListener('click', function () {
@@ -524,6 +532,10 @@ function boot() {
   Game.onAttack = function (yaw) {
     if (S.mode === 'client') Net.send({ t: 'atk', yaw: yaw });
     else if (S.sim) S.sim.attack(S.myId, yaw);
+  };
+  Game.onShoot = function (yaw) {
+    if (S.mode === 'client') Net.send({ t: 'gun', yaw: yaw });
+    else if (S.sim) S.sim.shoot(S.myId, yaw);
   };
   try {
     const m = /[?&]room=([A-Za-z0-9]{5})/.exec(location.search);

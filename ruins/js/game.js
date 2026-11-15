@@ -216,7 +216,7 @@ function drawMini(L) {
   const MC_COL = ['#ff5a2a', '#5ad0ff', '#8cff5a', '#b070ff'];
   for (let i = 0; i < view.monsters.length; i++) {
     const m = view.monsters[i];
-    if (!m.group.visible || Math.hypot(m.x - L.x, m.z - L.z) > 14) continue;   // 14 公尺內才顯示
+    if (!m.group.visible || (view.mode !== 'hunt' && Math.hypot(m.x - L.x, m.z - L.z) > 14)) continue;   // 14 公尺內才顯示
     const mx = m.x * k, my = m.z * k;
     if (m.chase && Math.floor(Date.now() / 250) % 2) { g.strokeStyle = '#ffffff'; g.lineWidth = 1.5; g.beginPath(); g.arc(mx, my, MC * 0.75, 0, Math.PI * 2); g.stroke(); }
     g.fillStyle = MC_COL[i % 4]; g.strokeStyle = '#000'; g.lineWidth = 1;
@@ -549,6 +549,29 @@ function setViewWeapon(w) {
   camera.add(pipe);
   if (renderer) resize();
 }
+// 開槍（電腦 X 或滑鼠右鍵、手機「槍」）：實際命中由房主判定
+let gunT = 0, gunMesh = null;
+function shoot() {
+  if (!canControl() || gunT > 0) return;
+  gunT = 0.22;
+  if (RR.Game.onShoot) RR.Game.onShoot(Math.round(me.yaw * 100) / 100);
+}
+function showShot(e) {
+  const mine = e.id === myId, sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
+  const from = mine ? new THREE.Vector3(me.x - sy * 0.5 + cy * 0.22, 1.42 + me.y, me.z - cy * 0.5 - sy * 0.22) : new THREE.Vector3(e.x, 1.25, e.z);
+  const to = new THREE.Vector3(e.hx, e.mi >= 0 ? 1.7 : 1.4, e.hz);
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([from, to]), new THREE.LineBasicMaterial({ color: 0xfff1b0, transparent: true, opacity: 0.95, fog: false }));
+  const spark = part(new THREE.SphereGeometry(e.mi >= 0 ? 0.28 : 0.12, 10, 8), new THREE.MeshBasicMaterial({ color: e.mi >= 0 ? 0xff8a3a : 0xfff1b0, transparent: true, opacity: 0.9, fog: false }), to.x, to.y, to.z);
+  scene.add(line, spark);
+  const t0 = Date.now(), id = setInterval(function () {
+    const k = (Date.now() - t0) / 160; line.material.opacity = Math.max(0, 0.95 - k); spark.material.opacity = Math.max(0, 0.9 - k); spark.scale.setScalar(1 + k * 1.5);
+    if (k >= 1) { clearInterval(id); scene.remove(line, spark); line.geometry.dispose(); line.material.dispose(); spark.geometry.dispose(); spark.material.dispose(); }
+  }, 30);
+  const d = Math.hypot(e.x - me.x, e.z - me.z), v = mine ? 0.22 : Math.max(0.03, 0.2 - d * 0.006);
+  Sfx.noise(0.09, v); Sfx.tone(520, 0.07, 'square', v * 0.6, 140);
+  if (mine) { shakeT = Math.max(shakeT, 0.07); if (gunMesh) gunMesh.userData.kick = 1; me.ammo = e.ammo; }
+  if (e.mi >= 0 && view.monsters[e.mi]) view.monsters[e.mi].hitT = 0.18;
+}
 function attack() {
   if (!canControl() || atkT > 0) return;
   atkT = 0.7; swingT = 0.28;
@@ -592,12 +615,15 @@ function bindInput() {
     if (e.code === 'KeyF') { if (canControl()) { e.preventDefault(); attack(); } }
     if (e.code === 'Space') { if (canControl()) { e.preventDefault(); if (!e.repeat) jumpQ = true; } }
     if (e.code === 'KeyC' && !e.repeat && canControl()) dashQ = true;
+    if (e.code === 'KeyX' && canControl()) shoot();
   });
   window.addEventListener('keyup', function (e) { keys[e.code] = false; });
   window.addEventListener('blur', function () { for (const k in keys) keys[k] = false; });
-  canvas.addEventListener('mousedown', function () {
+  canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  canvas.addEventListener('mousedown', function (ev) {
     if (active && view.phase === 'play' && !me.alive) { nextSpec(); return; }
     if (!canControl()) return;
+    if (ev.button === 2) { shoot(); return; }
     dragging = true;
     if (document.pointerLockElement !== canvas) lockPointer(); else attack();   // 鎖定滑鼠後，左鍵 = 揮擊
   });
@@ -654,7 +680,7 @@ function bindInput() {
   runBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   $('micBtn').addEventListener('click', function () { RR.Game.toggleMic(); });
   $('mini').addEventListener('click', function () { $('mini').classList.toggle('big'); });
-  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }]].forEach(function (q) {
+  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', shoot]].forEach(function (q) {
     const b = $(q[0]);
     b.addEventListener('touchstart', function (e) { e.preventDefault(); if (canControl()) q[1](); }, { passive: false });
     b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
@@ -720,6 +746,8 @@ function updateMe(dt) {
   // 跑步時視野變寬，讓速度感更明顯
   const fovT = dashT > 0 ? 96 : wantRun ? 88 : 75;
   if (Math.abs(camera.fov - fovT) > 0.1) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
+  if (gunT > 0) gunT -= dt;
+  if (gunMesh) { const kk = gunMesh.userData.kick || 0; gunMesh.userData.kick = Math.max(0, kk - dt * 9); gunMesh.position.set(-0.3, -0.3 + kk * 0.03, -0.62 + kk * 0.07); gunMesh.rotation.x = kk * 0.22; }
   if (shakeT > 0) shakeT = Math.max(0, shakeT - dt);
   const sk2 = shakeT * 0.22;
   camera.position.set(me.x + (Math.random() - 0.5) * sk2, 1.65 + me.y + (moving && me.y <= 0 ? Math.sin(me.walkT * 2) * 0.045 : 0) + (Math.random() - 0.5) * sk2, me.z + (Math.random() - 0.5) * sk2);
@@ -776,6 +804,7 @@ function interpolate(dt, now) {
     m.x += (m.tx - m.x) * k; m.z += (m.tz - m.z) * k; m.rot = lerpAngle(m.rot, m.trot, Math.min(1, dt * 8));
     m.group.position.set(m.x, Math.sin(now * (m.chase ? 14 : 5) + i) * 0.05, m.z);
     m.group.rotation.y = m.rot;
+    if (m.hitT > 0) { m.hitT -= dt; const hs = 1 + Math.max(0, m.hitT) * 1.2; m.group.scale.x = hs; m.group.scale.z = hs; } else if (m.group.scale.x !== 1) { m.group.scale.x = 1; m.group.scale.z = 1; }
     if (m.arms) { const sw = Math.sin(now * (m.chase ? 11 : 3.5) + i); m.arms[0].rotation.x = m.chase ? -1.25 + sw * 0.25 : sw * 0.35; m.arms[1].rotation.x = m.chase ? -1.25 - sw * 0.25 : -sw * 0.35; }
   }
   for (let i = 0; i < view.items.length; i++) {
@@ -834,6 +863,8 @@ function updateHud() {
   $('money').textContent = '$' + view.money;
   $('quota').textContent = '$' + view.quota;
   $('bag').textContent = me.bagN;
+  const am = $('ammo'), at = me.reloading ? '裝填中' : String(me.ammo || 0); if (am.textContent !== at) am.textContent = at;
+  const gb = $('gun'), gt = me.reloading ? '…' : '槍'; if (gb.textContent !== gt) gb.textContent = gt; gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
   const qf = $('qfill'), pct = view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
   qf.style.width = pct + '%'; qf.classList.toggle('done', pct >= 100);
   const pp = $('pips'); for (let i = 0; i < 3; i++) pp.children[i].className = i < me.bagN ? 'on' : ''; pp.className = me.bagN >= 3 ? 'full' : '';
@@ -921,6 +952,11 @@ RR.Game = {
     hemi = new THREE.HemisphereLight(0xcfd8e6, 0x3a3f3a, 0.45); scene.add(hemi);
     sun = new THREE.DirectionalLight(0xfff2d8, 0); sun.position.set(30, 60, 20); scene.add(sun);
     torch = new THREE.SpotLight(0xfff0cc, 2.2, 42, 0.62, 0.55, 1.2);
+    gunMesh = new THREE.Group();
+    { const gm = pmat(0x2b3038, 0.08), gg = pmat(0x8a6238, 0.12);
+      gunMesh.add(part(new THREE.BoxGeometry(0.07, 0.09, 0.34), gm, 0, 0, 0), part(new THREE.BoxGeometry(0.06, 0.16, 0.08), gg, 0, -0.11, 0.11), part(new THREE.CylinderGeometry(0.018, 0.018, 0.1, 10), gm, 0, 0.01, -0.21));
+      gunMesh.children[2].rotation.x = Math.PI / 2; }
+    gunMesh.position.set(-0.3, -0.3, -0.62); camera.add(gunMesh);
     torch.position.set(0.25, -0.2, 0); camera.add(torch); camera.add(torch.target); torch.target.position.set(0, -0.05, -1);
     buildLevel();
     for (let i = 0; i < 4; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));
@@ -1004,6 +1040,8 @@ RR.Game = {
       mesh.position.set(a[0], 0.75, a[1]); scene.add(mesh);
       return { x: a[0], z: a[1], kind: a[2], value: a[3], taken: false, mesh: mesh };
     });
+    view.mode = info.mode || 'coop'; document.body.classList.toggle('hunt', view.mode === 'hunt');
+    $('moneyLbl').textContent = view.mode === 'hunt' ? '擊倒得分' : '收入'; me.ammo = view.mode === 'hunt' ? 12 : 6; me.reloading = false;
     view.phase = 'play'; view.day = info.day; view.quota = info.quota; view.time = info.time; view.money = 0;
     view.players.forEach(function (p) {
       const s = info.spawns[p.id] || W.VAN;
@@ -1017,7 +1055,7 @@ RR.Game = {
     $('flash').style.opacity = 0; $('warn').style.opacity = 0; $('spec').classList.add('hide');
     Sfx.drone(true);
     updateHud();
-    toast('第 ' + info.day + ' 天：把廢料帶回金色回收車，賺到 $' + info.quota);
+    toast(view.mode === 'hunt' ? '獵殺第 ' + info.day + ' 關：用槍擊倒 ' + (info.quota / 50) + ' 隻怪物（每隻 $50）' : '第 ' + info.day + ' 天：把廢料帶回金色回收車，賺到 $' + info.quota);
     lockPointer();
   },
   onSnapshot: function (s) {
@@ -1050,6 +1088,7 @@ RR.Game = {
       p.alive = !!a[4]; p.bagN = a[5]; p.flags = a[6];
       if (a[0] === myId) {
         me.bagN = a[5]; if (s.ph === 'play' && !a[4]) me.alive = false;
+        if (a[8] != null) { me.ammo = a[8]; me.reloading = !!a[9]; }
         if (a[7] != null && a[7] !== me.hp) { me.hp = a[7]; $('hpBar').style.width = Math.max(0, me.hp) + '%'; }
         continue;
       }
@@ -1061,7 +1100,8 @@ RR.Game = {
       if (!a || s.ph === 'lobby') { m.group.visible = false; continue; }
       m.tx = a[0]; m.tz = a[1]; m.trot = a[2]; m.chase = !!a[3];
       if (m.fresh) { m.x = m.tx; m.z = m.tz; m.rot = m.trot; m.fresh = false; }
-      m.group.visible = true;
+      m.group.visible = a[4] !== 0;   // 獵殺模式：被擊倒的怪物先消失，重生後再出現
+      if (!m.group.visible) m.fresh = true;
     }
     if (s.it && s.it.length === view.items.length) {
       for (let i = 0; i < view.items.length; i++) {
@@ -1127,6 +1167,12 @@ RR.Game = {
     } else if (e.t === 'moon') {
       if (e.id === myId) { skEnd = Date.now() + 25000; toast('月光波！附近怪物暫停 3 秒'); }
       showMoon(e.x, e.z);
+    } else if (e.t === 'shot') {
+      showShot(e);
+      if (e.kill) { Sfx.tone(180, 0.35, 'sawtooth', 0.14, 60); floatText('+$50'); toast((e.id === myId ? '你' : nameOf(e.id)) + '擊倒了怪物！'); }
+      else if (e.mi >= 0 && e.id === myId && view.mode !== 'hunt') toast('命中！怪物暈 2.5 秒');
+    } else if (e.t === 'noammo') {
+      if (e.id === myId) { toast('沒子彈了'); Sfx.tone(900, 0.04, 'square', 0.06); }
     } else if (e.t === 'smoke') {
       showCloud(e.x, e.z);
       if (e.id === myId) { smEnd = Date.now() + 20000; toast('煙霧彈！煙裡的人怪物看不到'); }

@@ -17,7 +17,7 @@
 <!-- 遊戲中介面 -->
 <div id="hud" class="hide">
   <div id="hudTop">
-    <div>第 <b id="day">1</b> 天　收入 <b id="money">$0</b> / <span id="quota">$0</span><div id="qbar"><i id="qfill"></i></div><span class="bagrow">背包 <b id="bag">0</b> / 3 <span id="pips"><i></i><i></i><i></i></span></span></div>
+    <div>第 <b id="day">1</b> 天　<span id="moneyLbl">收入</span> <b id="money">$0</b> / <span id="quota">$0</span><div id="qbar"><i id="qfill"></i></div><span class="bagrow">背包 <b id="bag">0</b> / 3 <span id="pips"><i></i><i></i><i></i></span>　子彈 <b id="ammo">6</b></span></div>
     <div class="r">剩餘時間<br><b id="timer">4:00</b></div>
   </div>
   <div id="compass"><span id="arrow">▲</span>回收車</div>
@@ -40,6 +40,7 @@
   <div id="joy"></div><div id="knob"></div>
   <button id="run" type="button">跑</button>
   <button id="atk" type="button">打</button>
+  <button id="gun" type="button">槍</button>
   <button id="jump" type="button">跳</button>
   <button id="dash" type="button">衝</button>
   <button id="rescue" type="button">救</button>
@@ -90,6 +91,7 @@
       <button class="mode main" id="createBtn" type="button"><b>多人合作</b><span>建立房間，邀請最多 3 位隊友</span></button>
       <button class="mode" id="soloBtn" type="button"><b>單人遊玩</b><span>自己練習</span></button>
       <button class="mode" id="miniInfoBtn" type="button"><b>小遊戲</b><span>圈圈叉叉 · 搶獎盃</span></button>
+      <button class="mode hunt" id="huntBtn" type="button"><b>獵殺模式</b><span>新模式：拿槍反過來獵殺怪物，在時間內擊倒指定數量（單人；多人請在大廳切換模式）</span></button>
     </div>
     <div class="sec">每日任務</div>
     <div id="missions"></div>
@@ -168,11 +170,11 @@
 <h3>手機</h3>
 <table><tr><td>移動</td><td>左半邊拖曳</td></tr><tr><td>轉視角</td><td>右半邊拖曳</td></tr>
 <tr><td><kbd>跑</kbd></td><td>按住奔跑</td></tr><tr><td><kbd>跳</kbd> <kbd>衝</kbd></td><td>跳躍、衝刺</td></tr>
-<tr><td><kbd>技</kbd> <kbd>煙</kbd></td><td>角色技能、煙霧彈</td></tr><tr><td><kbd>打</kbd> <kbd>救</kbd></td><td>揮武器、按住救隊友</td></tr></table>
+<tr><td><kbd>技</kbd> <kbd>煙</kbd></td><td>角色技能、煙霧彈</td></tr><tr><td><kbd>槍</kbd></td><td>開槍</td></tr><tr><td><kbd>打</kbd> <kbd>救</kbd></td><td>揮武器、按住救隊友</td></tr></table>
 <h3>電腦</h3>
 <table><tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>移動（滑鼠轉視角）</td></tr><tr><td><kbd>Shift</kbd></td><td>奔跑</td></tr>
 <tr><td><kbd>空白鍵</kbd> <kbd>C</kbd></td><td>跳躍、衝刺</td></tr><tr><td><kbd>R</kbd> <kbd>Q</kbd></td><td>角色技能、煙霧彈</td></tr>
-<tr><td><kbd>左鍵</kbd> / <kbd>F</kbd></td><td>揮武器</td></tr><tr><td><kbd>E</kbd></td><td>按住救隊友、搶獎盃</td></tr>
+<tr><td><kbd>左鍵</kbd> / <kbd>F</kbd></td><td>揮武器</td></tr><tr><td><kbd>右鍵</kbd> / <kbd>X</kbd></td><td>開槍</td></tr><tr><td><kbd>E</kbd></td><td>按住救隊友、搶獎盃</td></tr>
 <tr><td><kbd>G</kbd></td><td>小遊戲</td></tr><tr><td><kbd>M</kbd> <kbd>Enter</kbd></td><td>麥克風、聊天</td></tr><tr><td><kbd>Esc</kbd></td><td>釋放滑鼠</td></tr></table>
       </section>
       <section class="htopic hide" data-topic="mon"><h2><span class="hico">👾</span>怪物</h2>
@@ -186,7 +188,8 @@
 <li>怪物靠近到 14 公尺內，小地圖才會出現牠的三角形。</li></ul>
       </section>
       <section class="htopic hide" data-topic="safe"><h2><span class="hico">🛡</span>保命方法</h2>
-<ul><li><b>櫃子</b>（小地圖藍點）：站在旁邊不要跑，怪物看不到你；貼太近還是會被抓。</li>
+<ul><li><b>槍</b>：回收模式每天 6 發，打中怪物讓牠暈 2.5 秒（打不死）。對準怪物、中間不能有牆。</li>
+<li><b>櫃子</b>（小地圖藍點）：站在旁邊不要跑，怪物看不到你；貼太近還是會被抓。</li>
 <li><b>煙霧彈</b>：冒出一團煙約 6 秒，站在煙裡怪物看不到你。冷卻 20 秒。</li>
 <li><b>跑</b>：跑步一定比怪物快，體力約可跑 6～7 秒；跑到牠看不到你，約 3.5 秒後牠會放棄。</li>
 <li><b>跳</b>：人在空中時抓不到你，耗 18% 體力。</li>
@@ -212,7 +215,8 @@
 <tr><td>金色方塊</td><td>回收車</td></tr><tr><td>藍色方塊</td><td>櫃子（躲藏點）</td></tr><tr><td>彩色三角</td><td>靠近的怪物（閃白圈代表正在追人）</td></tr></table>
       </section>
       <section class="htopic hide" data-topic="bonus"><h2><span class="hico">🎲</span>加分與小遊戲</h2>
-<ul><li><b>獎盃</b>：地圖上有一座金色獎盃，站旁按住「救」／E 3 秒，團隊 +120。</li>
+<ul><li><b>獵殺模式</b>：沒有廢料，改成用槍獵殺怪物。3 槍擊倒一隻得 $50，彈匣 12 發打完自動裝填；怪物 3 秒後在遠處重生。在時間內擊倒指定數量就過關，小地圖會顯示所有怪物。</li>
+<li><b>獎盃</b>：地圖上有一座金色獎盃，站旁按住「救」／E 3 秒，團隊 +120。</li>
 <li><b>圈圈叉叉</b>：遊戲中按「小遊戲」。前兩位落子的人是 X 與 O，連成一線團隊 +150。</li>
 <li><b>傳送陣</b>：背包滿 3 件後附近會出現，踩上去直接傳回回收車。</li></ul>
       </section>
@@ -266,6 +270,7 @@
       <button class="btn" id="lobbyMic" type="button">麥克風 開</button>
       <button class="btn" id="pvpBtn" type="button">互相傷害：開</button>
       <button class="btn" id="mapBtn" type="button">地圖</button>
+      <button class="btn" id="modeBtn" type="button">模式</button>
       <button class="btn primary hide" id="startBtn" type="button">開始遊戲</button>
       <p class="note hide" id="waitHost">等待房主開始…</p>
       <button class="link" id="lobbyLeave" type="button">離開房間</button>
