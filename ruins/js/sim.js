@@ -121,6 +121,8 @@ function bfs(sc, sr, gc, gr) {
 const SPAWN_OFF = [[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]];
 const r2 = (v) => Math.round(v * 100) / 100;
 
+// 怪物種類（依序）：0 紅＝火（追逐較快）、1 藍＝冰（靠近減速）、2 綠＝毒（緩慢、靠近扣血）、3 紫＝暗影（追逐更快）
+const KIND_CHASE = [1.25, 1, 1, 1.15];
 const TT_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
 function newTT() { return { cells: ['', '', '', '', '', '', '', '', ''], x: null, o: null, turn: 'X', over: null, winner: null, timer: 0 }; }
 function quotaFor(day, n) { return 200 + 100 * day + 120 * (n - 1); }
@@ -185,10 +187,11 @@ Sim.prototype.startDay = function (day) {
       value: Math.round((k.lo + this.rng() * (k.hi - k.lo)) / 5) * 5, taken: false });
   }
   // 怪物：第 3 天起 2 隻，第 6 天起 3 隻
-  const mc = Math.min(MONSTER_CELLS.length, day >= 6 ? 3 : day >= 3 ? 2 : 1);
+  const mc = day >= 6 ? 4 : day >= 3 ? 2 : 1;
   this.monsters = [];
   for (let i = 0; i < mc; i++) {
-    const p = center(MONSTER_CELLS[i][0], MONSTER_CELLS[i][1]);
+    const mcell = MONSTER_CELLS[i] || floorCells[Math.floor(this.rng() * floorCells.length)];   // 地圖的怪物點不夠時，隨機放在地板上
+    const p = center(mcell[0], mcell[1]);
     this.monsters.push({ x: p[0], z: p[1], rot: 0, state: 'wander', path: null, goal: null, lost: 0, repath: 0, cool: 0, target: null });
   }
   this.chaseSpeed = Math.min(4.5 + 0.12 * (day - 1), 5.6);
@@ -217,11 +220,7 @@ Sim.prototype.setInput = function (id, m) {
   if (this.phase !== 'play' || !p.alive) return;
   if (m.sm && (p.smCd || 0) <= 0) { p.smCd = 20; this.events.push({ t: 'smoke', id: p.id, x: p.x, z: p.z }); }   // 煙霧彈：冷卻 20 秒，不影響金額
   // 太空人技能「月光波」：7 公尺內怪物暫停 3 秒，冷卻 25 秒
-  if (m.sk && p.c === 2 && (p.skCd || 0) <= 0) {
-    p.skCd = 25;
-    for (let i = 0; i < this.monsters.length; i++) { const mo = this.monsters[i]; if (Math.hypot(mo.x - p.x, mo.z - p.z) < 7) mo.cool = 3; }
-    this.events.push({ t: 'moon', id: p.id, x: p.x, z: p.z });
-  }
+  if (m.sk && (p.skCd || 0) <= 0) this._skill(p);
   if (typeof m.tt === 'number') this._ttMove(p, m.tt);
   const x = +m.x, z = +m.z, yaw = +m.yaw;
   if (isFinite(x) && isFinite(z) && !blocked(x, z, 0.3)) { p.x = x; p.z = z; }
@@ -254,7 +253,7 @@ Sim.prototype.attack = function (id, yaw) {
   const a = this.player(id);
   if (!a || this.phase !== 'play' || !a.alive || a.atkCd > 0) return;
   if (isFinite(+yaw)) a.yaw = +yaw;
-  a.atkCd = 0.65;
+  a.atkCd = a.c === 4 ? 0.49 : 0.65;   // 南瓜頭攻擊冷卻 -25%
   this.events.push({ t: 'swing', id: id });
   if (!this.pvp) return;
   const fx = -Math.sin(a.yaw), fz = -Math.cos(a.yaw);
@@ -269,7 +268,7 @@ Sim.prototype.attack = function (id, yaw) {
     best = p; bd = d;
   }
   if (!best) return;
-  best.hp -= 50; best.hurtT = 0;
+  best.hp -= a.c === 1 ? 65 : 50; best.hurtT = 0;   // 機器人攻擊力 +30%
   this.events.push({ t: 'hit', id: best.id, by: id, hp: Math.max(0, best.hp) });
   if (best.hp <= 0) {
     best.alive = false; best.run = best.loud = false; a.kills++;
@@ -279,6 +278,27 @@ Sim.prototype.attack = function (id, yaw) {
 };
 
 // 在離玩家 8～14 公尺的可走地板上找一格放傳送陣
+// 角色技能：0 回收員「鼓舞」、1 機器人「護盾」、2 太空人「月光波」、3 貓貓「潛行」、4 南瓜頭「加血」、5 紙箱人「隱身」
+Sim.prototype._skill = function (p) {
+  const self = this;
+  switch (p.c) {
+    case 0: {
+      const ids = [];
+      this.players.forEach(function (q) { if (q.alive && Math.hypot(q.x - p.x, q.z - p.z) < 6) { q.rallyT = 5; ids.push(q.id); } });
+      p.skCd = 25; this.events.push({ t: 'rally', id: p.id, ids: ids }); break;
+    }
+    case 1: p.shieldT = 4; p.skCd = 30; this.events.push({ t: 'shield', id: p.id }); break;
+    case 2: {
+      p.skCd = 25;
+      this.monsters.forEach(function (mo) { if (Math.hypot(mo.x - p.x, mo.z - p.z) < 7) mo.cool = 3; });
+      this.events.push({ t: 'moon', id: p.id, x: p.x, z: p.z }); break;
+    }
+    case 3: p.stealthT = 6; p.skCd = 25; this.events.push({ t: 'stealth', id: p.id }); break;
+    case 4: p.hp = Math.min(100, p.hp + 35); p.skCd = 25; this.events.push({ t: 'heal', id: p.id, hp: Math.round(p.hp) }); break;
+    case 5: p.hideT = 4; p.skCd = 30; this.events.push({ t: 'hide', id: p.id }); break;
+  }
+};
+
 // 在 (cx, cz) 周圍 lo～hi 公尺的可走地板上隨機找一點
 Sim.prototype._spotAt = function (cx, cz, lo, hi) {
   const pool = [];
@@ -334,8 +354,8 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   if (m.cool > 0) { m.cool -= dt; return; }
   let best = null, bd = 1e9, bestSees = false;
   for (let i = 0; i < alive.length; i++) {
-    const p = alive[i], d = Math.hypot(p.x - m.x, p.z - m.z);
-    const sees = d < 30 && los(m.x, m.z, p.x, p.z);
+    const p = alive[i], d = Math.hypot(p.x - m.x, p.z - m.z) * (p.c === 5 ? 1.33 : 1) * (p.stealthT > 0 ? 2 : 1);   // 紙箱人較難被發現
+    const sees = !(p.hideT > 0) && d < 30 && los(m.x, m.z, p.x, p.z);
     const hears = (p.run && d < 22) || (p.loud && d < 18) || (p.bag.length >= 3 && d < 40);   // 身上集滿 3 件會把怪物引過來
     if ((sees || hears) && d < bd) { best = p; bd = d; bestSees = sees; }
   }
@@ -370,7 +390,7 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   }
   const ddx = tx - m.x, ddz = tz - m.z, dd = Math.hypot(ddx, ddz);
   // 紅色（火）怪物追逐時較快；藍色（冰）怪物的減速光環在客戶端計算
-  const sp = m.state === 'chase' ? this.chaseSpeed * (mi % 2 === 0 ? 1.25 : 1) : this.wanderSpeed;
+  const sp = m.state === 'chase' ? this.chaseSpeed * KIND_CHASE[mi % 4] : this.wanderSpeed * (mi % 4 === 2 ? 0.8 : 1);
   if (dd > 0.05) {
     const step = Math.min(dd, sp * dt), mx = ddx / dd * step, mz = ddz / dd * step;
     if (direct) {
@@ -381,7 +401,7 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   }
   for (let i = 0; i < alive.length; i++) {
     const p = alive[i];
-    if (p.alive && Math.hypot(p.x - m.x, p.z - m.z) < 1.15) {
+    if (p.alive && !(p.shieldT > 0) && Math.hypot(p.x - m.x, p.z - m.z) < 1.15) {
       p.alive = false; p.run = p.loud = false;
       this.events.push({ t: 'caught', id: p.id, x: r2(m.x), z: r2(m.z) });
       this._dropBag(p);
@@ -401,6 +421,7 @@ Sim.prototype.step = function (dt) {
     if (p.atkCd > 0) p.atkCd -= dt;
     if ((p.smCd || 0) > 0) p.smCd -= dt;
     if ((p.skCd || 0) > 0) p.skCd -= dt;
+    for (const k of ['shieldT', 'hideT', 'stealthT', 'rallyT']) if ((p[k] || 0) > 0) p[k] -= dt;
     p.hurtT += dt;
     if (p.hurtT > 5 && p.hp < 100) p.hp = Math.min(100, p.hp + 6 * dt);   // 5 秒沒受傷後慢慢回血
   }
@@ -473,6 +494,11 @@ Sim.prototype.step = function (dt) {
     }
   }
   if (this.money >= this.quota) { this._end(true, 'quota'); return; }
+  for (let i = 0; i < this.monsters.length; i++) {
+    if (i % 4 !== 2) continue;
+    const mo = this.monsters[i];
+    for (let k = 0; k < alive.length; k++) { const p = alive[k]; if (Math.hypot(p.x - mo.x, p.z - mo.z) < 3) { p.hp = Math.max(1, p.hp - 6 * dt); p.hurtT = 0; } }
+  }
   for (let i = 0; i < this.monsters.length; i++) this._monster(this.monsters[i], i, dt, alive);
   if (!this.players.some(function (p) { return p.alive; })) { this._end(false, 'dead'); return; }
   if (this.time <= 0) this._end(false, 'time');
