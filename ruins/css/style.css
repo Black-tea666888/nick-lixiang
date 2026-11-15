@@ -319,6 +319,9 @@ body.btnedit #run, body.btnedit #atk, body.btnedit #gun, body.btnedit #rescue, b
 .grow em { flex: none; font-style: normal; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,.25); color: #ffe39a; }
 .grow.on em { background: var(--g); color: #1b1305; }
 .grow:active { transform: scale(.98); }
+.mode.br { grid-column: 1 / -1; min-height: 0; background: linear-gradient(135deg, #f6c453, #d9622b); border-color: rgba(255,255,255,.35); color: #1b1305; }
+.mode.br span { color: rgba(27,19,5,.8); }
+body.br .bagrow > b:first-of-type, body.br #pips, body.br #qbar { opacity: .3; }
 /* ---------- 說明：主題選單 ---------- */
 #helpMenu { display: flex; flex-direction: column; gap: 8px; }
 .hrow { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; font: inherit; text-align: left; color: var(--ink); cursor: pointer;
@@ -388,3 +391,5 @@ input[type=text]::placeholder { color: rgba(255,255,255,.6); }
 body.touch #toast { bottom: 318px; }
 #hideTag { bottom: 356px; }
 @media (orientation: landscape) and (max-height: 520px) { body.touch #toast { bottom: 46%; } #hideTag { bottom: auto; top: 14%; } #bars { bottom: 10px; } }
+body.br #mini { top: 262px; }
+@media (orientation: landscape) and (max-height: 520px) { body.br #mini { top: 112px; left: 170px; } }

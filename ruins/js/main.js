@@ -37,7 +37,7 @@ function pushEquip(eq) {
   lsSet('rr_eq', JSON.stringify(eq));
   if (!S.mode || !S.sim && S.mode !== 'client') return;
   if (S.mode === 'client') Net.send({ t: 'eq', eq: eq, gems: prog().gems });
-  else { const me = S.sim.player(S.myId); S.sim.setEquip(S.myId, eq); if (me) me.gems = prog().gems.slice(); hostBroadcast(S.mode === 'solo' ? { t: 'roster', code: null, hostId: 'me', mode: S.sim.mode, players: S.sim.roster() } : rosterMsg()); }
+  else { const me = S.sim.player(S.myId); S.sim.setEquip(S.myId, eq); if (me) me.gems = prog().gems.slice(); hostBroadcast(rosterAny()); }
 }
 function renderGear() {
   const p = prog(), eq = myEquip(p);
@@ -287,12 +287,13 @@ function startHostLoop() {
   S.lastTick = Date.now(); S.tickN = 0;
   S.timers.push(setInterval(hostTick, 33));
 }
-function hostStart(day) { hostBroadcast(S.sim.startDay(day || 1)); }
+function rosterAny() { return S.mode === 'solo' ? { t: 'roster', code: null, hostId: 'me', mode: S.sim.mode, players: S.sim.roster() } : rosterMsg(); }
+function hostStart(day) { const info = S.sim.startDay(day || 1); hostBroadcast(rosterAny()); hostBroadcast(info); }   // 先送名單（大逃殺會加入電腦玩家），再送開局資料
 
 /* ---------- 進入各種模式 ---------- */
 function startSolo(gmode) {
   Sfx.unlock();
-  S.mode = 'solo'; S.myId = 'me'; S.sim = new W.Sim(); S.sim.mode = gmode === 'hunt' ? 'hunt' : 'coop'; S.gmode = S.sim.mode;
+  S.mode = 'solo'; S.myId = 'me'; S.sim = new W.Sim(); S.sim.mode = gmode === 'hunt' || gmode === 'br' ? gmode : 'coop'; S.gmode = S.sim.mode;
   document.body.classList.add('solo');
   S.sim.map = myMap();
   S.sim.addPlayer('me', myName(), myLook());
@@ -452,7 +453,7 @@ function tickLobby() {
   const pv = $('pvpBtn');
   pv.textContent = '互相傷害：' + (S.pvp ? '開' : '關') + (S.mode === 'host' ? '' : '（房主設定）');
   pv.classList.toggle('off', !S.pvp);
-  $('modeBtn').textContent = '模式：' + (S.gmode === 'hunt' ? '獵殺（用槍打怪物）' : '回收（撿廢料賣錢）') + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
+  $('modeBtn').textContent = '模式：' + (S.gmode === 'hunt' ? '獵殺（用槍打怪物）' : S.gmode === 'br' ? '大逃殺（互相對戰，活到最後）' : '回收（撿廢料賣錢）') + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
   $('mapBtn').textContent = '地圖：' + W.MAPS[S.map || 0].name + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
 }
 // 新手教學：第一次開始遊戲時出現，之後可從「設定與說明」重看
@@ -468,7 +469,30 @@ function tutShow(i) {
   $('tutNext').textContent = i === TUT.length - 1 ? '開始' : '下一步'; $('tut').classList.remove('hide');
 }
 function tutDone() { $('tut').classList.add('hide'); lsSet('rr_tut', '1'); }
+function showResultBR(e) {
+  const host = S.mode === 'host', solo = S.mode === 'solo';
+  const mine = (e.stats || []).filter(function (p) { return p.id === S.myId; })[0] || { rank: e.stats ? e.stats.length : 1, kills: 0 };
+  const win = mine.rank === 1, n = e.stats ? e.stats.length : 1;
+  $('resTitle').textContent = win ? '第 1 名！你活到最後' : '第 ' + mine.rank + ' 名'; $('resTitle').style.color = win ? '' : '#ffd98a';
+  const stars = win ? 3 : mine.rank <= 3 ? 2 : 1, sb = $('resStars'); sb.textContent = '';
+  for (let k = 0; k < 3; k++) { const x = document.createElement(k < stars ? 'span' : 'i'); x.textContent = '★'; sb.appendChild(x); }
+  $('resText').textContent = '共 ' + n + ' 人，你淘汰了 ' + (mine.kills || 0) + ' 人。';
+  const p = prog(), coins = 15 + (mine.kills || 0) * 15 + (win ? 60 : mine.rank <= 3 ? 20 : 0); p.coins += coins; p.xp += coins + 10; if (win) p.m[0] += 1; progSave(p);
+  $('resGain').textContent = '金幣 +' + coins + ' · 經驗 +' + (coins + 10);
+  const st = $('resStats'); st.textContent = '';
+  (e.stats || []).slice().sort(function (a, b) { return a.rank - b.rank; }).forEach(function (q) {
+    const row = document.createElement('div'); row.className = 'prow' + (q.rank === 1 ? '' : ' dead');
+    const dot = document.createElement('i'); dot.style.background = CSSCOL[q.slot % 4];
+    const nm = document.createElement('span'); nm.textContent = '#' + q.rank + '　' + q.name + (q.ai ? '（電腦）' : '') + (q.id === S.myId ? '（你）' : '');
+    const sm = document.createElement('small'); sm.textContent = '淘汰 ' + (q.kills || 0);
+    row.appendChild(dot); row.appendChild(nm); row.appendChild(sm); st.appendChild(row);
+  });
+  st.classList.remove('hide');
+  $('resNext').classList.add('hide'); $('resRetry').classList.toggle('hide', !solo); $('resLobby').classList.toggle('hide', !host); $('resWait').classList.toggle('hide', host || solo);
+  setTimeout(function () { if (S.mode && Game.state().phase !== 'play') show('scrResult'); }, 900);
+}
 function showResult(e) {
+  if (S.gmode === 'br') { showResultBR(e); return; }
   const host = S.mode === 'host', solo = S.mode === 'solo';
   if (e.win) { const best = parseInt(ls('rr_best') || '0', 10); if (e.day > best) lsSet('rr_best', String(e.day)); }
   $('resTitle').textContent = e.win ? '第 ' + e.day + ' 天完成！' : '任務失敗';
@@ -530,7 +554,8 @@ function bind() {
     S.sim.map = (S.sim.map + 1) % W.MAPS.length; lsSet('rr_map', String(S.sim.map));
     hostBroadcast(rosterMsg()); tickLobby(); showMapName();
   });
-  $('modeBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.mode = S.sim.mode === 'hunt' ? 'coop' : 'hunt'; hostBroadcast(rosterMsg()); tickLobby(); });
+  $('modeBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.mode = S.sim.mode === 'coop' ? 'hunt' : S.sim.mode === 'hunt' ? 'br' : 'coop'; hostBroadcast(rosterMsg()); tickLobby(); });
+  $('brBtn').addEventListener('click', function () { startSolo('br'); });
   $('huntBtn').addEventListener('click', function () { startSolo('hunt'); });
   $('pvpBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.pvp = !S.sim.pvp; hostBroadcast(rosterMsg()); tickLobby(); });
   $('lobbyMic').addEventListener('click', function () { if (Voice.hasMic()) Voice.setMuted(!Voice.isMuted()); else say('沒有麥克風權限。請在瀏覽器允許麥克風後，重新進入房間。'); tickLobby(); });
@@ -541,7 +566,7 @@ function bind() {
   });
   $('resNext').addEventListener('click', function () { if (S.sim) hostStart(S.sim.day + 1); });
   $('resRetry').addEventListener('click', function () { if (S.sim) hostStart(1); });
-  $('resLobby').addEventListener('click', function () { if (S.mode === 'host') { S.sim.toLobby(); hostBroadcast({ t: 'lobby' }); } });
+  $('resLobby').addEventListener('click', function () { if (S.mode === 'host') { S.sim.toLobby(); hostBroadcast(rosterMsg()); hostBroadcast({ t: 'lobby' }); } });
   $('resLeave').addEventListener('click', leave);
   $('leaveBtn').addEventListener('click', function () { $('confirm').classList.remove('hide'); });
   $('confirmNo').addEventListener('click', function () { $('confirm').classList.add('hide'); });
