@@ -238,7 +238,7 @@ function drawMini(L) {
   const MC_COL = ['#ff5a2a', '#5ad0ff', '#8cff5a', '#b070ff'];
   for (let i = 0; i < view.monsters.length; i++) {
     const m = view.monsters[i];
-    if (!m.group.visible || (view.mode !== 'hunt' && Math.hypot(m.x - L.x, m.z - L.z) > (myPet() === 2 ? 22 : 14))) continue;   // 14 公尺內才顯示
+    if (!m.group.visible || view.weather === 4 || (view.mode !== 'hunt' && Math.hypot(m.x - L.x, m.z - L.z) > (myPet() === 2 ? 22 : 14))) continue;   // 14 公尺內才顯示
     const mx = m.x * k, my = m.z * k;
     if (m.chase && Math.floor(Date.now() / 250) % 2) { g.strokeStyle = '#ffffff'; g.lineWidth = 1.5; g.beginPath(); g.arc(mx, my, MC * 0.75, 0, Math.PI * 2); g.stroke(); }
     g.fillStyle = MC_COL[i % 4]; g.strokeStyle = '#000'; g.lineWidth = 1;
@@ -267,6 +267,7 @@ function buildLevel() {
   if (hemi) hemi.intensity = open ? 0.3 : 0.45 * br;
   if (sun) sun.intensity = open ? (T.sun || 0.5) : 0;
   torchBase = T.torch != null ? T.torch : 2.2;
+  baseLight = { fog: scene.fog.density, fogC: skyC, amb: ambient ? ambient.intensity : 1, hemi: hemi ? hemi.intensity : 0.4, sun: sun ? sun.intensity : 0, torch: torchBase, open: open };
   const style = T.style || 'ruin', wallH = T.wallH || WH;
   const floorTex = makeTex(T.floor, style === 'beach' ? '255,255,255' : '0,0,0', false); floorTex.repeat.set(COLS, ROWS);
   const Wd = COLS * CS, D = ROWS * CS;
@@ -629,10 +630,71 @@ function setViewWeapon(w) {
 let gunT = 0, gunMesh = null;
 function shoot() {
   if (!canControl() || gunT > 0) return;
+  if (me.riding) { toast('在推車上不能開槍'); return; }
   gunT = 0.22;
   if (RR.Game.onShoot) RR.Game.onShoot(Math.round(me.yaw * 100) / 100);
 }
 let zoneMesh = null, outT = 0;
+/* ---------- 天氣、災害、載具 ---------- */
+let baseLight = null, rain = null, quakeT = 0, vhQ = false, cartMesh = null, cartView = null;
+const rings = [];   // 落石警示圈
+function applyWeather(w) {
+  view.weather = w | 0;
+  const b = baseLight; if (!b) return;
+  const fogK = [1, 1.6, b.open ? 5 : 3.2, 1.3, b.open ? 4.5 : 2.4][view.weather], lightK = [1, 0.8, 0.85, 0.32, 0.75][view.weather];
+  scene.fog.density = b.fog * fogK;
+  const fc = view.weather === 4 ? (b.open ? 0xb58a5a : 0x3a2f28) : view.weather === 2 ? (b.open ? 0xc4ccd4 : 0x4a5258) : view.weather === 1 ? 0x6f7f90 : b.fogC;
+  scene.fog.color.setHex(fc); scene.background.setHex(fc);
+  if (ambient) ambient.intensity = b.amb * lightK; if (hemi) hemi.intensity = b.hemi * lightK; if (sun) sun.intensity = b.sun * (view.weather ? 0.45 : 1);
+  torchBase = view.weather === 3 ? Math.max(b.torch, 2.4) : b.torch;
+  if (rain) { camera.remove(rain); rain.geometry.dispose(); rain.material.dispose(); rain = null; }
+  if (view.weather === 1 || view.weather === 4) {
+    const n = 500, pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { pos[i * 3] = (Math.random() - 0.5) * 16; pos[i * 3 + 1] = (Math.random() - 0.5) * 9; pos[i * 3 + 2] = -Math.random() * 14; }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    rain = new THREE.Points(g, new THREE.PointsMaterial({ color: view.weather === 1 ? 0xbfd8f0 : 0xd9b98a, size: view.weather === 1 ? 0.05 : 0.07, transparent: true, opacity: 0.75, fog: false }));
+    camera.add(rain);
+  }
+  const chip = $('wx'); chip.textContent = view.weather ? W.WEATHERS[view.weather] : ''; chip.classList.toggle('hide', !view.weather);
+}
+function tickWeather(dt) {
+  if (rain) {
+    const a = rain.geometry.attributes.position, storm = view.weather === 4;
+    for (let i = 0; i < a.count; i++) {
+      let y = a.getY(i) - (storm ? 2 : 13) * dt, x = a.getX(i) + (storm ? 9 : 0.6) * dt;
+      if (y < -4.5) y += 9; if (x > 8) x -= 16;
+      a.setY(i, y); a.setX(i, x);
+    }
+    a.needsUpdate = true;
+    if (Math.random() < dt * 5) Sfx.noise(0.25, storm ? 0.035 : 0.022);
+  }
+  if (quakeT > 0) { quakeT -= dt; shakeT = Math.max(shakeT, 0.25); if (Math.random() < dt * 6) Sfx.tone(46 + Math.random() * 14, 0.3, 'sawtooth', 0.12, 34); }
+  for (let i = rings.length - 1; i >= 0; i--) {
+    const r = rings[i]; r.t -= dt; const k = 1 + Math.sin(Date.now() / 90) * 0.12; r.mesh.scale.set(k, k, k); r.mesh.material.opacity = 0.45 + Math.sin(Date.now() / 90) * 0.25;
+    if (r.t <= -0.3) { scene.remove(r.mesh); r.mesh.geometry.dispose(); r.mesh.material.dispose(); rings.splice(i, 1); }
+  }
+}
+function showBoom(x, z) {
+  const m = part(new THREE.SphereGeometry(0.6, 14, 10), new THREE.MeshBasicMaterial({ color: 0xffa24a, transparent: true, opacity: 0.9, fog: false }), x, 0.8, z);
+  const rock = part(new THREE.DodecahedronGeometry(0.55, 0), new THREE.MeshPhongMaterial({ color: 0x5a4a40, emissive: 0x301808 }), x, 0.4, z);
+  scene.add(m, rock);
+  const t0 = Date.now(), id = setInterval(function () {
+    const k = (Date.now() - t0) / 500; m.scale.setScalar(1 + k * 3.5); m.material.opacity = Math.max(0, 0.9 - k);
+    if (k >= 1) { clearInterval(id); scene.remove(m); m.geometry.dispose(); m.material.dispose(); setTimeout(function () { scene.remove(rock); rock.geometry.dispose(); rock.material.dispose(); }, 8000); }
+  }, 30);
+  const d = Math.hypot(x - me.x, z - me.z);
+  Sfx.noise(0.5, Math.max(0.05, 0.4 - d * 0.02)); Sfx.tone(90, 0.5, 'sawtooth', Math.max(0.03, 0.25 - d * 0.012), 40);
+  if (d < 10) shakeT = Math.max(shakeT, 0.5 - d * 0.04);
+}
+function buildCart() {
+  const g = new THREE.Group(), body = pmat(0xd9902f, 0.25), dark = pmat(0x1c2026, 0.05), steel = pmat(0x9aa3a8, 0.15);
+  g.add(part(new THREE.BoxGeometry(0.8, 0.45, 1.1), body, 0, 0.5, 0), part(new THREE.BoxGeometry(0.7, 0.05, 1.0), dark, 0, 0.74, 0),
+    part(new THREE.CylinderGeometry(0.02, 0.02, 0.7, 8), steel, -0.3, 0.95, -0.55), part(new THREE.CylinderGeometry(0.02, 0.02, 0.7, 8), steel, 0.3, 0.95, -0.55), part(new THREE.CylinderGeometry(0.025, 0.025, 0.66, 8), steel, 0, 1.3, -0.55));
+  g.children[4].rotation.z = Math.PI / 2;
+  [[-0.42, 0.38], [0.42, 0.38], [-0.42, -0.38], [0.42, -0.38]].forEach(function (q) { const w = part(new THREE.CylinderGeometry(0.16, 0.16, 0.08, 14), dark, q[0], 0.16, q[1]); w.rotation.z = Math.PI / 2; g.add(w); });
+  addShadow(g, 0.7);
+  return g;
+}
 function showShot(e) {
   const mine = e.id === myId, sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   const from = mine ? new THREE.Vector3(me.x - sy * 0.5 + cy * 0.22, 1.42 + me.y, me.z - cy * 0.5 - sy * 0.22) : new THREE.Vector3(e.x, 1.25, e.z);
@@ -669,7 +731,7 @@ function fpsWatch(dt) {
   }
 }
 /* ---------- 手機按鈕：位置與大小可自訂（直式、橫式各存一份） ---------- */
-const BTN = { run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
+const BTN = { veh: [244, 218, 58], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
 let btnScale = 1, dragBtn = null;
 function layoutKey() { return 'rr_layout_' + (window.innerWidth > window.innerHeight ? 'l' : 'p'); }
 function loadLayout() { try { return JSON.parse(localStorage.getItem(layoutKey()) || 'null') || {}; } catch (e) { return {}; } }
@@ -717,6 +779,7 @@ function initLayout() {
 }
 function attack() {
   if (!canControl() || atkT > 0) return;
+  if (me.riding) return;
   atkT = 0.7; swingT = 0.28;
   Sfx.noise(0.12, 0.1);
   if (RR.Game.onAttack) RR.Game.onAttack(Math.round(me.yaw * 100) / 100);
@@ -759,6 +822,7 @@ function bindInput() {
     if (e.code === 'Space') { if (canControl()) { e.preventDefault(); if (!e.repeat) jumpQ = true; } }
     if (e.code === 'KeyC' && !e.repeat && canControl()) dashQ = true;
     if (e.code === 'KeyX' && canControl()) shoot();
+    if (e.code === 'KeyV' && !e.repeat && canControl()) vhQ = true;
   });
   window.addEventListener('keyup', function (e) { keys[e.code] = false; });
   window.addEventListener('blur', function () { for (const k in keys) keys[k] = false; });
@@ -823,7 +887,7 @@ function bindInput() {
   runBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   $('micBtn').addEventListener('click', function () { RR.Game.toggleMic(); });
   $('mini').addEventListener('click', function () { $('mini').classList.toggle('big'); });
-  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', shoot]].forEach(function (q) {
+  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', shoot], ['veh', function () { vhQ = true; }]].forEach(function (q) {
     const b = $(q[0]);
     b.addEventListener('touchstart', function (e) { e.preventDefault(); if (canControl()) q[1](); }, { passive: false });
     b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
@@ -861,13 +925,15 @@ function updateMe(dt) {
   let mag = Math.hypot(f, s);
   if (mag > 1) { f /= mag; s /= mag; mag = 1; }
   const moving = mag > 0.15;
-  const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run) && moving && !me.tired;
+  const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run) && moving && !me.tired && !me.riding;
   if (wantRun) { me.stam -= 0.15 * (1 - 0.05 * myGem(1)) * dt; if (me.stam <= 0) { me.stam = 0; me.tired = true; } }
   else { me.stam = Math.min(1, me.stam + 0.28 * (myPet() === 4 ? 1.2 : 1) * (myC() === 7 ? 1.15 : 1) * dt); if (me.tired && me.stam > 0.2) me.tired = false; }
   if (me.rallyT > 0) me.rallyT -= dt;
-  const speed = (wantRun ? 9.0 : 4.2) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05) * CHAR_SPEED[myC()] * (myPet() === 1 ? 1.05 : 1) * (myEq(1) ? 1.06 : 1) * (iceNear() ? 0.75 : 1) * (me.rallyT > 0 ? 1.2 : 1);   // 靠近藍色（冰）怪物減速 25%
+  const speed0 = (wantRun ? 9.0 : 4.2) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05) * CHAR_SPEED[myC()] * (myPet() === 1 ? 1.05 : 1) * (myEq(1) ? 1.06 : 1) * (iceNear() ? 0.75 : 1) * (me.rallyT > 0 ? 1.2 : 1);   // 靠近藍色（冰）怪物減速 25%
+  const speed = (me.riding ? 11.5 * (iceNear() ? 0.75 : 1) : speed0) * (quakeT > 0 ? 0.6 : 1);   // 推車：固定高速、不受背包影響；地震時變慢
   const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   // 跳：耗 18% 體力，在空中時怪物抓不到；衝刺：往移動方向（沒動就往前）瞬間衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒
+  if (me.riding) { jumpQ = false; dashQ = false; }   // 推車上不能跳、衝
   if (jumpQ) { jumpQ = false; if (me.y <= 0 && !me.tired && me.stam >= 0.18) { me.vy = 5.6; me.y = 0.001; me.stam -= 0.18; Sfx.tone(300, 0.12, 'triangle', 0.08, 520); } }
   if (me.y > 0) { me.vy -= 15 * dt; me.y += me.vy * dt; if (me.y <= 0) { me.y = 0; me.vy = 0; Sfx.noise(0.05, 0.06); } }
   if (dashCd > 0) dashCd -= dt;
@@ -892,7 +958,7 @@ function updateMe(dt) {
   const fovT = dashT > 0 ? 96 : wantRun ? 88 : 75;
   if (Math.abs(camera.fov - fovT) > 0.1) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   if (gunT > 0) gunT -= dt;
-  fpsWatch(dt);
+  fpsWatch(dt); tickWeather(dt);
   if (view.zone && me.alive && Math.hypot(me.x - view.zone[0], me.z - view.zone[1]) > view.zr) { outT -= dt; if (outT <= 0) { outT = 2.5; toast('你在安全區外，正在扣血！往白圈裡跑'); Sfx.tone(300, 0.15, 'square', 0.08); } hurtFlash = Math.max(hurtFlash, 0.35); }
   if (gunMesh) { const kk = gunMesh.userData.kick || 0; gunMesh.userData.kick = Math.max(0, kk - dt * 9); gunMesh.position.set(-0.3, -0.3 + kk * 0.03, -0.62 + kk * 0.07); gunMesh.rotation.x = kk * 0.22; }
   if (shakeT > 0) shakeT = Math.max(0, shakeT - dt);
@@ -1015,8 +1081,8 @@ function updateHud() {
   const gb = $('gun'), gt = me.reloading ? '…' : '槍'; if (gb.textContent !== gt) gb.textContent = gt; gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
   const qf = $('qfill'), pct = view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
   qf.style.width = pct + '%'; qf.classList.toggle('done', pct >= 100);
-  const cap = myEq(2) ? 4 : 3, pp = $('pips'); if ($('bagCap').textContent !== String(cap)) $('bagCap').textContent = cap;
-  for (let i = 0; i < 4; i++) { pp.children[i].className = i < me.bagN ? 'on' : ''; pp.children[i].style.display = i < cap ? '' : 'none'; } pp.className = me.bagN >= cap ? 'full' : '';
+  const cap = (myEq(2) ? 4 : 3) + (me.riding ? 2 : 0), pp = $('pips'); while (pp.children.length < 6) pp.appendChild(document.createElement('i')); if ($('bagCap').textContent !== String(cap)) $('bagCap').textContent = cap;
+  for (let i = 0; i < 6; i++) { pp.children[i].className = i < me.bagN ? 'on' : ''; pp.children[i].style.display = i < cap ? '' : 'none'; } pp.className = me.bagN >= cap ? 'full' : '';
   $('day').textContent = view.day;
   const s = Math.max(0, Math.ceil(view.time)), mm = Math.floor(s / 60), ss = s % 60;
   $('timer').textContent = mm + ':' + (ss < 10 ? '0' : '') + ss;
@@ -1106,6 +1172,7 @@ RR.Game = {
       gunMesh.add(part(new THREE.BoxGeometry(0.07, 0.09, 0.34), gm, 0, 0, 0), part(new THREE.BoxGeometry(0.06, 0.16, 0.08), gg, 0, -0.11, 0.11), part(new THREE.CylinderGeometry(0.018, 0.018, 0.1, 10), gm, 0, 0.01, -0.21));
       gunMesh.children[2].rotation.x = Math.PI / 2; }
     gunMesh.position.set(-0.3, -0.3, -0.62); camera.add(gunMesh);
+    cartView = new THREE.Group(); cartView.add(part(new THREE.BoxGeometry(0.9, 0.3, 0.6), pmat(0xd9902f, 0.25), 0, -0.78, -1.05), part(new THREE.CylinderGeometry(0.02, 0.02, 0.8, 8), pmat(0x9aa3a8, 0.15), 0, -0.5, -0.62)); cartView.children[1].rotation.z = Math.PI / 2; cartView.visible = false; camera.add(cartView);
     torch.position.set(0.25, -0.2, 0); camera.add(torch); camera.add(torch.target); torch.target.position.set(0, -0.05, -1);
     buildLevel();
     for (let i = 0; i < 4; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));
@@ -1199,6 +1266,8 @@ RR.Game = {
       return { x: a[0], z: a[1], kind: a[2], value: a[3], taken: false, mesh: mesh };
     });
     view.mode = info.mode || 'coop'; document.body.classList.toggle('hunt', view.mode === 'hunt'); document.body.classList.toggle('br', view.mode === 'br');
+    applyWeather(info.weather || 0); quakeT = 0; me.riding = false; rings.forEach(function (r) { scene.remove(r.mesh); }); rings.length = 0;
+    if (info.weather) setTimeout(function () { toast('今天的天氣：' + W.WEATHERS[info.weather] + ['', '（雨聲蓋過腳步，怪物比較聽不到你）', '（你和怪物都看不遠）', '（很暗，靠手電筒；怪物也看不遠）', '（能見度低，小地圖看不到怪物）'][info.weather]); }, 2600);
     view.zone = info.zone || null; view.zr = info.zone ? info.zone[2] : 0; outT = 0;
     if (zoneMesh) { scene.remove(zoneMesh); zoneMesh = null; }
     if (view.zone) {
@@ -1239,6 +1308,18 @@ RR.Game = {
     if (s.tt) view.tt = s.tt;
     else view.tt = null;
     // 傳送陣的顯示
+    // 推車
+    if (s.veh) {
+      if (!cartMesh) { cartMesh = buildCart(); scene.add(cartMesh); }
+      const rid = s.veh[2]; me.riding = rid === myId && me.alive;
+      let cx = s.veh[0], cz = s.veh[1], cyaw = cartMesh.rotation.y;
+      if (rid && rid !== myId) { const rp = view.players.get(rid); if (rp) { cx = rp.x; cz = rp.z; cyaw = rp.yaw; } }
+      cartMesh.visible = rid !== myId; cartMesh.position.set(cx, 0, cz); cartMesh.rotation.y = cyaw;
+      view.veh = s.veh;
+    } else { if (cartMesh) cartMesh.visible = false; view.veh = null; me.riding = false; }
+    if (cartView) cartView.visible = !!me.riding;
+    const nearV = view.veh && me.alive && (me.riding || (!view.veh[2] && Math.hypot(view.veh[0] - me.x, view.veh[1] - me.z) < 2.4));
+    document.body.classList.toggle('nearveh', !!nearV); const vb = $('veh'), vt = me.riding ? '下車' : '車'; if (vb.textContent !== vt) vb.textContent = vt;
     if (s.pad && !padMesh) {
       padMesh = new THREE.Mesh(new THREE.RingGeometry(0.6, 1.0, 40), new THREE.MeshBasicMaterial({ color: 0x66e0ff, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
       padMesh.rotation.x = -Math.PI / 2; padMesh.position.y = 0.05; scene.add(padMesh);
@@ -1332,6 +1413,19 @@ RR.Game = {
     } else if (e.t === 'moon') {
       if (e.id === myId) { skEnd = Date.now() + 25000; toast('月光波！附近怪物暫停 3 秒'); }
       showMoon(e.x, e.z);
+    } else if (e.t === 'quake') {
+      quakeT = e.dur || 4; toast('地震！所有人變慢，怪物也站不穩'); Sfx.tone(50, 1.2, 'sawtooth', 0.2, 30);
+    } else if (e.t === 'strike') {
+      toast(baseLight && baseLight.open ? '隕石來襲！離開紅圈' : '天花板落石！離開紅圈'); Sfx.tone(880, 0.5, 'square', 0.1, 440);
+      (e.pts || []).forEach(function (q) {
+        const ring = new THREE.Mesh(new THREE.RingGeometry(1.9, 2.5, 40), new THREE.MeshBasicMaterial({ color: 0xff3a2a, transparent: true, opacity: 0.6, side: THREE.DoubleSide, depthWrite: false, fog: false }));
+        ring.rotation.x = -Math.PI / 2; ring.position.set(q[0], 0.06, q[1]); scene.add(ring); rings.push({ mesh: ring, t: e.delay || 2.5 });
+      });
+    } else if (e.t === 'boom') {
+      showBoom(e.x, e.z);
+    } else if (e.t === 'veh') {
+      if (e.id === myId) toast(e.on ? '推上推車：速度快、多放 2 件，但很吵，不能跳、衝、開槍' : '下車了');
+      Sfx.tone(e.on ? 300 : 220, 0.12, 'triangle', 0.1, e.on ? 450 : 160);
     } else if (e.t === 'brkill') {
       const vp = view.players.get(e.id); if (vp) vp.alive = false;
       let left = 0; view.players.forEach(function (p) { if (p.id === myId ? (me.alive && e.id !== myId) : p.alive) left++; });
@@ -1396,9 +1490,10 @@ RR.Game = {
     }
   },
   input: function () {
+    const vh = vhQ; vhQ = false;
     const sm = smQ; smQ = false; const sk = skQ; skQ = false; const tt = ttQ; ttQ = null;
     return { t: 'i', x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100,
-      run: me.running && me.alive, air: me.y > 0.25 && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!keys.KeyE && me.alive, sm: sm, sk: sk, tt: tt === null ? undefined : tt };
+      vh: vh || undefined, run: me.running && me.alive, air: me.y > 0.25 && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!keys.KeyE && me.alive, sm: sm, sk: sk, tt: tt === null ? undefined : tt };
   },
   setMonSkin: function (v) {
     RR.Game.settings.monSkin = v | 0;
