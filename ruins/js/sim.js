@@ -281,7 +281,7 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   for (let i = 0; i < alive.length; i++) {
     const p = alive[i], d = Math.hypot(p.x - m.x, p.z - m.z);
     const sees = d < 30 && los(m.x, m.z, p.x, p.z);
-    const hears = (p.run && d < 22) || (p.loud && d < 18);
+    const hears = (p.run && d < 22) || (p.loud && d < 18) || (p.bag.length >= 3 && d < 40);   // 身上集滿 3 件會把怪物引過來
     if ((sees || hears) && d < bd) { best = p; bd = d; bestSees = sees; }
   }
   const mc = cellOf(m.x, m.z);
