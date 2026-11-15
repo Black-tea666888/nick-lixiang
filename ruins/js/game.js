@@ -181,6 +181,7 @@ function buildMini() {
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (W.MAP[r][c] !== '#') g.fillRect(c * MC, r * MC, MC, MC);
   // 回收車
   const v = W.VAN, k = MC / CS;
+  g.fillStyle = '#5fb4e6'; (W.lockers || []).forEach(function (q) { g.fillRect(q[0] * k - MC * 0.25, q[1] * k - MC * 0.25, MC * 0.5, MC * 0.5); });   // 櫃子
   g.fillStyle = '#4dff9a'; g.fillRect(v[0] * k - MC * 0.45, v[1] * k - MC * 0.45, MC * 0.9, MC * 0.9);
   g.fillStyle = '#04140a'; g.font = 'bold ' + (MC * 0.8) + 'px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.fillText('車', v[0] * k, v[1] * k + 0.5);
@@ -235,6 +236,50 @@ function buildLevel() {
     new THREE.MeshBasicMaterial({ color: 0x4dff9a, transparent: true, opacity: 0.08, side: THREE.DoubleSide, depthWrite: false }));
   beam.position.set(VAN[0], WH / 2, VAN[1]); level.add(beam);
   const vl = new THREE.PointLight(0x4dff9a, 0.9, 12, 1.6); vl.position.set(VAN[0], 2.4, VAN[1]); level.add(vl);
+  // 櫃子（躲藏點）
+  const lockM = new THREE.MeshLambertMaterial({ color: 0x2a4a60, emissive: 0x0b1c28 }), lineM = new THREE.MeshBasicMaterial({ color: 0x0a141a }), tagM = new THREE.MeshBasicMaterial({ color: 0x7dffb0 });
+  (W.lockers || []).forEach(function (k) {
+    const lg = new THREE.Group();
+    lg.add(part(new THREE.BoxGeometry(1.0, 2.1, 0.6), lockM, 0, 1.05, 0), part(new THREE.BoxGeometry(0.02, 1.9, 0.02), lineM, 0, 1.05, 0.31),
+      part(new THREE.BoxGeometry(0.3, 0.03, 0.02), lineM, -0.25, 1.75, 0.31), part(new THREE.BoxGeometry(0.3, 0.03, 0.02), lineM, 0.25, 1.75, 0.31),
+      part(new THREE.BoxGeometry(0.04, 0.14, 0.04), lineM, -0.08, 1.05, 0.32), part(new THREE.BoxGeometry(0.04, 0.14, 0.04), lineM, 0.08, 1.05, 0.32),
+      part(new THREE.BoxGeometry(0.22, 0.08, 0.02), tagM, 0, 2.22, 0.2));
+    lg.position.set(k[0], 0, k[1]); lg.rotation.y = k[2]; level.add(lg);
+  });
+  // 擺設：木箱、鐵桶貼牆放；天花板燈條（固定種子，每張地圖每次都一樣）
+  let seed = 1234 + W.mapIndex * 77; const rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const crateM = new THREE.MeshPhongMaterial({ map: makeTex('#7a5a3a', '30,20,10', true), shininess: 4 }), barrelM = new THREE.MeshPhongMaterial({ color: 0x556b5a, emissive: 0x0c140e, shininess: 40 });
+  const lampM = new THREE.MeshBasicMaterial({ color: 0xdfeee6 }), bandM = new THREE.MeshBasicMaterial({ color: 0xc9a227 });
+  let lamps = 0;
+  W.floorCells.forEach(function (fc) {
+    const c = fc[0], r = fc[1], cx = c * CS + CS / 2, cz = r * CS + CS / 2;
+    if (Math.hypot(cx - VAN[0], cz - VAN[1]) < CS * 1.5) return;
+    if ((W.lockers || []).some(function (k) { return Math.hypot(k[0] - cx, k[1] - cz) < CS * 0.75; })) return;
+    const walls4 = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(function (d) { return W.isWall(c + d[0], r + d[1]); });
+    const roll = rnd();
+    if (walls4.length && roll < 0.22) {
+      const d = walls4[Math.floor(rnd() * walls4.length)], off = CS / 2 - 0.42, side = (rnd() - 0.5) * 1.6;
+      const px = cx + d[0] * off + (d[0] ? 0 : side), pz = cz + d[1] * off + (d[1] ? 0 : side);
+      if (roll < 0.12) {
+        const sz = 0.55 + rnd() * 0.25, cr = part(new THREE.BoxGeometry(sz, sz, sz), crateM, px, sz / 2, pz); cr.rotation.y = rnd() * 0.5; level.add(cr);
+        if (rnd() < 0.4) { const s2 = sz * 0.7, c2 = part(new THREE.BoxGeometry(s2, s2, s2), crateM, px, sz + s2 / 2, pz); c2.rotation.y = rnd(); level.add(c2); }
+      } else {
+        level.add(part(new THREE.CylinderGeometry(0.3, 0.3, 0.9, 12), barrelM, px, 0.45, pz), part(new THREE.CylinderGeometry(0.31, 0.31, 0.06, 12), bandM, px, 0.62, pz));
+      }
+    }
+    if ((c + r * 2) % 5 === 0 && lamps < 40) {   // 燈條：發光但不投光（省效能）
+      lamps++;
+      const lp = part(new THREE.BoxGeometry(1.3, 0.05, 0.22), lampM, cx, WH - 0.04, cz); if (c % 2) lp.rotation.y = Math.PI / 2; level.add(lp);
+    }
+  });
+  // 回收車車體（放在光圈旁，緊貼最近的牆）
+  const sc0 = W.cellOf(VAN[0], VAN[1]), vw = [[-1, 0], [0, -1], [1, 0], [0, 1]].filter(function (d) { return W.isWall(sc0[0] + d[0], sc0[1] + d[1]); })[0];
+  if (vw) {
+    const tg = new THREE.Group(), bodyM = pmat(0x2f9a6b, 0.25), cabM = pmat(0xe8eef2, 0.15), tyre = pmat(0x111413, 0.02);
+    tg.add(part(new THREE.BoxGeometry(1.5, 0.9, 0.8), bodyM, 0, 0.75, 0), part(new THREE.BoxGeometry(0.55, 0.7, 0.8), cabM, 1.05, 0.65, 0), part(new THREE.BoxGeometry(0.3, 0.25, 0.7), new THREE.MeshBasicMaterial({ color: 0x9fe8ff }), 1.2, 0.82, 0));
+    [[-0.5, 0.42], [0.95, 0.42], [-0.5, -0.42], [0.95, -0.42]].forEach(function (q) { const w = part(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 10), tyre, q[0], 0.2, q[1]); w.rotation.x = Math.PI / 2; tg.add(w); });
+    tg.position.set(VAN[0] + vw[0] * (CS / 2 - 0.5), 0, VAN[1] + vw[1] * (CS / 2 - 0.5)); tg.rotation.y = vw[0] ? Math.PI / 2 : 0; level.add(tg);
+  }
   scene.add(level);
   buildMini();
 }
@@ -243,26 +288,50 @@ const MON_COL = { fire: [0xff6a1a, 0xff4a10], ice: [0x6ad8ff, 0x3ac8ff], poison:
 function buildMonster(kind) {
   const col = MON_COL[kind] || MON_COL.fire;
   const g = new THREE.Group();
-  const dark = new THREE.MeshPhongMaterial({ color: 0x0c0c0e, shininess: 30 });
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.34, 2.2, 10), dark); body.position.y = 1.1;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 12), dark); head.position.y = 2.5; head.scale.y = 1.25;
+  const dark = new THREE.MeshPhongMaterial({ color: 0x0c0c0e, shininess: 30, emissive: new THREE.Color(col[1]).multiplyScalar(0.07) });
+  const tint = new THREE.MeshPhongMaterial({ color: col[1], emissive: new THREE.Color(col[1]).multiplyScalar(0.5), shininess: 40 });
   const eyeM = new THREE.MeshBasicMaterial({ color: col[0] });
-  const e1 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), eyeM); e1.position.set(-0.13, 2.56, 0.3);
-  const e2 = e1.clone(); e2.position.x = 0.13;
-  const armG = new THREE.CylinderGeometry(0.05, 0.04, 1.9, 6);
-  const a1 = new THREE.Mesh(armG, dark); a1.position.set(-0.42, 1.35, 0.1); a1.rotation.z = 0.16;
-  const a2 = new THREE.Mesh(armG, dark); a2.position.set(0.42, 1.35, 0.1); a2.rotation.z = -0.16;
+  const tall = kind === 'shadow' ? 1.12 : kind === 'poison' ? 0.9 : 1;
+  const body = part(new THREE.CylinderGeometry(kind === 'poison' ? 0.3 : 0.2, kind === 'poison' ? 0.46 : 0.34, 2.2, 10), dark, 0, 1.1, 0);
+  const head = part(new THREE.SphereGeometry(0.34, 14, 12), dark, 0, 2.5, 0); head.scale.y = 1.25;
+  const e1 = part(new THREE.SphereGeometry(0.065, 8, 8), eyeM, -0.13, 2.56, 0.3), e2 = part(new THREE.SphereGeometry(0.065, 8, 8), eyeM, 0.13, 2.56, 0.3);
+  const mouth = part(new THREE.BoxGeometry(0.26, 0.05, 0.04), eyeM, 0, 2.34, 0.31);
+  const armG = new THREE.CylinderGeometry(0.05, 0.035, 1.9, 6), clawG = new THREE.ConeGeometry(0.035, 0.22, 5);
+  const mkArm = function (x) {
+    const pv = new THREE.Group(); pv.position.set(x, 2.15, 0.05);
+    pv.add(part(armG, dark, 0, -0.9, 0));
+    for (let k = -1; k <= 1; k++) { const cl = part(clawG, tint, k * 0.05, -1.92, 0.02); cl.rotation.x = Math.PI; pv.add(cl); }
+    pv.rotation.z = x < 0 ? -0.16 : 0.16; return pv;
+  };
+  const a1 = mkArm(-0.42), a2 = mkArm(0.42);
+  g.add(body, head, e1, e2, mouth, a1, a2);
+  if (kind === 'fire') {            // 火：兩支角、背後火焰
+    const hornG = new THREE.ConeGeometry(0.07, 0.42, 6);
+    const h1 = part(hornG, tint, -0.2, 2.98, 0), h2 = part(hornG, tint, 0.2, 2.98, 0); h1.rotation.z = 0.35; h2.rotation.z = -0.35;
+    g.add(h1, h2);
+    for (let k = 0; k < 4; k++) g.add(part(new THREE.ConeGeometry(0.09, 0.5 + k % 2 * 0.2, 5), tint, (k - 1.5) * 0.14, 1.5 + k % 2 * 0.25, -0.3));
+  } else if (kind === 'ice') {      // 冰：肩膀與頭頂的冰晶
+    const cr = new THREE.OctahedronGeometry(0.2);
+    [[-0.36, 2.05, 0], [0.36, 2.05, 0], [0, 3.0, 0], [-0.2, 1.3, -0.25], [0.22, 0.9, -0.22]].forEach(function (q, k) { const m = part(cr, tint, q[0], q[1], q[2]); m.scale.set(0.8, 1.5 - k * 0.1, 0.8); g.add(m); });
+  } else if (kind === 'poison') {   // 毒：身上的膿包、駝背
+    [[-0.3, 1.5, 0.15, 0.2], [0.34, 1.0, 0.1, 0.24], [0.1, 1.8, -0.28, 0.18], [-0.2, 0.6, -0.2, 0.22], [0.28, 2.0, 0.05, 0.13]].forEach(function (q) { g.add(part(new THREE.SphereGeometry(q[3], 10, 8), tint, q[0], q[1], q[2])); });
+    head.position.set(0, 2.3, 0.18); e1.position.set(-0.13, 2.36, 0.48); e2.position.set(0.13, 2.36, 0.48); mouth.position.set(0, 2.14, 0.49);
+  } else {                          // 暗影：破斗篷、尖帽
+    const cloak = part(new THREE.ConeGeometry(0.62, 2.3, 9, 1, true), new THREE.MeshPhongMaterial({ color: 0x140a22, emissive: 0x1a0a30, side: THREE.DoubleSide, shininess: 5 }), 0, 1.25, -0.05);
+    const hood = part(new THREE.ConeGeometry(0.4, 0.7, 9), new THREE.MeshPhongMaterial({ color: 0x140a22, emissive: 0x1a0a30 }), 0, 3.05, -0.05);
+    g.add(cloak, hood);
+  }
   const glow = new THREE.PointLight(col[1], 0.8, 7, 1.5); glow.position.set(0, 2.5, 0.5);
-  g.add(body, head, e1, e2, a1, a2, glow);
+  g.add(glow); g.scale.set(1, tall, 1);
   g.visible = false; scene.add(g);
-  return { group: g, x: 0, z: 0, rot: 0, tx: 0, tz: 0, trot: 0, chase: false, fresh: true };
+  return { group: g, arms: [a1, a2], x: 0, z: 0, rot: 0, tx: 0, tz: 0, trot: 0, chase: false, fresh: true };
 }
 
 function pmat(col, em) { return new THREE.MeshPhongMaterial({ color: col, emissive: new THREE.Color(col).multiplyScalar(em == null ? 0.22 : em), shininess: 20 }); }
 function part(geo, m, x, y, z) { const o = new THREE.Mesh(geo, m); o.position.set(x || 0, y || 0, z || 0); return o; }
 
 /** 角色造型（純外觀）。身體用玩家顏色，正面朝 +z。 */
-function buildChar(c, slot) {
+function buildChar(c, slot, h) {
   const g = new THREE.Group();
   const M = pmat(COLORS[slot % 4]);
   const dark = new THREE.MeshBasicMaterial({ color: 0x0a0f0c }), glow = new THREE.MeshBasicMaterial({ color: 0xfff0cc });
@@ -297,6 +366,36 @@ function buildChar(c, slot) {
     g.add(body(), part(new THREE.SphereGeometry(0.24, 14, 12), M, 0, 1.6, 0), part(new THREE.BoxGeometry(0.34, 0.12, 0.1), dark, 0, 1.63, 0.2),
       part(new THREE.SphereGeometry(0.05, 8, 8), glow, 0.2, 1.25, 0.26));
   }
+  // 手腳（以肩膀／腳踝為軸，走路時擺動）
+  const sx = c === 1 ? 0.34 : 0.33, limb = pmat(c === 1 ? 0x9aa3a8 : COLORS[slot % 4], 0.12), shoe = pmat(0x1c2220, 0.05);
+  const mkArm = function (x) { const pv = new THREE.Group(); pv.position.set(x, 1.22, 0); pv.add(part(new THREE.CylinderGeometry(0.07, 0.06, 0.62, 8), limb, 0, -0.3, 0), part(new THREE.SphereGeometry(0.075, 8, 8), limb, 0, -0.62, 0)); return pv; };
+  const mkFoot = function (x) { const pv = new THREE.Group(); pv.position.set(x, 0.3, 0); pv.add(part(new THREE.BoxGeometry(0.17, 0.12, 0.3), shoe, 0, -0.24, 0.06)); return pv; };
+  const aL = mkArm(-sx), aR = mkArm(sx), fL = mkFoot(-0.13), fR = mkFoot(0.13);
+  aR.rotation.x = -0.45;   // 右手往前握著攻擊物
+  g.add(aL, aR, fL, fR);
+  g.userData.limbs = [aL, aR, fL, fR];
+  const hat = buildHat(h || 0); if (hat) { hat.position.y = [1.84, 1.78, 1.95, 1.87, 1.89, 1.9][c] || 1.84; if (c === 1) hat.position.x = 0.14; g.add(hat); }
+  return g;
+}
+/** 頭飾（純外觀）：1 安全帽、2 頭燈、3 天線、4 光環、5 皇冠 */
+function buildHat(h) {
+  if (!h) return null;
+  const g = new THREE.Group();
+  if (h === 1) {
+    const dome = part(new THREE.SphereGeometry(0.29, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), pmat(0xffc928, 0.3), 0, -0.1, 0);
+    g.add(dome, part(new THREE.CylinderGeometry(0.34, 0.34, 0.03, 16), pmat(0xffc928, 0.3), 0, -0.09, 0.04));
+  } else if (h === 2) {
+    g.add(part(new THREE.TorusGeometry(0.25, 0.025, 6, 20), pmat(0x30363a, 0.1), 0, -0.14, 0), part(new THREE.CylinderGeometry(0.07, 0.07, 0.06, 10), new THREE.MeshBasicMaterial({ color: 0xfff6c8 }), 0, -0.14, 0.26));
+    g.children[0].rotation.x = Math.PI / 2; g.children[1].rotation.x = Math.PI / 2;
+  } else if (h === 3) {
+    g.add(part(new THREE.CylinderGeometry(0.012, 0.012, 0.38, 6), pmat(0xb8c0c4, 0.2), 0, 0.17, 0), part(new THREE.SphereGeometry(0.05, 8, 8), new THREE.MeshBasicMaterial({ color: 0x7dffb0 }), 0, 0.38, 0));
+  } else if (h === 4) {
+    const r = part(new THREE.TorusGeometry(0.2, 0.025, 6, 24), new THREE.MeshBasicMaterial({ color: 0xfff3a0 }), 0, 0.18, 0); r.rotation.x = Math.PI / 2; g.add(r);
+  } else {
+    const gold = pmat(0xffd24a, 0.45);
+    g.add(part(new THREE.CylinderGeometry(0.2, 0.18, 0.1, 12, 1, true), gold, 0, 0.0, 0));
+    for (let k = 0; k < 6; k++) g.add(part(new THREE.ConeGeometry(0.045, 0.13, 4), gold, Math.cos(k * 1.047) * 0.19, 0.1, Math.sin(k * 1.047) * 0.19));
+  }
   return g;
 }
 
@@ -326,7 +425,7 @@ function buildWeapon(w) {
 }
 
 function buildAvatar(p) {
-  const g = buildChar(p.c || 0, p.slot);
+  const g = buildChar(p.c || 0, p.slot, p.h || 0);
   const wg = buildWeapon(p.w || 0); wg.position.set(0.36, 0.85, 0.12); wg.rotation.x = 0.5; g.add(wg);
   const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
   const c = cv.getContext('2d');
@@ -549,6 +648,10 @@ function interpolate(dt, now) {
       p.avatar.userData.talk.visible = !!(p.flags & 2);
       if (p.swingT > 0) p.swingT = Math.max(0, p.swingT - dt);
       p.avatar.userData.weapon.rotation.x = 0.5 + (p.swingT > 0 ? Math.sin((1 - p.swingT / 0.28) * Math.PI) * 1.5 : 0);
+      const sp = Math.min(1, Math.hypot(p.tx - p.x, p.tz - p.z) * 2.2); p.walk = (p.walk || 0) + dt * (5 + sp * 9) * (sp > 0.05 ? 1 : 0);
+      const L = p.avatar.userData.limbs, sw = Math.sin(p.walk) * sp;
+      if (L) { L[0].rotation.x = sw * 0.9; L[1].rotation.x = -0.45 - sw * 0.25 - (p.swingT > 0 ? Math.sin((1 - p.swingT / 0.28) * Math.PI) * 1.1 : 0); L[2].rotation.x = -sw * 0.8; L[3].rotation.x = sw * 0.8; }
+      p.avatar.position.y = Math.abs(Math.sin(p.walk)) * 0.04 * sp;
     }
   });
   for (let i = 0; i < view.monsters.length; i++) {
@@ -557,6 +660,7 @@ function interpolate(dt, now) {
     m.x += (m.tx - m.x) * k; m.z += (m.tz - m.z) * k; m.rot = lerpAngle(m.rot, m.trot, Math.min(1, dt * 8));
     m.group.position.set(m.x, Math.sin(now * (m.chase ? 14 : 5) + i) * 0.05, m.z);
     m.group.rotation.y = m.rot;
+    if (m.arms) { const sw = Math.sin(now * (m.chase ? 11 : 3.5) + i); m.arms[0].rotation.x = m.chase ? -1.25 + sw * 0.25 : sw * 0.35; m.arms[1].rotation.x = m.chase ? -1.25 - sw * 0.25 : -sw * 0.35; }
   }
   for (let i = 0; i < view.items.length; i++) {
     const it = view.items[i];
@@ -567,6 +671,8 @@ function interpolate(dt, now) {
 }
 
 function atmosphere(L, dt) {
+  const hidNow = me.alive && !me.running && (W.lockers || []).some(function (q) { return Math.hypot(q[0] - me.x, q[1] - me.z) < 1.4; });
+  $('hideTag').classList.toggle('hide', !hidNow);
   let dist = 1e9, chase = false;
   for (let i = 0; i < view.monsters.length; i++) {
     const m = view.monsters[i];
@@ -717,7 +823,7 @@ RR.Game = {
   /** 選單／大廳換地圖時，背景跟著換 */
   showMap: function (i) { if (!ready || active) return; W.setMap(i); if (builtMap !== W.mapIndex) buildLevel(); },
   /** 選單裡的造型預覽 */
-  preview: function (canvas, c, w) {
+  preview: function (canvas, c, w, h) {
     if (!ready) return;
     if (!pv) {
       try {
@@ -731,7 +837,7 @@ RR.Game = {
       } catch (e) { pv = null; return; }
     }
     if (pv.model) pv.sc.remove(pv.model);
-    const g = buildChar(c, 0), wg = buildWeapon(w);
+    const g = buildChar(c, 0, h || 0), wg = buildWeapon(w);
     wg.position.set(0.36, 0.85, 0.12); wg.rotation.x = 0.5; g.add(wg);
     pv.model = g; pv.sc.add(g);
   },
@@ -757,9 +863,9 @@ RR.Game = {
     list.forEach(function (r) {
       seen[r.id] = true;
       let p = view.players.get(r.id);
-      if (p && (p.name !== r.name || p.slot !== r.slot || p.c !== r.c || p.w !== r.w)) { if (p.avatar) scene.remove(p.avatar); view.players.delete(r.id); p = null; }
+      if (p && (p.name !== r.name || p.slot !== r.slot || p.c !== r.c || p.w !== r.w || (p.h || 0) !== (r.h || 0))) { if (p.avatar) scene.remove(p.avatar); view.players.delete(r.id); p = null; }
       if (!p) {
-        p = { id: r.id, name: r.name, slot: r.slot, c: r.c || 0, w: r.w || 0, swingT: 0, x: W.VAN[0], z: W.VAN[1], yaw: 0, tx: W.VAN[0], tz: W.VAN[1], tyaw: 0, alive: true, bagN: 0, flags: 0, avatar: null, row: null, fresh: true };
+        p = { id: r.id, name: r.name, slot: r.slot, c: r.c || 0, w: r.w || 0, h: r.h || 0, swingT: 0, x: W.VAN[0], z: W.VAN[1], yaw: 0, tx: W.VAN[0], tz: W.VAN[1], tyaw: 0, alive: true, bagN: 0, flags: 0, avatar: null, row: null, fresh: true };
         if (r.id !== myId) { p.avatar = buildAvatar(p); p.avatar.visible = false; }
         else setViewWeapon(p.w);
         view.players.set(r.id, p);

@@ -71,6 +71,7 @@ const KINDS = [
 
 const CHARS = ['回收員', '機器人', '太空人', '貓貓', '南瓜頭', '紙箱人'];
 const WEAPONS = ['鐵管', '扳手', '球棒', '平底鍋', '雨傘', '鹹魚'];
+const HATS = ['無', '安全帽', '頭燈', '天線', '光環', '皇冠'];   // 頭飾（純外觀）
 const pick = (v, n) => { v = Math.floor(+v); return v >= 0 && v < n ? v : 0; };
 
 const isWall = (c, r) => r < 0 || c < 0 || r >= ROWS || c >= COLS || MAP[r][c] === '#';
@@ -118,6 +119,7 @@ function bfs(sc, sr, gc, gr) {
   return path.reverse();
 }
 
+let LOCKERS = [];
 const SPAWN_OFF = [[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]];
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -146,7 +148,7 @@ Sim.prototype.addPlayer = function (id, name, look) {
   let slot = 0;
   while (this.players.some(function (p) { return p.slot === slot; })) slot++;
   look = look || {};
-  const p = { id: id, name: String(name || '玩家').slice(0, 12), slot: slot, c: pick(look.c, CHARS.length), w: pick(look.w, WEAPONS.length), x: VAN[0], z: VAN[1], yaw: 0,
+  const p = { id: id, name: String(name || '玩家').slice(0, 12), slot: slot, c: pick(look.c, CHARS.length), w: pick(look.w, WEAPONS.length), h: pick(look.h, HATS.length), x: VAN[0], z: VAN[1], yaw: 0,
     run: false, loud: false, spk: false, alive: true, bag: [], hp: 100, atkCd: 0, hurtT: 99, earned: 0, kills: 0 };
   this.players.push(p);
   return p;
@@ -159,7 +161,7 @@ Sim.prototype.removePlayer = function (id) {
   if (this.phase === 'play' && !this.players.some(function (q) { return q.alive; })) this._end(false, 'dead');
 };
 Sim.prototype.roster = function () {
-  return this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, c: p.c, w: p.w }; });
+  return this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, c: p.c, w: p.w, h: p.h || 0 }; });
 };
 
 Sim.prototype.startDay = function (day) {
@@ -356,8 +358,10 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   let best = null, bd = 1e9, bestSees = false;
   for (let i = 0; i < alive.length; i++) {
     const p = alive[i], d = Math.hypot(p.x - m.x, p.z - m.z) * (p.c === 5 ? 1.33 : 1) * (p.stealthT > 0 ? 2 : 1);   // 紙箱人較難被發現
+    // 躲在櫃子旁（1.4 公尺內、沒有在跑）：怪物看不到，除非牠已經貼到 2.5 公尺內
+    const hid = !p.run && d > 2.5 && LOCKERS.some(function (k) { return Math.hypot(k[0] - p.x, k[1] - p.z) < 1.4; });
     const inSmoke = (this.smokes || []).some(function (k) { return Math.hypot(k.x - p.x, k.z - p.z) < 3; });   // 站在煙裡怪物看不到
-    const sees = !(p.hideT > 0) && !inSmoke && d < 30 && los(m.x, m.z, p.x, p.z);
+    const sees = !(p.hideT > 0) && !inSmoke && !hid && d < 30 && los(m.x, m.z, p.x, p.z);
     const hears = (p.run && d < 22) || (p.loud && d < 18) || (p.bag.length >= 3 && d < 40);   // 身上集滿 3 件會把怪物引過來
     if ((sees || hears) && d < bd) { best = p; bd = d; bestSees = sees; }
   }
@@ -523,7 +527,7 @@ Sim.prototype.snapshot = function () {
 };
 
 const api = { MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
-  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, isWall: isWall, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
+  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, HATS: HATS, isWall: isWall, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
   quotaFor: quotaFor, Sim: Sim, setMap: setMap };
 
 /** 切換目前地圖（碰撞、視線、尋路都跟著換）。房主與每位玩家各自呼叫。 */
@@ -542,6 +546,25 @@ function setMap(i) {
   // 離起點最遠的出生點先用
   MONSTER_CELLS.sort(function (a, b) { return (Math.abs(b[0] - startCell[0]) + Math.abs(b[1] - startCell[1])) - (Math.abs(a[0] - startCell[0]) + Math.abs(a[1] - startCell[1])); });
   VAN = center(startCell[0], startCell[1]);
+  // 櫃子（躲藏點）：先放死巷（三面牆），不夠再放轉角（兩面相鄰的牆）；貼牆放、彼此至少隔 3 格、離起點 4 格以上，最多 6 個
+  LOCKERS = [];
+  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]], cellsUsed = [];
+  const tryLocker = function (fc, wantOpen) {
+    if (LOCKERS.length >= 6) return;
+    const c = fc[0], r = fc[1];
+    if (MAP[r][c] !== '.' || Math.abs(c - startCell[0]) + Math.abs(r - startCell[1]) < 4) return;
+    const open = DIRS.filter(function (d) { return !isWall(c + d[0], r + d[1]); });
+    if (open.length !== wantOpen) return;
+    if (wantOpen === 2 && open[0][0] === -open[1][0] && open[0][1] === -open[1][1]) return;   // 直走廊不是轉角
+    if (cellsUsed.some(function (u) { return Math.abs(u[0] - c) + Math.abs(u[1] - r) < 3; })) return;
+    const wd = DIRS.filter(function (d) { return isWall(c + d[0], r + d[1]); })[0], p = center(c, r);
+    const back = wantOpen === 1 ? [-open[0][0], -open[0][1]] : wd;
+    LOCKERS.push([p[0] + back[0] * (CS / 2 - 0.45), p[1] + back[1] * (CS / 2 - 0.45), Math.atan2(-back[0], -back[1])]);
+    cellsUsed.push([c, r]);
+  };
+  floorCells.forEach(function (fc) { tryLocker(fc, 1); });
+  floorCells.forEach(function (fc) { tryLocker(fc, 2); });
+  api.lockers = LOCKERS;
   api.MAP = MAP; api.ROWS = ROWS; api.COLS = COLS; api.VAN = VAN; api.floorCells = floorCells; api.mapIndex = i;
   api.theme = MAPS[i].theme; api.mapName = MAPS[i].name; api.monsterCells = MONSTER_CELLS;
   return i;
