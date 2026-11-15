@@ -4,7 +4,7 @@
 const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx, Auth = RR.Auth, Game = RR.Game;
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrHelp', 'scrLobby', 'scrResult'];
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrLobby', 'scrResult'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -283,7 +283,7 @@ function leave() {
   Game.setActive(false); Game.setRoster([]);
   document.body.classList.remove('solo');
   $('chat').classList.add('hide'); chatOpen(false);
-  $('confirm').classList.add('hide');
+  $('confirm').classList.add('hide'); $('scrHelp').classList.add('hide');
   Game.showMap(myMap());
   if (Auth.user()) showMenu(); else show('scrLogin');
 }
@@ -482,8 +482,20 @@ function bind() {
   $('pickBtn').addEventListener('click', function () { show('scrPick'); });
   $('pickDone').addEventListener('click', function () { showMenu(); });
   $('pickOk').addEventListener('click', function () { showMenu(); });
-  $('helpBtn').addEventListener('click', function () { show('scrHelp'); });
-  $('helpDone').addEventListener('click', function () { showMenu(); });
+  // 說明頁：主題選單 → 單一主題；遊戲中也能從右上角「說明」打開（蓋在遊戲上，關掉就回到遊戲）
+  const helpList = function () { $('helpTopic').classList.add('hide'); document.querySelector('#scrHelp .helpBody').classList.remove('hide'); };
+  const helpOpen = function () { helpList(); $('scrHelp').classList.remove('hide'); $('scrHelp').scrollTop = 0; try { if (document.exitPointerLock) document.exitPointerLock(); } catch (e) {} };
+  const helpClose = function () { if (!$('helpTopic').classList.contains('hide')) { helpList(); return; } $('scrHelp').classList.add('hide'); };
+  $('helpBtn').addEventListener('click', helpOpen);
+  $('hudHelp').addEventListener('click', helpOpen);
+  $('helpDone').addEventListener('click', helpClose);
+  $('helpBack').addEventListener('click', helpList);
+  Array.prototype.forEach.call(document.querySelectorAll('#helpMenu .hrow'), function (b) {
+    b.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('#helpTopic .htopic'), function (t) { t.classList.toggle('hide', t.dataset.topic !== b.dataset.topic); });
+      document.querySelector('#scrHelp .helpBody').classList.add('hide'); $('helpTopic').classList.remove('hide'); $('scrHelp').scrollTop = 0;
+    });
+  });
   $('tutNext').addEventListener('click', function () { if (tutI < TUT.length - 1) tutShow(tutI + 1); else tutDone(); });
   $('tutSkip').addEventListener('click', tutDone);
   $('tutAgain').addEventListener('click', function () { tutShow(0); });

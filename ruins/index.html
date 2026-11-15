@@ -27,6 +27,7 @@
     <button id="micBtn" type="button">麥克風</button>
     <button id="chatBtn" type="button">聊天</button>
     <button id="miniBtn" type="button">小遊戲</button>
+    <button id="hudHelp" type="button">說明</button>
     <button id="leaveBtn" type="button">離開</button>
   </div>
   <div id="spec" class="hide">觀戰中：<b id="specName"></b>（點畫面切換）</div>
@@ -142,28 +143,92 @@
       <label class="field">音效音量<input id="setSfx" type="range" min="0" max="1" step="0.05"></label>
       <label class="field">背景音樂<input id="setMusic" type="range" min="0" max="1" step="0.05"></label>
       <label class="field">語音音量<input id="setVoice" type="range" min="0" max="1.5" step="0.05"></label>
-      <div class="sec">玩法說明</div>
-      <ul class="tips">
-        <li>背景音樂會隨局勢變化：大廳平靜、怪物靠近變緊張、被追逐時強烈，過關與失敗各有提示音。聽不到音樂時，請確認手機沒有開靜音模式（iPhone 側邊的靜音鍵）並調高媒體音量。</li>
-        <li>畫面左上的進度條代表今天的收入目標；過關依表現給 1～3 顆星（超過目標 30%、剩 60 秒以上各加一顆）。</li>
-        <li>地圖上有藍色櫃子（小地圖上的藍點）：站在旁邊不要跑，怪物就看不到你（貼得太近還是會被抓）。</li>
-        <li>過關會拿到金幣和經驗；金幣可以在「出戰角色」解鎖頭飾，每日任務完成會另外給金幣（進度存在這台裝置上）。</li>
-        <li>主選單點「出戰角色」可以換角色、攻擊物與地圖；遊戲中按右上角「小遊戲」（電腦按 G）會開啟小遊戲選擇頁。</li>
-        <li>手機：左半邊拖曳移動、右半邊拖曳轉視角、按住「跑」奔跑、按「打」揮武器、「跳」跳躍、「衝」衝刺。</li>
-        <li>身法：跳躍耗 18% 體力，人在空中時怪物抓不到你；衝刺會往移動方向瞬間衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒。</li>
-        <li>地圖共 7 張：廢棄設施、大倉庫、地下水道、辦公室是室內；海邊、城市、太空站是開放場景，有天空和陽光。</li>
-        <li>電腦：WASD 移動、滑鼠轉視角、Shift 奔跑、空白鍵跳、C 衝刺、滑鼠左鍵或 F 揮武器、M 開關麥克風、Enter 聊天、Esc 釋放滑鼠、E 按住救援倒地隊友、Q 丟煙霧彈（場上會冒出一團煙約 6 秒：站在煙裡怪物看不到你，附近隊友的畫面會變模糊；冷卻 20 秒，按鈕會顯示秒數）。</li>
-        <li>左側小地圖會顯示你的位置與方向、隊友和回收車（點一下放大）；怪物靠近到 14 公尺內才會以三角形顯示（顏色代表種類，正在追人時會閃白圈）；廢料不會顯示。</li>
-        <li>怪物看得到你，也聽得到跑步聲和太大聲的麥克風；身上集滿 3 件廢料時，附近怪物會被引過來。</li>
-        <li>集滿 3 件廢料後，附近會出現傳送陣，踩上去就能傳回基地。</li>
-        <li>怪物靠近時會有恐怖低鳴；非常近時會出現「發現你了！」字幕。</li>
-        <li>怪物有四種：紅色是火（追逐較快）、藍色是冰（靠近減速）、綠色是毒（緩慢，靠近會持續扣血，最低留 1 點）、紫色是暗影（追逐更快）。第 6 天起會出現四隻。</li>
-        <li>角色技能（電腦按 R、手機按「技」）：回收員「鼓舞」6 公尺內隊友加速 5 秒；機器人「護盾」4 秒內不會被抓；太空人「月光波」7 公尺內怪物暫停 3 秒；貓貓「潛行」6 秒內怪物較難發現你；南瓜頭「加血」回復 35；紙箱人「隱身」4 秒內怪物看不到你。</li>
-        <li>地圖上有一座獎盃，站在旁邊按住 E 3 秒就能搶到，團隊 +120。</li>
-        <li>遊戲中按「小遊戲」→ 選「圈圈叉叉」就能玩：前兩位落子的人分別是 X 與 O，連成一線團隊 +150。</li>
-        <li>沒有廢料時移動速度會略快；長按跑會明顯加速。</li>
-        <li>兩下可以打死隊友，他身上的廢料會掉在原地（房主可在大廳關閉）。手機：右下角「救」按住救援倒地隊友，「煙」丟煙霧彈。</li>
-      </ul>
+      <div class="sec">玩法說明 · 選一個主題</div>
+      <div id="helpMenu">
+        <button class="hrow" type="button" data-topic="goal"><span class="hico">🎯</span><span class="htxt"><b>目標與流程</b><small>撿廢料、賣錢、達成當天目標</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="ctrl"><span class="hico">🎮</span><span class="htxt"><b>操作方式</b><small>手機按鈕與電腦按鍵對照</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="mon"><span class="hico">👾</span><span class="htxt"><b>怪物</b><small>四種怪物與牠怎麼發現你</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="safe"><span class="hico">🛡</span><span class="htxt"><b>保命方法</b><small>技能、煙霧彈、櫃子、跳與衝、救隊友</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="char"><span class="hico">🧑‍🚀</span><span class="htxt"><b>角色技能</b><small>六個角色的技能與特色</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="map"><span class="hico">🗺</span><span class="htxt"><b>地圖與小地圖</b><small>7 張地圖、小地圖上的標記</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="bonus"><span class="hico">🎲</span><span class="htxt"><b>加分與小遊戲</b><small>獎盃、圈圈叉叉、傳送陣</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="grow"><span class="hico">⭐</span><span class="htxt"><b>星等與成長</b><small>星星、金幣、每日任務、頭飾</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="team"><span class="hico">🔊</span><span class="htxt"><b>語音與隊友</b><small>麥克風、聊天、互相傷害、沒聲音時</small></span><span class="go">›</span></button>
+      </div>
+    </div>
+    <div id="helpTopic" class="hide">
+      <section class="htopic hide" data-topic="goal"><h2><span class="hico">🎯</span>目標與流程</h2>
+<ul><li>在時間內把廢料帶回<b>金色回收車</b>，賺到當天的目標金額就過關。</li>
+<li>走近發亮的廢料會自動撿起，背包最多 <b>3 件</b>；走回回收車自動賣出。</li>
+<li>畫面上方的箭頭指向回收車，左上的進度條是今天的進度。</li>
+<li>背包是空的時候走得比較快；背越多越慢。</li>
+<li>每過一天，目標更高、怪物更快；第 6 天起有 4 隻怪物。</li></ul>
+      </section>
+      <section class="htopic hide" data-topic="ctrl"><h2><span class="hico">🎮</span>操作方式</h2>
+<h3>手機</h3>
+<table><tr><td>移動</td><td>左半邊拖曳</td></tr><tr><td>轉視角</td><td>右半邊拖曳</td></tr>
+<tr><td><kbd>跑</kbd></td><td>按住奔跑</td></tr><tr><td><kbd>跳</kbd> <kbd>衝</kbd></td><td>跳躍、衝刺</td></tr>
+<tr><td><kbd>技</kbd> <kbd>煙</kbd></td><td>角色技能、煙霧彈</td></tr><tr><td><kbd>打</kbd> <kbd>救</kbd></td><td>揮武器、按住救隊友</td></tr></table>
+<h3>電腦</h3>
+<table><tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>移動（滑鼠轉視角）</td></tr><tr><td><kbd>Shift</kbd></td><td>奔跑</td></tr>
+<tr><td><kbd>空白鍵</kbd> <kbd>C</kbd></td><td>跳躍、衝刺</td></tr><tr><td><kbd>R</kbd> <kbd>Q</kbd></td><td>角色技能、煙霧彈</td></tr>
+<tr><td><kbd>左鍵</kbd> / <kbd>F</kbd></td><td>揮武器</td></tr><tr><td><kbd>E</kbd></td><td>按住救隊友、搶獎盃</td></tr>
+<tr><td><kbd>G</kbd></td><td>小遊戲</td></tr><tr><td><kbd>M</kbd> <kbd>Enter</kbd></td><td>麥克風、聊天</td></tr><tr><td><kbd>Esc</kbd></td><td>釋放滑鼠</td></tr></table>
+      </section>
+      <section class="htopic hide" data-topic="mon"><h2><span class="hico">👾</span>怪物</h2>
+<table><tr><td><i class="dot" style="background:#ff5a2a"></i>火</td><td>追得比較快</td></tr>
+<tr><td><i class="dot" style="background:#5ad0ff"></i>冰</td><td>靠近牠你會變慢</td></tr>
+<tr><td><i class="dot" style="background:#8cff5a"></i>毒</td><td>走得慢，靠近會持續扣血（最低留 1）</td></tr>
+<tr><td><i class="dot" style="background:#b070ff"></i>暗影</td><td>追得更快</td></tr></table>
+<ul><li>怪物<b>看得到</b>你，也<b>聽得到</b>跑步聲和太大聲的麥克風。</li>
+<li>背包滿 3 件時，附近的怪物會被引過來。</li>
+<li>心跳聲變快代表牠在附近；出現「發現你了！」就快跑。</li>
+<li>怪物靠近到 14 公尺內，小地圖才會出現牠的三角形。</li></ul>
+      </section>
+      <section class="htopic hide" data-topic="safe"><h2><span class="hico">🛡</span>保命方法</h2>
+<ul><li><b>櫃子</b>（小地圖藍點）：站在旁邊不要跑，怪物看不到你；貼太近還是會被抓。</li>
+<li><b>煙霧彈</b>：冒出一團煙約 6 秒，站在煙裡怪物看不到你。冷卻 20 秒。</li>
+<li><b>跳</b>：人在空中時抓不到你，耗 18% 體力。</li>
+<li><b>衝</b>：瞬間往前衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒。</li>
+<li><b>技能</b>：每個角色不同，見「角色技能」。按鈕上的數字是冷卻秒數。</li>
+<li><b>救隊友</b>：隊友倒地時靠近按住「救」2 秒。</li></ul>
+      </section>
+      <section class="htopic hide" data-topic="char"><h2><span class="hico">🧑‍🚀</span>角色技能</h2>
+<table><tr><td>回收員</td><td><b>鼓舞</b>　6 公尺內隊友加速 5 秒</td></tr>
+<tr><td>機器人</td><td><b>護盾</b>　4 秒內不會被抓；攻擊力高</td></tr>
+<tr><td>太空人</td><td><b>月光波</b>　7 公尺內怪物暫停 3 秒；速度 +5%</td></tr>
+<tr><td>貓貓</td><td><b>潛行</b>　6 秒內較難被發現；速度 +10%</td></tr>
+<tr><td>南瓜頭</td><td><b>加血</b>　回復 35；揮擊較快</td></tr>
+<tr><td>紙箱人</td><td><b>隱身</b>　4 秒內怪物看不到你</td></tr></table>
+<ul><li>在主選單點「出戰角色」更換角色、攻擊物和頭飾。</li></ul>
+      </section>
+      <section class="htopic hide" data-topic="map"><h2><span class="hico">🗺</span>地圖與小地圖</h2>
+<ul><li><b>室內</b>：廢棄設施、大倉庫、地下水道、辦公室。</li>
+<li><b>開放場景</b>：海邊、城市、太空站，有天空和陽光。</li>
+<li>在「出戰角色」選地圖；房主也能在大廳切換。</li></ul>
+<h3>小地圖（點一下放大）</h3>
+<table><tr><td>白色箭頭</td><td>你的位置與方向</td></tr><tr><td>彩色圓點</td><td>隊友</td></tr>
+<tr><td>金色方塊</td><td>回收車</td></tr><tr><td>藍色方塊</td><td>櫃子（躲藏點）</td></tr><tr><td>彩色三角</td><td>靠近的怪物（閃白圈代表正在追人）</td></tr></table>
+      </section>
+      <section class="htopic hide" data-topic="bonus"><h2><span class="hico">🎲</span>加分與小遊戲</h2>
+<ul><li><b>獎盃</b>：地圖上有一座金色獎盃，站旁按住「救」／E 3 秒，團隊 +120。</li>
+<li><b>圈圈叉叉</b>：遊戲中按「小遊戲」。前兩位落子的人是 X 與 O，連成一線團隊 +150。</li>
+<li><b>傳送陣</b>：背包滿 3 件後附近會出現，踩上去直接傳回回收車。</li></ul>
+      </section>
+      <section class="htopic hide" data-topic="grow"><h2><span class="hico">⭐</span>星等與成長</h2>
+<ul><li>過關給 <b>1～3 顆星</b>：超過目標 30%、剩 60 秒以上各加一顆。</li>
+<li>過關拿<b>金幣</b>和<b>經驗</b>，經驗會提升等級。</li>
+<li>主選單有 3 個<b>每日任務</b>，完成另外給金幣。</li>
+<li>金幣可在「出戰角色」解鎖<b>頭飾</b>，隊友也看得到。</li>
+<li>進度只存在這台裝置上。</li></ul>
+      </section>
+      <section class="htopic hide" data-topic="team"><h2><span class="hico">🔊</span>語音與隊友</h2>
+<ul><li>隊友語音音量固定，不會因為距離變小聲。</li>
+<li>麥克風太大聲會引來怪物，按鈕會變紅提醒。</li>
+<li>打隊友兩下會把他打倒，身上的廢料掉在原地；房主可在大廳關閉。</li>
+<li><b>聽不到聲音</b>：檢查手機靜音鍵（iPhone 側邊）並調高媒體音量。</li></ul>
+      </section>
+      <div class="col"><button class="btn" id="helpBack" type="button">‹ 回到主題選單</button></div>
     </div>
   </div>
 </div>
