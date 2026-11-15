@@ -27,10 +27,55 @@ function say(text) { $('msgText').textContent = text; $('msg').classList.remove(
 function busy(on, text) { $('busyText').textContent = text || '請稍候…'; $('busy').classList.toggle('hide', !on); }
 function cleanName(n) { return String(n || '').replace(/\s+/g, ' ').trim().slice(0, 12) || '玩家'; }
 function myName() { const u = Auth.user(); return cleanName(u ? u.name : '玩家'); }
+/* ---------- 配件與寶石 ---------- */
+const ACC_COST = [0, 80, 120, 100, 150, 100, 200];
+function myEquip(p) {
+  let a = []; try { a = JSON.parse(ls('rr_eq') || '[]'); } catch (e) {}
+  return (Array.isArray(a) ? a : []).filter(function (v, i, arr) { return p.acc.indexOf(v) >= 0 && arr.indexOf(v) === i; }).slice(0, 2);
+}
+function pushEquip(eq) {
+  lsSet('rr_eq', JSON.stringify(eq));
+  if (!S.mode || !S.sim && S.mode !== 'client') return;
+  if (S.mode === 'client') Net.send({ t: 'eq', eq: eq, gems: prog().gems });
+  else { const me = S.sim.player(S.myId); S.sim.setEquip(S.myId, eq); if (me) me.gems = prog().gems.slice(); hostBroadcast(S.mode === 'solo' ? { t: 'roster', code: null, hostId: 'me', mode: S.sim.mode, players: S.sim.roster() } : rosterMsg()); }
+}
+function renderGear() {
+  const p = prog(), eq = myEquip(p);
+  $('coinTag4').textContent = p.coins; $('eqCount').textContent = eq.length;
+  const mk = function (cls, title, note, tag, fn) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'grow' + cls;
+    const t = document.createElement('span'); t.className = 'htxt'; const tb = document.createElement('b'); tb.textContent = title; const ts = document.createElement('small'); ts.textContent = note;
+    t.appendChild(tb); t.appendChild(ts); const e = document.createElement('em'); e.textContent = tag; b.appendChild(t); b.appendChild(e); b.addEventListener('click', fn); return b;
+  };
+  const al = $('accList'); al.textContent = '';
+  for (let i = 1; i < W.ACCS.length; i++) (function (i) {
+    const own = p.acc.indexOf(i) >= 0, on = eq.indexOf(i) >= 0;
+    al.appendChild(mk(on ? ' on' : '', W.ACCS[i], W.ACC_NOTE[i], on ? '已裝備' : own ? '裝備' : ACC_COST[i] + ' 金幣', function () {
+      const q = prog(); let e2 = myEquip(q);
+      if (q.acc.indexOf(i) < 0) {
+        if (q.coins < ACC_COST[i]) { say('金幣不夠：「' + W.ACCS[i] + '」要 ' + ACC_COST[i] + ' 金幣，你有 ' + q.coins + '。'); return; }
+        q.coins -= ACC_COST[i]; q.acc.push(i); progSave(q);
+        if (e2.length < 2) { e2.push(i); pushEquip(e2); }
+      } else if (e2.indexOf(i) >= 0) { e2 = e2.filter(function (v) { return v !== i; }); pushEquip(e2); }
+      else { if (e2.length >= 2) e2.shift(); e2.push(i); pushEquip(e2); }
+      renderGear(); renderProg();
+    }));
+  })(i);
+  const gl = $('gemList'); gl.textContent = '';
+  W.GEMS.forEach(function (g, i) {
+    const lv = p.gems[i], cost = 40 * (lv + 1);
+    gl.appendChild(mk(lv ? ' on' : '', g + '　Lv.' + lv, W.GEM_NOTE[i], lv >= 5 ? '已滿級' : '升級 ' + cost, function () {
+      const q = prog(); if (q.gems[i] >= 5) return;
+      const c = 40 * (q.gems[i] + 1);
+      if (q.coins < c) { say('金幣不夠：升級要 ' + c + ' 金幣，你有 ' + q.coins + '。'); return; }
+      q.coins -= c; q.gems[i]++; progSave(q); pushEquip(myEquip(q)); renderGear(); renderProg();
+    }));
+  });
+}
 function myLook() {
   const p = prog(), n = function (k) { return parseInt(ls(k) || '0', 10) || 0; }, own = function (cat, v) { return p.own[cat].indexOf(v) >= 0 ? v : 0; };
   const h = n('rr_h');
-  return { c: n('rr_c'), w: n('rr_w'), h: p.hats.indexOf(h) >= 0 ? h : 0, o: own('o', n('rr_o')), pet: own('pet', n('rr_pet')) };
+  return { c: n('rr_c'), w: n('rr_w'), h: p.hats.indexOf(h) >= 0 ? h : 0, o: own('o', n('rr_o')), pet: own('pet', n('rr_pet')), eq: myEquip(p), gems: p.gems };
 }
 // 只影響自己畫面的造型：回收品、怪物、彈道
 function applyLocalSkins() {
@@ -97,6 +142,8 @@ function prog() {
   if (!Array.isArray(p.hats)) p.hats = [0];
   if (!p.own || typeof p.own !== 'object') p.own = {};
   ['o', 'pet', 'is', 'ms', 'fx'].forEach(function (k) { if (!Array.isArray(p.own[k])) p.own[k] = [0]; });
+  if (!Array.isArray(p.acc)) p.acc = [];
+  if (!Array.isArray(p.gems) || p.gems.length !== 3) p.gems = [0, 0, 0];
   if (p.day !== today() || !Array.isArray(p.m)) { p.day = today(); p.m = [0, 0, 0]; p.done = [false, false, false]; }
   if (!Array.isArray(p.done)) p.done = [false, false, false];
   return p;
@@ -285,6 +332,7 @@ function wireNet() {
       else if (d.t === 'chat') hostChat(from, d.text);
       else if (d.t === 'atk') S.sim.attack(from, d.yaw);
       else if (d.t === 'gun') S.sim.shoot(from, d.yaw);
+      else if (d.t === 'eq') { const pl = S.sim.player(from); if (pl && S.sim.setEquip(from, d.eq)) { if (Array.isArray(d.gems)) pl.gems = [0, 1, 2].map(function (k) { return Math.max(0, Math.min(5, d.gems[k] | 0)); }); hostBroadcast(rosterMsg()); } }
       else if (d.t === 'bye') { Net.drop(from); hostRemove(from); }
     } else if (S.mode === 'client') { S.lastHost = Date.now(); dispatch(d); }
   });
@@ -318,7 +366,7 @@ async function joinRoom() {
   await Voice.init(false);   // 不主動要求麥克風（會打斷 Discord 等其他通話）；要講話再按遊戲裡的「麥克風」
   const u = Auth.user();
   const look = myLook();
-  Net.join(code, { name: myName(), uid: u ? u.uid : '', c: look.c, w: look.w, h: look.h, o: look.o, pet: look.pet }, function (err, id) {
+  Net.join(code, { name: myName(), uid: u ? u.uid : '', c: look.c, w: look.w, h: look.h, o: look.o, pet: look.pet, eq: look.eq, gems: look.gems }, function (err, id) {
     busy(false);
     if (err) { say(netErr(err)); return; }
     S.mode = 'client'; S.myId = id; S.lastHost = Date.now();
@@ -347,7 +395,7 @@ function leave() {
   Game.setActive(false); Game.setRoster([]);
   document.body.classList.remove('solo');
   $('chat').classList.add('hide'); chatOpen(false);
-  $('confirm').classList.add('hide'); $('scrHelp').classList.add('hide');
+  $('confirm').classList.add('hide'); $('scrHelp').classList.add('hide'); $('scrGear').classList.add('hide');
   Game.showMap(myMap());
   if (Auth.user()) showMenu(); else show('scrLogin');
 }
@@ -571,6 +619,9 @@ function bind() {
     b.appendChild(t); b.appendChild(u); b.addEventListener('click', function () { if (wheelBusy) return; wheelI = k; $('wheelMsg').textContent = ''; wheelDraw(); });
     $('wheelSel').appendChild(b);
   });
+  const openGear = function () { renderGear(); $('scrGear').classList.remove('hide'); $('scrGear').scrollTop = 0; try { if (document.exitPointerLock) document.exitPointerLock(); } catch (e) {} };
+  $('gearOpen').addEventListener('click', openGear); $('hudGear').addEventListener('click', openGear);
+  $('gearDone').addEventListener('click', function () { $('scrGear').classList.add('hide'); });
   const openWheel = function () { wheelDraw(); show('scrWheel'); };
   $('wheelOpen').addEventListener('click', openWheel); $('wheelOpen2').addEventListener('click', openWheel);
   $('wheelDone').addEventListener('click', function () { if (!wheelBusy) showMenu(); });

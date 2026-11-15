@@ -309,6 +309,16 @@ body.btnedit #run, body.btnedit #atk, body.btnedit #gun, body.btnedit #rescue, b
 #wheelMsg { text-align: center; min-height: 22px; font-size: 16px; }
 .wsel .card { min-height: 46px; }
 @media (orientation: landscape) and (max-height: 520px) { .cards.c3.wsel { grid-template-columns: repeat(4, 1fr); } #wheelBox { width: 220px; height: 220px; } #wheel span i { top: -100px; } }
+.mode.gear { grid-column: 1 / -1; min-height: 0; background: linear-gradient(135deg, #4fd1c5, #2b7a9b); border-color: rgba(255,255,255,.35); }
+.mode.gear span { color: rgba(255,255,255,.9); }
+#scrGear { z-index: 26; background: linear-gradient(180deg, #4f7be0 0%, #2f55b8 38%, #22408f 100%); align-items: flex-start; }
+#accList, #gemList { display: flex; flex-direction: column; gap: 8px; }
+.grow { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 13px; font: inherit; text-align: left; color: var(--ink); cursor: pointer; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.22); border-radius: 12px; }
+.grow.on { border-color: var(--g); background: rgba(255,214,120,.26); box-shadow: 0 0 0 1px var(--g) inset; }
+.grow .htxt b { font-size: 15px; } .grow .htxt small { white-space: normal; }
+.grow em { flex: none; font-style: normal; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,.25); color: #ffe39a; }
+.grow.on em { background: var(--g); color: #1b1305; }
+.grow:active { transform: scale(.98); }
 /* ---------- 說明：主題選單 ---------- */
 #helpMenu { display: flex; flex-direction: column; gap: 8px; }
 .hrow { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; font: inherit; text-align: left; color: var(--ink); cursor: pointer;
