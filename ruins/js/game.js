@@ -205,7 +205,7 @@ function buildLevel() {
   }
   level = new THREE.Group(); builtMap = W.mapIndex;
   const COLS = W.COLS, ROWS = W.ROWS, MAP = W.MAP, T = W.theme, VAN = W.VAN;
-  scene.fog.density = T.fog; if (ambient) ambient.color.setHex(T.amb);
+  scene.fog.density = T.fog * 0.55; if (ambient) ambient.color.setHex(T.amb);   // 霧調淡，場景比較亮
   const floorTex = makeTex(T.floor, '0,0,0', false); floorTex.repeat.set(COLS, ROWS);
   const ceilTex = makeTex(T.ceil, '0,0,0', false); ceilTex.repeat.set(COLS, ROWS);
   const wallTex = makeTex(T.wall, '20,20,20', true);
@@ -579,7 +579,7 @@ function atmosphere(L, dt) {
   $('vig').style.opacity = (danger * danger * 0.9).toFixed(2);
   beatT -= dt;
   if (danger > 0.12 && beatT <= 0) { Sfx.tone(58, 0.16, 'sine', 0.1 + danger * 0.3, 38); beatT = 1.15 - danger * 0.8; }
-  torch.intensity = dist < 9 ? 1.7 * (Math.random() < 0.25 ? 0.25 : 1) : 1.7;
+  torch.intensity = dist < 9 ? 2.2 * (Math.random() < 0.25 ? 0.25 : 1) : 2.2;
   // 回收車方向
   const rel = Math.atan2(-(W.VAN[0] - L.x), -(W.VAN[1] - L.z)) - L.yaw;
   $('arrow').style.transform = 'rotate(' + (-rel).toFixed(3) + 'rad)';
@@ -662,7 +662,7 @@ function frame(nowMs) {
     RR.Music.setMood('menu');
     camera.position.set(W.VAN[0], 1.65, W.VAN[1]);
     camera.rotation.set(0, -Math.PI * 0.75 + Math.sin(now * 0.3) * 0.5, 0);
-    torch.intensity = 1.7;
+    torch.intensity = 2.2;
   }
   voiceSpatial(playing, lastL);
   hudT -= dt; if (hudT <= 0) { hudT = 0.15; tickHud(); }
@@ -681,10 +681,11 @@ RR.Game = {
     try { renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true }); } catch (e) { return false; }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000);
-    scene.fog = new THREE.FogExp2(0x000000, 0.075);
+    scene.fog = new THREE.FogExp2(0x0a0f0d, 0.04);
     camera = new THREE.PerspectiveCamera(75, 1, 0.1, 80); camera.rotation.order = 'YXZ'; scene.add(camera);
-    ambient = new THREE.AmbientLight(0x4a5568, 0.28); scene.add(ambient);
-    torch = new THREE.SpotLight(0xfff0cc, 1.7, 30, 0.55, 0.55, 1.4);
+    ambient = new THREE.AmbientLight(0x4a5568, 0.95); scene.add(ambient);
+    scene.add(new THREE.HemisphereLight(0xcfd8e6, 0x3a3f3a, 0.45));
+    torch = new THREE.SpotLight(0xfff0cc, 2.2, 42, 0.62, 0.55, 1.2);
     torch.position.set(0.25, -0.2, 0); camera.add(torch); camera.add(torch.target); torch.target.position.set(0, -0.05, -1);
     buildLevel();
     for (let i = 0; i < 4; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));

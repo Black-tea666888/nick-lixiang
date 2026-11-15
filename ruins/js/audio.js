@@ -15,7 +15,7 @@ function ctx() {
       voiceGain = ac.createGain(); voiceGain.connect(master);
     } catch (e) { ac = null; return null; }
   }
-  if (ac.state === 'suspended') { try { ac.resume(); } catch (e) {} }
+  if (ac.state !== 'running') { try { ac.resume(); } catch (e) {} }   // iOS 也會出現 interrupted
   return ac;
 }
 
@@ -173,7 +173,7 @@ const Music = (function () {
     const c = ctx();
     if (!c) return false;
     if (!out) {
-      lpf = c.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 750;
+      lpf = c.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 2200;
       out = c.createGain(); out.gain.value = 0;
       lpf.connect(out); out.connect(master);
       nextT = c.currentTime + 0.2;
@@ -217,8 +217,12 @@ const Music = (function () {
   function bar(n, t) {
     const ch = CHORDS[n % 4], len = BEAT * 4;
     const tense = mood === 'tense' || mood === 'chase', chase = mood === 'chase';
-    ch.forEach(function (f) { note(f, t, len * 2, 'triangle', 0.035, 2.5); });        // 鋪底音
-    note(ch[0] / 2, t, len, 'sine', 0.14, 0.4);                                        // 低音
+    ch.forEach(function (f) { note(f, t, len * 2, 'triangle', 0.035, 2.5); note(f * 2, t, len * 2, 'triangle', 0.03, 2.5); });   // 鋪底音（加高八度，手機喇叭才聽得到）
+    // 中音旋律：分解和弦，手機喇叭聽得到的音域
+    const mel = [ch[0] * 4, ch[2] * 4, ch[1] * 4, ch[2] * 4, ch[0] * 8, ch[2] * 4, ch[1] * 4, ch[2] * 4];
+    const stepN = chase ? 8 : tense ? 8 : 4;
+    for (let k = 0; k < stepN; k++) note(mel[(k * (8 / stepN)) % 8], t + k * (len / stepN), (len / stepN) * 1.6, 'triangle', 0.055, 0.03);
+    note(ch[0] / 2, t, len, 'sine', 0.14, 0.4); note(ch[0], t, len, 'triangle', 0.05, 0.4);                                        // 低音
     note(ch[0] / 2, t + len / 2, len / 2, 'sine', 0.09, 0.3);
     if (tense) for (let b = 0; b < 4; b++) { kick(t + b * BEAT); if (b % 2 === 1) hat(t + b * BEAT + BEAT / 2); }
     if (chase) {                                                                       // 追逐：不協和刺音
@@ -230,14 +234,15 @@ const Music = (function () {
   function tick() {
     if (!ac || !out) return;
     const now = ac.currentTime;
-    out.gain.setTargetAtTime(mood === 'off' ? 0 : vol * (LEVEL[mood] || 0) * 0.45, now, 0.5);
-    lpf.frequency.setTargetAtTime(mood === 'chase' ? 1700 : mood === 'tense' ? 1100 : 750, now, 0.8);
+    out.gain.setTargetAtTime(mood === 'off' ? 0 : vol * (LEVEL[mood] || 0) * 0.9, now, 0.5);
+    lpf.frequency.setTargetAtTime(mood === 'chase' ? 3200 : mood === 'tense' ? 2600 : 2200, now, 0.8);
     if (nextT < now) nextT = now + 0.1;   // 分頁被暫停後不要一次補播
     while (nextT < now + 0.5) { bar(step, nextT); step++; nextT += BEAT * 4; }
   }
 
   return {
     setMood: function (m) { mood = m; if (ac) ensure(); },
+    kick: function () { ctx(); ensure(); },
     setVolume: function (v) { vol = Math.max(0, Math.min(1, +v)); },
     sting: function (kind) {
       if (!ensure()) return;
@@ -249,5 +254,8 @@ const Music = (function () {
 })();
 Sfx.drone = function () {};   // 舊的低頻嗡嗡聲改由背景音樂負責
 RR.Music = Music;
+// 任何一次點擊或觸控都嘗試啟動／恢復聲音（手機瀏覽器要有手勢才會出聲）
+['touchend', 'click', 'keydown'].forEach(function (ev) { window.addEventListener(ev, function () { Music.kick(); }, { passive: true }); });
+document.addEventListener('visibilitychange', function () { if (!document.hidden && ac) ctx(); });
 RR.Sfx = Sfx; RR.Voice = Voice;
 })();
