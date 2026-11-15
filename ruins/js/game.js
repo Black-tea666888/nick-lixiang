@@ -212,6 +212,16 @@ function drawMini(L) {
     g.fillStyle = CSSCOL[p.slot % 4];
     g.beginPath(); g.arc(p.x * k, p.z * k, MC * 0.38, 0, Math.PI * 2); g.fill();
   });
+  // 怪物：依種類上色（火紅、冰藍、毒綠、暗影紫），追人時外圈閃爍
+  const MC_COL = ['#ff5a2a', '#5ad0ff', '#8cff5a', '#b070ff'];
+  for (let i = 0; i < view.monsters.length; i++) {
+    const m = view.monsters[i];
+    if (!m.group.visible) continue;
+    const mx = m.x * k, my = m.z * k;
+    if (m.chase && Math.floor(Date.now() / 250) % 2) { g.strokeStyle = '#ffffff'; g.lineWidth = 1.5; g.beginPath(); g.arc(mx, my, MC * 0.75, 0, Math.PI * 2); g.stroke(); }
+    g.fillStyle = MC_COL[i % 4]; g.strokeStyle = '#000'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(mx, my - MC * 0.55); g.lineTo(mx + MC * 0.5, my + MC * 0.4); g.lineTo(mx - MC * 0.5, my + MC * 0.4); g.closePath(); g.fill(); g.stroke();
+  }
   // 自己（或觀戰對象）：箭頭指向面對的方向
   const fx = -Math.sin(L.yaw), fz = -Math.cos(L.yaw), x = L.x * k, y = L.z * k, s = MC * 0.75;
   g.fillStyle = '#ffffff'; g.strokeStyle = '#000'; g.lineWidth = 1.5;
