@@ -34,9 +34,33 @@ function showMoon(x, z) {
   }, 50);
   Sfx.tone(880, 0.5, 'sine', 0.1, 440);
 }
-// 圈圈叉叉面板：站在棋盤旁邊才會出現
+// 煙霧彈：場景中冒出一團看得到的煙，約 6 秒後散掉
+function showCloud(x, z) {
+  const g = new THREE.Group(), puffs = [];
+  for (let i = 0; i < 9; i++) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.9 + Math.random() * 0.5, 10, 8), new THREE.MeshBasicMaterial({ color: 0xc9cdc4, transparent: true, opacity: 0, depthWrite: false, fog: false, side: THREE.DoubleSide }));
+    const a = Math.random() * 6.283, r = i ? 0.6 + Math.random() * 1.6 : 0;
+    m.position.set(Math.cos(a) * r, 0.7 + Math.random() * 1.3, Math.sin(a) * r); g.add(m); puffs.push(m);
+  }
+  g.position.set(x, 0, z); g.scale.set(0.2, 0.2, 0.2); scene.add(g);
+  const t0 = Date.now();
+  const id = setInterval(function () {
+    const t = (Date.now() - t0) / 1000;
+    const s = Math.min(1, 0.2 + t * 1.6), o = t < 0.5 ? t * 1.3 : t > 5 ? Math.max(0, (6 - t) * 0.65) : 0.65;
+    g.scale.set(s, s, s); g.rotation.y += 0.01;
+    puffs.forEach(function (m) { m.material.opacity = o; });
+    if (t >= 6) { clearInterval(id); scene.remove(g); puffs.forEach(function (m) { m.geometry.dispose(); m.material.dispose(); }); }
+  }, 50);
+  Sfx.noise(0.5, 0.14);
+}
+function trySmoke() {
+  if (!canControl()) return;
+  const left = Math.ceil((smEnd - Date.now()) / 1000);
+  if (left > 0) { toast('煙霧彈冷卻中，還要 ' + left + ' 秒'); return; }
+  smQ = true;
+}
 // 小遊戲獨立頁面：先選小遊戲，再進圈圈叉叉棋盤
-let miniInPlay = false, skEnd = 0;
+let miniInPlay = false, skEnd = 0, smEnd = 0;
 function miniShowList(on) { $('miniList').classList.toggle('hide', !on); $('miniTTBox').classList.toggle('hide', on); }
 function openMini() {
   miniInPlay = canControl();
@@ -70,6 +94,8 @@ function trySkill() {
 function renderTT() {
   const left = Math.ceil((skEnd - Date.now()) / 1000), sb = $('skill'), txt = left > 0 ? String(left) : '技';
   if (sb.textContent !== txt) { sb.textContent = txt; sb.classList.toggle('cd', left > 0); }
+  const sl = Math.ceil((smEnd - Date.now()) / 1000), mb = $('smoke'), mt = sl > 0 ? String(sl) : '煙';
+  if (mb.textContent !== mt) { mb.textContent = mt; mb.classList.toggle('cd', sl > 0); }
   if ($('scrMini').classList.contains('hide')) return;
   if (miniInPlay && !canControl()) { closeMini(); return; }
   if ($('miniTTBox').classList.contains('hide') || !view.tt) return;
@@ -356,7 +382,7 @@ function bindInput() {
     keys[e.code] = true;
     if (canControl() && e.code.indexOf('Arrow') === 0) e.preventDefault();
     if (active && e.code === 'KeyM') RR.Game.toggleMic();
-    if (e.code === 'KeyQ' && !e.repeat && canControl()) smQ = true;
+    if (e.code === 'KeyQ' && !e.repeat) trySmoke();
     if (e.code === 'KeyR' && !e.repeat) trySkill();
     if (e.code === 'KeyG' && !e.repeat && canControl() && !(e.target && /INPUT|TEXTAREA/.test(e.target.tagName))) { if ($('scrMini').classList.contains('hide')) openMini(); else closeMini(); }
     if (e.code === 'KeyF' || e.code === 'Space') { if (canControl()) { e.preventDefault(); attack(); } }
@@ -432,7 +458,8 @@ function bindInput() {
   rescueBtn.addEventListener('touchend', rescueOff, { passive: false }); rescueBtn.addEventListener('touchcancel', rescueOff, { passive: false });
   rescueBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   const smokeBtn = $('smoke');
-  smokeBtn.addEventListener('touchstart', function (e) { e.preventDefault(); if (canControl()) smQ = true; }, { passive: false });
+  smokeBtn.addEventListener('touchstart', function (e) { e.preventDefault(); trySmoke(); }, { passive: false });
+  smokeBtn.addEventListener('click', trySmoke);
   smokeBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   const skillBtn = $('skill');
   skillBtn.addEventListener('touchstart', function (e) { e.preventDefault(); trySkill(); }, { passive: false });
@@ -732,7 +759,7 @@ RR.Game = {
     buildPlist();
   },
   onDay: function (info) {
-    skEnd = 0;
+    skEnd = 0; smEnd = 0;
     W.setMap(info.map || 0);
     if (builtMap !== W.mapIndex) buildLevel();
     view.items.forEach(function (it) { scene.remove(it.mesh); });
@@ -865,7 +892,9 @@ RR.Game = {
       if (e.id === myId) { skEnd = Date.now() + 25000; toast('月光波！附近怪物暫停 3 秒'); }
       showMoon(e.x, e.z);
     } else if (e.t === 'smoke') {
-      if (e.id !== myId && me.alive && Math.hypot(e.x - me.x, e.z - me.z) < 6) showSmoke();
+      showCloud(e.x, e.z);
+      if (e.id === myId) { smEnd = Date.now() + 20000; toast('煙霧彈！煙裡的人怪物看不到'); }
+      else if (me.alive && Math.hypot(e.x - me.x, e.z - me.z) < 6) showSmoke();
     } else if (e.t === 'revive') {
       const p = view.players.get(e.id); if (p) p.alive = true;
       if (e.id === myId) { me.alive = true; me.hp = 50; hurtFlash = 0; Sfx.tone(520, 0.3, 'sine', 0.15, 780); toast('被隊友救起來了'); }
