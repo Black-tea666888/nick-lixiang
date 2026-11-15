@@ -352,6 +352,15 @@ function bindInput() {
   const atkBtn = $('atk');
   atkBtn.addEventListener('touchstart', function (e) { e.preventDefault(); attack(); }, { passive: false });
   atkBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  // 手機：救援（按住）與煙霧彈（按一下）
+  const rescueBtn = $('rescue');
+  const rescueOff = function (e) { e.preventDefault(); keys.KeyE = false; rescueBtn.classList.remove('on'); };
+  rescueBtn.addEventListener('touchstart', function (e) { e.preventDefault(); keys.KeyE = true; rescueBtn.classList.add('on'); }, { passive: false });
+  rescueBtn.addEventListener('touchend', rescueOff, { passive: false }); rescueBtn.addEventListener('touchcancel', rescueOff, { passive: false });
+  rescueBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  const smokeBtn = $('smoke');
+  smokeBtn.addEventListener('touchstart', function (e) { e.preventDefault(); if (canControl()) smQ = true; }, { passive: false });
+  smokeBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 }
 
 /* ---------- 每幀更新 ---------- */

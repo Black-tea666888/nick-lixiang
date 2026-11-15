@@ -49,6 +49,13 @@ body.solo #micBtn, body.solo #chatBtn { display: none; }
 #atk { position: fixed; right: 108px; bottom: 40px; width: 64px; height: 64px; border-radius: 50%; display: none; pointer-events: auto;
   border: 2px solid rgba(255,107,94,.7); background: rgba(255,107,94,.14); color: #ff6b5e; font: inherit; font-size: 16px; font-weight: 700; touch-action: none; }
 #atk:active { background: rgba(255,107,94,.45); }
+#rescue, #smoke { position: fixed; width: 58px; height: 58px; border-radius: 50%; display: none; pointer-events: auto; font: 700 16px sans-serif; color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3); }
+#rescue { right: 108px; bottom: 116px; }
+#smoke { right: 184px; bottom: 40px; }
+#rescue:active, #rescue.on { background: rgba(125,255,176,.4); }
+#smoke:active { background: rgba(200,200,190,.45); }
+body.touch.playing #rescue, body.touch.playing #smoke { display: block; }
+body.solo #rescue, body.solo #smoke { display: none !important; }
 body.touch.playing #run { display: block; }
 body.touch.playing #atk { display: block; }
 body.solo #atk { display: none !important; }
