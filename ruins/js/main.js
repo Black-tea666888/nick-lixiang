@@ -4,7 +4,16 @@
 const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx, Auth = RR.Auth, Game = RR.Game;
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#7dffb0', '#6ecbff', '#ffd166', '#ff7eb6'];
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrLobby', 'scrResult'];
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrHelp', 'scrLobby', 'scrResult'];
+// 角色資料：技能名、技能說明、屬性
+const CINFO = [
+  ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
+  ['護盾', '4 秒內不會被怪物抓到', '攻擊力高（一下 65）'],
+  ['月光波', '7 公尺內怪物暫停 3 秒', '移動速度 +5%'],
+  ['潛行', '6 秒內怪物較難發現你', '移動速度 +10%'],
+  ['加血', '回復 35 點生命', '揮擊速度較快'],
+  ['隱身', '4 秒內怪物看不到你', '平常就較不容易被怪物發現']
+];
 
 const S = { mode: null, pvp: true, map: 0, sim: null, myId: null, hostId: null, roster: [], timers: [], lastHost: 0, seen: {}, tickN: 0, lastTick: 0, chatRate: {}, flags: {} };
 
@@ -239,8 +248,9 @@ function leave() {
 
 /* ---------- 畫面 ---------- */
 function refreshPickSummary() {
-  const c = W.CHARS[((+ls('rr_c') || 0) % W.CHARS.length)], w = W.WEAPONS[((+ls('rr_w') || 0) % W.WEAPONS.length)], m = W.MAPS[myMap()];
+  const ci = (+ls('rr_c') || 0) % W.CHARS.length, c = W.CHARS[ci], w = W.WEAPONS[((+ls('rr_w') || 0) % W.WEAPONS.length)], m = W.MAPS[myMap()];
   $('pickSum').textContent = c + ' · ' + w + ' · ' + (m ? m.name : '');
+  $('avatar').textContent = c.charAt(0);
 }
 function showMenu() {
   const u = Auth.user();
@@ -364,29 +374,44 @@ function bind() {
     if (e.target && /INPUT|TEXTAREA|BUTTON/.test(e.target.tagName)) return;
     if (document.body.classList.contains('playing')) { e.preventDefault(); chatOpen(true); }
   });
-  // 造型選擇
+  // 造型選擇（卡片式）
   const look = myLook();
+  const cards = function (box, names, sub, onPick) {
+    const out = [];
+    names.forEach(function (n, i) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'card';
+      const t = document.createElement('b'); t.textContent = n; b.appendChild(t);
+      if (sub) { const u = document.createElement('span'); u.textContent = sub(i); b.appendChild(u); }
+      b.addEventListener('click', function () { onPick(i); });
+      box.appendChild(b); out.push(b);
+    });
+    return out;
+  };
+  const mark = function (list, i) { list.forEach(function (b, k) { b.classList.toggle('on', k === i); }); };
+  let mapSel = myMap();
+  const cBtns = cards($('cGrid'), W.CHARS, function (i) { return CINFO[i] ? CINFO[i][0] : ''; }, function (i) { look.c = i; showLook(); });
+  const wBtns = cards($('wGrid'), W.WEAPONS, null, function (i) { look.w = i; showLook(); });
+  const mBtns = cards($('mGrid'), W.MAPS.map(function (m) { return m.name; }), null, function (i) { mapSel = i; lsSet('rr_map', String(i)); showMapName(); Game.showMap(mapSel); });
   const showLook = function () {
     look.c = ((look.c % W.CHARS.length) + W.CHARS.length) % W.CHARS.length;
     look.w = ((look.w % W.WEAPONS.length) + W.WEAPONS.length) % W.WEAPONS.length;
-    $('cName').textContent = W.CHARS[look.c]; $('wName').textContent = W.WEAPONS[look.w];
+    const info = CINFO[look.c] || ['', '', ''];
+    $('cName').textContent = W.CHARS[look.c]; $('cSkill').textContent = info[0];
+    $('cDesc').textContent = info[1]; $('cAttr').textContent = '屬性：' + info[2];
+    mark(cBtns, look.c); mark(wBtns, look.w);
     lsSet('rr_c', String(look.c)); lsSet('rr_w', String(look.w));
     refreshPickSummary();
     Game.preview($('lookPrev'), look.c, look.w);
   };
-  let mapSel = myMap();
-  showMapName = function () { mapSel = myMap(); $('mName').textContent = W.MAPS[mapSel].name; refreshPickSummary(); };
-  const stepMap = function (d) { mapSel = (mapSel + d + W.MAPS.length) % W.MAPS.length; lsSet('rr_map', String(mapSel)); showMapName(); Game.showMap(mapSel); };
-  $('mPrev').addEventListener('click', function () { stepMap(-1); });
-  $('mNext').addEventListener('click', function () { stepMap(1); });
+  showMapName = function () { mapSel = myMap(); mark(mBtns, mapSel); refreshPickSummary(); };
   showMapName(); Game.showMap(mapSel);
-  $('cPrev').addEventListener('click', function () { look.c--; showLook(); });
-  $('cNext').addEventListener('click', function () { look.c++; showLook(); });
-  $('wPrev').addEventListener('click', function () { look.w--; showLook(); });
-  $('wNext').addEventListener('click', function () { look.w++; showLook(); });
   showLook();
   $('pickBtn').addEventListener('click', function () { show('scrPick'); });
   $('pickDone').addEventListener('click', function () { showMenu(); });
+  $('pickOk').addEventListener('click', function () { showMenu(); });
+  $('helpBtn').addEventListener('click', function () { show('scrHelp'); });
+  $('helpDone').addEventListener('click', function () { showMenu(); });
+  $('miniInfoBtn').addEventListener('click', function () { Game.openMini(); });
   // 設定
   const sens = parseFloat(ls('rr_sens') || '1'), sfx = parseFloat(ls('rr_sfx') || '0.8'), vv = parseFloat(ls('rr_voice') || '1');
   $('setSens').value = sens; $('setSfx').value = sfx; $('setVoice').value = vv; $('setMusic').value = ls('rr_music') || '0.6';

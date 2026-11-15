@@ -35,31 +35,51 @@ function showMoon(x, z) {
   Sfx.tone(880, 0.5, 'sine', 0.1, 440);
 }
 // 圈圈叉叉面板：站在棋盤旁邊才會出現
-function renderTT() {
-  if (!ttBox) {
-    ttBox = document.createElement('div');
-    ttBox.style.cssText = 'position:fixed;left:50%;top:14%;transform:translateX(-50%);z-index:22;background:rgba(10,12,16,.82);border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:10px;color:#fff;font:14px sans-serif;text-align:center;display:none';
-    ttSub = document.createElement('div'); ttSub.style.marginBottom = '6px'; ttBox.appendChild(ttSub);
-    const grid = document.createElement('div'); grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,56px);gap:4px;justify-content:center';
-    for (let i = 0; i < 9; i++) {
-      const b = document.createElement('button'); b.type = 'button'; b.dataset.i = i;
-      b.style.cssText = 'width:56px;height:56px;font:700 24px sans-serif;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:8px;pointer-events:auto';
-      b.addEventListener('click', function () { ttQ = i; });
-      b.addEventListener('touchstart', function (e) { e.preventDefault(); ttQ = i; }, { passive: false });
-      grid.appendChild(b);
-    }
-    ttBox.appendChild(grid); document.body.appendChild(ttBox);
+// 小遊戲獨立頁面：先選小遊戲，再進圈圈叉叉棋盤
+let miniInPlay = false, skEnd = 0;
+function miniShowList(on) { $('miniList').classList.toggle('hide', !on); $('miniTTBox').classList.toggle('hide', on); }
+function openMini() {
+  miniInPlay = canControl();
+  miniShowList(true);
+  $('scrMini').classList.remove('hide');
+  try { if (document.exitPointerLock) document.exitPointerLock(); } catch (err) {}
+}
+function closeMini() { $('scrMini').classList.add('hide'); miniInPlay = false; }
+function initMini() {
+  const grid = $('ttGrid');
+  for (let i = 0; i < 9; i++) {
+    const b = document.createElement('button'); b.type = 'button';
+    b.addEventListener('click', function () { if (canControl()) ttQ = i; });
+    grid.appendChild(b);
   }
-  const near = view.bp && view.tt && canControl() && Math.hypot(view.bp[0] - me.x, view.bp[1] - me.z) < 4.5;
-  ttBox.style.display = near ? 'block' : 'none';
-  if (!near) return;
-  const t = view.tt, cells = ttBox.querySelectorAll('button');
+  $('miniBtn').addEventListener('click', openMini);
+  $('miniClose').addEventListener('click', closeMini);
+  $('miniBack').addEventListener('click', function () { miniShowList(true); });
+  $('miniTT').addEventListener('click', function () {
+    if (!canControl()) { RR.UI.say('圈圈叉叉要在遊戲中玩：開始遊戲後，按右上角「小遊戲」（電腦按 G）。'); return; }
+    miniShowList(false);
+  });
+}
+// 技能：冷卻中按下會提示剩餘秒數
+function trySkill() {
+  if (!canControl()) return;
+  const left = Math.ceil((skEnd - Date.now()) / 1000);
+  if (left > 0) { toast('技能冷卻中，還要 ' + left + ' 秒'); return; }
+  skQ = true;
+}
+function renderTT() {
+  const left = Math.ceil((skEnd - Date.now()) / 1000), sb = $('skill'), txt = left > 0 ? String(left) : '技';
+  if (sb.textContent !== txt) { sb.textContent = txt; sb.classList.toggle('cd', left > 0); }
+  if ($('scrMini').classList.contains('hide')) return;
+  if (miniInPlay && !canControl()) { closeMini(); return; }
+  if ($('miniTTBox').classList.contains('hide') || !view.tt) return;
+  const t = view.tt, cells = $('ttGrid').children;
   for (let i = 0; i < 9; i++) {
     const c = t[0][i]; cells[i].textContent = c === '.' ? '' : c;
     cells[i].disabled = c !== '.' || t[4] !== null;
   }
-  const who = t[4] ? (t[4] === 'win' ? (t[5] + ' 獲勝！') : '平手') : (t[1] + ' 的回合' + (t[2] ? '' : '（等待玩家落子）'));
-  ttSub.textContent = '圈圈叉叉　' + who;
+  const who = t[4] ? (t[4] === 'win' ? (t[5] + ' 獲勝！6 秒後重新開始') : '平手，6 秒後重新開始') : (t[1] + ' 的回合' + (!t[2] ? '（還沒有人落子）' : !t[3] ? '（等另一位玩家加入）' : ''));
+  $('ttSub').textContent = who;
 }
 // 煙霧干擾：畫面模糊 5 秒
 function showSmoke() {
@@ -84,7 +104,7 @@ function showSub(text) {
   clearTimeout(subHide); subHide = setTimeout(function () { subEl.style.opacity = '0'; }, 2000);
 }
 const keys = {};
-let smQ = false, skQ = false, smokeT = null, padMesh = null, ttQ = null, trophyMesh = null, boardMesh = null, ttBox = null, ttSub = null;   // Q 丟煙霧彈（按一下送一次）
+let smQ = false, skQ = false, smokeT = null, padMesh = null, ttQ = null, trophyMesh = null, boardMesh = null;   // Q 丟煙霧彈（按一下送一次）
 const touch = { joyId: null, lookId: null, ox: 0, oy: 0, jx: 0, jy: 0, lx: 0, ly: 0, run: false };
 const settings = { sens: 1 };
 let specId = null, beatT = 0, toastT = 0, fullHintT = 0, loudT = 0, spk = false, hudT = 0, lastL = me, dragging = false;
@@ -337,7 +357,8 @@ function bindInput() {
     if (canControl() && e.code.indexOf('Arrow') === 0) e.preventDefault();
     if (active && e.code === 'KeyM') RR.Game.toggleMic();
     if (e.code === 'KeyQ' && !e.repeat && canControl()) smQ = true;
-    if (e.code === 'KeyR' && !e.repeat && canControl()) skQ = true;
+    if (e.code === 'KeyR' && !e.repeat) trySkill();
+    if (e.code === 'KeyG' && !e.repeat && canControl() && !(e.target && /INPUT|TEXTAREA/.test(e.target.tagName))) { if ($('scrMini').classList.contains('hide')) openMini(); else closeMini(); }
     if (e.code === 'KeyF' || e.code === 'Space') { if (canControl()) { e.preventDefault(); attack(); } }
   });
   window.addEventListener('keyup', function (e) { keys[e.code] = false; });
@@ -414,8 +435,10 @@ function bindInput() {
   smokeBtn.addEventListener('touchstart', function (e) { e.preventDefault(); if (canControl()) smQ = true; }, { passive: false });
   smokeBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   const skillBtn = $('skill');
-  skillBtn.addEventListener('touchstart', function (e) { e.preventDefault(); if (canControl()) skQ = true; }, { passive: false });
+  skillBtn.addEventListener('touchstart', function (e) { e.preventDefault(); trySkill(); }, { passive: false });
+  skillBtn.addEventListener('click', trySkill);
   skillBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  initMini();
 }
 
 /* ---------- 每幀更新 ---------- */
@@ -451,7 +474,6 @@ function updateMe(dt) {
   const fovT = wantRun ? 88 : 75;
   if (Math.abs(camera.fov - fovT) > 0.1) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   camera.position.set(me.x, 1.65 + (moving ? Math.sin(me.walkT * 2) * 0.045 : 0), me.z);
-  renderTT();
   camera.rotation.set(me.pitch, me.yaw, 0);
   $('stamBar').style.width = (me.stam * 100).toFixed(0) + '%';
   $('stam').className = me.tired ? 'tired' : '';
@@ -599,6 +621,7 @@ function frame(nowMs) {
   if (hurtFlash > 0) { hurtFlash = Math.max(0, hurtFlash - dt * 1.6); if (me.alive) $('flash').style.opacity = (hurtFlash * 0.5).toFixed(2); }
   if (playing) {
     let L;
+    renderTT();
     if (me.alive) { updateMe(dt); L = me; $('spec').classList.add('hide'); }
     else L = spectate();
     lastL = L;
@@ -623,6 +646,7 @@ function frame(nowMs) {
 
 /* ---------- 對外介面 ---------- */
 RR.Game = {
+  openMini: openMini,
   init: function () {
     if (ready) return true;
     if (!window.THREE) return false;
@@ -679,6 +703,7 @@ RR.Game = {
     document.body.classList.toggle('playing', active);
     $('hud').classList.toggle('hide', !active);
     if (!active) {
+      if (miniInPlay) closeMini();
       releaseTouch(); Sfx.drone(false);
       try { if (document.exitPointerLock) document.exitPointerLock(); } catch (e) {}
       $('vig').style.opacity = 0; $('flash').style.opacity = 0; $('spec').classList.add('hide');
@@ -707,6 +732,7 @@ RR.Game = {
     buildPlist();
   },
   onDay: function (info) {
+    skEnd = 0;
     W.setMap(info.map || 0);
     if (builtMap !== W.mapIndex) buildLevel();
     view.items.forEach(function (it) { scene.remove(it.mesh); });
@@ -821,17 +847,22 @@ RR.Game = {
       toast('圈圈叉叉平手，下一局開始');
     } else if (e.t === 'rally') {
       if (e.ids.indexOf(myId) >= 0 && e.id !== myId) { me.rallyT = 5; toast(nameOf(e.id) + ' 的鼓舞：移動加速'); }
-      else if (e.id === myId) { me.rallyT = 5; toast('鼓舞！附近隊友加速'); }
+      else if (e.id === myId) { me.rallyT = 5; skEnd = Date.now() + 25000; toast('鼓舞！附近隊友加速'); }
       Sfx.tone(600, 0.2, 'triangle', 0.12, 900);
     } else if (e.t === 'shield') {
+      if (e.id === myId) skEnd = Date.now() + 30000;
       if (e.id === myId) toast('護盾開啟，4 秒內不會被抓'); Sfx.tone(700, 0.3, 'sine', 0.1, 1000);
     } else if (e.t === 'stealth') {
+      if (e.id === myId) skEnd = Date.now() + 25000;
       if (e.id === myId) toast('潛行中，怪物較難發現你'); Sfx.tone(300, 0.3, 'sine', 0.08, 220);
     } else if (e.t === 'heal') {
+      if (e.id === myId) skEnd = Date.now() + 25000;
       if (e.id === myId) { me.hp = e.hp; $('hpBar').style.width = Math.max(0, me.hp) + '%'; toast('加血 +35'); } Sfx.tone(660, 0.2, 'sine', 0.1, 880);
     } else if (e.t === 'hide') {
+      if (e.id === myId) skEnd = Date.now() + 30000;
       if (e.id === myId) toast('隱身 4 秒，怪物看不到你'); Sfx.tone(180, 0.4, 'sine', 0.08, 120);
     } else if (e.t === 'moon') {
+      if (e.id === myId) { skEnd = Date.now() + 25000; toast('月光波！附近怪物暫停 3 秒'); }
       showMoon(e.x, e.z);
     } else if (e.t === 'smoke') {
       if (e.id !== myId && me.alive && Math.hypot(e.x - me.x, e.z - me.z) < 6) showSmoke();
