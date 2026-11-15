@@ -2,7 +2,7 @@
 (function (root) {
 'use strict';
 
-/* 地圖：# 牆、. 地板、S 回收車（起點）、M 怪物出生點（每張 3 個） */
+/* 地圖：# 牆、. 地板、S 回收車（起點）、M 怪物出生點（每張至少 3 個） */
 const MAPS = [
   { name: '廢棄設施', theme: { wall: '#5a5f58', floor: '#3a3d3f', ceil: '#232527', fog: 0.075, amb: 0x4a5568 }, rows: [
     '#####################',
@@ -56,6 +56,74 @@ const MAPS = [
     '#.#####.#.#####.#.#####.#',
     '#M......#.......#......M#',
     '#########################'
+  ] },
+  { name: '海邊', theme: { wall: '#8f8166', floor: '#c2ae78', ceil: '#000000', fog: 0.012, amb: 0xfff4e0, open: true, sky: 0x8fd0f5, style: 'beach', wallH: 2.3, sun: 0.55, torch: 0.15 }, rows: [
+    '#####################',
+    '#S........#........M#',
+    '#...................#',
+    '#..##.....#....##...#',
+    '#..#...........#....#',
+    '#......##...........#',
+    '#......#....##...#..#',
+    '#....M......#....#..#',
+    '#...........#.......#',
+    '#..#....##......##..#',
+    '#..##...#........#..#',
+    '#...................#',
+    '#.....#....##.......#',
+    '#M....#....#........#',
+    '#####################'
+  ] },
+  { name: '城市', theme: { wall: '#59616e', floor: '#3b3e44', ceil: '#000000', fog: 0.014, amb: 0xffe6c8, open: true, sky: 0xf2a56b, style: 'city', wallH: 3.6, sun: 0.5, torch: 0.5 }, rows: [
+    '#####################',
+    '#S..................#',
+    '#.##.##.###.##.##.#.#',
+    '#.##.##.###.##.##.#.#',
+    '#...................#',
+    '#.##.#..##.##.#.##..#',
+    '#.##.#..##.##.#.##.M#',
+    '#.........M.........#',
+    '#.##.##.#.##.##.#.#.#',
+    '#.##.##.#.##.##.#.#.#',
+    '#...................#',
+    '#.#.###.##.#.##.##..#',
+    '#.#.###.##.#.##.##..#',
+    '#M..................#',
+    '#####################'
+  ] },
+  { name: '太空站', theme: { wall: '#66727f', floor: '#3f4854', ceil: '#000000', fog: 0.006, amb: 0xdde8ff, open: true, sky: 0x04060d, style: 'space', wallH: 3.0, sun: 0.45, torch: 1.0 }, rows: [
+    '#####################',
+    '#S....#.......#.....#',
+    '#.....#.......#.....#',
+    '#..#.....###.....#..#',
+    '#..#.....#M#.....#..#',
+    '#...................#',
+    '###..##.......##..###',
+    '#....#....#....#....#',
+    '###..##.......##..###',
+    '#...................#',
+    '#..#.....#.#.....#..#',
+    '#..#.....###.....#..#',
+    '#.....#.......#.....#',
+    '#M....#.......#....M#',
+    '#####################'
+  ] },
+  { name: '辦公室', theme: { wall: '#b9c2c9', floor: '#5d6f84', ceil: '#cfd2cf', fog: 0.018, amb: 0xffffff, style: 'office', bright: 0.72, torch: 0.3 }, rows: [
+    '#####################',
+    '#S....#....#....#...#',
+    '#.....#....#....#...#',
+    '#.##.......#........#',
+    '#.....#.........#.M.#',
+    '###.###.##.###.######',
+    '#...................#',
+    '#.##.##.##.##.##.##.#',
+    '#...................#',
+    '###.####.###.###.####',
+    '#.....#....#....#...#',
+    '#..M..#.........#...#',
+    '#..........#........#',
+    '#.....#....#....#..M#',
+    '#####################'
   ] }
 ];
 const CS = 4, WH = 3.6;
@@ -229,7 +297,7 @@ Sim.prototype.setInput = function (id, m) {
   const x = +m.x, z = +m.z, yaw = +m.yaw;
   if (isFinite(x) && isFinite(z) && !blocked(x, z, 0.3)) { p.x = x; p.z = z; }
   if (isFinite(yaw)) p.yaw = yaw;
-  p.run = !!m.run; p.loud = !!m.loud;
+  p.run = !!m.run; p.loud = !!m.loud; p.air = !!m.air;
 };
 
 Sim.prototype._dropBag = function (p) {
@@ -407,7 +475,7 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   }
   for (let i = 0; i < alive.length; i++) {
     const p = alive[i];
-    if (p.alive && !(p.shieldT > 0) && Math.hypot(p.x - m.x, p.z - m.z) < 1.15) {
+    if (p.alive && !(p.shieldT > 0) && !p.air && Math.hypot(p.x - m.x, p.z - m.z) < 1.15) {   // 跳在空中時抓不到
       p.alive = false; p.run = p.loud = false;
       this.events.push({ t: 'caught', id: p.id, x: r2(m.x), z: r2(m.z) });
       this._dropBag(p);
@@ -516,7 +584,7 @@ Sim.prototype.snapshot = function () {
   for (let i = 0; i < this.items.length; i++) it += this.items[i].taken ? '1' : '0';
   return { t: 's', ph: this.phase, day: this.day, money: this.money, quota: this.quota, time: Math.round(this.time * 10) / 10,
     p: this.players.map(function (p) {
-      return [p.id, r2(p.x), r2(p.z), r2(p.yaw), p.alive ? 1 : 0, p.bag.length, (p.run ? 1 : 0) | (p.spk ? 2 : 0) | (p.loud ? 4 : 0), Math.round(p.hp)];
+      return [p.id, r2(p.x), r2(p.z), r2(p.yaw), p.alive ? 1 : 0, p.bag.length, (p.run ? 1 : 0) | (p.spk ? 2 : 0) | (p.loud ? 4 : 0) | (p.air ? 8 : 0), Math.round(p.hp)];
     }),
     pad: this.pad ? [r2(this.pad[0]), r2(this.pad[1])] : null,
     tr: this.trophy ? [r2(this.trophy[0]), r2(this.trophy[1])] : null,
@@ -564,6 +632,7 @@ function setMap(i) {
   };
   floorCells.forEach(function (fc) { tryLocker(fc, 1); });
   floorCells.forEach(function (fc) { tryLocker(fc, 2); });
+  floorCells.forEach(function (fc) { tryLocker(fc, 3); });   // 開放地圖轉角少：貼著單面牆也可以放
   api.lockers = LOCKERS;
   api.MAP = MAP; api.ROWS = ROWS; api.COLS = COLS; api.VAN = VAN; api.floorCells = floorCells; api.mapIndex = i;
   api.theme = MAPS[i].theme; api.mapName = MAPS[i].name; api.monsterCells = MONSTER_CELLS;
