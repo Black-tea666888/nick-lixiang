@@ -161,7 +161,7 @@ Sim.prototype.roster = function () {
 Sim.prototype.startDay = function (day) {
   this.map = setMap(this.map);
   const self = this, n = Math.max(1, this.players.length);
-  this.day = day; this.phase = 'play'; this.money = 0; this.time = DAY_TIME;
+  this.day = day; this.phase = 'play'; this.money = 0; this.time = DAY_TIME; this.pad = null;
   this.quota = quotaFor(day, n); this.events = [];
   // 物品：隨機放在離起點有段距離的格子
   const cands = floorCells.filter(function (c) {
@@ -264,6 +264,18 @@ Sim.prototype.attack = function (id, yaw) {
     this.events.push({ t: 'killed', id: best.id, by: id });
     this._dropBag(best);
   }
+};
+
+// 在離玩家 8～14 公尺的可走地板上找一格放傳送陣
+Sim.prototype._padSpot = function (p) {
+  const pool = [];
+  for (let i = 0; i < floorCells.length; i++) {
+    const c = center(floorCells[i][0], floorCells[i][1]);
+    const d = Math.hypot(c[0] - p.x, c[1] - p.z);
+    if (d >= 8 && d <= 14 && !blocked(c[0], c[1], 0.5)) pool.push(c);
+  }
+  if (!pool.length) return center(floorCells[0][0], floorCells[0][1]);
+  return pool[Math.floor(this.rng() * pool.length)];
 };
 
 Sim.prototype._pickWander = function (m) {
@@ -381,6 +393,16 @@ Sim.prototype.step = function (dt) {
   }
   for (let k = 0; k < alive.length; k++) {
     const p = alive[k];
+    // 傳送陣：身上集滿 3 件時，在附近隨機出現；踩上去會被傳回基地
+    if (!this.pad && p.bag.length >= BAG_MAX) {
+      this.pad = this._padSpot(p);
+      this.events.push({ t: 'pad', x: this.pad[0], z: this.pad[1] });
+    }
+    if (this.pad && Math.hypot(this.pad[0] - p.x, this.pad[1] - p.z) < 1.2) {
+      p.x = VAN[0]; p.z = VAN[1];
+      this.pad = null;
+      this.events.push({ t: 'warp', id: p.id, x: VAN[0], z: VAN[1] });
+    }
     if (p.bag.length && Math.hypot(VAN[0] - p.x, VAN[1] - p.z) < 1.9) {
       let sum = 0;
       for (let b = 0; b < p.bag.length; b++) sum += this.items[p.bag[b]].value;
@@ -401,6 +423,7 @@ Sim.prototype.snapshot = function () {
     p: this.players.map(function (p) {
       return [p.id, r2(p.x), r2(p.z), r2(p.yaw), p.alive ? 1 : 0, p.bag.length, (p.run ? 1 : 0) | (p.spk ? 2 : 0) | (p.loud ? 4 : 0), Math.round(p.hp)];
     }),
+    pad: this.pad ? [r2(this.pad[0]), r2(this.pad[1])] : null,
     m: this.monsters.map(function (m) { return [r2(m.x), r2(m.z), r2(m.rot), m.state === 'chase' ? 1 : 0]; }),
     it: it };
 };

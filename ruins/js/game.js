@@ -35,7 +35,7 @@ function showSub(text) {
   clearTimeout(subHide); subHide = setTimeout(function () { subEl.style.opacity = '0'; }, 2000);
 }
 const keys = {};
-let smQ = false, smokeT = null;   // Q 丟煙霧彈（按一下送一次）
+let smQ = false, smokeT = null, padMesh = null;   // Q 丟煙霧彈（按一下送一次）
 const touch = { joyId: null, lookId: null, ox: 0, oy: 0, jx: 0, jy: 0, lx: 0, ly: 0, run: false };
 const settings = { sens: 1 };
 let specId = null, beatT = 0, toastT = 0, fullHintT = 0, loudT = 0, spk = false, hudT = 0, lastL = me, dragging = false;
@@ -370,7 +370,7 @@ function updateMe(dt) {
   const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run) && moving && !me.tired;
   if (wantRun) { me.stam -= 0.26 * dt; if (me.stam <= 0) { me.stam = 0; me.tired = true; } }
   else { me.stam = Math.min(1, me.stam + 0.17 * dt); if (me.tired && me.stam > 0.35) me.tired = false; }
-  const speed = (wantRun ? 6.6 : 3.9) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05);   // 沒有回收物時移動速度 +5%
+  const speed = (wantRun ? 9.0 : 3.9) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05);   // 長按跑：明顯加速；沒有回收物時 +5%
   const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   const dx = (-sy * f + cy * s) * speed * dt, dz = (-cy * f - sy * s) * speed * dt;
   const R = 0.42;
@@ -382,6 +382,9 @@ function updateMe(dt) {
     if (Math.floor(me.walkT / Math.PI) !== before) Sfx.tone(wantRun ? 85 : 70, 0.06, 'sine', wantRun ? 0.09 : 0.045);
   }
   me.running = wantRun;
+  // 跑步時視野變寬，讓速度感更明顯
+  const fovT = wantRun ? 88 : 75;
+  if (Math.abs(camera.fov - fovT) > 0.1) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   camera.position.set(me.x, 1.65 + (moving ? Math.sin(me.walkT * 2) * 0.045 : 0), me.z);
   camera.rotation.set(me.pitch, me.yaw, 0);
   $('stamBar').style.width = (me.stam * 100).toFixed(0) + '%';
@@ -667,6 +670,13 @@ RR.Game = {
   },
   onSnapshot: function (s) {
     const prevSec = Math.ceil(view.time), prevMoney = view.money, prevBag = me.bagN;
+    // 傳送陣的顯示
+    if (s.pad && !padMesh) {
+      padMesh = new THREE.Mesh(new THREE.RingGeometry(0.6, 1.0, 40), new THREE.MeshBasicMaterial({ color: 0x66e0ff, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+      padMesh.rotation.x = -Math.PI / 2; padMesh.position.y = 0.05; scene.add(padMesh);
+    }
+    if (s.pad && padMesh) padMesh.position.set(s.pad[0], 0.05, s.pad[1]);
+    if (!s.pad && padMesh) { scene.remove(padMesh); padMesh = null; }
     view.phase = s.ph; view.day = s.day; view.money = s.money; view.quota = s.quota; view.time = s.time;
     for (let i = 0; i < s.p.length; i++) {
       const a = s.p[i], p = view.players.get(a[0]);
@@ -716,6 +726,12 @@ RR.Game = {
         $('flash').style.opacity = 0.85; setTimeout(function () { $('flash').style.opacity = 0; }, 900);
         toast('你被抓到了');
       } else { Sfx.tone(90, 0.5, 'sawtooth', 0.12, 45); toast(nameOf(e.id) + ' 被抓走了，身上的廢料掉在原地'); }
+    } else if (e.t === 'pad') {
+      toast('出現傳送陣！快去踩上去回基地');
+      Sfx.tone(660, 0.4, 'sine', 0.12, 990);
+    } else if (e.t === 'warp') {
+      if (e.id === myId) { me.x = e.x; me.z = e.z; toast('已傳回基地'); }
+      else { const p = view.players.get(e.id); if (p) { p.x = p.tx = e.x; p.z = p.tz = e.z; } }
     } else if (e.t === 'smoke') {
       if (e.id !== myId && me.alive && Math.hypot(e.x - me.x, e.z - me.z) < 6) showSmoke();
     } else if (e.t === 'revive') {
