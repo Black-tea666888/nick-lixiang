@@ -328,3 +328,9 @@ input[type=text]::placeholder { color: rgba(255,255,255,.6); }
 .hrow .go, .hero .go { color: #dfe6f5; }
 #ttGrid button { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); }
 #resStars i { color: rgba(255,255,255,.3); }
+/* 主選單等畫面：半透明，後面看得到會動的 3D 場景 */
+.screen { background: linear-gradient(180deg, rgba(79,123,224,.5) 0%, rgba(47,85,184,.62) 40%, rgba(34,64,143,.8) 100%); }
+#scrHelp { background: linear-gradient(180deg, #4f7be0 0%, #2f55b8 38%, #22408f 100%); }
+.topbar, .hero, .stage, #missions, #lobbyList, #resStats, .card, .hrow { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.panel h1, .panel .sub, .sec, .link, .note { text-shadow: 0 1px 6px rgba(10,22,60,.6); }
+.logo { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: #ffe39a !important; filter: none; text-shadow: 0 3px 14px rgba(10,22,60,.65), 0 0 22px rgba(255,200,90,.35); }

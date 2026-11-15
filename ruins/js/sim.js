@@ -192,7 +192,7 @@ const SPAWN_OFF = [[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]];
 const r2 = (v) => Math.round(v * 100) / 100;
 
 // 怪物種類（依序）：0 紅＝火（追逐較快）、1 藍＝冰（靠近減速）、2 綠＝毒（緩慢、靠近扣血）、3 紫＝暗影（追逐更快）
-const KIND_CHASE = [1.25, 1, 1, 1.15];
+const KIND_CHASE = [1.15, 1, 1, 1.08];
 const TT_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
 function newTT() { return { cells: ['', '', '', '', '', '', '', '', ''], x: null, o: null, turn: 'X', over: null, winner: null, timer: 0 }; }
 function quotaFor(day, n) { return 200 + 100 * day + 120 * (n - 1); }
@@ -266,7 +266,7 @@ Sim.prototype.startDay = function (day) {
     const p = center(mcell[0], mcell[1]);
     this.monsters.push({ x: p[0], z: p[1], rot: 0, state: 'wander', path: null, goal: null, lost: 0, repath: 0, cool: 0, target: null });
   }
-  this.chaseSpeed = Math.min(4.5 + 0.12 * (day - 1), 5.6);
+  this.chaseSpeed = Math.min(3.9 + 0.1 * (day - 1), 4.9);   // 跑步（9）一定甩得掉；走路（4.2）在後期甩不掉
   this.wanderSpeed = Math.min(2.1 + 0.05 * (day - 1), 2.8);
   this.players.forEach(function (p) {
     const o = SPAWN_OFF[p.slot % 4];
@@ -430,7 +430,7 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
     const hid = !p.run && d > 2.5 && LOCKERS.some(function (k) { return Math.hypot(k[0] - p.x, k[1] - p.z) < 1.4; });
     const inSmoke = (this.smokes || []).some(function (k) { return Math.hypot(k.x - p.x, k.z - p.z) < 3; });   // 站在煙裡怪物看不到
     const sees = !(p.hideT > 0) && !inSmoke && !hid && d < 30 && los(m.x, m.z, p.x, p.z);
-    const hears = (p.run && d < 22) || (p.loud && d < 18) || (p.bag.length >= 3 && d < 40);   // 身上集滿 3 件會把怪物引過來
+    const hears = (p.run && d < 12) || (p.loud && d < 18) || (p.bag.length >= 3 && d < 40);   // 身上集滿 3 件會把怪物引過來
     if ((sees || hears) && d < bd) { best = p; bd = d; bestSees = sees; }
   }
   const mc = cellOf(m.x, m.z);
@@ -441,7 +441,7 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
     m.lost += dt;
     const tp = this.player(m.target);
     if (m.lost < 1.5 && tp && tp.alive) m.goal = cellOf(tp.x, tp.z);
-    if (m.lost > 5 || !m.goal) { m.state = 'wander'; m.path = null; }
+    if (m.lost > 3.5 || !m.goal) { m.state = 'wander'; m.path = null; }
   }
 
   let tx, tz, direct = false;
