@@ -3,7 +3,7 @@
 'use strict';
 const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx, Auth = RR.Auth, Game = RR.Game;
 const $ = function (id) { return document.getElementById(id); };
-const CSSCOL = ['#7dffb0', '#6ecbff', '#ffd166', '#ff7eb6'];
+const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrHelp', 'scrLobby', 'scrResult'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -344,7 +344,7 @@ function tickLobby() {
 }
 // 新手教學：第一次開始遊戲時出現，之後可從「設定與說明」重看
 const TUT = [
-  ['目標', '在時間內把廢料帶回綠色回收車，賺到當天的目標金額。上方的進度條滿了就過關。'],
+  ['目標', '在時間內把廢料帶回金色回收車，賺到當天的目標金額。上方的進度條滿了就過關。'],
   ['撿與賣', '走近發亮的廢料就會撿起來，背包最多 3 件。走回回收車會自動賣掉。跟著畫面上方的箭頭就能找到回收車。'],
   ['怪物', '怪物看得到你，也聽得到跑步聲。聽到心跳聲變快就代表牠在附近。背包滿 3 件時牠會被引過來。'],
   ['保命工具', '「技」是角色技能、「煙」是煙霧彈（躲進煙裡怪物看不到你），按鈕上的數字是冷卻秒數。隊友倒地時按住「救」。']
