@@ -138,7 +138,10 @@ const GEM_NOTE = ['每級：槍傷害 +8%、擊暈 +0.2 秒', '每級：跑步�
 function cleanEq(a) { const out = []; (Array.isArray(a) ? a : []).forEach(function (v) { v = v | 0; if (v > 0 && v < ACCS.length && out.indexOf(v) < 0 && out.length < 2) out.push(v); }); return out; }
 function cleanGems(a) { const out = [0, 0, 0]; if (Array.isArray(a)) for (let i = 0; i < 3; i++) out[i] = Math.max(0, Math.min(5, a[i] | 0)); return out; }
 function hasAcc(p, k) { return !!p.eq && p.eq.indexOf(k) >= 0; }
-function bagCap(p) { return hasAcc(p, 2) ? BAG_MAX + 1 : BAG_MAX; }
+function bagCap(p) { return (hasAcc(p, 2) ? BAG_MAX + 1 : BAG_MAX) + (p.veh ? 2 : 0); }   // 推車上可以多放 2 件
+// 天氣：0 晴朗、1 下雨（開放場景；雨聲蓋過腳步，怪物聽力 ×0.7）、2 濃霧（怪物視線變短）、3 停電（室內；很暗，怪物視線變短）、4 沙塵暴／太陽風暴（開放場景；能見度低、小地圖不顯示怪物）
+const WEATHERS = ['晴朗', '下雨', '濃霧', '停電', '風暴'];
+const WX_SIGHT = [1, 1.15, 2.1, 1.6, 1.9], WX_HEAR = [1, 0.7, 1, 1, 0.85];
 function maxHp(p) { return hasAcc(p, 4) ? 130 : 100; }
 const KINDS = [
   { n: '齒輪', lo: 25, hi: 45 }, { n: '電池', lo: 40, hi: 70 }, { n: '銅線圈', lo: 60, hi: 95 },
@@ -292,6 +295,19 @@ Sim.prototype.startDay = function (day) {
     if (day === 1) { p.earned = 0; p.kills = 0; p.mk = 0; }
   });
   this.zone = null;
+  // 天氣與天然災害（第 1 天固定晴朗、沒有災害；大逃殺不啟用）
+  const openMap = !!MAPS[this.map].theme.open;
+  this.weather = 0; this.disT = -1; this.strikes = [];
+  if (!br && day > 1) {
+    const r = this.rng();
+    this.weather = r < 0.35 ? 0 : r < 0.6 ? 2 : openMap ? (r < 0.82 ? 1 : 4) : 3;
+    this.disT = 60 + this.rng() * 100;   // 剩餘時間到這個秒數時發生
+    this.disKind = this.rng() < 0.5 ? 'quake' : 'strike';
+  }
+  // 載具：回收車旁的推車（大逃殺沒有）
+  this.players.forEach(function (p) { p.veh = false; });
+  const vs = br ? null : this._spotAt(VAN[0], VAN[1], 2.5, 6);
+  this.veh = vs ? { x: vs[0], z: vs[1], rider: null } : null;
   if (br) this._startBR();
   return self.dayInfo();
 };
@@ -299,7 +315,7 @@ Sim.prototype.dayInfo = function () {
   const spawns = {};
   this.players.forEach(function (p) { spawns[p.id] = [p.x, p.z]; });
   return { t: 'day', map: this.map, mode: this.mode, day: this.day, quota: this.quota, time: this.time, monsters: this.monsters.length,
-    items: this.items.map(function (i) { return [i.x, i.z, i.kind, i.value]; }), spawns: spawns, zone: this.zone ? [this.zone.x, this.zone.z, this.zone.r0] : null };
+    items: this.items.map(function (i) { return [i.x, i.z, i.kind, i.value]; }), spawns: spawns, weather: this.weather || 0, zone: this.zone ? [this.zone.x, this.zone.z, this.zone.r0] : null };
 };
 Sim.prototype.toLobby = function () { this.phase = 'lobby'; this.day = 1; this.events = []; this.zone = null; this.players = this.players.filter(function (p) { return !p.ai; }); };
 
@@ -316,7 +332,7 @@ Sim.prototype.setInput = function (id, m) {
   const x = +m.x, z = +m.z, yaw = +m.yaw;
   if (isFinite(x) && isFinite(z) && !blocked(x, z, 0.3)) { p.x = x; p.z = z; }
   if (isFinite(yaw)) p.yaw = yaw;
-  p.run = !!m.run; p.loud = !!m.loud; p.air = !!m.air;
+  p.run = !!m.run; p.loud = !!m.loud; p.air = !!m.air; if (m.vh) p.vq = true;
 };
 
 Sim.prototype._dropBag = function (p) {
@@ -618,12 +634,15 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   if (m.cool > 0) { m.cool -= dt; return; }
   let best = null, bd = 1e9, bestSees = false;
   for (let i = 0; i < alive.length; i++) {
-    const p = alive[i], d = Math.hypot(p.x - m.x, p.z - m.z) * (p.c === 5 ? 1.33 : 1) * (p.stealthT > 0 ? 2 : 1);   // 紙箱人較難被發現
+    const wx = this.weather || 0, hf = WX_HEAR[wx];
+    const p = alive[i], d = Math.hypot(p.x - m.x, p.z - m.z) * (p.c === 5 ? 1.33 : 1) * (p.stealthT > 0 ? 2 : 1) * WX_SIGHT[wx];   // 紙箱人較難被發現；壞天氣怪物看不遠
     // 躲在櫃子旁（1.4 公尺內、沒有在跑）：怪物看不到，除非牠已經貼到 2.5 公尺內
     const hid = !p.run && d > 2.5 && LOCKERS.some(function (k) { return Math.hypot(k[0] - p.x, k[1] - p.z) < 1.4; });
     const inSmoke = (this.smokes || []).some(function (k) { return Math.hypot(k.x - p.x, k.z - p.z) < 3; });   // 站在煙裡怪物看不到
     const sees = !(p.hideT > 0) && !inSmoke && !hid && d < 30 && los(m.x, m.z, p.x, p.z);
-    const hears = (p.run && d < (hasAcc(p, 5) ? 7 : 12)) || (p.loud && d < 18) || (p.bag.length >= bagCap(p) && d < 40);   // 身上集滿 3 件會把怪物引過來
+    const dh = d / WX_SIGHT[wx];
+    const hears = (p.veh && dh < 20 * hf) || (p.run && dh < (hasAcc(p, 5) ? 7 : 12) * hf) || (p.loud && dh < 18 * hf) ||   // 推車很吵
+      (p.bag.length >= bagCap(p) && d < 40);   // 身上集滿 3 件會把怪物引過來
     if ((sees || hears) && d < bd) { best = p; bd = d; bestSees = sees; }
   }
   const mc = cellOf(m.x, m.z);
@@ -697,6 +716,42 @@ Sim.prototype.step = function (dt) {
     if (this.mode !== 'br' && p.hurtT > 5 && p.hp < maxHp(p)) p.hp = Math.min(maxHp(p), p.hp + 6 * dt);   // 5 秒沒受傷後慢慢回血
   }
   if (this.mode === 'br') { this._stepBR(dt, alive); return; }
+  // 天然災害
+  if (this.disT > 0 && this.time <= this.disT) {
+    this.disT = -1;
+    if (this.disKind === 'quake') {   // 地震：怪物站不穩 3 秒，玩家畫面搖晃並變慢（由各自裝置處理）
+      this.monsters.forEach(function (mo) { mo.cool = Math.max(mo.cool, 3); });
+      this.events.push({ t: 'quake', dur: 4 });
+    } else {                         // 落石／隕石：玩家附近 6 個落點，2.5 秒後砸下
+      const pts = [], self2 = this;
+      for (let k = 0; k < 6 && alive.length; k++) {
+        const q = alive[k % alive.length], sp = this._spotAt(q.x, q.z, k < alive.length ? 0 : 2.5, k < alive.length ? 2.5 : 9) || [q.x, q.z];   // 每位玩家腳邊一顆，其餘散在附近
+        pts.push([r2(sp[0]), r2(sp[1])]); self2.strikes.push({ x: sp[0], z: sp[1], t: 2.5 });
+      }
+      this.events.push({ t: 'strike', pts: pts, delay: 2.5 });
+    }
+  }
+  for (let i = this.strikes.length - 1; i >= 0; i--) {
+    const st = this.strikes[i]; st.t -= dt;
+    if (st.t > 0) continue;
+    this.strikes.splice(i, 1);
+    for (let k = 0; k < alive.length; k++) { const p = alive[k]; if (p.alive && !(p.shieldT > 0) && Math.hypot(p.x - st.x, p.z - st.z) < 2.5) { p.hp = Math.max(1, p.hp - 40); p.hurtT = 0; this.events.push({ t: 'hit', id: p.id, by: null, hp: Math.round(p.hp) }); } }
+    this.monsters.forEach(function (mo) { if (Math.hypot(mo.x - st.x, mo.z - st.z) < 2.5) mo.cool = Math.max(mo.cool, 3); });
+    this.events.push({ t: 'boom', x: r2(st.x), z: r2(st.z) });
+  }
+  // 載具：按「車」上下推車
+  if (this.veh) {
+    const v = this.veh;
+    for (let k = 0; k < this.players.length; k++) {
+      const p = this.players[k];
+      if (p.veh && !p.alive) { p.veh = false; v.rider = null; }
+      if (!p.vq) continue;
+      p.vq = false;
+      if (p.veh) { p.veh = false; v.rider = null; this.events.push({ t: 'veh', id: p.id, on: false }); }
+      else if (p.alive && !v.rider && Math.hypot(p.x - v.x, p.z - v.z) < 2.4) { p.veh = true; v.rider = p.id; this.events.push({ t: 'veh', id: p.id, on: true }); }
+    }
+    if (v.rider) { const rp = this.player(v.rider); if (rp && rp.veh) { v.x = rp.x; v.z = rp.z; } else v.rider = null; }
+  }
   // 救援：按住 E 站在倒地隊友 2 公尺內 2 秒，把隊友救起（血量 50，身上廢料留在原地）
   for (let k = 0; k < alive.length; k++) {
     const p = alive[k];
@@ -786,6 +841,7 @@ Sim.prototype.snapshot = function () {
     p: this.players.map(function (p) {
       return [p.id, r2(p.x), r2(p.z), r2(p.yaw), p.alive ? 1 : 0, p.bag.length, (p.run ? 1 : 0) | (p.spk ? 2 : 0) | (p.loud ? 4 : 0) | (p.air ? 8 : 0), Math.round(p.hp), p.ammo || 0, p.reload > 0 ? 1 : 0];
     }),
+    veh: this.veh ? [r2(this.veh.x), r2(this.veh.z), this.veh.rider || 0] : undefined,
     pad: this.pad ? [r2(this.pad[0]), r2(this.pad[1])] : null,
     tr: this.trophy ? [r2(this.trophy[0]), r2(this.trophy[1])] : null,
     bp: this.boardPos ? [r2(this.boardPos[0]), r2(this.boardPos[1])] : null,
@@ -795,7 +851,7 @@ Sim.prototype.snapshot = function () {
 };
 
 const api = { MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
-  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
+  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
   quotaFor: quotaFor, Sim: Sim, setMap: setMap };
 
 /** 切換目前地圖（碰撞、視線、尋路都跟著換）。房主與每位玩家各自呼叫。 */

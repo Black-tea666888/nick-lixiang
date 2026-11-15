@@ -33,6 +33,7 @@
   </div>
   <div id="spec" class="hide">觀戰中：<b id="specName"></b>（點畫面切換）</div>
   <div id="floats"></div>
+  <div id="wx" class="hide"></div>
   <div id="hideTag" class="hide">躲藏中 · 怪物看不到你</div>
   <div id="warn">它發現你了</div>
   <div id="toast"></div>
@@ -42,6 +43,7 @@
   <button id="run" type="button">跑</button>
   <button id="atk" type="button">打</button>
   <button id="gun" type="button">槍</button>
+  <button id="veh" type="button">車</button>
   <button id="jump" type="button">跳</button>
   <button id="dash" type="button">衝</button>
   <button id="rescue" type="button">救</button>
@@ -224,7 +226,7 @@
 <table><tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>移動（滑鼠轉視角）</td></tr><tr><td><kbd>Shift</kbd></td><td>奔跑</td></tr>
 <tr><td><kbd>空白鍵</kbd> <kbd>C</kbd></td><td>跳躍、衝刺</td></tr><tr><td><kbd>R</kbd> <kbd>Q</kbd></td><td>角色技能、煙霧彈</td></tr>
 <tr><td><kbd>左鍵</kbd> / <kbd>F</kbd></td><td>揮武器</td></tr><tr><td><kbd>右鍵</kbd> / <kbd>X</kbd></td><td>開槍</td></tr><tr><td><kbd>E</kbd></td><td>按住救隊友、搶獎盃</td></tr>
-<tr><td><kbd>G</kbd></td><td>小遊戲</td></tr><tr><td><kbd>M</kbd> <kbd>Enter</kbd></td><td>麥克風、聊天</td></tr><tr><td><kbd>Esc</kbd></td><td>釋放滑鼠</td></tr></table>
+<tr><td><kbd>V</kbd></td><td>上／下推車</td></tr><tr><td><kbd>G</kbd></td><td>小遊戲</td></tr><tr><td><kbd>M</kbd> <kbd>Enter</kbd></td><td>麥克風、聊天</td></tr><tr><td><kbd>Esc</kbd></td><td>釋放滑鼠</td></tr></table>
       </section>
       <section class="htopic hide" data-topic="mon"><h2><span class="hico">👾</span>怪物</h2>
 <table><tr><td><i class="dot" style="background:#ff5a2a"></i>火</td><td>追得比較快</td></tr>
@@ -269,6 +271,9 @@
       <section class="htopic hide" data-topic="bonus"><h2><span class="hico">🎲</span>加分與小遊戲</h2>
 <ul><li><b>獵殺模式</b>：沒有廢料，改成用槍獵殺怪物。3 槍擊倒一隻得 $50，彈匣 12 發打完自動裝填；怪物 3 秒後在遠處重生。在時間內擊倒指定數量就過關，小地圖會顯示所有怪物。</li>
 <li><b>大逃殺</b>：6 人各自為戰（人數不足由電腦補滿），用槍或近戰淘汰對手。白色圓圈是安全區，20 秒後開始縮小，圈外會持續扣血。補給箱：綠色 急救 +40、藍色 護甲（生命上限 150）、紅色 火力（傷害 ×1.5）。小地圖不顯示對手。多人由房主在大廳切換模式。</li>
+<li><b>天氣</b>（第 2 天起隨機）：下雨（雨聲蓋過腳步）、濃霧（大家都看不遠）、停電（室內很暗）、風暴（小地圖看不到怪物）。</li>
+<li><b>天然災害</b>（第 2 天起每天一次）：地震會讓所有人變慢、怪物站不穩；落石或隕石會先出現紅圈，2.5 秒後砸下，圈內扣 40 血，也能砸暈怪物。</li>
+<li><b>推車</b>：回收車旁有一台推車，靠近按「車」（電腦 V）推著走：速度很快、可多放 2 件廢料，但很吵會引來怪物，而且不能跳、衝、開槍。再按一次下車。</li>
 <li><b>獎盃</b>：地圖上有一座金色獎盃，站旁按住「救」／E 3 秒，團隊 +120。</li>
 <li><b>圈圈叉叉</b>：遊戲中按「小遊戲」。前兩位落子的人是 X 與 O，連成一線團隊 +150。</li>
 <li><b>傳送陣</b>：背包滿 3 件後附近會出現，踩上去直接傳回回收車。</li></ul>

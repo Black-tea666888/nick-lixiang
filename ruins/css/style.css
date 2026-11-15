@@ -322,6 +322,11 @@ body.btnedit #run, body.btnedit #atk, body.btnedit #gun, body.btnedit #rescue, b
 .mode.br { grid-column: 1 / -1; min-height: 0; background: linear-gradient(135deg, #f6c453, #d9622b); border-color: rgba(255,255,255,.35); color: #1b1305; }
 .mode.br span { color: rgba(27,19,5,.8); }
 body.br .bagrow > b:first-of-type, body.br #pips, body.br #qbar { opacity: .3; }
+#veh { position: fixed; width: 58px; height: 58px; border-radius: 50%; display: none; pointer-events: auto; font: 800 15px sans-serif; color: #7dffe0; background: rgba(9,13,22,.5); border: 1px solid rgba(125,255,224,.8); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); box-shadow: 0 4px 12px rgba(0,0,0,.35); }
+body.touch.playing.nearveh #veh, body.btnedit #veh { display: block; }
+body.btnedit #veh { z-index: 41; touch-action: none; outline: 2px dashed rgba(255,255,255,.7); outline-offset: 3px; }
+#veh:active { transform: scale(.93); }
+#wx { position: absolute; top: 64px; right: 96px; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; color: #1b1305; background: #ffd27a; text-shadow: none; }
 /* ---------- 說明：主題選單 ---------- */
 #helpMenu { display: flex; flex-direction: column; gap: 8px; }
 .hrow { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; font: inherit; text-align: left; color: var(--ink); cursor: pointer;
