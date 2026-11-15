@@ -4,7 +4,7 @@
 const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx, Auth = RR.Auth, Game = RR.Game;
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrLobby', 'scrResult'];
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -12,7 +12,9 @@ const CINFO = [
   ['月光波', '7 公尺內怪物暫停 3 秒', '移動速度 +5%'],
   ['潛行', '6 秒內怪物較難發現你', '移動速度 +10%'],
   ['加血', '回復 35 點生命', '揮擊速度較快'],
-  ['隱身', '4 秒內怪物看不到你', '平常就較不容易被怪物發現']
+  ['隱身', '4 秒內怪物看不到你', '平常就較不容易被怪物發現'],
+  ['咆哮', '6 公尺內怪物嚇呆 2.5 秒', '移動速度 −3%'],
+  ['瞬移', '往前瞬間移動 6 公尺', '體力回復 +15%']
 ];
 
 const S = { mode: null, pvp: true, map: 0, sim: null, myId: null, hostId: null, roster: [], timers: [], lastHost: 0, seen: {}, tickN: 0, lastTick: 0, chatRate: {}, flags: {} };
@@ -25,7 +27,65 @@ function say(text) { $('msgText').textContent = text; $('msg').classList.remove(
 function busy(on, text) { $('busyText').textContent = text || '請稍候…'; $('busy').classList.toggle('hide', !on); }
 function cleanName(n) { return String(n || '').replace(/\s+/g, ' ').trim().slice(0, 12) || '玩家'; }
 function myName() { const u = Auth.user(); return cleanName(u ? u.name : '玩家'); }
-function myLook() { const h = parseInt(ls('rr_h') || '0', 10) || 0; return { c: parseInt(ls('rr_c') || '0', 10) || 0, w: parseInt(ls('rr_w') || '0', 10) || 0, h: prog().hats.indexOf(h) >= 0 ? h : 0 }; }
+function myLook() {
+  const p = prog(), n = function (k) { return parseInt(ls(k) || '0', 10) || 0; }, own = function (cat, v) { return p.own[cat].indexOf(v) >= 0 ? v : 0; };
+  const h = n('rr_h');
+  return { c: n('rr_c'), w: n('rr_w'), h: p.hats.indexOf(h) >= 0 ? h : 0, o: own('o', n('rr_o')), pet: own('pet', n('rr_pet')) };
+}
+// 只影響自己畫面的造型：回收品、怪物、彈道
+function applyLocalSkins() {
+  const p = prog(), n = function (k) { return parseInt(ls(k) || '0', 10) || 0; }, own = function (cat, v) { return p.own[cat].indexOf(v) >= 0 ? v : 0; };
+  Game.settings.itemSkin = own('is', n('rr_is')); Game.settings.fx = own('fx', n('rr_fx'));
+  const ms = own('ms', n('rr_ms')); if ((Game.settings.monSkin | 0) !== ms) Game.setMonSkin(ms);
+}
+const SKIN_NAMES = { is: ['預設', '糖果', '寶石'], ms: ['預設', '骸骨白', '霓虹'], fx: ['金黃', '冰藍', '粉紅', '紫光'] };
+const PET_NOTE = ['', '速度 +5%', '偵測 +8m', '賣出 +10%', '體力 +20%'];
+function catNames(cat) { return cat === 'o' ? W.COSTUMES : cat === 'pet' ? W.PETS : cat === 'hat' ? W.HATS : SKIN_NAMES[cat]; }
+const CAT_LABEL = { o: '服裝', pet: '寵物', hat: '頭飾', is: '回收品造型', ms: '怪物造型', fx: '彈道特效' };
+function owns(p, cat, i) { return cat === 'hat' ? p.hats.indexOf(i) >= 0 : p.own[cat].indexOf(i) >= 0; }
+/* ---------- 造型轉盤 ---------- */
+const WHEELS = [
+  { n: '綜合', cost: 50, seg: [['o'], ['pet'], ['hat'], ['is'], ['coin', 30], ['ms'], ['fx'], ['coin', 80]] },
+  { n: '服裝', cost: 80, seg: [['o', 1], ['o', 2], ['o', 3], ['o', 4], ['o', 5], ['coin', 30], ['coin', 60], ['coin', 100]] },
+  { n: '寵物', cost: 80, seg: [['pet', 1], ['coin', 20], ['pet', 2], ['coin', 40], ['pet', 3], ['coin', 60], ['pet', 4], ['coin', 100]] },
+  { n: '造型特效', cost: 60, seg: [['is', 1], ['is', 2], ['ms', 1], ['ms', 2], ['fx', 1], ['fx', 2], ['fx', 3], ['coin', 50]] }
+];
+let wheelI = 0, wheelBusy = false, wheelTurn = 0;
+function segLabel(sg) { return sg[0] === 'coin' ? '金幣 +' + sg[1] : sg.length > 1 ? catNames(sg[0])[sg[1]] : CAT_LABEL[sg[0]]; }
+function wheelDraw() {
+  const wh = WHEELS[wheelI], box = $('wheel'), p = prog();
+  box.textContent = '';
+  wh.seg.forEach(function (sg, i) {
+    const sp = document.createElement('span'), t = document.createElement('i');
+    sp.style.transform = 'rotate(' + (i * 45 + 22.5) + 'deg)'; t.textContent = segLabel(sg); sp.appendChild(t); box.appendChild(sp);
+  });
+  const free = wheelI === 0 && p.freeDay !== today();
+  $('wheelSpin').textContent = free ? '免費轉一次' : '轉一次（' + wh.cost + ' 金幣）';
+  $('coinTag3').textContent = p.coins;
+  Array.prototype.forEach.call($('wheelSel').children, function (b, k) { b.classList.toggle('on', k === wheelI); });
+}
+function wheelSpin() {
+  if (wheelBusy) return;
+  const wh = WHEELS[wheelI], p = prog(), free = wheelI === 0 && p.freeDay !== today();
+  if (!free && p.coins < wh.cost) { say('金幣不夠：這個轉盤一次要 ' + wh.cost + ' 金幣，你有 ' + p.coins + '。過關和每日任務可以賺金幣。'); return; }
+  if (free) p.freeDay = today(); else p.coins -= wh.cost;
+  const idx = Math.floor(Math.random() * 8), sg = wh.seg[idx];
+  let msg;
+  if (sg[0] === 'coin') { p.coins += sg[1]; msg = '金幣 +' + sg[1]; }
+  else {
+    const cat = sg[0], names = catNames(cat);
+    let pickI = sg[1];
+    if (pickI == null) { const pool = []; for (let k = 1; k < names.length; k++) if (!owns(p, cat, k)) pool.push(k); pickI = pool.length ? pool[Math.floor(Math.random() * pool.length)] : 1 + Math.floor(Math.random() * (names.length - 1)); }
+    if (owns(p, cat, pickI)) { p.coins += 25; msg = CAT_LABEL[cat] + '「' + names[pickI] + '」已經有了，換成金幣 +25'; }
+    else { if (cat === 'hat') p.hats.push(pickI); else p.own[cat].push(pickI); msg = '獲得' + CAT_LABEL[cat] + '「' + names[pickI] + '」！到「出戰角色」換上'; }
+  }
+  progSave(p);
+  wheelBusy = true; $('wheelMsg').textContent = ''; $('coinTag3').textContent = p.coins;
+  wheelTurn += 360 * 5 + ((360 - (idx * 45 + 22.5)) - (wheelTurn % 360) + 360) % 360;
+  $('wheel').style.transform = 'rotate(' + wheelTurn + 'deg)';
+  Sfx.tone(520, 0.08, 'triangle', 0.08, 700);
+  setTimeout(function () { wheelBusy = false; $('wheelMsg').textContent = msg; Sfx.tone(660, 0.25, 'triangle', 0.14, 990); wheelDraw(); renderProg(); if (window.RR_refreshWardrobe) window.RR_refreshWardrobe(); }, 3300);
+}
 /* ---------- 成長系統（存在這台裝置上）：金幣、經驗、每日任務、頭飾 ---------- */
 const HAT_COST = [0, 60, 100, 150, 250, 400];
 const MISSIONS = [['完成 1 天', 1, 30], ['團隊累計賺到 $800', 800, 40], ['拿到一次 3 顆星', 1, 50]];
@@ -35,6 +95,8 @@ function prog() {
   if (!p || typeof p !== 'object') p = {};
   p.coins = Math.max(0, Math.floor(+p.coins || 0)); p.xp = Math.max(0, Math.floor(+p.xp || 0));
   if (!Array.isArray(p.hats)) p.hats = [0];
+  if (!p.own || typeof p.own !== 'object') p.own = {};
+  ['o', 'pet', 'is', 'ms', 'fx'].forEach(function (k) { if (!Array.isArray(p.own[k])) p.own[k] = [0]; });
   if (p.day !== today() || !Array.isArray(p.m)) { p.day = today(); p.m = [0, 0, 0]; p.done = [false, false, false]; }
   if (!Array.isArray(p.done)) p.done = [false, false, false];
   return p;
@@ -256,7 +318,7 @@ async function joinRoom() {
   await Voice.init(false);   // 不主動要求麥克風（會打斷 Discord 等其他通話）；要講話再按遊戲裡的「麥克風」
   const u = Auth.user();
   const look = myLook();
-  Net.join(code, { name: myName(), uid: u ? u.uid : '', c: look.c, w: look.w, h: look.h }, function (err, id) {
+  Net.join(code, { name: myName(), uid: u ? u.uid : '', c: look.c, w: look.w, h: look.h, o: look.o, pet: look.pet }, function (err, id) {
     busy(false);
     if (err) { say(netErr(err)); return; }
     S.mode = 'client'; S.myId = id; S.lastHost = Date.now();
@@ -471,6 +533,14 @@ function bind() {
     }
     look.h = i; showLook();
   });
+  // 服裝、寵物（隊友看得到）與只影響自己畫面的造型
+  const wardrobe = [['o', 'oGrid', 'rr_o'], ['pet', 'petGrid', 'rr_pet'], ['is', 'isGrid', 'rr_is'], ['ms', 'msGrid', 'rr_ms'], ['fx', 'fxGrid', 'rr_fx']].map(function (d) {
+    const cat = d[0], btns = cards($(d[1]), catNames(cat), function () { return ''; }, function (i) {
+      if (!owns(prog(), cat, i)) { say('「' + catNames(cat)[i] + '」還沒取得，到「造型轉盤」抽。'); return; }
+      lsSet(d[2], String(i)); if (cat === 'o') look.o = i; if (cat === 'pet') look.pet = i; showLook();
+    });
+    return { cat: cat, key: d[2], btns: btns };
+  });
   const mBtns = cards($('mGrid'), W.MAPS.map(function (m) { return m.name; }), null, function (i) { mapSel = i; lsSet('rr_map', String(i)); showMapName(); Game.showMap(mapSel); });
   const showLook = function () {
     look.c = ((look.c % W.CHARS.length) + W.CHARS.length) % W.CHARS.length;
@@ -481,13 +551,30 @@ function bind() {
     mark(cBtns, look.c); mark(wBtns, look.w); mark(hBtns, look.h);
     const pg = prog();
     hBtns.forEach(function (b, i) { const own = pg.hats.indexOf(i) >= 0; b.classList.toggle('lock', !own); b.lastChild.textContent = own ? (i === look.h ? '使用中' : '已擁有') : HAT_COST[i] + ' 金幣'; });
+    wardrobe.forEach(function (wd) {
+      const cur = parseInt(ls(wd.key) || '0', 10) || 0, sel = owns(pg, wd.cat, cur) ? cur : 0;
+      wd.btns.forEach(function (b, i) { const own = owns(pg, wd.cat, i); b.classList.toggle('lock', !own); b.classList.toggle('on', i === sel); b.lastChild.textContent = !own ? '轉盤取得' : i === sel ? '使用中' : wd.cat === 'pet' && i ? PET_NOTE[i] : '已擁有'; });
+    });
+    look.o = owns(pg, 'o', look.o) ? look.o : 0; look.pet = owns(pg, 'pet', look.pet) ? look.pet : 0;
+    applyLocalSkins();
     lsSet('rr_c', String(look.c)); lsSet('rr_w', String(look.w)); lsSet('rr_h', String(look.h)); renderProg();
     refreshPickSummary();
-    Game.preview($('lookPrev'), look.c, look.w, look.h);
+    Game.preview($('lookPrev'), look.c, look.w, look.h, look.o, look.pet);
   };
   showMapName = function () { mapSel = myMap(); mark(mBtns, mapSel); refreshPickSummary(); };
   showMapName(); Game.showMap(mapSel);
   showLook();
+  window.RR_refreshWardrobe = showLook;
+  WHEELS.forEach(function (wh, k) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'card';
+    const t = document.createElement('b'); t.textContent = wh.n; const u = document.createElement('span'); u.textContent = wh.cost + ' 金幣';
+    b.appendChild(t); b.appendChild(u); b.addEventListener('click', function () { if (wheelBusy) return; wheelI = k; $('wheelMsg').textContent = ''; wheelDraw(); });
+    $('wheelSel').appendChild(b);
+  });
+  const openWheel = function () { wheelDraw(); show('scrWheel'); };
+  $('wheelOpen').addEventListener('click', openWheel); $('wheelOpen2').addEventListener('click', openWheel);
+  $('wheelDone').addEventListener('click', function () { if (!wheelBusy) showMenu(); });
+  $('wheelSpin').addEventListener('click', wheelSpin);
   $('pickBtn').addEventListener('click', function () { show('scrPick'); });
   $('pickDone').addEventListener('click', function () { showMenu(); });
   $('pickOk').addEventListener('click', function () { showMenu(); });

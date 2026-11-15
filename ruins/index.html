@@ -91,6 +91,7 @@
       <button class="mode main" id="createBtn" type="button"><b>多人合作</b><span>建立房間，邀請最多 3 位隊友</span></button>
       <button class="mode" id="soloBtn" type="button"><b>單人遊玩</b><span>自己練習</span></button>
       <button class="mode" id="miniInfoBtn" type="button"><b>小遊戲</b><span>圈圈叉叉 · 搶獎盃</span></button>
+      <button class="mode wheel" id="wheelOpen" type="button"><b>造型轉盤</b><span>用金幣抽服裝、寵物、造型與特效 · 每天免費一次</span></button>
       <button class="mode hunt" id="huntBtn" type="button"><b>獵殺模式</b><span>新模式：拿槍反過來獵殺怪物，在時間內擊倒指定數量（單人；多人請在大廳切換模式）</span></button>
     </div>
     <div class="sec">每日任務</div>
@@ -125,9 +126,35 @@
     <div class="cards c3" id="wGrid"></div>
     <div class="sec">頭飾（用金幣解鎖）· 金幣 <b id="coinTag2">0</b></div>
     <div class="cards c3" id="hGrid"></div>
+    <div class="sec">服裝（轉盤取得）</div>
+    <div class="cards c3" id="oGrid"></div>
+    <div class="sec">寵物（轉盤取得，有加成）</div>
+    <div class="cards c3" id="petGrid"></div>
+    <div class="sec">回收品造型</div>
+    <div class="cards c3" id="isGrid"></div>
+    <div class="sec">怪物造型</div>
+    <div class="cards c3" id="msGrid"></div>
+    <div class="sec">彈道特效</div>
+    <div class="cards c3" id="fxGrid"></div>
+    <div class="col"><button class="btn" id="wheelOpen2" type="button">去轉盤抽造型</button></div>
     <div class="sec">地圖</div>
     <div class="cards c3" id="mGrid"></div>
     <div class="col"><button class="btn primary" id="pickOk" type="button">確定</button></div>
+  </div>
+</div>
+
+<!-- 造型轉盤 -->
+<div class="screen hide" id="scrWheel">
+  <div class="panel lobby">
+    <div class="topbar">
+      <button class="icon" id="wheelDone" type="button" aria-label="返回">‹</button>
+      <div class="who"><b class="ttl">造型轉盤</b><div class="note">金幣 <b id="coinTag3">0</b></div></div>
+    </div>
+    <div class="cards c3 wsel" id="wheelSel"></div>
+    <div id="wheelBox"><div id="wheelPtr"></div><div id="wheel"></div></div>
+    <p id="wheelMsg" class="gain"></p>
+    <div class="col"><button class="btn primary" id="wheelSpin" type="button">轉一次</button></div>
+    <p class="note" style="text-align:center">抽到已經有的會換成 25 金幣。金幣靠過關和每日任務取得，不需要也無法儲值。</p>
   </div>
 </div>
 
@@ -208,8 +235,10 @@
 <tr><td>太空人</td><td><b>月光波</b>　7 公尺內怪物暫停 3 秒；速度 +5%</td></tr>
 <tr><td>貓貓</td><td><b>潛行</b>　6 秒內較難被發現；速度 +10%</td></tr>
 <tr><td>南瓜頭</td><td><b>加血</b>　回復 35；揮擊較快</td></tr>
-<tr><td>紙箱人</td><td><b>隱身</b>　4 秒內怪物看不到你</td></tr></table>
-<ul><li>在主選單點「出戰角色」更換角色、攻擊物和頭飾。</li></ul>
+<tr><td>紙箱人</td><td><b>隱身</b>　4 秒內怪物看不到你</td></tr>
+<tr><td>恐龍</td><td><b>咆哮</b>　6 公尺內怪物嚇呆 2.5 秒；速度 −3%</td></tr>
+<tr><td>外星人</td><td><b>瞬移</b>　往前瞬間移動 6 公尺；體力回復 +15%</td></tr></table>
+<ul><li>在主選單點「出戰角色」更換角色、攻擊物、頭飾、服裝和寵物。</li></ul>
       </section>
       <section class="htopic hide" data-topic="map"><h2><span class="hico">🗺</span>地圖與小地圖</h2>
 <ul><li><b>室內</b>：廢棄設施、大倉庫、地下水道、辦公室。</li>
@@ -230,6 +259,8 @@
 <li>過關拿<b>金幣</b>和<b>經驗</b>，經驗會提升等級。</li>
 <li>主選單有 3 個<b>每日任務</b>，完成另外給金幣。</li>
 <li>金幣可在「出戰角色」解鎖<b>頭飾</b>，隊友也看得到。</li>
+<li><b>造型轉盤</b>：用金幣抽服裝、寵物、回收品造型、怪物造型、彈道特效，每天免費一次；可選綜合、服裝、寵物、造型特效四種轉盤。</li>
+<li><b>寵物加成</b>：小狗 速度 +5%、貓頭鷹 怪物在小地圖顯示的距離 14→22 公尺、小機器人 賣出 +10%、史萊姆 體力回復 +20%。</li>
 <li>進度只存在這台裝置上。</li></ul>
       </section>
       <section class="htopic hide" data-topic="team"><h2><span class="hico">🔊</span>語音與隊友</h2>

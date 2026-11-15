@@ -13,7 +13,10 @@ const me = { x: W.VAN[0], z: W.VAN[1], yaw: -Math.PI * 0.75, pitch: 0, stam: 1, 
 let atkT = 0, swingT = 0, pipe = null, hurtFlash = 0;
 const view = { phase: 'lobby', day: 1, money: 0, quota: 0, time: 0, players: new Map(), monsters: [], items: [] };
 // 角色屬性：0 回收員 1 機器人 2 太空人 3 貓貓 4 南瓜頭 5 紙箱人
-const CHAR_SPEED = [1, 1, 1.05, 1.10, 1, 1];
+const CHAR_SPEED = [1, 1, 1.05, 1.10, 1, 1, 0.97, 1];
+const COSTUME_COL = [null, 0x566b3a, 0x39e8ff, 0xffd24a, 0x1d2027, 0xf2f4f8];   // 服裝顏色（0 = 隊伍色）
+const FX_COL = [0xfff1b0, 0x6ad8ff, 0xff7eb6, 0xb98cff];                          // 彈道特效顏色
+function myPet() { const pm = view.players.get(myId); return pm && pm.pet ? pm.pet : 0; }
 function myC() { const pm = view.players.get(myId); return pm && pm.c ? pm.c : 0; }
 // 藍色（冰）怪物附近：減速
 function iceNear() {
@@ -134,7 +137,7 @@ let smQ = false, skQ = false, smokeT = null, padMesh = null, ttQ = null, trophyM
 const touch = { joyId: null, lookId: null, ox: 0, oy: 0, jx: 0, jy: 0, lx: 0, ly: 0, run: false };
 const settings = { sens: 1 };
 let specId = null, beatT = 0, toastT = 0, fullHintT = 0, loudT = 0, spk = false, hudT = 0, lastL = me, dragging = false;
-let itemGeos = null;
+let itemGeos = null, skinGeos = null;
 
 // 飄字（賣出金額、受傷）
 function floatText(text, bad) {
@@ -229,7 +232,7 @@ function drawMini(L) {
   const MC_COL = ['#ff5a2a', '#5ad0ff', '#8cff5a', '#b070ff'];
   for (let i = 0; i < view.monsters.length; i++) {
     const m = view.monsters[i];
-    if (!m.group.visible || (view.mode !== 'hunt' && Math.hypot(m.x - L.x, m.z - L.z) > 14)) continue;   // 14 公尺內才顯示
+    if (!m.group.visible || (view.mode !== 'hunt' && Math.hypot(m.x - L.x, m.z - L.z) > (myPet() === 2 ? 22 : 14))) continue;   // 14 公尺內才顯示
     const mx = m.x * k, my = m.z * k;
     if (m.chase && Math.floor(Date.now() / 250) % 2) { g.strokeStyle = '#ffffff'; g.lineWidth = 1.5; g.beginPath(); g.arc(mx, my, MC * 0.75, 0, Math.PI * 2); g.stroke(); }
     g.fillStyle = MC_COL[i % 4]; g.strokeStyle = '#000'; g.lineWidth = 1;
@@ -373,7 +376,8 @@ const MON_COL = { fire: [0xff6a1a, 0xff4a10], ice: [0x6ad8ff, 0x3ac8ff], poison:
 function buildMonster(kind) {
   const col = MON_COL[kind] || MON_COL.fire;
   const g = new THREE.Group();
-  const dark = new THREE.MeshPhongMaterial({ color: 0x0c0c0e, shininess: 30, emissive: new THREE.Color(col[1]).multiplyScalar(0.07) });
+  const skinM = RR.Game && RR.Game.settings ? RR.Game.settings.monSkin | 0 : 0;   // 怪物造型：0 預設（黑）、1 骸骨白、2 霓虹
+  const dark = new THREE.MeshPhongMaterial({ color: skinM === 1 ? 0xe8e2d0 : skinM === 2 ? 0x101018 : 0x0c0c0e, shininess: 30, emissive: new THREE.Color(col[1]).multiplyScalar(skinM === 2 ? 0.75 : skinM === 1 ? 0.02 : 0.07) });
   const tint = new THREE.MeshPhongMaterial({ color: col[1], emissive: new THREE.Color(col[1]).multiplyScalar(0.5), shininess: 40 });
   const eyeM = new THREE.MeshBasicMaterial({ color: col[0] });
   const tall = kind === 'shadow' ? 1.12 : kind === 'poison' ? 0.9 : 1;
@@ -433,9 +437,9 @@ function pmat(col, em) { return new THREE.MeshPhongMaterial({ color: col, emissi
 function part(geo, m, x, y, z) { const o = new THREE.Mesh(geo, m); o.position.set(x || 0, y || 0, z || 0); return o; }
 
 /** 角色造型（純外觀）。身體用玩家顏色，正面朝 +z。 */
-function buildChar(c, slot, h) {
+function buildChar(c, slot, h, o, pet) {
   const g = new THREE.Group();
-  const M = pmat(COLORS[slot % 4]);
+  const M = o && COSTUME_COL[o] ? new THREE.MeshPhongMaterial({ color: COSTUME_COL[o], emissive: new THREE.Color(COSTUME_COL[o]).multiplyScalar(o === 2 ? 0.55 : o === 3 ? 0.3 : 0.12), shininess: o === 3 ? 90 : 20 }) : pmat(COLORS[slot % 4]);
   const dark = new THREE.MeshBasicMaterial({ color: 0x0a0f0c }), glow = new THREE.MeshBasicMaterial({ color: 0xfff0cc });
   const body = function () { return part(new THREE.CylinderGeometry(0.27, 0.25, 0.8, 28), M, 0, 0.99, 0); };   // 上身；腿另外做，走路會擺動
   if (c === 1) {            // 機器人
@@ -460,6 +464,26 @@ function buildChar(c, slot, h) {
     const mouth = part(new THREE.BoxGeometry(0.22, 0.04, 0.03), dark, 0, 1.5, 0.34);
     g.add(part(new THREE.CylinderGeometry(0.2, 0.24, 0.8, 28), M, 0, 0.99, 0), head, part(new THREE.CylinderGeometry(0.03, 0.045, 0.14, 16), pmat(0x4f7a3a, 0.2), 0, 1.93, 0),
       part(eye, dark, -0.12, 1.65, 0.33), part(eye, dark, 0.12, 1.65, 0.33), mouth);
+  } else if (c === 6) {     // 恐龍：長吻、牙齒、背棘、尾巴
+    const skin = o ? M : pmat(0x4fae5a, 0.25), belly = pmat(0xe8dca0, 0.2), tooth = pmat(0xffffff, 0.3);
+    const head = part(new THREE.BoxGeometry(0.4, 0.36, 0.44), skin, 0, 1.62, 0.02), snout = part(new THREE.BoxGeometry(0.3, 0.22, 0.34), skin, 0, 1.55, 0.36);
+    const tail = part(new THREE.ConeGeometry(0.15, 0.8, 12), skin, 0, 0.72, -0.5); tail.rotation.x = -1.95;
+    g.add(part(new THREE.CylinderGeometry(0.27, 0.27, 0.8, 28), skin, 0, 0.99, 0), part(new THREE.BoxGeometry(0.3, 0.6, 0.06), belly, 0, 0.98, 0.26), head, snout, tail,
+      part(new THREE.SphereGeometry(0.05, 20, 16), glow, -0.14, 1.72, 0.2), part(new THREE.SphereGeometry(0.05, 20, 16), glow, 0.14, 1.72, 0.2),
+      part(new THREE.SphereGeometry(0.025, 12, 10), dark, -0.14, 1.72, 0.245), part(new THREE.SphereGeometry(0.025, 12, 10), dark, 0.14, 1.72, 0.245));
+    for (let k = 0; k < 4; k++) g.add(part(new THREE.ConeGeometry(0.025, 0.07, 6), tooth, -0.1 + k * 0.066, 1.42, 0.5));
+    g.children.slice(-4).forEach(function (t) { t.rotation.x = Math.PI; });
+    for (let k = 0; k < 4; k++) g.add(part(new THREE.ConeGeometry(0.06, 0.2, 6), pmat(0xff9f3a, 0.35), 0, 1.86 - k * 0.3, -0.2 - (k ? 0.08 : 0)));
+  } else if (c === 7) {     // 外星人：大頭、大黑眼、觸角
+    const skin = o ? M : pmat(0x9be8c8, 0.3);
+    const head = part(new THREE.SphereGeometry(0.33, 32, 24), skin, 0, 1.68, 0); head.scale.set(1, 1.2, 0.95);
+    const e1 = part(new THREE.SphereGeometry(0.1, 24, 18), dark, -0.13, 1.66, 0.25), e2 = part(new THREE.SphereGeometry(0.1, 24, 18), dark, 0.13, 1.66, 0.25);
+    e1.scale.set(0.8, 1.25, 0.5); e2.scale.set(0.8, 1.25, 0.5); e1.rotation.z = 0.35; e2.rotation.z = -0.35;
+    const a1 = part(new THREE.CylinderGeometry(0.012, 0.012, 0.26, 8), skin, -0.12, 2.14, 0), a2 = part(new THREE.CylinderGeometry(0.012, 0.012, 0.26, 8), skin, 0.12, 2.14, 0);
+    a1.rotation.z = 0.3; a2.rotation.z = -0.3;
+    g.add(part(new THREE.CylinderGeometry(0.2, 0.23, 0.8, 28), M, 0, 0.99, 0), head, e1, e2, a1, a2,
+      part(new THREE.SphereGeometry(0.04, 16, 12), new THREE.MeshBasicMaterial({ color: 0x7dffe0 }), -0.16, 2.28, 0), part(new THREE.SphereGeometry(0.04, 16, 12), new THREE.MeshBasicMaterial({ color: 0x7dffe0 }), 0.16, 2.28, 0),
+      part(new THREE.BoxGeometry(0.1, 0.015, 0.02), dark, 0, 1.46, 0.3));
   } else if (c === 5) {     // 紙箱人
     const eye = new THREE.BoxGeometry(0.09, 0.09, 0.03);
     g.add(body(), part(new THREE.BoxGeometry(0.52, 0.5, 0.5), pmat(0xb98a55, 0.18), 0, 1.62, 0), part(eye, dark, -0.12, 1.66, 0.26), part(eye, dark, 0.12, 1.66, 0.26),
@@ -471,7 +495,7 @@ function buildChar(c, slot, h) {
       part(new THREE.SphereGeometry(0.05, 20, 16), glow, 0.2, 1.25, 0.26));
   }
   // 手腳（以肩膀／腳踝為軸，走路時擺動）
-  const sx = c === 1 ? 0.34 : 0.33, limb = pmat(c === 1 ? 0x9aa3a8 : COLORS[slot % 4], 0.12), shoe = pmat(0x1c2220, 0.05);
+  const sx = c === 1 ? 0.34 : 0.33, limb = c === 1 ? pmat(0x9aa3a8, 0.12) : o ? M : pmat(c === 6 ? 0x4fae5a : c === 7 ? 0x9be8c8 : COLORS[slot % 4], 0.12), shoe = pmat(0x1c2220, 0.05);
   const mkArm = function (x) { const pv = new THREE.Group(); pv.position.set(x, 1.22, 0); pv.add(part(new THREE.CylinderGeometry(0.07, 0.06, 0.62, 16), limb, 0, -0.3, 0), part(new THREE.SphereGeometry(0.08, 20, 16), pmat(0xf1e6d6, 0.2), 0, -0.63, 0)); return pv; };
   const pants = pmat(c === 1 ? 0x7d868c : 0x27313c, 0.1);
   const mkFoot = function (x) { const pv = new THREE.Group(); pv.position.set(x, 0.64, 0); pv.add(part(new THREE.CylinderGeometry(0.105, 0.09, 0.56, 16), pants, 0, -0.28, 0), part(new THREE.BoxGeometry(0.18, 0.12, 0.32), shoe, 0, -0.58, 0.06)); return pv; };
@@ -486,8 +510,40 @@ function buildChar(c, slot, h) {
     const collar = part(new THREE.TorusGeometry(0.2, 0.045, 12, 36), M, 0, 1.36, 0); collar.rotation.x = Math.PI / 2;
     g.add(belt, buckle, collar, part(new THREE.SphereGeometry(0.1, 20, 16), limb, -sx, 1.24, 0), part(new THREE.SphereGeometry(0.1, 20, 16), limb, sx, 1.24, 0));
   }
-  const hat = buildHat(h || 0); if (hat) { hat.position.y = [1.84, 1.78, 1.95, 1.87, 1.89, 1.9][c] || 1.84; if (c === 1) hat.position.x = 0.14; g.add(hat); }
+  const hat = buildHat(h || 0); if (hat) { hat.position.y = [1.84, 1.78, 1.95, 1.87, 1.89, 1.9, 1.84, 2.08][c] || 1.84; if (c === 1) hat.position.x = 0.14; g.add(hat); }
   addOutline(g, 0x05080a, 1.07); addShadow(g, 0.42);
+  const pm = buildPet(pet || 0); if (pm) { pm.position.set(-0.75, 0, -0.25); g.add(pm); g.userData.pet = pm; }
+  return g;
+}
+/** 寵物：1 小狗、2 貓頭鷹（會飄）、3 小機器人、4 史萊姆 */
+function buildPet(k) {
+  if (!k) return null;
+  const g = new THREE.Group(), dark = new THREE.MeshBasicMaterial({ color: 0x0a0f0c });
+  if (k === 1) {
+    const fur = pmat(0xc98a4a, 0.2), ear = pmat(0x7a4a22, 0.15);
+    const tail = part(new THREE.CylinderGeometry(0.025, 0.02, 0.2, 8), fur, 0, 0.36, -0.26); tail.rotation.x = -0.7;
+    g.add(part(new THREE.BoxGeometry(0.22, 0.2, 0.4), fur, 0, 0.24, 0), part(new THREE.SphereGeometry(0.14, 20, 16), fur, 0, 0.42, 0.22), part(new THREE.BoxGeometry(0.1, 0.08, 0.1), fur, 0, 0.38, 0.34),
+      part(new THREE.BoxGeometry(0.05, 0.12, 0.04), ear, -0.11, 0.48, 0.2), part(new THREE.BoxGeometry(0.05, 0.12, 0.04), ear, 0.11, 0.48, 0.2), tail,
+      part(new THREE.SphereGeometry(0.02, 10, 8), dark, -0.05, 0.45, 0.34), part(new THREE.SphereGeometry(0.02, 10, 8), dark, 0.05, 0.45, 0.34), part(new THREE.SphereGeometry(0.025, 10, 8), dark, 0, 0.4, 0.4));
+    [[-0.08, 0.14], [0.08, 0.14], [-0.08, -0.14], [0.08, -0.14]].forEach(function (q) { g.add(part(new THREE.CylinderGeometry(0.035, 0.035, 0.16, 8), fur, q[0], 0.08, q[1])); });
+  } else if (k === 2) {
+    const fe = pmat(0x8a6a4a, 0.2), eye = new THREE.MeshBasicMaterial({ color: 0xffe07a });
+    const b = part(new THREE.SphereGeometry(0.17, 24, 18), fe, 0, 1.25, 0); b.scale.y = 1.25;
+    const w1 = part(new THREE.BoxGeometry(0.05, 0.24, 0.16), fe, -0.19, 1.25, 0), w2 = part(new THREE.BoxGeometry(0.05, 0.24, 0.16), fe, 0.19, 1.25, 0);
+    g.add(b, w1, w2, part(new THREE.SphereGeometry(0.055, 16, 12), eye, -0.07, 1.32, 0.14), part(new THREE.SphereGeometry(0.055, 16, 12), eye, 0.07, 1.32, 0.14),
+      part(new THREE.SphereGeometry(0.022, 10, 8), dark, -0.07, 1.32, 0.19), part(new THREE.SphereGeometry(0.022, 10, 8), dark, 0.07, 1.32, 0.19), part(new THREE.ConeGeometry(0.03, 0.07, 6), pmat(0xffa53a, 0.4), 0, 1.25, 0.18));
+    g.children[7].rotation.x = Math.PI / 2; g.userData.fly = true;
+  } else if (k === 3) {
+    const met = pmat(0xaab4bd, 0.15);
+    g.add(part(new THREE.BoxGeometry(0.28, 0.26, 0.24), met, 0, 0.32, 0), part(new THREE.BoxGeometry(0.2, 0.08, 0.02), new THREE.MeshBasicMaterial({ color: 0x6ad8ff }), 0, 0.35, 0.125),
+      part(new THREE.CylinderGeometry(0.01, 0.01, 0.14, 6), met, 0, 0.52, 0), part(new THREE.SphereGeometry(0.03, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff5a5a }), 0, 0.6, 0),
+      part(new THREE.CylinderGeometry(0.07, 0.07, 0.05, 14), pmat(0x22262b, 0.05), -0.16, 0.1, 0), part(new THREE.CylinderGeometry(0.07, 0.07, 0.05, 14), pmat(0x22262b, 0.05), 0.16, 0.1, 0));
+    g.children[4].rotation.z = Math.PI / 2; g.children[5].rotation.z = Math.PI / 2;
+  } else {
+    const b = part(new THREE.SphereGeometry(0.22, 24, 18), new THREE.MeshPhongMaterial({ color: 0x6ad8ff, emissive: 0x1a4a7a, shininess: 90, transparent: true, opacity: 0.85 }), 0, 0.17, 0); b.scale.y = 0.75;
+    g.add(b, part(new THREE.SphereGeometry(0.03, 10, 8), dark, -0.07, 0.22, 0.18), part(new THREE.SphereGeometry(0.03, 10, 8), dark, 0.07, 0.22, 0.18));
+  }
+  addShadow(g, k === 2 ? 0.16 : 0.2);
   return g;
 }
 /** 頭飾（純外觀）：1 安全帽、2 頭燈、3 天線、4 光環、5 皇冠 */
@@ -538,7 +594,7 @@ function buildWeapon(w) {
 }
 
 function buildAvatar(p) {
-  const g = buildChar(p.c || 0, p.slot, p.h || 0);
+  const g = buildChar(p.c || 0, p.slot, p.h || 0, p.o || 0, p.pet || 0);
   const wg = buildWeapon(p.w || 0); wg.position.set(0.37, 0.67, 0.3); wg.rotation.x = 0.5; g.add(wg);   // 握在右手上
   const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
   const c = cv.getContext('2d');
@@ -574,7 +630,7 @@ function showShot(e) {
   const mine = e.id === myId, sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   const from = mine ? new THREE.Vector3(me.x - sy * 0.5 + cy * 0.22, 1.42 + me.y, me.z - cy * 0.5 - sy * 0.22) : new THREE.Vector3(e.x, 1.25, e.z);
   const to = new THREE.Vector3(e.hx, e.mi >= 0 ? 1.7 : 1.4, e.hz);
-  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([from, to]), new THREE.LineBasicMaterial({ color: 0xfff1b0, transparent: true, opacity: 0.95, fog: false }));
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([from, to]), new THREE.LineBasicMaterial({ color: mine ? FX_COL[RR.Game.settings.fx | 0] || 0xfff1b0 : 0xfff1b0, transparent: true, opacity: 0.95, fog: false }));
   const spark = part(new THREE.SphereGeometry(e.mi >= 0 ? 0.28 : 0.12, 10, 8), new THREE.MeshBasicMaterial({ color: e.mi >= 0 ? 0xff8a3a : 0xfff1b0, transparent: true, opacity: 0.9, fog: false }), to.x, to.y, to.z);
   scene.add(line, spark);
   const t0 = Date.now(), id = setInterval(function () {
@@ -800,9 +856,9 @@ function updateMe(dt) {
   const moving = mag > 0.15;
   const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run) && moving && !me.tired;
   if (wantRun) { me.stam -= 0.15 * dt; if (me.stam <= 0) { me.stam = 0; me.tired = true; } }
-  else { me.stam = Math.min(1, me.stam + 0.28 * dt); if (me.tired && me.stam > 0.2) me.tired = false; }
+  else { me.stam = Math.min(1, me.stam + 0.28 * (myPet() === 4 ? 1.2 : 1) * (myC() === 7 ? 1.15 : 1) * dt); if (me.tired && me.stam > 0.2) me.tired = false; }
   if (me.rallyT > 0) me.rallyT -= dt;
-  const speed = (wantRun ? 9.0 : 4.2) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05) * CHAR_SPEED[myC()] * (iceNear() ? 0.75 : 1) * (me.rallyT > 0 ? 1.2 : 1);   // 靠近藍色（冰）怪物減速 25%
+  const speed = (wantRun ? 9.0 : 4.2) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05) * CHAR_SPEED[myC()] * (myPet() === 1 ? 1.05 : 1) * (iceNear() ? 0.75 : 1) * (me.rallyT > 0 ? 1.2 : 1);   // 靠近藍色（冰）怪物減速 25%
   const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   // 跳：耗 18% 體力，在空中時怪物抓不到；衝刺：往移動方向（沒動就往前）瞬間衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒
   if (jumpQ) { jumpQ = false; if (me.y <= 0 && !me.tired && me.stam >= 0.18) { me.vy = 5.6; me.y = 0.001; me.stam -= 0.18; Sfx.tone(300, 0.12, 'triangle', 0.08, 520); } }
@@ -879,6 +935,7 @@ function interpolate(dt, now) {
       if (L) { L[0].rotation.x = sw * 0.9; L[1].rotation.x = -0.45 - sw * 0.25 - (p.swingT > 0 ? Math.sin((1 - p.swingT / 0.28) * Math.PI) * 1.1 : 0); L[2].rotation.x = -sw * 0.7; L[3].rotation.x = sw * 0.7; }
       p.airY = (p.airY || 0) + (((p.flags & 8) ? 0.75 : 0) - (p.airY || 0)) * Math.min(1, dt * 10);
       p.avatar.position.y = Math.abs(Math.sin(p.walk)) * 0.04 * sp + p.airY;
+      const pt = p.avatar.userData.pet; if (pt) { pt.position.y = (pt.userData.fly ? Math.sin(now * 3) * 0.08 : Math.abs(Math.sin(p.walk * 1.3)) * 0.07 * sp) - p.airY; }
     }
   });
   for (let i = 0; i < view.monsters.length; i++) {
@@ -1044,6 +1101,7 @@ RR.Game = {
     buildLevel();
     for (let i = 0; i < 4; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));
     setViewWeapon(0);
+    skinGeos = [new THREE.SphereGeometry(0.28, 18, 14), new THREE.OctahedronGeometry(0.34, 0)];
     itemGeos = [
       new THREE.TorusGeometry(0.26, 0.1, 8, 16), new THREE.BoxGeometry(0.3, 0.5, 0.3), new THREE.CylinderGeometry(0.25, 0.25, 0.3, 12),
       new THREE.BoxGeometry(0.55, 0.35, 0.25), new THREE.IcosahedronGeometry(0.28, 0), new THREE.CylinderGeometry(0.2, 0.28, 0.45, 10),
@@ -1060,7 +1118,7 @@ RR.Game = {
   /** 選單／大廳換地圖時，背景跟著換 */
   showMap: function (i) { if (!ready || active) return; W.setMap(i); if (builtMap !== W.mapIndex) buildLevel(); },
   /** 選單裡的造型預覽 */
-  preview: function (canvas, c, w, h) {
+  preview: function (canvas, c, w, h, o, pet) {
     if (!ready) return;
     if (!pv) {
       try {
@@ -1074,7 +1132,7 @@ RR.Game = {
       } catch (e) { pv = null; return; }
     }
     if (pv.model) pv.sc.remove(pv.model);
-    const g = buildChar(c, 0, h || 0), wg = buildWeapon(w);
+    const g = buildChar(c, 0, h || 0, o || 0, pet || 0), wg = buildWeapon(w);
     wg.position.set(0.37, 0.67, 0.3); wg.rotation.x = 0.5; g.add(wg);
     pv.model = g; pv.sc.add(g);
   },
@@ -1100,9 +1158,9 @@ RR.Game = {
     list.forEach(function (r) {
       seen[r.id] = true;
       let p = view.players.get(r.id);
-      if (p && (p.name !== r.name || p.slot !== r.slot || p.c !== r.c || p.w !== r.w || (p.h || 0) !== (r.h || 0))) { if (p.avatar) scene.remove(p.avatar); view.players.delete(r.id); p = null; }
+      if (p && (p.name !== r.name || p.slot !== r.slot || p.c !== r.c || p.w !== r.w || (p.h || 0) !== (r.h || 0) || (p.o || 0) !== (r.o || 0) || (p.pet || 0) !== (r.pet || 0))) { if (p.avatar) scene.remove(p.avatar); view.players.delete(r.id); p = null; }
       if (!p) {
-        p = { id: r.id, name: r.name, slot: r.slot, c: r.c || 0, w: r.w || 0, h: r.h || 0, swingT: 0, x: W.VAN[0], z: W.VAN[1], yaw: 0, tx: W.VAN[0], tz: W.VAN[1], tyaw: 0, alive: true, bagN: 0, flags: 0, avatar: null, row: null, fresh: true };
+        p = { id: r.id, name: r.name, slot: r.slot, c: r.c || 0, w: r.w || 0, h: r.h || 0, o: r.o || 0, pet: r.pet || 0, swingT: 0, x: W.VAN[0], z: W.VAN[1], yaw: 0, tx: W.VAN[0], tz: W.VAN[1], tyaw: 0, alive: true, bagN: 0, flags: 0, avatar: null, row: null, fresh: true };
         if (r.id !== myId) { p.avatar = buildAvatar(p); p.avatar.visible = false; }
         else setViewWeapon(p.w);
         view.players.set(r.id, p);
@@ -1119,7 +1177,9 @@ RR.Game = {
     if (builtMap !== W.mapIndex) buildLevel();
     view.items.forEach(function (it) { scene.remove(it.mesh); });
     view.items = info.items.map(function (a) {
-      const mesh = new THREE.Mesh(itemGeos[a[2] % itemGeos.length], new THREE.MeshBasicMaterial({ color: [0xffd166, 0x6ecbff, 0xff9f5a, 0xc9a0ff, 0xff7eb6, 0x9be564, 0xffe94a, 0xfff3b0, 0x5affc9, 0xffb86b, 0xbfc7d1][a[2] % 11] }));
+      const isk = RR.Game.settings.itemSkin | 0;   // 回收品造型：0 預設、1 糖果（圓球粉彩）、2 寶石（八面體亮色）
+      const icol = isk === 1 ? [0xffb3d1, 0xb3e5ff, 0xfff0a8, 0xd5b8ff, 0xb8ffd9][a[2] % 5] : isk === 2 ? [0xff4a6a, 0x4ac8ff, 0x6aff8a, 0xffd24a, 0xc86aff][a[2] % 5] : [0xffd166, 0x6ecbff, 0xff9f5a, 0xc9a0ff, 0xff7eb6, 0x9be564, 0xffe94a, 0xfff3b0, 0x5affc9, 0xffb86b, 0xbfc7d1][a[2] % 11];
+      const mesh = new THREE.Mesh(isk === 1 ? skinGeos[0] : isk === 2 ? skinGeos[1] : itemGeos[a[2] % itemGeos.length], new THREE.MeshBasicMaterial({ color: icol }));
       mesh.position.set(a[0], 0.75, a[1]); scene.add(mesh);
       return { x: a[0], z: a[1], kind: a[2], value: a[3], taken: false, mesh: mesh };
     });
@@ -1250,6 +1310,17 @@ RR.Game = {
     } else if (e.t === 'moon') {
       if (e.id === myId) { skEnd = Date.now() + 25000; toast('月光波！附近怪物暫停 3 秒'); }
       showMoon(e.x, e.z);
+    } else if (e.t === 'roar') {
+      if (e.id === myId) { skEnd = Date.now() + 22000; toast('咆哮！附近怪物嚇呆 2.5 秒'); }
+      Sfx.tone(140, 0.6, 'sawtooth', 0.22, 70); Sfx.noise(0.4, 0.15); if (Math.hypot(e.x - me.x, e.z - me.z) < 8) shakeT = Math.max(shakeT, 0.35);
+    } else if (e.t === 'blink') {
+      if (e.id === myId) {
+        skEnd = Date.now() + 18000;
+        const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw); let d = 0;
+        while (d < 6 && !W.blocked(me.x - sy * (d + 0.5), me.z - cy * (d + 0.5), 0.42) && !hitSolid(me.x - sy * (d + 0.5), me.z - cy * (d + 0.5))) d += 0.5;
+        me.x -= sy * d; me.z -= cy * d; toast('瞬移！');
+      }
+      Sfx.tone(900, 0.25, 'sine', 0.12, 1800);
     } else if (e.t === 'shot') {
       showShot(e);
       if (e.kill) { Sfx.tone(180, 0.35, 'sawtooth', 0.14, 60); floatText('+$50'); toast((e.id === myId ? '你' : nameOf(e.id)) + '擊倒了怪物！'); }
@@ -1292,6 +1363,12 @@ RR.Game = {
     const sm = smQ; smQ = false; const sk = skQ; skQ = false; const tt = ttQ; ttQ = null;
     return { t: 'i', x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100,
       run: me.running && me.alive, air: me.y > 0.25 && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!keys.KeyE && me.alive, sm: sm, sk: sk, tt: tt === null ? undefined : tt };
+  },
+  setMonSkin: function (v) {
+    RR.Game.settings.monSkin = v | 0;
+    if (!ready) return;
+    view.monsters.forEach(function (m) { scene.remove(m.group); });
+    view.monsters = []; for (let i = 0; i < 4; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));
   },
   setQuality: function (q) { quality = q === 'low' || q === 'mid' ? q : 'high'; applyQuality(); },
   setBtnScale: function (v) { btnScale = Math.max(0.7, Math.min(1.5, +v || 1)); layoutButtons(); },

@@ -137,7 +137,9 @@ const KINDS = [
   { n: '儀表', lo: 55, hi: 85 }, { n: '鐵罐', lo: 20, hi: 40 }
 ];
 
-const CHARS = ['回收員', '機器人', '太空人', '貓貓', '南瓜頭', '紙箱人'];
+const CHARS = ['回收員', '機器人', '太空人', '貓貓', '南瓜頭', '紙箱人', '恐龍', '外星人'];
+const COSTUMES = ['隊伍色', '迷彩', '霓虹', '黃金', '忍者', '雪白'];        // 服裝（純外觀）
+const PETS = ['無', '小狗', '貓頭鷹', '小機器人', '史萊姆'];   // 寵物：小狗 速度+5%、貓頭鷹 怪物偵測距離+8 公尺、小機器人 賣出+10%、史萊姆 體力回復+20%
 const WEAPONS = ['鐵管', '扳手', '球棒', '平底鍋', '雨傘', '鹹魚'];
 const HATS = ['無', '安全帽', '頭燈', '天線', '光環', '皇冠'];   // 頭飾（純外觀）
 const pick = (v, n) => { v = Math.floor(+v); return v >= 0 && v < n ? v : 0; };
@@ -217,7 +219,7 @@ Sim.prototype.addPlayer = function (id, name, look) {
   let slot = 0;
   while (this.players.some(function (p) { return p.slot === slot; })) slot++;
   look = look || {};
-  const p = { id: id, name: String(name || '玩家').slice(0, 12), slot: slot, c: pick(look.c, CHARS.length), w: pick(look.w, WEAPONS.length), h: pick(look.h, HATS.length), x: VAN[0], z: VAN[1], yaw: 0,
+  const p = { id: id, name: String(name || '玩家').slice(0, 12), slot: slot, c: pick(look.c, CHARS.length), w: pick(look.w, WEAPONS.length), h: pick(look.h, HATS.length), o: pick(look.o, COSTUMES.length), pet: pick(look.pet, PETS.length), x: VAN[0], z: VAN[1], yaw: 0,
     run: false, loud: false, spk: false, alive: true, bag: [], hp: 100, atkCd: 0, hurtT: 99, earned: 0, kills: 0 };
   this.players.push(p);
   return p;
@@ -230,7 +232,7 @@ Sim.prototype.removePlayer = function (id) {
   if (this.phase === 'play' && !this.players.some(function (q) { return q.alive; })) this._end(false, 'dead');
 };
 Sim.prototype.roster = function () {
-  return this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, c: p.c, w: p.w, h: p.h || 0 }; });
+  return this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, c: p.c, w: p.w, h: p.h || 0, o: p.o || 0, pet: p.pet || 0 }; });
 };
 
 Sim.prototype.startDay = function (day) {
@@ -416,6 +418,12 @@ Sim.prototype._skill = function (p) {
     case 3: p.stealthT = 6; p.skCd = 25; this.events.push({ t: 'stealth', id: p.id }); break;
     case 4: p.hp = Math.min(100, p.hp + 35); p.skCd = 25; this.events.push({ t: 'heal', id: p.id, hp: Math.round(p.hp) }); break;
     case 5: p.hideT = 4; p.skCd = 30; this.events.push({ t: 'hide', id: p.id }); break;
+    case 6: {   // 恐龍「咆哮」：6 公尺內怪物嚇呆 2.5 秒
+      p.skCd = 22;
+      this.monsters.forEach(function (mo) { if (!(mo.dead > 0) && Math.hypot(mo.x - p.x, mo.z - p.z) < 6) mo.cool = 2.5; });
+      this.events.push({ t: 'roar', id: p.id, x: r2(p.x), z: r2(p.z) }); break;
+    }
+    case 7: p.skCd = 18; this.events.push({ t: 'blink', id: p.id }); break;   // 外星人「瞬移」：位置由該玩家自己的裝置往前移 6 公尺
   }
 };
 
@@ -615,6 +623,7 @@ Sim.prototype.step = function (dt) {
     if (p.bag.length && Math.hypot(VAN[0] - p.x, VAN[1] - p.z) < 1.9) {
       let sum = 0;
       for (let b = 0; b < p.bag.length; b++) sum += this.items[p.bag[b]].value;
+      if (p.pet === 3) sum = Math.round(sum * 1.1);   // 寵物小機器人：賣出 +10%
       p.bag = []; this.money += sum; p.earned += sum;
       this.events.push({ t: 'sell', id: p.id, sum: sum });
     }
@@ -647,7 +656,7 @@ Sim.prototype.snapshot = function () {
 };
 
 const api = { MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
-  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, HATS: HATS, isWall: isWall, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
+  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, isWall: isWall, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
   quotaFor: quotaFor, Sim: Sim, setMap: setMap };
 
 /** 切換目前地圖（碰撞、視線、尋路都跟著換）。房主與每位玩家各自呼叫。 */
