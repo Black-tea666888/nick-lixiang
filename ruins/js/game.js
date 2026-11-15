@@ -226,8 +226,11 @@ function drawMini(L) {
   const g = miniCtx, k = MC / CS;
   g.clearRect(0, 0, mini.width, mini.height);
   g.drawImage(miniBase, 0, 0);
-  view.players.forEach(function (p) {          // 還活著的隊友
-    if (p.id === myId || !p.alive) return;
+  if (view.zone) {   // 大逃殺安全區
+    g.strokeStyle = '#ffffff'; g.lineWidth = 2; g.beginPath(); g.arc(view.zone[0] * k, view.zone[1] * k, Math.max(1, view.zr * k), 0, Math.PI * 2); g.stroke();
+  }
+  view.players.forEach(function (p) {          // 還活著的隊友（大逃殺不顯示對手）
+    if (p.id === myId || !p.alive || view.mode === 'br') return;
     g.fillStyle = CSSCOL[p.slot % 4];
     g.beginPath(); g.arc(p.x * k, p.z * k, MC * 0.38, 0, Math.PI * 2); g.fill();
   });
@@ -629,6 +632,7 @@ function shoot() {
   gunT = 0.22;
   if (RR.Game.onShoot) RR.Game.onShoot(Math.round(me.yaw * 100) / 100);
 }
+let zoneMesh = null, outT = 0;
 function showShot(e) {
   const mine = e.id === myId, sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   const from = mine ? new THREE.Vector3(me.x - sy * 0.5 + cy * 0.22, 1.42 + me.y, me.z - cy * 0.5 - sy * 0.22) : new THREE.Vector3(e.x, 1.25, e.z);
@@ -889,6 +893,7 @@ function updateMe(dt) {
   if (Math.abs(camera.fov - fovT) > 0.1) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   if (gunT > 0) gunT -= dt;
   fpsWatch(dt);
+  if (view.zone && me.alive && Math.hypot(me.x - view.zone[0], me.z - view.zone[1]) > view.zr) { outT -= dt; if (outT <= 0) { outT = 2.5; toast('你在安全區外，正在扣血！往白圈裡跑'); Sfx.tone(300, 0.15, 'square', 0.08); } hurtFlash = Math.max(hurtFlash, 0.35); }
   if (gunMesh) { const kk = gunMesh.userData.kick || 0; gunMesh.userData.kick = Math.max(0, kk - dt * 9); gunMesh.position.set(-0.3, -0.3 + kk * 0.03, -0.62 + kk * 0.07); gunMesh.rotation.x = kk * 0.22; }
   if (shakeT > 0) shakeT = Math.max(0, shakeT - dt);
   const sk2 = shakeT * 0.22;
@@ -1003,8 +1008,8 @@ function voiceSpatial(playing, L) {
 }
 
 function updateHud() {
-  $('money').textContent = '$' + view.money;
-  $('quota').textContent = '$' + view.quota;
+  if (view.mode === 'br') { let al = 0; view.players.forEach(function (p) { if (p.id === myId ? me.alive : p.alive) al++; }); $('money').textContent = al; $('quota').textContent = view.players.size + ' 人'; }
+  else { $('money').textContent = '$' + view.money; $('quota').textContent = '$' + view.quota; }
   $('bag').textContent = me.bagN;
   const am = $('ammo'), at = me.reloading ? '裝填中' : String(me.ammo || 0); if (am.textContent !== at) am.textContent = at;
   const gb = $('gun'), gt = me.reloading ? '…' : '槍'; if (gb.textContent !== gt) gb.textContent = gt; gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
@@ -1184,12 +1189,23 @@ RR.Game = {
     view.items = info.items.map(function (a) {
       const isk = RR.Game.settings.itemSkin | 0;   // 回收品造型：0 預設、1 糖果（圓球粉彩）、2 寶石（八面體亮色）
       const icol = isk === 1 ? [0xffb3d1, 0xb3e5ff, 0xfff0a8, 0xd5b8ff, 0xb8ffd9][a[2] % 5] : isk === 2 ? [0xff4a6a, 0x4ac8ff, 0x6aff8a, 0xffd24a, 0xc86aff][a[2] % 5] : [0xffd166, 0x6ecbff, 0xff9f5a, 0xc9a0ff, 0xff7eb6, 0x9be564, 0xffe94a, 0xfff3b0, 0x5affc9, 0xffb86b, 0xbfc7d1][a[2] % 11];
+      if (a[2] >= 20) {   // 大逃殺補給箱：綠 急救、藍 護甲、紅 火力
+        const lm = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.45, 0.6), new THREE.MeshBasicMaterial({ color: [0x4ade80, 0x5aa9ff, 0xff5a5a][a[2] - 20] || 0xffffff }));
+        lm.position.set(a[0], 0.45, a[1]); scene.add(lm);
+        return { x: a[0], z: a[1], kind: a[2], value: 0, taken: false, mesh: lm };
+      }
       const mesh = new THREE.Mesh(isk === 1 ? skinGeos[0] : isk === 2 ? skinGeos[1] : itemGeos[a[2] % itemGeos.length], new THREE.MeshBasicMaterial({ color: icol }));
       mesh.position.set(a[0], 0.75, a[1]); scene.add(mesh);
       return { x: a[0], z: a[1], kind: a[2], value: a[3], taken: false, mesh: mesh };
     });
-    view.mode = info.mode || 'coop'; document.body.classList.toggle('hunt', view.mode === 'hunt');
-    $('moneyLbl').textContent = view.mode === 'hunt' ? '擊倒得分' : '收入'; me.ammo = view.mode === 'hunt' ? 12 : 6; me.reloading = false;
+    view.mode = info.mode || 'coop'; document.body.classList.toggle('hunt', view.mode === 'hunt'); document.body.classList.toggle('br', view.mode === 'br');
+    view.zone = info.zone || null; view.zr = info.zone ? info.zone[2] : 0; outT = 0;
+    if (zoneMesh) { scene.remove(zoneMesh); zoneMesh = null; }
+    if (view.zone) {
+      zoneMesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 30, 64, 1, true), new THREE.MeshBasicMaterial({ color: 0x8fd0ff, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false, fog: false }));
+      zoneMesh.position.set(view.zone[0], 15, view.zone[1]); zoneMesh.scale.set(view.zr, 1, view.zr); scene.add(zoneMesh);
+    }
+    $('moneyLbl').textContent = view.mode === 'hunt' ? '擊倒得分' : view.mode === 'br' ? '存活' : '收入'; me.ammo = view.mode === 'coop' ? 6 : 12; me.reloading = false;
     view.phase = 'play'; view.day = info.day; view.quota = info.quota; view.time = info.time; view.money = 0;
     view.players.forEach(function (p) {
       const s = info.spawns[p.id] || W.VAN;
@@ -1203,7 +1219,7 @@ RR.Game = {
     $('flash').style.opacity = 0; $('warn').style.opacity = 0; $('spec').classList.add('hide');
     Sfx.drone(true);
     updateHud();
-    toast(view.mode === 'hunt' ? '獵殺第 ' + info.day + ' 關：用槍擊倒 ' + (info.quota / 50) + ' 隻怪物（每隻 $50）' : '第 ' + info.day + ' 天：把廢料帶回金色回收車，賺到 $' + info.quota);
+    toast(view.mode === 'br' ? '大逃殺：活到最後！白圈外會扣血，補給箱：綠 急救、藍 護甲、紅 火力' : view.mode === 'hunt' ? '獵殺第 ' + info.day + ' 關：用槍擊倒 ' + (info.quota / 50) + ' 隻怪物（每隻 $50）' : '第 ' + info.day + ' 天：把廢料帶回金色回收車，賺到 $' + info.quota);
     lockPointer();
   },
   onSnapshot: function (s) {
@@ -1236,6 +1252,7 @@ RR.Game = {
       p.alive = !!a[4]; p.bagN = a[5]; p.flags = a[6];
       if (a[0] === myId) {
         me.bagN = a[5]; if (s.ph === 'play' && !a[4]) me.alive = false;
+        if (s.zr != null) { view.zr = s.zr; if (zoneMesh) zoneMesh.scale.set(s.zr, 1, s.zr); }
         if (a[8] != null) { me.ammo = a[8]; me.reloading = !!a[9]; }
         if (a[7] != null && a[7] !== me.hp) { me.hp = a[7]; $('hpBar').style.width = hpPct(); }
         continue;
@@ -1315,6 +1332,17 @@ RR.Game = {
     } else if (e.t === 'moon') {
       if (e.id === myId) { skEnd = Date.now() + 25000; toast('月光波！附近怪物暫停 3 秒'); }
       showMoon(e.x, e.z);
+    } else if (e.t === 'brkill') {
+      const vp = view.players.get(e.id); if (vp) vp.alive = false;
+      let left = 0; view.players.forEach(function (p) { if (p.id === myId ? (me.alive && e.id !== myId) : p.alive) left++; });
+      if (e.id === myId) {
+        me.alive = false; me.running = false; releaseTouch(); Sfx.noise(0.6, 0.4);
+        $('flash').style.opacity = 0.85; setTimeout(function () { $('flash').style.opacity = 0; }, 900);
+        toast((e.by ? '你被 ' + nameOf(e.by) + ' 淘汰' : '你倒在安全區外') + '，第 ' + e.rank + ' 名');
+      } else toast((e.by === myId ? '你淘汰了 ' + nameOf(e.id) : e.by ? nameOf(e.by) + ' 淘汰了 ' + nameOf(e.id) : nameOf(e.id) + ' 倒在安全區外') + '，剩 ' + left + ' 人');
+      if (e.by === myId) { floatText('淘汰 +1'); Sfx.tone(520, 0.2, 'triangle', 0.14, 880); }
+    } else if (e.t === 'loot') {
+      if (e.id === myId) { me.hp = e.hp; $('hpBar').style.width = Math.min(100, me.hp) + '%'; toast(e.k === 20 ? '急救箱：生命 +40' : e.k === 21 ? '護甲：生命上限 150' : '火力強化：傷害 ×1.5'); Sfx.tone(660, 0.12, 'triangle', 0.12, 990); }
     } else if (e.t === 'escape') {
       if (e.id === myId) { toast('急救針發動！掙脫了，快跑'); shakeT = 0.4; hurtFlash = 0.6; } else toast(nameOf(e.id) + ' 用急救針掙脫了');
       Sfx.tone(700, 0.2, 'triangle', 0.14, 1200);

@@ -239,7 +239,7 @@ Sim.prototype.removePlayer = function (id) {
   if (!p) return;
   if (this.phase === 'play') this._dropBag(p);
   this.players = this.players.filter(function (q) { return q.id !== id; });
-  if (this.phase === 'play' && !this.players.some(function (q) { return q.alive; })) this._end(false, 'dead');
+  if (this.phase === 'play' && this.mode !== 'br' && !this.players.some(function (q) { return q.alive; })) this._end(false, 'dead');
 };
 Sim.prototype.roster = function () {
   return this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, c: p.c, w: p.w, h: p.h || 0, o: p.o || 0, pet: p.pet || 0, eq: p.eq || [], gems: p.gems || [0, 0, 0] }; });
@@ -252,8 +252,9 @@ Sim.prototype.startDay = function (day) {
   this.boardPos = this._spotAt(VAN[0], VAN[1], 2.5, 4) || [VAN[0] + 2.5, VAN[1]];
   this.tt = newTT();
   this.trophy = this._spotAt(VAN[0], VAN[1], 12, 25);   // 搶獎盃：地圖上一座獎盃，按住 E 3 秒的人拿走
-  const hunt = this.mode === 'hunt';
-  this.quota = hunt ? 50 * (5 + 2 * (day - 1) + 2 * (n - 1)) : quotaFor(day, n); this.events = [];   // 獵殺：每擊倒一隻 $50
+  const hunt = this.mode === 'hunt', br = this.mode === 'br';
+  this.players = this.players.filter(function (p) { return !p.ai; });   // 上一局的機器人先清掉
+  this.quota = br ? 0 : hunt ? 50 * (5 + 2 * (day - 1) + 2 * (n - 1)) : quotaFor(day, n); this.events = [];   // 獵殺：每擊倒一隻 $50
   this.smokes = [];
   this.players.forEach(function (p) { p.skCd = 0; p.smCd = 0; p.shieldT = 0; p.hideT = 0; p.stealthT = 0; p.rallyT = 0; });   // 每天開始技能冷卻歸零
   // 物品：隨機放在離起點有段距離的格子
@@ -264,7 +265,7 @@ Sim.prototype.startDay = function (day) {
   for (let i = cands.length - 1; i > 0; i--) {
     const j = Math.floor(this.rng() * (i + 1)), t = cands[i]; cands[i] = cands[j]; cands[j] = t;
   }
-  const count = hunt ? 0 : Math.min(cands.length, Math.round(floorCells.length / 12) + 2 * n + Math.min(day, 6));
+  const count = hunt || br ? 0 : Math.min(cands.length, Math.round(floorCells.length / 12) + 2 * n + Math.min(day, 6));
   this.items = [];
   for (let i = 0; i < count; i++) {
     const p = center(cands[i][0], cands[i][1]);
@@ -273,32 +274,34 @@ Sim.prototype.startDay = function (day) {
       value: Math.round((k.lo + this.rng() * (k.hi - k.lo)) / 5) * 5, taken: false });
   }
   // 怪物：第 3 天起 2 隻，第 6 天起 3 隻
-  const mc = hunt ? Math.min(4, 1 + day) : day >= 6 ? 4 : day >= 3 ? 2 : 1;
+  const mc = br ? 0 : hunt ? Math.min(4, 1 + day) : day >= 6 ? 4 : day >= 3 ? 2 : 1;
   this.monsters = [];
   for (let i = 0; i < mc; i++) {
     const mcell = MONSTER_CELLS[i] || floorCells[Math.floor(this.rng() * floorCells.length)];   // 地圖的怪物點不夠時，隨機放在地板上
     const p = center(mcell[0], mcell[1]);
     this.monsters.push({ x: p[0], z: p[1], rot: 0, state: 'wander', path: null, goal: null, lost: 0, repath: 0, cool: 0, target: null, hp: 100, dead: 0 });
   }
-  if (hunt) this.trophy = null;
+  if (hunt || br) this.trophy = null;
   this.chaseSpeed = Math.min(3.9 + 0.1 * (day - 1), 4.9);   // 跑步（9）一定甩得掉；走路（4.2）在後期甩不掉
   this.wanderSpeed = Math.min(2.1 + 0.05 * (day - 1), 2.8);
   this.players.forEach(function (p) {
     const o = SPAWN_OFF[p.slot % 4];
     p.alive = true; p.bag = []; p.x = VAN[0] + o[0]; p.z = VAN[1] + o[1]; p.yaw = -Math.PI * 0.75;
     p.run = p.loud = false; p.hp = maxHp(p); p.atkCd = 0; p.hurtT = 99; p.esc = false;
-    p.clip = Math.round((hunt ? 12 : 6) * (hasAcc(p, 3) ? 1.5 : 1)); p.ammo = p.clip; p.gunCd = 0; p.reload = 0;   // 回收模式每天 6 發（擊中讓怪物暈 2.5 秒）；獵殺模式彈匣 12 發、自動裝填
+    p.clip = Math.round((hunt || br ? 12 : 6) * (hasAcc(p, 3) ? 1.5 : 1)); p.ammo = p.clip; p.gunCd = 0; p.reload = 0;   // 回收模式每天 6 發（擊中讓怪物暈 2.5 秒）；獵殺模式彈匣 12 發、自動裝填
     if (day === 1) { p.earned = 0; p.kills = 0; p.mk = 0; }
   });
+  this.zone = null;
+  if (br) this._startBR();
   return self.dayInfo();
 };
 Sim.prototype.dayInfo = function () {
   const spawns = {};
   this.players.forEach(function (p) { spawns[p.id] = [p.x, p.z]; });
   return { t: 'day', map: this.map, mode: this.mode, day: this.day, quota: this.quota, time: this.time, monsters: this.monsters.length,
-    items: this.items.map(function (i) { return [i.x, i.z, i.kind, i.value]; }), spawns: spawns };
+    items: this.items.map(function (i) { return [i.x, i.z, i.kind, i.value]; }), spawns: spawns, zone: this.zone ? [this.zone.x, this.zone.z, this.zone.r0] : null };
 };
-Sim.prototype.toLobby = function () { this.phase = 'lobby'; this.day = 1; this.events = []; };
+Sim.prototype.toLobby = function () { this.phase = 'lobby'; this.day = 1; this.events = []; this.zone = null; this.players = this.players.filter(function (p) { return !p.ai; }); };
 
 Sim.prototype.setInput = function (id, m) {
   const p = this.player(id);
@@ -333,7 +336,7 @@ Sim.prototype._end = function (win, why) {
   if (this.phase !== 'play') return;
   this.phase = win ? 'won' : 'lost';
   this.events.push({ t: 'end', win: win, why: why, day: this.day, money: this.money, quota: this.quota, time: Math.max(0, Math.ceil(this.time)),
-    stats: this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, earned: p.earned, kills: p.kills, mk: p.mk || 0, alive: p.alive }; }) });
+    stats: this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, earned: p.earned, kills: p.kills, mk: p.mk || 0, alive: p.alive, rank: p.rank || 0, ai: !!p.ai }; }) });
 };
 
 /** 對局中更換配件：立刻生效（子彈上限等下一天才變） */
@@ -351,7 +354,7 @@ Sim.prototype.shoot = function (id, yaw) {
   if (isFinite(+yaw)) p.yaw = +yaw;
   const hunt = this.mode === 'hunt', fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
   p.gunCd = 0.22; p.ammo--;
-  if (hunt && p.ammo <= 0) p.reload = 1.4;
+  if ((hunt || this.mode === 'br') && p.ammo <= 0) p.reload = 1.4;
   let hit = -1, hd = 45;
   for (let i = 0; i < this.monsters.length; i++) {
     const m = this.monsters[i];
@@ -361,8 +364,25 @@ Sim.prototype.shoot = function (id, yaw) {
     if (!los(p.x, p.z, m.x, m.z)) continue;
     hit = i; hd = along;
   }
+  // 大逃殺：子彈也會打到其他玩家（含機器人）
+  let hitP = null;
+  if (this.mode === 'br') {
+    for (let i = 0; i < this.players.length; i++) {
+      const q = this.players[i];
+      if (q === p || !q.alive) continue;
+      const dx = q.x - p.x, dz = q.z - p.z, along = dx * fx + dz * fz;
+      if (along <= 0 || along > hd || Math.abs(dx * fz - dz * fx) > 0.55) continue;
+      if (!los(p.x, p.z, q.x, q.z)) continue;
+      hitP = q; hd = along; hit = -1;
+    }
+  }
   let hx, hz, kill = false;
-  if (hit >= 0) {
+  if (hitP) {
+    hx = hitP.x; hz = hitP.z;
+    hitP.hp -= 25 * (p.boost ? 1.5 : 1) * (1 + 0.08 * (p.gems ? p.gems[0] : 0)); hitP.hurtT = 0;
+    if (hitP.hp <= 0) { kill = true; this._brKill(hitP, p); }
+    else this.events.push({ t: 'hit', id: hitP.id, by: p.id, hp: Math.round(hitP.hp) });
+  } else if (hit >= 0) {
     const m = this.monsters[hit]; hx = m.x; hz = m.z;
     if (hunt) {
       m.hp -= 34 * (1 + 0.08 * (p.gems ? p.gems[0] : 0)); m.cool = 0.25;
@@ -373,7 +393,105 @@ Sim.prototype.shoot = function (id, yaw) {
     let d = 0; hx = p.x; hz = p.z;
     while (d < 45 && !isWall(Math.floor((p.x + fx * (d + 0.5)) / CS), Math.floor((p.z + fz * (d + 0.5)) / CS))) { d += 0.5; hx = p.x + fx * d; hz = p.z + fz * d; }
   }
-  this.events.push({ t: 'shot', id: id, x: r2(p.x), z: r2(p.z), hx: r2(hx), hz: r2(hz), mi: hit, kill: kill, ammo: p.ammo });
+  this.events.push({ t: 'shot', id: id, x: r2(p.x), z: r2(p.z), hx: r2(hx), hz: r2(hz), mi: hit, kill: kill && !hitP, pk: hitP ? hitP.id : undefined, ammo: p.ammo });
+};
+/* ---------- 大逃殺 ---------- */
+const BR_TOTAL = 6;   // 真人 + 機器人的總人數
+const BOT_NAMES = ['阿鐵', '小綠', '老皮', '閃電', '麻糬', '黑糖', '豆花'];
+Sim.prototype._startBR = function () {
+  const self = this;
+  // 機器人補滿人數
+  for (let i = 0; this.players.length < BR_TOTAL; i++) {
+    let slot = 0; while (this.players.some(function (q) { return q.slot === slot; })) slot++;
+    this.players.push({ id: 'bot' + i, name: BOT_NAMES[i % BOT_NAMES.length], slot: slot, c: Math.floor(this.rng() * CHARS.length), w: Math.floor(this.rng() * WEAPONS.length), h: Math.floor(this.rng() * HATS.length), o: 0, pet: 0, eq: [], gems: [0, 0, 0],
+      ai: true, x: 0, z: 0, yaw: 0, run: false, loud: false, spk: false, alive: true, bag: [], hp: 100, atkCd: 0, hurtT: 99, earned: 0, kills: 0, mk: 0, gunCd: 0, reload: 0, clip: 12, ammo: 12 });
+  }
+  // 出生點：盡量彼此分開
+  const used = [];
+  this.players.forEach(function (p) {
+    let best = null, bd = -1;
+    for (let k = 0; k < 30; k++) {
+      const fc = floorCells[Math.floor(self.rng() * floorCells.length)], c = center(fc[0], fc[1]);
+      let near = 1e9; used.forEach(function (u) { near = Math.min(near, Math.hypot(u[0] - c[0], u[1] - c[1])); });
+      if (near > bd) { bd = near; best = c; }
+    }
+    used.push(best); p.x = best[0]; p.z = best[1]; p.hp = 100; p.alive = true; p.boost = false; p.kills = 0; p.rank = 0; p.path = null; p.think = 0;
+  });
+  // 安全區：圓心在地圖中段的地板上，半徑從涵蓋全圖縮到 5 公尺
+  const W2 = COLS * CS, D2 = ROWS * CS;
+  let zc = null, zd = 1e9;
+  floorCells.forEach(function (fc) { const c = center(fc[0], fc[1]), d = Math.hypot(c[0] - W2 / 2, c[1] - D2 / 2) + self.rng() * 10; if (d < zd) { zd = d; zc = c; } });
+  const r0 = Math.hypot(W2, D2) * 0.62;
+  this.zone = { x: zc[0], z: zc[1], r0: r0, r: r0 };
+  this.time = 210; this.dead = 0;
+  // 補給箱：kind 20 急救（+40）、21 護甲（生命上限到 150，+50）、22 火力（傷害 ×1.5）
+  const cells = floorCells.slice();
+  for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(this.rng() * (i + 1)), t = cells[i]; cells[i] = cells[j]; cells[j] = t; }
+  this.items = [];
+  for (let i = 0; i < Math.min(12, cells.length); i++) { const c = center(cells[i][0], cells[i][1]); this.items.push({ x: c[0], z: c[1], kind: 20 + (i % 3 === 2 ? (i % 2 ? 22 - 20 : 1) : 0), value: 0, taken: false }); }
+};
+Sim.prototype._brKill = function (v, by) {
+  if (!v.alive) return;
+  v.alive = false; v.hp = 0; v.run = v.loud = false;
+  v.rank = this.players.length - this.dead; this.dead++;
+  if (by) by.kills = (by.kills || 0) + 1;
+  this.events.push({ t: 'brkill', id: v.id, by: by ? by.id : null, rank: v.rank });
+};
+Sim.prototype._stepBR = function (dt, alive) {
+  const self = this, z = this.zone, T = 210 - this.time;
+  // 縮圈：20 秒後開始，170 秒時縮到最小
+  z.r = T < 20 ? z.r0 : Math.max(5, z.r0 - (z.r0 - 5) * Math.min(1, (T - 20) / 150));
+  const zoneDps = 5 + T / 20;
+  for (let k = 0; k < alive.length; k++) {
+    const p = alive[k];
+    if (!p.alive) continue;
+    if (Math.hypot(p.x - z.x, p.z - z.z) > z.r) { p.hp -= zoneDps * dt; p.hurtT = 0; if (p.hp <= 0) { this._brKill(p, null); continue; } }
+    // 補給
+    for (let i = 0; i < this.items.length; i++) {
+      const it = this.items[i];
+      if (it.taken || Math.hypot(it.x - p.x, it.z - p.z) > 1.5) continue;
+      if (it.kind === 20) { if (p.hp >= (p.armor ? 150 : 100)) continue; p.hp = Math.min(p.armor ? 150 : 100, p.hp + 40); }
+      else if (it.kind === 21) { p.armor = true; p.hp = Math.min(150, p.hp + 50); }
+      else p.boost = true;
+      it.taken = true; this.events.push({ t: 'loot', id: p.id, k: it.kind, hp: Math.round(p.hp) });
+    }
+    if (p.ai) this._bot(p, dt, alive);
+  }
+  const left = this.players.filter(function (p) { return p.alive; });
+  if (left.length <= 1 || this.time <= 0) {
+    left.sort(function (a, b) { return (b.kills || 0) - (a.kills || 0) || b.hp - a.hp; });
+    left.forEach(function (p, i) { p.rank = i + 1; });
+    this._end(true, left.length <= 1 ? 'last' : 'time');
+  }
+};
+// 機器人：往圈內走、看到人就開槍（有瞄準誤差）、血少會找急救箱
+Sim.prototype._bot = function (p, dt, alive) {
+  const z = this.zone;
+  let tgt = null, td = 20;
+  for (let i = 0; i < alive.length; i++) { const q = alive[i]; if (q === p || !q.alive) continue; const d = Math.hypot(q.x - p.x, q.z - p.z); if (d < td && los(p.x, p.z, q.x, q.z)) { tgt = q; td = d; } }
+  if (tgt) {
+    const want = Math.atan2(-(tgt.x - p.x), -(tgt.z - p.z));
+    p.yaw = want;
+    if (p.gunCd <= 0 && p.reload <= 0) { p.aim = (p.aim || 0) + dt; if (p.aim > 0.7) { p.aim = 0.25; this.shoot(p.id, want + (this.rng() - 0.5) * 0.3); } }
+  } else p.aim = 0;
+  p.think -= dt;
+  const pc = cellOf(p.x, p.z);
+  if (!p.path || !p.path.length || p.think <= 0) {
+    p.think = 2 + this.rng() * 2;
+    let goal = null;
+    if (p.hp < 60) { let bd = 1e9; this.items.forEach(function (it) { if (it.taken || it.kind !== 20) return; const d = Math.hypot(it.x - p.x, it.z - p.z); if (d < bd && Math.hypot(it.x - z.x, it.z - z.z) < z.r) { bd = d; goal = cellOf(it.x, it.z); } }); }
+    if (!goal) {
+      for (let k = 0; k < 12 && !goal; k++) { const fc = floorCells[Math.floor(this.rng() * floorCells.length)], c = center(fc[0], fc[1]); if (Math.hypot(c[0] - z.x, c[1] - z.z) < z.r * 0.8) goal = fc; }
+      if (!goal) goal = cellOf(z.x, z.z);
+    }
+    const path = bfs(pc[0], pc[1], goal[0], goal[1]);
+    p.path = path ? path.slice(1) : null;
+  }
+  if (p.path && p.path.length && !(tgt && td < 7)) {
+    const c = center(p.path[0][0], p.path[0][1]), dx = c[0] - p.x, dz = c[1] - p.z, d = Math.hypot(dx, dz);
+    if (d < 0.3) p.path.shift();
+    else { const sp = 4.6 * dt; p.x += dx / d * Math.min(sp, d); p.z += dz / d * Math.min(sp, d); if (!tgt) p.yaw = Math.atan2(-dx, -dz); p.run = false; }
+  }
 };
 // 獵殺模式：被擊倒的怪物在離玩家最遠的候選格重生
 Sim.prototype._respawn = function (m) {
@@ -394,7 +512,7 @@ Sim.prototype.attack = function (id, yaw) {
   if (isFinite(+yaw)) a.yaw = +yaw;
   a.atkCd = a.c === 4 ? 0.49 : 0.65;   // 南瓜頭攻擊冷卻 -25%
   this.events.push({ t: 'swing', id: id });
-  if (!this.pvp) return;
+  if (!this.pvp && this.mode !== 'br') return;
   const fx = -Math.sin(a.yaw), fz = -Math.cos(a.yaw);
   let best = null, bd = 2.4;
   for (let i = 0; i < this.players.length; i++) {
@@ -409,6 +527,7 @@ Sim.prototype.attack = function (id, yaw) {
   if (!best) return;
   best.hp -= a.c === 1 ? 65 : 50; best.hurtT = 0;   // 機器人攻擊力 +30%
   this.events.push({ t: 'hit', id: best.id, by: id, hp: Math.max(0, best.hp) });
+  if (best.hp <= 0 && this.mode === 'br') { this._brKill(best, a); return; }
   if (best.hp <= 0) {
     best.alive = false; best.run = best.loud = false; a.kills++;
     this.events.push({ t: 'killed', id: best.id, by: id });
@@ -575,8 +694,9 @@ Sim.prototype.step = function (dt) {
     if ((p.skCd || 0) > 0) p.skCd -= dt;
     for (const k of ['shieldT', 'hideT', 'stealthT', 'rallyT']) if ((p[k] || 0) > 0) p[k] -= dt;
     p.hurtT += dt;
-    if (p.hurtT > 5 && p.hp < maxHp(p)) p.hp = Math.min(maxHp(p), p.hp + 6 * dt);   // 5 秒沒受傷後慢慢回血
+    if (this.mode !== 'br' && p.hurtT > 5 && p.hp < maxHp(p)) p.hp = Math.min(maxHp(p), p.hp + 6 * dt);   // 5 秒沒受傷後慢慢回血
   }
+  if (this.mode === 'br') { this._stepBR(dt, alive); return; }
   // 救援：按住 E 站在倒地隊友 2 公尺內 2 秒，把隊友救起（血量 50，身上廢料留在原地）
   for (let k = 0; k < alive.length; k++) {
     const p = alive[k];
@@ -662,7 +782,7 @@ Sim.prototype.step = function (dt) {
 Sim.prototype.snapshot = function () {
   let it = '';
   for (let i = 0; i < this.items.length; i++) it += this.items[i].taken ? '1' : '0';
-  return { t: 's', ph: this.phase, day: this.day, money: this.money, quota: this.quota, time: Math.round(this.time * 10) / 10,
+  return { t: 's', zr: this.zone ? r2(this.zone.r) : undefined, ph: this.phase, day: this.day, money: this.money, quota: this.quota, time: Math.round(this.time * 10) / 10,
     p: this.players.map(function (p) {
       return [p.id, r2(p.x), r2(p.z), r2(p.yaw), p.alive ? 1 : 0, p.bag.length, (p.run ? 1 : 0) | (p.spk ? 2 : 0) | (p.loud ? 4 : 0) | (p.air ? 8 : 0), Math.round(p.hp), p.ammo || 0, p.reload > 0 ? 1 : 0];
     }),
