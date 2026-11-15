@@ -136,6 +136,12 @@ const settings = { sens: 1 };
 let specId = null, beatT = 0, toastT = 0, fullHintT = 0, loudT = 0, spk = false, hudT = 0, lastL = me, dragging = false;
 let itemGeos = null;
 
+// 飄字（賣出金額、受傷）
+function floatText(text, bad) {
+  const el = document.createElement('span'); el.textContent = text; if (bad) el.className = 'bad';
+  $('floats').appendChild(el); setTimeout(function () { el.remove(); }, 1350);
+}
+let shakeT = 0;
 function toast(msg) { const el = $('toast'); el.textContent = msg; el.style.opacity = 1; toastT = 2.4; }
 function canControl() { return active && view.phase === 'play' && me.alive; }
 function nameOf(id) { const p = view.players.get(id); return p ? p.name : '隊友'; }
@@ -494,13 +500,15 @@ function updateMe(dt) {
   if (moving) {
     const before = Math.floor(me.walkT / Math.PI);
     me.walkT += dt * (wantRun ? 13 : 8.5) * mag;
-    if (Math.floor(me.walkT / Math.PI) !== before) Sfx.tone(wantRun ? 85 : 70, 0.06, 'sine', wantRun ? 0.09 : 0.045);
+    if (Math.floor(me.walkT / Math.PI) !== before) { Sfx.tone(wantRun ? 85 : 70, 0.06, 'sine', wantRun ? 0.09 : 0.045); Sfx.noise(0.035, wantRun ? 0.05 : 0.028); }
   }
   me.running = wantRun;
   // 跑步時視野變寬，讓速度感更明顯
   const fovT = wantRun ? 88 : 75;
   if (Math.abs(camera.fov - fovT) > 0.1) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
-  camera.position.set(me.x, 1.65 + (moving ? Math.sin(me.walkT * 2) * 0.045 : 0), me.z);
+  if (shakeT > 0) shakeT = Math.max(0, shakeT - dt);
+  const sk2 = shakeT * 0.22;
+  camera.position.set(me.x + (Math.random() - 0.5) * sk2, 1.65 + (moving ? Math.sin(me.walkT * 2) * 0.045 : 0) + (Math.random() - 0.5) * sk2, me.z + (Math.random() - 0.5) * sk2);
   camera.rotation.set(me.pitch, me.yaw, 0);
   $('stamBar').style.width = (me.stam * 100).toFixed(0) + '%';
   $('stam').className = me.tired ? 'tired' : '';
@@ -604,6 +612,9 @@ function updateHud() {
   $('money').textContent = '$' + view.money;
   $('quota').textContent = '$' + view.quota;
   $('bag').textContent = me.bagN;
+  const qf = $('qfill'), pct = view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
+  qf.style.width = pct + '%'; qf.classList.toggle('done', pct >= 100);
+  const pp = $('pips'); for (let i = 0; i < 3; i++) pp.children[i].className = i < me.bagN ? 'on' : ''; pp.className = me.bagN >= 3 ? 'full' : '';
   $('day').textContent = view.day;
   const s = Math.max(0, Math.ceil(view.time)), mm = Math.floor(s / 60), ss = s % 60;
   $('timer').textContent = mm + ':' + (ss < 10 ? '0' : '') + ss;
@@ -846,14 +857,14 @@ RR.Game = {
       if (e.id === myId && it) { Sfx.tone(660, 0.09, 'triangle', 0.12, 990); toast('撿到 ' + W.KINDS[it.kind].n + '（$' + it.value + '）'); }
     } else if (e.t === 'sell') {
       Sfx.tone(523, 0.12, 'triangle', 0.14); setTimeout(function () { Sfx.tone(784, 0.2, 'triangle', 0.14); }, 110);
-      toast((e.id === myId ? '賣出' : nameOf(e.id) + ' 賣出') + ' +$' + e.sum);
+      toast((e.id === myId ? '賣出' : nameOf(e.id) + ' 賣出') + ' +$' + e.sum); floatText('+$' + e.sum);
     } else if (e.t === 'drop') {
       e.list.forEach(function (a) { const it = view.items[a[0]]; if (it) { it.x = a[1]; it.z = a[2]; it.taken = false; it.mesh.visible = true; } });
     } else if (e.t === 'caught') {
       const p = view.players.get(e.id); if (p) p.alive = false;
       if (e.id === myId) {
         me.alive = false; me.running = false; releaseTouch();
-        Sfx.noise(0.8, 0.5); Sfx.tone(220, 0.8, 'sawtooth', 0.25, 55);
+        Sfx.noise(0.8, 0.5); Sfx.tone(220, 0.8, 'sawtooth', 0.25, 55); shakeT = 0.6;
         $('flash').style.opacity = 0.85; setTimeout(function () { $('flash').style.opacity = 0; }, 900);
         toast('你被抓到了');
       } else { Sfx.tone(90, 0.5, 'sawtooth', 0.12, 45); toast(nameOf(e.id) + ' 被抓走了，身上的廢料掉在原地'); }
@@ -903,7 +914,7 @@ RR.Game = {
     } else if (e.t === 'swing') {
       if (e.id !== myId) { const p = view.players.get(e.id); if (p) { p.swingT = 0.28; if (Math.hypot(p.x - lastL.x, p.z - lastL.z) < 14) Sfx.noise(0.1, 0.05); } }
     } else if (e.t === 'hit') {
-      if (e.id === myId) { hurtFlash = 1; Sfx.tone(160, 0.25, 'square', 0.2, 70); if (e.hp > 0) toast('被 ' + nameOf(e.by) + ' 打了！'); }
+      if (e.id === myId) { hurtFlash = 1; shakeT = 0.3; Sfx.tone(160, 0.25, 'square', 0.2, 70); if (e.hp > 0) toast('被 ' + nameOf(e.by) + ' 打了！'); }
       else if (e.by === myId) Sfx.tone(240, 0.12, 'square', 0.12, 120);
     } else if (e.t === 'killed') {
       const p = view.players.get(e.id); if (p) p.alive = false;

@@ -78,6 +78,7 @@ function dispatch(msg) {
       break;
     case 'day':
       show(null); Game.setActive(true); Game.onDay(msg); chatOpen(false);
+      if (!ls('rr_tut')) tutShow(0);
       break;
     case 's':
       Game.onSnapshot(msg);
@@ -300,11 +301,29 @@ function tickLobby() {
   pv.classList.toggle('off', !S.pvp);
   $('mapBtn').textContent = '地圖：' + W.MAPS[S.map || 0].name + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
 }
+// 新手教學：第一次開始遊戲時出現，之後可從「設定與說明」重看
+const TUT = [
+  ['目標', '在時間內把廢料帶回綠色回收車，賺到當天的目標金額。上方的進度條滿了就過關。'],
+  ['撿與賣', '走近發亮的廢料就會撿起來，背包最多 3 件。走回回收車會自動賣掉。跟著畫面上方的箭頭就能找到回收車。'],
+  ['怪物', '怪物看得到你，也聽得到跑步聲。聽到心跳聲變快就代表牠在附近。背包滿 3 件時牠會被引過來。'],
+  ['保命工具', '「技」是角色技能、「煙」是煙霧彈（躲進煙裡怪物看不到你），按鈕上的數字是冷卻秒數。隊友倒地時按住「救」。']
+];
+let tutI = 0;
+function tutShow(i) {
+  tutI = i; $('tutN').textContent = (i + 1) + ' / ' + TUT.length; $('tutTitle').textContent = TUT[i][0]; $('tutText').textContent = TUT[i][1];
+  $('tutNext').textContent = i === TUT.length - 1 ? '開始' : '下一步'; $('tut').classList.remove('hide');
+}
+function tutDone() { $('tut').classList.add('hide'); lsSet('rr_tut', '1'); }
 function showResult(e) {
   const host = S.mode === 'host', solo = S.mode === 'solo';
   if (e.win) { const best = parseInt(ls('rr_best') || '0', 10); if (e.day > best) lsSet('rr_best', String(e.day)); }
   $('resTitle').textContent = e.win ? '第 ' + e.day + ' 天完成！' : '任務失敗';
   $('resTitle').style.color = e.win ? '' : '#ff4a3d';
+  // 星等：過關 1 顆，超過目標 30% 或剩 60 秒以上各再加 1 顆
+  const stars = e.win ? 1 + (e.money >= e.quota * 1.3 ? 1 : 0) + (e.time >= 60 ? 1 : 0) : 0;
+  const sb = $('resStars'); sb.textContent = '';
+  for (let k = 0; k < 3; k++) { const x = document.createElement(k < stars ? 'span' : 'i'); x.textContent = '★'; sb.appendChild(x); }
+  let top = null; if (e.stats) e.stats.forEach(function (p) { if (p.earned > 0 && (!top || p.earned > top.earned)) top = p; });
   $('resText').textContent = e.win
     ? '賺到 $' + e.money + '（目標 $' + e.quota + '），還剩 ' + e.time + ' 秒。明天目標更高，怪物也更快。'
     : (e.why === 'time' ? '時間到，只賺到 $' + e.money + ' / $' + e.quota + '。' : '全員被抓。帶回 $' + e.money + ' / $' + e.quota + '。') + ' 止步第 ' + e.day + ' 天。';
@@ -314,7 +333,9 @@ function showResult(e) {
     const dot = document.createElement('i'); dot.style.background = CSSCOL[p.slot % 4];
     const nm = document.createElement('span'); nm.textContent = p.name;
     const sm = document.createElement('small'); sm.textContent = '賣出 $' + p.earned + ' · 擊殺 ' + p.kills;
-    row.appendChild(dot); row.appendChild(nm); row.appendChild(sm); st.appendChild(row);
+    row.appendChild(dot); row.appendChild(nm);
+    if (top && top.id === p.id) { const mv = document.createElement('span'); mv.className = 'mvp'; mv.textContent = 'MVP'; row.appendChild(mv); }
+    row.appendChild(sm); st.appendChild(row);
   });
   st.classList.toggle('hide', solo || !e.stats);
   $('resNext').classList.toggle('hide', !(e.win && (host || solo)));
@@ -411,6 +432,9 @@ function bind() {
   $('pickOk').addEventListener('click', function () { showMenu(); });
   $('helpBtn').addEventListener('click', function () { show('scrHelp'); });
   $('helpDone').addEventListener('click', function () { showMenu(); });
+  $('tutNext').addEventListener('click', function () { if (tutI < TUT.length - 1) tutShow(tutI + 1); else tutDone(); });
+  $('tutSkip').addEventListener('click', tutDone);
+  $('tutAgain').addEventListener('click', function () { tutShow(0); });
   $('miniInfoBtn').addEventListener('click', function () { Game.openMini(); });
   // 設定
   const sens = parseFloat(ls('rr_sens') || '1'), sfx = parseFloat(ls('rr_sfx') || '0.8'), vv = parseFloat(ls('rr_voice') || '1');

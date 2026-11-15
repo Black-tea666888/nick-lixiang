@@ -30,6 +30,13 @@ const Sfx = {
       if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
       g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
       o.connect(g); g.connect(sfxGain); o.start(t); o.stop(t + dur + 0.02);
+      if (freq < 200) {   // 低音在手機喇叭上聽不到：疊一個高兩個八度的泛音
+        const o2 = ac.createOscillator(), g2 = ac.createGain();
+        o2.type = 'triangle'; o2.frequency.setValueAtTime(freq * 4, t);
+        if (slideTo) o2.frequency.exponentialRampToValueAtTime(slideTo * 4, t + dur);
+        g2.gain.setValueAtTime(vol * 0.45, t); g2.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o2.connect(g2); g2.connect(sfxGain); o2.start(t); o2.stop(t + dur + 0.02);
+      }
     } catch (e) {}
   },
   noise: function (dur, vol) {
