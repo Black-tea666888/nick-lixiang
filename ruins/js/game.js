@@ -4,8 +4,8 @@
 const RR = window.RR, W = RR.World, Sfx = RR.Sfx, Voice = RR.Voice;
 const CS = W.CS, WH = W.WH;
 const $ = function (id) { return document.getElementById(id); };
-const COLORS = [0x7dffb0, 0x6ecbff, 0xffd166, 0xff7eb6];
-const CSSCOL = ['#7dffb0', '#6ecbff', '#ffd166', '#ff7eb6'];
+const COLORS = [0xffb84a, 0x6ecbff, 0xc79bff, 0xff7eb6];
+const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 
 let renderer, scene, camera, torch, canvas, ready = false;
 let myId = null, active = false;
@@ -192,14 +192,14 @@ function buildMini() {
   miniCtx = mini.getContext('2d');
   miniBase = document.createElement('canvas'); miniBase.width = mini.width; miniBase.height = mini.height;
   const g = miniBase.getContext('2d');
-  g.fillStyle = 'rgba(5,8,7,.72)'; g.fillRect(0, 0, mini.width, mini.height);
-  g.fillStyle = 'rgba(125,255,176,.2)';
+  g.fillStyle = 'rgba(9,13,22,.78)'; g.fillRect(0, 0, mini.width, mini.height);
+  g.fillStyle = 'rgba(120,160,230,.28)';
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (W.MAP[r][c] !== '#') g.fillRect(c * MC, r * MC, MC, MC);
   // 回收車
   const v = W.VAN, k = MC / CS;
   g.fillStyle = '#5fb4e6'; (W.lockers || []).forEach(function (q) { g.fillRect(q[0] * k - MC * 0.25, q[1] * k - MC * 0.25, MC * 0.5, MC * 0.5); });   // 櫃子
-  g.fillStyle = '#4dff9a'; g.fillRect(v[0] * k - MC * 0.45, v[1] * k - MC * 0.45, MC * 0.9, MC * 0.9);
-  g.fillStyle = '#04140a'; g.font = 'bold ' + (MC * 0.8) + 'px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = '#ffc24a'; g.fillRect(v[0] * k - MC * 0.45, v[1] * k - MC * 0.45, MC * 0.9, MC * 0.9);
+  g.fillStyle = '#1b1305'; g.font = 'bold ' + (MC * 0.8) + 'px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.fillText('車', v[0] * k, v[1] * k + 0.5);
 }
 function drawMini(L) {
@@ -291,12 +291,12 @@ function buildLevel() {
     tops.forEach(function (t) { level.add(part(new THREE.BoxGeometry(CS * 0.9, 0.06, 0.12), glowM, t[0], t[1] + 0.03, t[2])); });
   }
   // 回收車
-  const ring = new THREE.Mesh(new THREE.RingGeometry(1.5, 1.85, 40), new THREE.MeshBasicMaterial({ color: 0x4dff9a, side: THREE.DoubleSide }));
+  const ring = new THREE.Mesh(new THREE.RingGeometry(1.5, 1.85, 40), new THREE.MeshBasicMaterial({ color: 0xffc24a, side: THREE.DoubleSide }));
   ring.rotation.x = -Math.PI / 2; ring.position.set(VAN[0], 0.03, VAN[1]); level.add(ring);
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 1.65, WH, 28, 1, true),
-    new THREE.MeshBasicMaterial({ color: 0x4dff9a, transparent: true, opacity: 0.08, side: THREE.DoubleSide, depthWrite: false }));
+    new THREE.MeshBasicMaterial({ color: 0xffc24a, transparent: true, opacity: 0.08, side: THREE.DoubleSide, depthWrite: false }));
   beam.position.set(VAN[0], WH / 2, VAN[1]); level.add(beam);
-  const vl = new THREE.PointLight(0x4dff9a, 0.9, 12, 1.6); vl.position.set(VAN[0], 2.4, VAN[1]); level.add(vl);
+  const vl = new THREE.PointLight(0xffc24a, 0.9, 12, 1.6); vl.position.set(VAN[0], 2.4, VAN[1]); level.add(vl);
   // 櫃子（躲藏點）
   const lockM = new THREE.MeshLambertMaterial({ color: 0x2a4a60, emissive: 0x0b1c28 }), lineM = new THREE.MeshBasicMaterial({ color: 0x0a141a }), tagM = new THREE.MeshBasicMaterial({ color: 0x7dffb0 });
   (W.lockers || []).forEach(function (k) {
@@ -336,7 +336,7 @@ function buildLevel() {
   // 回收車車體（放在光圈旁，緊貼最近的牆）
   const sc0 = W.cellOf(VAN[0], VAN[1]), vw = [[-1, 0], [0, -1], [1, 0], [0, 1]].filter(function (d) { return W.isWall(sc0[0] + d[0], sc0[1] + d[1]); })[0];
   if (vw) {
-    const tg = new THREE.Group(), bodyM = pmat(0x2f9a6b, 0.25), cabM = pmat(0xe8eef2, 0.15), tyre = pmat(0x111413, 0.02);
+    const tg = new THREE.Group(), bodyM = pmat(0xd9902f, 0.25), cabM = pmat(0xe8eef2, 0.15), tyre = pmat(0x111413, 0.02);
     tg.add(part(new THREE.BoxGeometry(1.5, 0.9, 0.8), bodyM, 0, 0.75, 0), part(new THREE.BoxGeometry(0.55, 0.7, 0.8), cabM, 1.05, 0.65, 0), part(new THREE.BoxGeometry(0.3, 0.25, 0.7), new THREE.MeshBasicMaterial({ color: 0x9fe8ff }), 1.2, 0.82, 0));
     [[-0.5, 0.42], [0.95, 0.42], [-0.5, -0.42], [0.95, -0.42]].forEach(function (q) { const w = part(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 10), tyre, q[0], 0.2, q[1]); w.rotation.x = Math.PI / 2; tg.add(w); });
     tg.position.set(VAN[0] + vw[0] * (CS / 2 - 0.5), 0, VAN[1] + vw[1] * (CS / 2 - 0.5)); tg.rotation.y = vw[0] ? Math.PI / 2 : 0; level.add(tg);
@@ -1007,7 +1007,7 @@ RR.Game = {
     $('flash').style.opacity = 0; $('warn').style.opacity = 0; $('spec').classList.add('hide');
     Sfx.drone(true);
     updateHud();
-    toast('第 ' + info.day + ' 天：把廢料帶回綠色回收車，賺到 $' + info.quota);
+    toast('第 ' + info.day + ' 天：把廢料帶回金色回收車，賺到 $' + info.quota);
     lockPointer();
   },
   onSnapshot: function (s) {
