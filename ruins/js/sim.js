@@ -254,7 +254,7 @@ Sim.prototype.attack = function (id, yaw) {
   const a = this.player(id);
   if (!a || this.phase !== 'play' || !a.alive || a.atkCd > 0) return;
   if (isFinite(+yaw)) a.yaw = +yaw;
-  a.atkCd = 0.65;
+  a.atkCd = a.c === 4 ? 0.49 : 0.65;   // 南瓜頭攻擊冷卻 -25%
   this.events.push({ t: 'swing', id: id });
   if (!this.pvp) return;
   const fx = -Math.sin(a.yaw), fz = -Math.cos(a.yaw);
@@ -269,7 +269,7 @@ Sim.prototype.attack = function (id, yaw) {
     best = p; bd = d;
   }
   if (!best) return;
-  best.hp -= 50; best.hurtT = 0;
+  best.hp -= a.c === 1 ? 65 : 50; best.hurtT = 0;   // 機器人攻擊力 +30%
   this.events.push({ t: 'hit', id: best.id, by: id, hp: Math.max(0, best.hp) });
   if (best.hp <= 0) {
     best.alive = false; best.run = best.loud = false; a.kills++;
@@ -334,7 +334,7 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   if (m.cool > 0) { m.cool -= dt; return; }
   let best = null, bd = 1e9, bestSees = false;
   for (let i = 0; i < alive.length; i++) {
-    const p = alive[i], d = Math.hypot(p.x - m.x, p.z - m.z);
+    const p = alive[i], d = Math.hypot(p.x - m.x, p.z - m.z) * (p.c === 5 ? 1.33 : 1);   // 紙箱人較難被發現
     const sees = d < 30 && los(m.x, m.z, p.x, p.z);
     const hears = (p.run && d < 22) || (p.loud && d < 18) || (p.bag.length >= 3 && d < 40);   // 身上集滿 3 件會把怪物引過來
     if ((sees || hears) && d < bd) { best = p; bd = d; bestSees = sees; }

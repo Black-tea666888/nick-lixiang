@@ -12,6 +12,9 @@ let myId = null, active = false;
 const me = { x: W.VAN[0], z: W.VAN[1], yaw: -Math.PI * 0.75, pitch: 0, stam: 1, tired: false, walkT: 0, running: false, alive: true, bagN: 0, hp: 100 };
 let atkT = 0, swingT = 0, pipe = null, hurtFlash = 0;
 const view = { phase: 'lobby', day: 1, money: 0, quota: 0, time: 0, players: new Map(), monsters: [], items: [] };
+// 角色屬性：0 回收員 1 機器人 2 太空人 3 貓貓 4 南瓜頭 5 紙箱人
+const CHAR_SPEED = [1, 1, 1.05, 1.10, 1, 1];
+function myC() { const pm = view.players.get(myId); return pm && pm.c ? pm.c : 0; }
 // 藍色（冰）怪物附近：減速
 function iceNear() {
   for (let i = 1; i < view.monsters.length; i += 2) {
@@ -430,7 +433,7 @@ function updateMe(dt) {
   const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run) && moving && !me.tired;
   if (wantRun) { me.stam -= 0.26 * dt; if (me.stam <= 0) { me.stam = 0; me.tired = true; } }
   else { me.stam = Math.min(1, me.stam + 0.17 * dt); if (me.tired && me.stam > 0.35) me.tired = false; }
-  const speed = (wantRun ? 9.0 : 3.9) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05) * (iceNear() ? 0.75 : 1);   // 靠近藍色（冰）怪物減速 25%
+  const speed = (wantRun ? 9.0 : 3.9) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05) * CHAR_SPEED[myC()] * (iceNear() ? 0.75 : 1);   // 靠近藍色（冰）怪物減速 25%
   const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   const dx = (-sy * f + cy * s) * speed * dt, dz = (-cy * f - sy * s) * speed * dt;
   const R = 0.42;
@@ -539,10 +542,7 @@ function voiceSpatial(playing, L) {
       if (!me.alive) g = 0.9;                 // 死掉後聽得到所有人
       else if (!p.alive) g = 0;               // 活人聽不到死人
       else {
-        const dx = p.x - L.x, dz = p.z - L.z, d = Math.hypot(dx, dz);
-        g = d <= 5 ? 1 : d >= 28 ? 0 : Math.pow(1 - (d - 5) / 23, 2);
-        if (g > 0 && !W.los(L.x, L.z, p.x, p.z)) g *= 0.5;   // 隔牆變小聲
-        if (d > 0.5) pan = Math.max(-1, Math.min(1, (dx * Math.cos(L.yaw) - dz * Math.sin(L.yaw)) / d)) * 0.8;
+        g = 1; pan = 0;   // 活著的隊友音量固定，不隨距離或牆壁改變，方便溝通
       }
     }
     Voice.spatial(p.id, g, pan);
