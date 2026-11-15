@@ -25,7 +25,46 @@ function say(text) { $('msgText').textContent = text; $('msg').classList.remove(
 function busy(on, text) { $('busyText').textContent = text || '請稍候…'; $('busy').classList.toggle('hide', !on); }
 function cleanName(n) { return String(n || '').replace(/\s+/g, ' ').trim().slice(0, 12) || '玩家'; }
 function myName() { const u = Auth.user(); return cleanName(u ? u.name : '玩家'); }
-function myLook() { return { c: parseInt(ls('rr_c') || '0', 10) || 0, w: parseInt(ls('rr_w') || '0', 10) || 0 }; }
+function myLook() { const h = parseInt(ls('rr_h') || '0', 10) || 0; return { c: parseInt(ls('rr_c') || '0', 10) || 0, w: parseInt(ls('rr_w') || '0', 10) || 0, h: prog().hats.indexOf(h) >= 0 ? h : 0 }; }
+/* ---------- 成長系統（存在這台裝置上）：金幣、經驗、每日任務、頭飾 ---------- */
+const HAT_COST = [0, 60, 100, 150, 250, 400];
+const MISSIONS = [['完成 1 天', 1, 30], ['團隊累計賺到 $800', 800, 40], ['拿到一次 3 顆星', 1, 50]];
+function today() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function prog() {
+  let p = null; try { p = JSON.parse(ls('rr_prog') || 'null'); } catch (e) {}
+  if (!p || typeof p !== 'object') p = {};
+  p.coins = Math.max(0, Math.floor(+p.coins || 0)); p.xp = Math.max(0, Math.floor(+p.xp || 0));
+  if (!Array.isArray(p.hats)) p.hats = [0];
+  if (p.day !== today() || !Array.isArray(p.m)) { p.day = today(); p.m = [0, 0, 0]; p.done = [false, false, false]; }
+  if (!Array.isArray(p.done)) p.done = [false, false, false];
+  return p;
+}
+function progSave(p) { lsSet('rr_prog', JSON.stringify(p)); }
+function levelOf(xp) { return 1 + Math.floor(Math.sqrt(xp / 60)); }
+function renderProg() {
+  const p = prog(), lv = levelOf(p.xp), lo = 60 * (lv - 1) * (lv - 1), hi = 60 * lv * lv;
+  $('lvTag').textContent = 'Lv.' + lv; $('coinTag').textContent = p.coins; $('coinTag2').textContent = p.coins;
+  $('xpFill').style.width = Math.min(100, (p.xp - lo) / (hi - lo) * 100) + '%';
+  const box = $('missions'); box.textContent = '';
+  MISSIONS.forEach(function (m, i) {
+    const row = document.createElement('div'); if (p.done[i]) row.className = 'ok';
+    const t = document.createElement('span'); t.textContent = (p.done[i] ? '✓ ' : '') + m[0];
+    const s = document.createElement('small'); s.textContent = p.done[i] ? '已領 +' + m[2] : Math.min(p.m[i], m[1]) + ' / ' + m[1] + ' · 金幣 +' + m[2];
+    row.appendChild(t); row.appendChild(s); box.appendChild(row);
+  });
+}
+// 一局結束時結算：回傳要顯示的文字
+function progOnResult(e, stars) {
+  const p = prog();
+  const coins = e.win ? Math.floor(e.money / 10) + stars * 10 : Math.floor(e.money / 20), xp = coins + 10;
+  p.coins += coins; p.xp += xp;
+  if (e.win) p.m[0] += 1;
+  p.m[1] += e.money; if (stars >= 3) p.m[2] += 1;
+  let bonus = 0;
+  MISSIONS.forEach(function (m, i) { if (!p.done[i] && p.m[i] >= m[1]) { p.done[i] = true; p.coins += m[2]; bonus += m[2]; } });
+  progSave(p);
+  return '金幣 +' + coins + ' · 經驗 +' + xp + (bonus ? ' · 每日任務完成 +' + bonus : '');
+}
 function myMap() { const m = parseInt(ls('rr_map') || '0', 10) || 0; return m >= 0 && m < W.MAPS.length ? m : 0; }
 function rosterEntry(id) { for (let i = 0; i < S.roster.length; i++) if (S.roster[i].id === id) return S.roster[i]; return null; }
 
@@ -214,7 +253,7 @@ async function joinRoom() {
   await Voice.init(true);
   const u = Auth.user();
   const look = myLook();
-  Net.join(code, { name: myName(), uid: u ? u.uid : '', c: look.c, w: look.w }, function (err, id) {
+  Net.join(code, { name: myName(), uid: u ? u.uid : '', c: look.c, w: look.w, h: look.h }, function (err, id) {
     busy(false);
     if (err) { say(netErr(err)); return; }
     S.mode = 'client'; S.myId = id; S.lastHost = Date.now();
@@ -260,7 +299,7 @@ function showMenu() {
   if (document.activeElement !== $('nick')) $('nick').value = u.name;
   $('best').textContent = ls('rr_best') || '0';
   show('scrMenu');
-  refreshPickSummary();
+  refreshPickSummary(); renderProg();
 }
 function shareUrl(code) { return location.origin + location.pathname + '?room=' + code; }
 function showLobby(code) {
@@ -323,6 +362,7 @@ function showResult(e) {
   const stars = e.win ? 1 + (e.money >= e.quota * 1.3 ? 1 : 0) + (e.time >= 60 ? 1 : 0) : 0;
   const sb = $('resStars'); sb.textContent = '';
   for (let k = 0; k < 3; k++) { const x = document.createElement(k < stars ? 'span' : 'i'); x.textContent = '★'; sb.appendChild(x); }
+  $('resGain').textContent = progOnResult(e, stars);
   let top = null; if (e.stats) e.stats.forEach(function (p) { if (p.earned > 0 && (!top || p.earned > top.earned)) top = p; });
   $('resText').textContent = e.win
     ? '賺到 $' + e.money + '（目標 $' + e.quota + '），還剩 ' + e.time + ' 秒。明天目標更高，怪物也更快。'
@@ -412,6 +452,14 @@ function bind() {
   let mapSel = myMap();
   const cBtns = cards($('cGrid'), W.CHARS, function (i) { return CINFO[i] ? CINFO[i][0] : ''; }, function (i) { look.c = i; showLook(); });
   const wBtns = cards($('wGrid'), W.WEAPONS, null, function (i) { look.w = i; showLook(); });
+  const hBtns = cards($('hGrid'), W.HATS, function (i) { return ''; }, function (i) {
+    const p = prog();
+    if (p.hats.indexOf(i) < 0) {
+      if (p.coins < HAT_COST[i]) { say('金幣不夠：「' + W.HATS[i] + '」要 ' + HAT_COST[i] + ' 金幣，你有 ' + p.coins + '。過關和每日任務可以賺金幣。'); return; }
+      p.coins -= HAT_COST[i]; p.hats.push(i); progSave(p);
+    }
+    look.h = i; showLook();
+  });
   const mBtns = cards($('mGrid'), W.MAPS.map(function (m) { return m.name; }), null, function (i) { mapSel = i; lsSet('rr_map', String(i)); showMapName(); Game.showMap(mapSel); });
   const showLook = function () {
     look.c = ((look.c % W.CHARS.length) + W.CHARS.length) % W.CHARS.length;
@@ -419,10 +467,12 @@ function bind() {
     const info = CINFO[look.c] || ['', '', ''];
     $('cName').textContent = W.CHARS[look.c]; $('cSkill').textContent = info[0];
     $('cDesc').textContent = info[1]; $('cAttr').textContent = '屬性：' + info[2];
-    mark(cBtns, look.c); mark(wBtns, look.w);
-    lsSet('rr_c', String(look.c)); lsSet('rr_w', String(look.w));
+    mark(cBtns, look.c); mark(wBtns, look.w); mark(hBtns, look.h);
+    const pg = prog();
+    hBtns.forEach(function (b, i) { const own = pg.hats.indexOf(i) >= 0; b.classList.toggle('lock', !own); b.lastChild.textContent = own ? (i === look.h ? '使用中' : '已擁有') : HAT_COST[i] + ' 金幣'; });
+    lsSet('rr_c', String(look.c)); lsSet('rr_w', String(look.w)); lsSet('rr_h', String(look.h)); renderProg();
     refreshPickSummary();
-    Game.preview($('lookPrev'), look.c, look.w);
+    Game.preview($('lookPrev'), look.c, look.w, look.h);
   };
   showMapName = function () { mapSel = myMap(); mark(mBtns, mapSel); refreshPickSummary(); };
   showMapName(); Game.showMap(mapSel);

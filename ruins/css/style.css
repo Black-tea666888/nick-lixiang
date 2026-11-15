@@ -133,6 +133,21 @@ summary { color: var(--dim); font-size: 13px; cursor: pointer; text-align: cente
 #resStars i { font-style: normal; color: rgba(255,255,255,.18); }
 #resStats .mvp { color: #04140a; background: #ffd166; border-radius: 4px; padding: 0 5px; margin-left: 6px; font-size: 11px; font-weight: 700; }
 
+#hideTag { position: absolute; bottom: 236px; left: 50%; transform: translateX(-50%); padding: 5px 12px; border-radius: 14px; font-size: 13px; color: #04140a; background: #5fb4e6; text-shadow: none; white-space: nowrap; }
+#xpBar { height: 3px; margin: 3px 8px 0; border-radius: 2px; background: rgba(255,255,255,.14); overflow: hidden; }
+#xpFill { display: block; height: 100%; width: 0; background: #ffd166; }
+#lvTag, #coinTag, #coinTag2 { color: #ffd166; }
+#missions { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+#missions div { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 13px; border-bottom: 1px solid rgba(125,255,176,.1); }
+#missions div:last-child { border-bottom: 0; }
+#missions span { flex: 1; min-width: 0; }
+#missions small { color: var(--dim); }
+#missions .ok { color: var(--dim); }
+#missions .ok small { color: #ffd166; }
+.gain { color: #ffd166 !important; font-weight: 700; }
+.card.lock b { color: var(--dim); }
+.card.lock span { color: #ffd166; }
+
 /* ---------- 大廳式介面 ---------- */
 .screen { background: radial-gradient(120% 80% at 50% 0%, rgba(20,60,45,.55), rgba(0,0,0,.9) 70%); }
 #scrMini { z-index: 25; background: rgba(2,6,5,.94); }
