@@ -49,14 +49,17 @@ body.solo #micBtn, body.solo #chatBtn { display: none; }
 #atk { position: fixed; right: 108px; bottom: 40px; width: 64px; height: 64px; border-radius: 50%; display: none; pointer-events: auto;
   border: 2px solid rgba(255,107,94,.7); background: rgba(255,107,94,.14); color: #ff6b5e; font: inherit; font-size: 16px; font-weight: 700; touch-action: none; }
 #atk:active { background: rgba(255,107,94,.45); }
-#rescue, #smoke, #skill { position: fixed; width: 58px; height: 58px; border-radius: 50%; display: none; pointer-events: auto; font: 700 16px sans-serif; color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3); }
+#rescue, #smoke, #skill, #jump, #dash { position: fixed; width: 58px; height: 58px; border-radius: 50%; display: none; pointer-events: auto; font: 700 16px sans-serif; color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3); }
 #rescue { right: 108px; bottom: 116px; }
+#jump { right: 30px; bottom: 128px; border-color: rgba(125,255,176,.6) !important; color: var(--g) !important; }
+#dash { right: 30px; bottom: 198px; border-color: rgba(110,203,255,.7) !important; color: #6ecbff !important; }
+#jump:active, #dash:active { background: rgba(255,255,255,.35); }
 #smoke { right: 184px; bottom: 40px; }
 #skill { right: 184px; bottom: 110px; }
 #skill:active { background: rgba(200,230,255,.45); }
 #rescue:active, #rescue.on { background: rgba(125,255,176,.4); }
 #smoke:active { background: rgba(200,200,190,.45); }
-body.touch.playing #rescue, body.touch.playing #smoke, body.touch.playing #skill { display: block; }
+body.touch.playing #rescue, body.touch.playing #smoke, body.touch.playing #skill, body.touch.playing #jump, body.touch.playing #dash { display: block; }
 body.solo #rescue { display: none !important; }
 body.touch.playing #run { display: block; }
 body.touch.playing #atk { display: block; }
