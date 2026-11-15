@@ -17,7 +17,7 @@ const CHAR_SPEED = [1, 1, 1.05, 1.10, 1, 1];
 function myC() { const pm = view.players.get(myId); return pm && pm.c ? pm.c : 0; }
 // 藍色（冰）怪物附近：減速
 function iceNear() {
-  for (let i = 1; i < view.monsters.length; i += 2) {
+  for (let i = 1; i < view.monsters.length; i += 4) {
     const m = view.monsters[i];
     if (m.group.visible && Math.hypot(m.x - me.x, m.z - me.z) < 4) return true;
   }
@@ -187,19 +187,20 @@ function buildLevel() {
   buildMini();
 }
 
+const MON_COL = { fire: [0xff6a1a, 0xff4a10], ice: [0x6ad8ff, 0x3ac8ff], poison: [0x7dff5a, 0x5aff3a], shadow: [0xb070ff, 0x9040ff] };
 function buildMonster(kind) {
-  const fire = kind === 'fire';   // 紅色＝火、藍色＝冰
+  const col = MON_COL[kind] || MON_COL.fire;
   const g = new THREE.Group();
   const dark = new THREE.MeshPhongMaterial({ color: 0x0c0c0e, shininess: 30 });
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.34, 2.2, 10), dark); body.position.y = 1.1;
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 12), dark); head.position.y = 2.5; head.scale.y = 1.25;
-  const eyeM = new THREE.MeshBasicMaterial({ color: fire ? 0xff6a1a : 0x6ad8ff });
+  const eyeM = new THREE.MeshBasicMaterial({ color: col[0] });
   const e1 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), eyeM); e1.position.set(-0.13, 2.56, 0.3);
   const e2 = e1.clone(); e2.position.x = 0.13;
   const armG = new THREE.CylinderGeometry(0.05, 0.04, 1.9, 6);
   const a1 = new THREE.Mesh(armG, dark); a1.position.set(-0.42, 1.35, 0.1); a1.rotation.z = 0.16;
   const a2 = new THREE.Mesh(armG, dark); a2.position.set(0.42, 1.35, 0.1); a2.rotation.z = -0.16;
-  const glow = new THREE.PointLight(fire ? 0xff4a10 : 0x3ac8ff, 0.8, 7, 1.5); glow.position.set(0, 2.5, 0.5);
+  const glow = new THREE.PointLight(col[1], 0.8, 7, 1.5); glow.position.set(0, 2.5, 0.5);
   g.add(body, head, e1, e2, a1, a2, glow);
   g.visible = false; scene.add(g);
   return { group: g, x: 0, z: 0, rot: 0, tx: 0, tz: 0, trot: 0, chase: false, fresh: true };
@@ -433,7 +434,8 @@ function updateMe(dt) {
   const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run) && moving && !me.tired;
   if (wantRun) { me.stam -= 0.26 * dt; if (me.stam <= 0) { me.stam = 0; me.tired = true; } }
   else { me.stam = Math.min(1, me.stam + 0.17 * dt); if (me.tired && me.stam > 0.35) me.tired = false; }
-  const speed = (wantRun ? 9.0 : 3.9) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05) * CHAR_SPEED[myC()] * (iceNear() ? 0.75 : 1);   // 靠近藍色（冰）怪物減速 25%
+  if (me.rallyT > 0) me.rallyT -= dt;
+  const speed = (wantRun ? 9.0 : 3.9) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05) * CHAR_SPEED[myC()] * (iceNear() ? 0.75 : 1) * (me.rallyT > 0 ? 1.2 : 1);   // 靠近藍色（冰）怪物減速 25%
   const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   const dx = (-sy * f + cy * s) * speed * dt, dz = (-cy * f - sy * s) * speed * dt;
   const R = 0.42;
@@ -634,7 +636,7 @@ RR.Game = {
     torch = new THREE.SpotLight(0xfff0cc, 1.7, 30, 0.55, 0.55, 1.4);
     torch.position.set(0.25, -0.2, 0); camera.add(torch); camera.add(torch.target); torch.target.position.set(0, -0.05, -1);
     buildLevel();
-    for (let i = 0; i < 3; i++) view.monsters.push(buildMonster(i % 2 === 0 ? 'fire' : 'ice'));
+    for (let i = 0; i < 4; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));
     setViewWeapon(0);
     itemGeos = [
       new THREE.TorusGeometry(0.26, 0.1, 8, 16), new THREE.BoxGeometry(0.3, 0.5, 0.3), new THREE.CylinderGeometry(0.25, 0.25, 0.3, 12),
@@ -817,6 +819,18 @@ RR.Game = {
       Sfx.tone(523, 0.2, 'triangle', 0.15, 784); Sfx.tone(784, 0.4, 'triangle', 0.15, 1046);
     } else if (e.t === 'ttdraw') {
       toast('圈圈叉叉平手，下一局開始');
+    } else if (e.t === 'rally') {
+      if (e.ids.indexOf(myId) >= 0 && e.id !== myId) { me.rallyT = 5; toast(nameOf(e.id) + ' 的鼓舞：移動加速'); }
+      else if (e.id === myId) { me.rallyT = 5; toast('鼓舞！附近隊友加速'); }
+      Sfx.tone(600, 0.2, 'triangle', 0.12, 900);
+    } else if (e.t === 'shield') {
+      if (e.id === myId) toast('護盾開啟，4 秒內不會被抓'); Sfx.tone(700, 0.3, 'sine', 0.1, 1000);
+    } else if (e.t === 'stealth') {
+      if (e.id === myId) toast('潛行中，怪物較難發現你'); Sfx.tone(300, 0.3, 'sine', 0.08, 220);
+    } else if (e.t === 'heal') {
+      if (e.id === myId) { me.hp = e.hp; $('hpBar').style.width = Math.max(0, me.hp) + '%'; toast('加血 +35'); } Sfx.tone(660, 0.2, 'sine', 0.1, 880);
+    } else if (e.t === 'hide') {
+      if (e.id === myId) toast('隱身 4 秒，怪物看不到你'); Sfx.tone(180, 0.4, 'sine', 0.08, 120);
     } else if (e.t === 'moon') {
       showMoon(e.x, e.z);
     } else if (e.t === 'smoke') {
