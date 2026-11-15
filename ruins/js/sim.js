@@ -170,6 +170,7 @@ Sim.prototype.startDay = function (day) {
   this.tt = newTT();
   this.trophy = this._spotAt(VAN[0], VAN[1], 12, 25);   // 搶獎盃：地圖上一座獎盃，按住 E 3 秒的人拿走
   this.quota = quotaFor(day, n); this.events = [];
+  this.players.forEach(function (p) { p.skCd = 0; p.smCd = 0; p.shieldT = 0; p.hideT = 0; p.stealthT = 0; p.rallyT = 0; });   // 每天開始技能冷卻歸零
   // 物品：隨機放在離起點有段距離的格子
   const cands = floorCells.filter(function (c) {
     if (Math.abs(c[0] - startCell[0]) + Math.abs(c[1] - startCell[1]) < 4) return false;
@@ -315,7 +316,6 @@ Sim.prototype._spotAt = function (cx, cz, lo, hi) {
 Sim.prototype._ttMove = function (p, idx) {
   const b = this.tt;
   if (!b || b.over || idx < 0 || idx > 8 || b.cells[idx]) return;
-  if (Math.hypot(p.x - this.boardPos[0], p.z - this.boardPos[1]) > 3.5) return;
   if (!b.x) b.x = p.id;
   else if (!b.o && b.x !== p.id) b.o = p.id;
   const mark = b.x === p.id ? 'X' : b.o === p.id ? 'O' : null;
