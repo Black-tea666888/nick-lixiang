@@ -4,7 +4,7 @@
 const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx, Auth = RR.Auth, Game = RR.Game;
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#7dffb0', '#6ecbff', '#ffd166', '#ff7eb6'];
-const SCREENS = ['scrLogin', 'scrMenu', 'scrLobby', 'scrResult'];
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrLobby', 'scrResult'];
 
 const S = { mode: null, pvp: true, map: 0, sim: null, myId: null, hostId: null, roster: [], timers: [], lastHost: 0, seen: {}, tickN: 0, lastTick: 0, chatRate: {}, flags: {} };
 
@@ -238,6 +238,10 @@ function leave() {
 }
 
 /* ---------- 畫面 ---------- */
+function refreshPickSummary() {
+  const c = W.CHARS[((+ls('rr_c') || 0) % W.CHARS.length)], w = W.WEAPONS[((+ls('rr_w') || 0) % W.WEAPONS.length)], m = W.MAPS[myMap()];
+  $('pickSum').textContent = c + ' · ' + w + ' · ' + (m ? m.name : '');
+}
 function showMenu() {
   const u = Auth.user();
   if (!u) { show('scrLogin'); return; }
@@ -245,6 +249,7 @@ function showMenu() {
   if (document.activeElement !== $('nick')) $('nick').value = u.name;
   $('best').textContent = ls('rr_best') || '0';
   show('scrMenu');
+  refreshPickSummary();
 }
 function shareUrl(code) { return location.origin + location.pathname + '?room=' + code; }
 function showLobby(code) {
@@ -366,10 +371,11 @@ function bind() {
     look.w = ((look.w % W.WEAPONS.length) + W.WEAPONS.length) % W.WEAPONS.length;
     $('cName').textContent = W.CHARS[look.c]; $('wName').textContent = W.WEAPONS[look.w];
     lsSet('rr_c', String(look.c)); lsSet('rr_w', String(look.w));
+    refreshPickSummary();
     Game.preview($('lookPrev'), look.c, look.w);
   };
   let mapSel = myMap();
-  showMapName = function () { mapSel = myMap(); $('mName').textContent = W.MAPS[mapSel].name; };
+  showMapName = function () { mapSel = myMap(); $('mName').textContent = W.MAPS[mapSel].name; refreshPickSummary(); };
   const stepMap = function (d) { mapSel = (mapSel + d + W.MAPS.length) % W.MAPS.length; lsSet('rr_map', String(mapSel)); showMapName(); Game.showMap(mapSel); };
   $('mPrev').addEventListener('click', function () { stepMap(-1); });
   $('mNext').addEventListener('click', function () { stepMap(1); });
@@ -379,6 +385,8 @@ function bind() {
   $('wPrev').addEventListener('click', function () { look.w--; showLook(); });
   $('wNext').addEventListener('click', function () { look.w++; showLook(); });
   showLook();
+  $('pickBtn').addEventListener('click', function () { show('scrPick'); });
+  $('pickDone').addEventListener('click', function () { showMenu(); });
   // 設定
   const sens = parseFloat(ls('rr_sens') || '1'), sfx = parseFloat(ls('rr_sfx') || '0.8'), vv = parseFloat(ls('rr_voice') || '1');
   $('setSens').value = sens; $('setSfx').value = sfx; $('setVoice').value = vv; $('setMusic').value = ls('rr_music') || '0.6';
