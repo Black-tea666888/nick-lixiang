@@ -121,6 +121,8 @@ function bfs(sc, sr, gc, gr) {
 const SPAWN_OFF = [[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]];
 const r2 = (v) => Math.round(v * 100) / 100;
 
+const TT_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+function newTT() { return { cells: ['', '', '', '', '', '', '', '', ''], x: null, o: null, turn: 'X', over: null, winner: null, timer: 0 }; }
 function quotaFor(day, n) { return 200 + 100 * day + 120 * (n - 1); }
 
 function Sim(rng) {
@@ -162,6 +164,9 @@ Sim.prototype.startDay = function (day) {
   this.map = setMap(this.map);
   const self = this, n = Math.max(1, this.players.length);
   this.day = day; this.phase = 'play'; this.money = 0; this.time = DAY_TIME; this.pad = null;
+  this.boardPos = this._spotAt(VAN[0], VAN[1], 2.5, 4) || [VAN[0] + 2.5, VAN[1]];
+  this.tt = newTT();
+  this.trophy = this._spotAt(VAN[0], VAN[1], 12, 25);   // 搶獎盃：地圖上一座獎盃，按住 E 3 秒的人拿走
   this.quota = quotaFor(day, n); this.events = [];
   // 物品：隨機放在離起點有段距離的格子
   const cands = floorCells.filter(function (c) {
@@ -217,6 +222,7 @@ Sim.prototype.setInput = function (id, m) {
     for (let i = 0; i < this.monsters.length; i++) { const mo = this.monsters[i]; if (Math.hypot(mo.x - p.x, mo.z - p.z) < 7) mo.cool = 3; }
     this.events.push({ t: 'moon', id: p.id, x: p.x, z: p.z });
   }
+  if (typeof m.tt === 'number') this._ttMove(p, m.tt);
   const x = +m.x, z = +m.z, yaw = +m.yaw;
   if (isFinite(x) && isFinite(z) && !blocked(x, z, 0.3)) { p.x = x; p.z = z; }
   if (isFinite(yaw)) p.yaw = yaw;
@@ -273,6 +279,35 @@ Sim.prototype.attack = function (id, yaw) {
 };
 
 // 在離玩家 8～14 公尺的可走地板上找一格放傳送陣
+// 在 (cx, cz) 周圍 lo～hi 公尺的可走地板上隨機找一點
+Sim.prototype._spotAt = function (cx, cz, lo, hi) {
+  const pool = [];
+  for (let i = 0; i < floorCells.length; i++) {
+    const c = center(floorCells[i][0], floorCells[i][1]);
+    const d = Math.hypot(c[0] - cx, c[1] - cz);
+    if (d >= lo && d <= hi && !blocked(c[0], c[1], 0.5)) pool.push(c);
+  }
+  if (!pool.length) return null;
+  return pool[Math.floor(this.rng() * pool.length)];
+};
+
+// 圈圈叉叉：在棋盤旁落子。前兩位落子的玩家分別是 X 與 O，輪流下。
+Sim.prototype._ttMove = function (p, idx) {
+  const b = this.tt;
+  if (!b || b.over || idx < 0 || idx > 8 || b.cells[idx]) return;
+  if (Math.hypot(p.x - this.boardPos[0], p.z - this.boardPos[1]) > 3.5) return;
+  if (!b.x) b.x = p.id;
+  else if (!b.o && b.x !== p.id) b.o = p.id;
+  const mark = b.x === p.id ? 'X' : b.o === p.id ? 'O' : null;
+  if (!mark || b.turn !== mark) return;
+  b.cells[idx] = mark;
+  b.turn = mark === 'X' ? 'O' : 'X';
+  const win = TT_LINES.some(function (l) { return b.cells[l[0]] && b.cells[l[0]] === b.cells[l[1]] && b.cells[l[0]] === b.cells[l[2]]; });
+  if (win) { b.over = 'win'; b.winner = mark; this.money += 150; b.timer = 6; this.events.push({ t: 'ttwin', mark: mark }); }
+  else if (b.cells.every(function (c) { return c; })) { b.over = 'draw'; b.timer = 6; this.events.push({ t: 'ttdraw' }); }
+  this.events.push({ t: 'ttmove', id: p.id, idx: idx, mark: mark });
+};
+
 Sim.prototype._padSpot = function (p) {
   const pool = [];
   for (let i = 0; i < floorCells.length; i++) {
@@ -385,6 +420,25 @@ Sim.prototype.step = function (dt) {
       this.events.push({ t: 'revive', id: t.id, by: p.id });
     }
   }
+  // 搶獎盃：按住 E 3 秒
+  if (this.trophy) {
+    for (let k = 0; k < alive.length; k++) {
+      const p = alive[k];
+      if (p.rs && Math.hypot(p.x - this.trophy[0], p.z - this.trophy[1]) < 2.2) {
+        p.grabT = (p.grabT || 0) + dt;
+        if (p.grabT >= 3) {
+          this.money += 120; p.earned += 120; this.trophy = null;
+          this.events.push({ t: 'trophy', id: p.id });
+          break;
+        }
+      } else p.grabT = 0;
+    }
+  }
+  // 棋盤結束後 6 秒重新開局
+  if (this.tt && this.tt.over) {
+    this.tt.timer -= dt;
+    if (this.tt.timer <= 0) this.tt = newTT();
+  }
   // 撿取與賣出
   for (let i = 0; i < this.items.length; i++) {
     const it = this.items[i];
@@ -432,6 +486,9 @@ Sim.prototype.snapshot = function () {
       return [p.id, r2(p.x), r2(p.z), r2(p.yaw), p.alive ? 1 : 0, p.bag.length, (p.run ? 1 : 0) | (p.spk ? 2 : 0) | (p.loud ? 4 : 0), Math.round(p.hp)];
     }),
     pad: this.pad ? [r2(this.pad[0]), r2(this.pad[1])] : null,
+    tr: this.trophy ? [r2(this.trophy[0]), r2(this.trophy[1])] : null,
+    bp: this.boardPos ? [r2(this.boardPos[0]), r2(this.boardPos[1])] : null,
+    tt: this.tt ? [this.tt.cells.map(function (c) { return c || '.'; }).join(''), this.tt.turn, this.tt.x, this.tt.o, this.tt.over, this.tt.winner] : null,
     m: this.monsters.map(function (m) { return [r2(m.x), r2(m.z), r2(m.rot), m.state === 'chase' ? 1 : 0]; }),
     it: it };
 };
