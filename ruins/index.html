@@ -17,7 +17,7 @@
 <!-- 遊戲中介面 -->
 <div id="hud" class="hide">
   <div id="hudTop">
-    <div>第 <b id="day">1</b> 天　<span id="moneyLbl">收入</span> <b id="money">$0</b> / <span id="quota">$0</span><div id="qbar"><i id="qfill"></i></div><span class="bagrow">背包 <b id="bag">0</b> / 3 <span id="pips"><i></i><i></i><i></i></span>　子彈 <b id="ammo">6</b></span></div>
+    <div>第 <b id="day">1</b> 天　<span id="moneyLbl">收入</span> <b id="money">$0</b> / <span id="quota">$0</span><div id="qbar"><i id="qfill"></i></div><span class="bagrow">背包 <b id="bag">0</b> / <span id="bagCap">3</span> <span id="pips"><i></i><i></i><i></i><i></i></span>　子彈 <b id="ammo">6</b></span></div>
     <div class="r">剩餘時間<br><b id="timer">4:00</b></div>
   </div>
   <div id="compass"><span id="arrow">▲</span>回收車</div>
@@ -27,6 +27,7 @@
     <button id="micBtn" type="button">麥克風</button>
     <button id="chatBtn" type="button">聊天</button>
     <button id="miniBtn" type="button">小遊戲</button>
+    <button id="hudGear" type="button">背包</button>
     <button id="hudHelp" type="button">說明</button>
     <button id="leaveBtn" type="button">離開</button>
   </div>
@@ -91,6 +92,7 @@
       <button class="mode main" id="createBtn" type="button"><b>多人合作</b><span>建立房間，邀請最多 3 位隊友</span></button>
       <button class="mode" id="soloBtn" type="button"><b>單人遊玩</b><span>自己練習</span></button>
       <button class="mode" id="miniInfoBtn" type="button"><b>小遊戲</b><span>圈圈叉叉 · 搶獎盃</span></button>
+      <button class="mode gear" id="gearOpen" type="button"><b>裝備與寶石</b><span>配件最多裝 2 個，對局中也能換；寶石可升級</span></button>
       <button class="mode wheel" id="wheelOpen" type="button"><b>造型轉盤</b><span>用金幣抽服裝、寵物、造型與特效 · 每天免費一次</span></button>
       <button class="mode hunt" id="huntBtn" type="button"><b>獵殺模式</b><span>新模式：拿槍反過來獵殺怪物，在時間內擊倒指定數量（單人；多人請在大廳切換模式）</span></button>
     </div>
@@ -158,6 +160,20 @@
   </div>
 </div>
 
+<!-- 裝備與寶石（主選單與對局中共用，蓋在最上層） -->
+<div class="screen hide" id="scrGear">
+  <div class="panel lobby">
+    <div class="topbar">
+      <button class="icon" id="gearDone" type="button" aria-label="返回">‹</button>
+      <div class="who"><b class="ttl">裝備與寶石</b><div class="note">金幣 <b id="coinTag4">0</b> · 已裝備 <b id="eqCount">0</b> / 2</div></div>
+    </div>
+    <div class="sec">配件（點一下購買／裝備／卸下）</div>
+    <div id="accList"></div>
+    <div class="sec">寶石（用金幣升級，最高 5 級）</div>
+    <div id="gemList"></div>
+  </div>
+</div>
+
 <!-- 設定與說明 -->
 <div class="screen hide" id="scrHelp">
   <div class="panel lobby">
@@ -221,6 +237,7 @@
       </section>
       <section class="htopic hide" data-topic="safe"><h2><span class="hico">🛡</span>保命方法</h2>
 <ul><li><b>槍</b>：回收模式每天 6 發，打中怪物讓牠暈 2.5 秒（打不死）。對準怪物、中間不能有牆。</li>
+<li><b>配件與寶石</b>：主選單「裝備與寶石」購買。配件最多同時裝 2 個，對局中按右上角「背包」可以換；寶石升級後永久有效。</li>
 <li><b>櫃子</b>（小地圖藍點）：站在旁邊不要跑，怪物看不到你；貼太近還是會被抓。</li>
 <li><b>煙霧彈</b>：冒出一團煙約 6 秒，站在煙裡怪物看不到你。冷卻 20 秒。</li>
 <li><b>跑</b>：跑步一定比怪物快，體力約可跑 6～7 秒；跑到牠看不到你，約 3.5 秒後牠會放棄。</li>

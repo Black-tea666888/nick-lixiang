@@ -16,6 +16,9 @@ const view = { phase: 'lobby', day: 1, money: 0, quota: 0, time: 0, players: new
 const CHAR_SPEED = [1, 1, 1.05, 1.10, 1, 1, 0.97, 1];
 const COSTUME_COL = [null, 0x566b3a, 0x39e8ff, 0xffd24a, 0x1d2027, 0xf2f4f8];   // 服裝顏色（0 = 隊伍色）
 const FX_COL = [0xfff1b0, 0x6ad8ff, 0xff7eb6, 0xb98cff];                          // 彈道特效顏色
+function myEq(k) { const pm = view.players.get(myId); return !!(pm && pm.eq && pm.eq.indexOf(k) >= 0); }
+function myGem(i) { const pm = view.players.get(myId); return pm && pm.gems ? pm.gems[i] | 0 : 0; }
+function hpPct() { return Math.max(0, Math.min(100, me.hp / (myEq(4) ? 130 : 100) * 100)) + '%'; }
 function myPet() { const pm = view.players.get(myId); return pm && pm.pet ? pm.pet : 0; }
 function myC() { const pm = view.players.get(myId); return pm && pm.c ? pm.c : 0; }
 // 藍色（冰）怪物附近：減速
@@ -855,10 +858,10 @@ function updateMe(dt) {
   if (mag > 1) { f /= mag; s /= mag; mag = 1; }
   const moving = mag > 0.15;
   const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run) && moving && !me.tired;
-  if (wantRun) { me.stam -= 0.15 * dt; if (me.stam <= 0) { me.stam = 0; me.tired = true; } }
+  if (wantRun) { me.stam -= 0.15 * (1 - 0.05 * myGem(1)) * dt; if (me.stam <= 0) { me.stam = 0; me.tired = true; } }
   else { me.stam = Math.min(1, me.stam + 0.28 * (myPet() === 4 ? 1.2 : 1) * (myC() === 7 ? 1.15 : 1) * dt); if (me.tired && me.stam > 0.2) me.tired = false; }
   if (me.rallyT > 0) me.rallyT -= dt;
-  const speed = (wantRun ? 9.0 : 4.2) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05) * CHAR_SPEED[myC()] * (myPet() === 1 ? 1.05 : 1) * (iceNear() ? 0.75 : 1) * (me.rallyT > 0 ? 1.2 : 1);   // 靠近藍色（冰）怪物減速 25%
+  const speed = (wantRun ? 9.0 : 4.2) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05) * CHAR_SPEED[myC()] * (myPet() === 1 ? 1.05 : 1) * (myEq(1) ? 1.06 : 1) * (iceNear() ? 0.75 : 1) * (me.rallyT > 0 ? 1.2 : 1);   // 靠近藍色（冰）怪物減速 25%
   const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   // 跳：耗 18% 體力，在空中時怪物抓不到；衝刺：往移動方向（沒動就往前）瞬間衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒
   if (jumpQ) { jumpQ = false; if (me.y <= 0 && !me.tired && me.stam >= 0.18) { me.vy = 5.6; me.y = 0.001; me.stam -= 0.18; Sfx.tone(300, 0.12, 'triangle', 0.08, 520); } }
@@ -1007,7 +1010,8 @@ function updateHud() {
   const gb = $('gun'), gt = me.reloading ? '…' : '槍'; if (gb.textContent !== gt) gb.textContent = gt; gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
   const qf = $('qfill'), pct = view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
   qf.style.width = pct + '%'; qf.classList.toggle('done', pct >= 100);
-  const pp = $('pips'); for (let i = 0; i < 3; i++) pp.children[i].className = i < me.bagN ? 'on' : ''; pp.className = me.bagN >= 3 ? 'full' : '';
+  const cap = myEq(2) ? 4 : 3, pp = $('pips'); if ($('bagCap').textContent !== String(cap)) $('bagCap').textContent = cap;
+  for (let i = 0; i < 4; i++) { pp.children[i].className = i < me.bagN ? 'on' : ''; pp.children[i].style.display = i < cap ? '' : 'none'; } pp.className = me.bagN >= cap ? 'full' : '';
   $('day').textContent = view.day;
   const s = Math.max(0, Math.ceil(view.time)), mm = Math.floor(s / 60), ss = s % 60;
   $('timer').textContent = mm + ':' + (ss < 10 ? '0' : '') + ss;
@@ -1160,11 +1164,12 @@ RR.Game = {
       let p = view.players.get(r.id);
       if (p && (p.name !== r.name || p.slot !== r.slot || p.c !== r.c || p.w !== r.w || (p.h || 0) !== (r.h || 0) || (p.o || 0) !== (r.o || 0) || (p.pet || 0) !== (r.pet || 0))) { if (p.avatar) scene.remove(p.avatar); view.players.delete(r.id); p = null; }
       if (!p) {
-        p = { id: r.id, name: r.name, slot: r.slot, c: r.c || 0, w: r.w || 0, h: r.h || 0, o: r.o || 0, pet: r.pet || 0, swingT: 0, x: W.VAN[0], z: W.VAN[1], yaw: 0, tx: W.VAN[0], tz: W.VAN[1], tyaw: 0, alive: true, bagN: 0, flags: 0, avatar: null, row: null, fresh: true };
+        p = { id: r.id, name: r.name, slot: r.slot, c: r.c || 0, w: r.w || 0, h: r.h || 0, o: r.o || 0, pet: r.pet || 0, eq: r.eq || [], gems: r.gems || [0, 0, 0], swingT: 0, x: W.VAN[0], z: W.VAN[1], yaw: 0, tx: W.VAN[0], tz: W.VAN[1], tyaw: 0, alive: true, bagN: 0, flags: 0, avatar: null, row: null, fresh: true };
         if (r.id !== myId) { p.avatar = buildAvatar(p); p.avatar.visible = false; }
         else setViewWeapon(p.w);
         view.players.set(r.id, p);
       }
+      p.eq = r.eq || []; p.gems = r.gems || [0, 0, 0];   // 配件可在對局中更換
     });
     Array.from(view.players.keys()).forEach(function (id) {
       if (!seen[id]) { const p = view.players.get(id); if (p.avatar) scene.remove(p.avatar); view.players.delete(id); }
@@ -1232,7 +1237,7 @@ RR.Game = {
       if (a[0] === myId) {
         me.bagN = a[5]; if (s.ph === 'play' && !a[4]) me.alive = false;
         if (a[8] != null) { me.ammo = a[8]; me.reloading = !!a[9]; }
-        if (a[7] != null && a[7] !== me.hp) { me.hp = a[7]; $('hpBar').style.width = Math.max(0, me.hp) + '%'; }
+        if (a[7] != null && a[7] !== me.hp) { me.hp = a[7]; $('hpBar').style.width = hpPct(); }
         continue;
       }
       p.tx = a[1]; p.tz = a[2]; p.tyaw = a[3];
@@ -1303,13 +1308,16 @@ RR.Game = {
       if (e.id === myId) toast('潛行中，怪物較難發現你'); Sfx.tone(300, 0.3, 'sine', 0.08, 220);
     } else if (e.t === 'heal') {
       if (e.id === myId) skEnd = Date.now() + 25000;
-      if (e.id === myId) { me.hp = e.hp; $('hpBar').style.width = Math.max(0, me.hp) + '%'; toast('加血 +35'); } Sfx.tone(660, 0.2, 'sine', 0.1, 880);
+      if (e.id === myId) { me.hp = e.hp; $('hpBar').style.width = hpPct(); toast('加血 +35'); } Sfx.tone(660, 0.2, 'sine', 0.1, 880);
     } else if (e.t === 'hide') {
       if (e.id === myId) skEnd = Date.now() + 30000;
       if (e.id === myId) toast('隱身 4 秒，怪物看不到你'); Sfx.tone(180, 0.4, 'sine', 0.08, 120);
     } else if (e.t === 'moon') {
       if (e.id === myId) { skEnd = Date.now() + 25000; toast('月光波！附近怪物暫停 3 秒'); }
       showMoon(e.x, e.z);
+    } else if (e.t === 'escape') {
+      if (e.id === myId) { toast('急救針發動！掙脫了，快跑'); shakeT = 0.4; hurtFlash = 0.6; } else toast(nameOf(e.id) + ' 用急救針掙脫了');
+      Sfx.tone(700, 0.2, 'triangle', 0.14, 1200);
     } else if (e.t === 'roar') {
       if (e.id === myId) { skEnd = Date.now() + 22000; toast('咆哮！附近怪物嚇呆 2.5 秒'); }
       Sfx.tone(140, 0.6, 'sawtooth', 0.22, 70); Sfx.noise(0.4, 0.15); if (Math.hypot(e.x - me.x, e.z - me.z) < 8) shakeT = Math.max(shakeT, 0.35);
