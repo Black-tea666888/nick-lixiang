@@ -291,3 +291,40 @@ body.touch #toast { bottom: 272px; padding: 0 16px; }
 kbd { display: inline-block; min-width: 26px; padding: 2px 7px; margin-right: 3px; font: inherit; font-size: 12px; font-weight: 700; text-align: center; color: #1b1305; background: linear-gradient(180deg, #ffe3a1, #e9a436); border-radius: 6px; box-shadow: 0 2px 0 #9a6412; }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
 #scrHelp { z-index: 26; background: radial-gradient(130% 70% at 50% -10%, #223a7a, #070a12 68%); align-items: flex-start; }
+/* ---------- 調亮：較亮的藍色背景、亮面板、高對比文字 ---------- */
+:root { --ink: #f5f7fc; --dim: #b9c4dc; --panel: rgba(255,255,255,.13); --line: rgba(255,255,255,.22); }
+.screen { background: linear-gradient(180deg, #4f7be0 0%, #2f55b8 38%, #22408f 100%); }
+#scrHelp { background: linear-gradient(180deg, #4f7be0 0%, #2f55b8 38%, #22408f 100%); }
+#scrMini { background: linear-gradient(180deg, rgba(79,123,224,.97), rgba(34,64,143,.97)); }
+.modal { background: rgba(20,36,84,.72); }
+.panel.small { background: #2c4aa3; border-color: rgba(255,255,255,.25); }
+.topbar, .hero, .stage, #missions, #lobbyList, #resStats { border-color: rgba(255,255,255,.24); box-shadow: 0 8px 22px rgba(10,22,60,.35); }
+.btn { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.3); color: #fff; }
+.btn.off { opacity: .6; }
+.mode { background: linear-gradient(160deg, #6f9cf5, #3a62c8); border-color: rgba(255,255,255,.3); box-shadow: 0 8px 22px rgba(10,22,60,.35); }
+.mode span { color: rgba(255,255,255,.82); }
+.mode.static { background: var(--panel); }
+.card { background: rgba(255,255,255,.13); border-color: rgba(255,255,255,.24); }
+.card span { color: var(--dim); }
+.card.on { background: rgba(255,214,120,.28); }
+.card.lock b { color: #dfe6f5; }
+.icon { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.3); color: #fff; }
+input[type=text] { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); color: #fff; }
+input[type=text]::placeholder { color: rgba(255,255,255,.6); }
+.sec { color: #e3e9f7; border-left-color: #ffd27a; }
+.tag { background: #ffd27a; color: #1b1305; }
+.hero b, .who .ttl, .stage .info > b, .htopic h2 { color: #ffd98a; }
+.note, .panel .sub { color: var(--dim); }
+.link { color: #dfe6f5; }
+#missions div, #lobbyList .prow, #resStats .prow { border-bottom-color: rgba(255,255,255,.16); }
+#missions small { color: var(--dim); }
+#xpBar { background: rgba(255,255,255,.25); }
+#xpFill { background: #ffd27a; }
+#lvTag { color: #ffd98a; }
+.logo, #roomCode { background: linear-gradient(180deg, #fff3cf, #ffc24a); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 3px 10px rgba(10,22,60,.45)); }
+.hrow, .tips li, .helpBody .field, .htopic li, .htopic td { background: rgba(255,255,255,.13); border-color: rgba(255,255,255,.2); color: #f0f3fa; }
+.hico { background: rgba(255,255,255,.2); }
+.htopic h3 { color: #e3e9f7; border-left-color: #ffd27a; }
+.hrow .go, .hero .go { color: #dfe6f5; }
+#ttGrid button { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); }
+#resStars i { color: rgba(255,255,255,.3); }
