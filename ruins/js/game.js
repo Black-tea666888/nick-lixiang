@@ -12,6 +12,17 @@ let myId = null, active = false;
 const me = { x: W.VAN[0], z: W.VAN[1], yaw: -Math.PI * 0.75, pitch: 0, stam: 1, tired: false, walkT: 0, running: false, alive: true, bagN: 0, hp: 100 };
 let atkT = 0, swingT = 0, pipe = null, hurtFlash = 0;
 const view = { phase: 'lobby', day: 1, money: 0, quota: 0, time: 0, players: new Map(), monsters: [], items: [] };
+// 煙霧干擾：畫面模糊 5 秒
+function showSmoke() {
+  let el = document.getElementById('smokeFx');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'smokeFx';
+    el.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:15;backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);background:rgba(120,120,110,.55);opacity:0;transition:opacity .5s';
+    document.body.appendChild(el);
+  }
+  el.style.opacity = '1'; clearTimeout(smokeT); smokeT = setTimeout(function () { el.style.opacity = '0'; }, 5000);
+  Sfx.noise(0.3, 0.12);
+}
 // 字幕（畫面中央下方，約 2 秒後淡出）
 let subEl = null, subHide = 0;
 function showSub(text) {
@@ -24,6 +35,7 @@ function showSub(text) {
   clearTimeout(subHide); subHide = setTimeout(function () { subEl.style.opacity = '0'; }, 2000);
 }
 const keys = {};
+let smQ = false, smokeT = null;   // Q 丟煙霧彈（按一下送一次）
 const touch = { joyId: null, lookId: null, ox: 0, oy: 0, jx: 0, jy: 0, lx: 0, ly: 0, run: false };
 const settings = { sens: 1 };
 let specId = null, beatT = 0, toastT = 0, fullHintT = 0, loudT = 0, spk = false, hudT = 0, lastL = me, dragging = false;
@@ -273,6 +285,7 @@ function bindInput() {
     keys[e.code] = true;
     if (canControl() && e.code.indexOf('Arrow') === 0) e.preventDefault();
     if (active && e.code === 'KeyM') RR.Game.toggleMic();
+    if (e.code === 'KeyQ' && !e.repeat && canControl()) smQ = true;
     if (e.code === 'KeyF' || e.code === 'Space') { if (canControl()) { e.preventDefault(); attack(); } }
   });
   window.addEventListener('keyup', function (e) { keys[e.code] = false; });
@@ -703,6 +716,12 @@ RR.Game = {
         $('flash').style.opacity = 0.85; setTimeout(function () { $('flash').style.opacity = 0; }, 900);
         toast('你被抓到了');
       } else { Sfx.tone(90, 0.5, 'sawtooth', 0.12, 45); toast(nameOf(e.id) + ' 被抓走了，身上的廢料掉在原地'); }
+    } else if (e.t === 'smoke') {
+      if (e.id !== myId && me.alive && Math.hypot(e.x - me.x, e.z - me.z) < 6) showSmoke();
+    } else if (e.t === 'revive') {
+      const p = view.players.get(e.id); if (p) p.alive = true;
+      if (e.id === myId) { me.alive = true; me.hp = 50; hurtFlash = 0; Sfx.tone(520, 0.3, 'sine', 0.15, 780); toast('被隊友救起來了'); }
+      else toast(nameOf(e.by) + ' 救起了 ' + nameOf(e.id));
     } else if (e.t === 'swing') {
       if (e.id !== myId) { const p = view.players.get(e.id); if (p) { p.swingT = 0.28; if (Math.hypot(p.x - lastL.x, p.z - lastL.z) < 14) Sfx.noise(0.1, 0.05); } }
     } else if (e.t === 'hit') {
@@ -728,8 +747,9 @@ RR.Game = {
     }
   },
   input: function () {
+    const sm = smQ; smQ = false;
     return { t: 'i', x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100,
-      run: me.running && me.alive, loud: loudT > 0 && me.alive, spk: spk };
+      run: me.running && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!keys.KeyE && me.alive, sm: sm };
   },
   toggleMic: function () {
     if (!Voice.hasMic()) { RR.UI.say('沒有麥克風權限。請在瀏覽器允許麥克風後，重新進入房間。'); return; }

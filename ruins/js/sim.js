@@ -208,7 +208,9 @@ Sim.prototype.setInput = function (id, m) {
   const p = this.player(id);
   if (!p || !m) return;
   p.spk = !!m.spk;
+  p.rs = !!m.rs;   // 按住 E 救援
   if (this.phase !== 'play' || !p.alive) return;
+  if (m.sm && (p.smCd || 0) <= 0) { p.smCd = 20; this.events.push({ t: 'smoke', id: p.id, x: p.x, z: p.z }); }   // 煙霧彈：冷卻 20 秒，不影響金額
   const x = +m.x, z = +m.z, yaw = +m.yaw;
   if (isFinite(x) && isFinite(z) && !blocked(x, z, 0.3)) { p.x = x; p.z = z; }
   if (isFinite(yaw)) p.yaw = yaw;
@@ -343,8 +345,25 @@ Sim.prototype.step = function (dt) {
   for (let k = 0; k < alive.length; k++) {
     const p = alive[k];
     if (p.atkCd > 0) p.atkCd -= dt;
+    if ((p.smCd || 0) > 0) p.smCd -= dt;
     p.hurtT += dt;
     if (p.hurtT > 5 && p.hp < 100) p.hp = Math.min(100, p.hp + 6 * dt);   // 5 秒沒受傷後慢慢回血
+  }
+  // 救援：按住 E 站在倒地隊友 2 公尺內 2 秒，把隊友救起（血量 50，身上廢料留在原地）
+  for (let k = 0; k < alive.length; k++) {
+    const p = alive[k];
+    if (!p.rs) { p.rescT = 0; continue; }
+    let t = null;
+    for (let q = 0; q < this.players.length; q++) {
+      const o = this.players[q];
+      if (!o.alive && Math.hypot(o.x - p.x, o.z - p.z) < 2) { t = o; break; }
+    }
+    if (!t) { p.rescT = 0; continue; }
+    p.rescT = (p.rescT || 0) + dt;
+    if (p.rescT >= 2) {
+      p.rescT = 0; t.alive = true; t.hp = 50; t.hurtT = 0; t.run = t.loud = false;
+      this.events.push({ t: 'revive', id: t.id, by: p.id });
+    }
   }
   // 撿取與賣出
   for (let i = 0; i < this.items.length; i++) {
