@@ -36,7 +36,7 @@ const Net = {
     let opened = false, p;
     try { p = newPeer(PREFIX + c); } catch (e) { cb(e); return; }
     peer = p; common(p);
-    const timer = setTimeout(function () { if (!opened && peer === p) { Net.leave(); cb({ type: 'timeout' }); } }, 15000);
+    const timer = setTimeout(function () { if (!opened && peer === p) { Net.leave(); cb({ type: 'timeout' }); } }, 45000);
     p.on('open', function () { opened = true; clearTimeout(timer); mode = 'host'; code = c; cb(null, c); });
     p.on('error', function (e) {
       if (peer !== p) return;
@@ -61,7 +61,7 @@ const Net = {
     try { p = newPeer(); } catch (e) { cb(e); return; }
     peer = p; common(p);
     const fail = function (e) { if (done) return; done = true; clearTimeout(timer); if (peer === p) Net.leave(); cb(e); };
-    const timer = setTimeout(function () { if (!joined) fail({ type: 'timeout' }); }, 15000);
+    const timer = setTimeout(function () { if (!joined) fail({ type: 'timeout' }); }, 45000);
     p.on('open', function (id) {
       const conn = p.connect(PREFIX + c, { reliable: true, serialization: 'json', metadata: meta });
       hostConn = conn;
@@ -82,6 +82,12 @@ const Net = {
   broadcast: function (msg) { conns.forEach(function (c) { if (c.open) { try { c.send(msg); } catch (e) {} } }); },
   drop: function (id) { const c = conns.get(id); if (c) { try { c.close(); } catch (e) {} } },
   call: function (id, stream) { try { return peer ? peer.call(id, stream) : null; } catch (e) { return null; } },
+  /** 先叫醒訊號伺服器（免費主機閒置會休眠，喚醒要 10～40 秒），之後建房／加入就快了 */
+  warm: function () {
+    const c = RR.CONFIG && RR.CONFIG.peer;
+    if (!c || !c.host || !window.fetch) return;
+    try { fetch((c.secure === false ? 'http://' : 'https://') + c.host + (c.port && c.port !== 443 ? ':' + c.port : '') + (c.path || '/') + 'id', { mode: 'no-cors', cache: 'no-store' }).catch(function () {}); } catch (e) {}
+  },
   leave: function () {
     const p = peer;
     peer = null; mode = null; code = null; hostConn = null; conns.clear();

@@ -170,7 +170,7 @@ function hostTick() {
   if (sim.phase === 'play' ? S.tickN % 2 === 0 : S.tickN % 10 === 0) hostBroadcast(sim.snapshot());
   if (S.mode === 'host' && S.tickN % 30 === 0) {
     sim.players.forEach(function (p) {
-      if (p.id !== S.myId && now - (S.seen[p.id] || now) > 12000) { Net.drop(p.id); hostRemove(p.id); }
+      if (p.id !== S.myId && now - (S.seen[p.id] || now) > 8000) { Net.drop(p.id); hostRemove(p.id); }
     });
   }
 }
@@ -195,7 +195,7 @@ function startSolo() {
 function netErr(e) {
   const t = e && e.type;
   if (t === 'peer-unavailable') return '找不到這個房間，請確認代碼。';
-  if (t === 'timeout') return '連線逾時，請再試一次。';
+  if (t === 'timeout') return '連線逾時。伺服器可能還在喚醒，請等 10 秒再試一次。';
   if (t === 'browser-incompatible') return '這裡無法使用連線功能。如果你是在 Claude 的預覽頁，預覽頁會擋掉連線與麥克風，只能玩單人；把專案部署到自己的網址（例如 GitHub Pages）後用 Safari 或 Chrome 開啟就能連線。';
   return '無法連線到配對伺服器（' + (t || (e && e.message) || '未知錯誤') + '）。請檢查網路後再試。';
 }
@@ -221,6 +221,7 @@ function wireNet() {
       if (d.t === 'i') S.sim.setInput(from, d);
       else if (d.t === 'chat') hostChat(from, d.text);
       else if (d.t === 'atk') S.sim.attack(from, d.yaw);
+      else if (d.t === 'bye') { Net.drop(from); hostRemove(from); }
     } else if (S.mode === 'client') { S.lastHost = Date.now(); dispatch(d); }
   });
   Net.on('call', function (call) { Voice.onIncoming(call); });
@@ -231,7 +232,7 @@ function micNotice() {
   if (!Voice.hasMic()) chatAdd(null, '沒有麥克風權限：你聽得到隊友，但他們聽不到你。');
 }
 async function createRoom() {
-  Sfx.unlock(); busy(true, '建立房間中…');
+  Sfx.unlock(); busy(true, '建立房間中…（第一次連線要先喚醒伺服器，最多約 40 秒）');
   await Voice.init(true);
   Net.host(function (err) {
     busy(false);
@@ -249,7 +250,7 @@ async function createRoom() {
 async function joinRoom() {
   const code = Net.normalizeCode($('codeInput').value);
   if (code.length !== 5) { say('請輸入 5 碼房間代碼。'); return; }
-  Sfx.unlock(); busy(true, '加入房間中…');
+  Sfx.unlock(); busy(true, '加入房間中…（第一次連線要先喚醒伺服器，最多約 40 秒）');
   await Voice.init(true);
   const u = Auth.user();
   const look = myLook();
@@ -276,6 +277,7 @@ function enterRoom() {
 }
 function leave() {
   S.timers.forEach(clearInterval); S.timers = [];
+  if (S.mode === 'client') Net.send({ t: 'bye' });   // 主動告訴房主我走了，不用等逾時
   Voice.closeAll(); Net.leave();
   S.mode = null; S.sim = null; S.myId = null; S.roster = []; S.seen = {}; S.chatRate = {}; S.flags = {};
   Game.setActive(false); Game.setRoster([]);
@@ -498,7 +500,10 @@ function bind() {
   };
   ['setSens', 'setSfx', 'setVoice', 'setMusic'].forEach(function (id) { $(id).addEventListener('input', apply); });
   document.addEventListener('click', function once() { document.removeEventListener('click', once); apply(); });
-  window.addEventListener('pagehide', function () { Net.leave(); });
+  window.addEventListener('pagehide', function () { if (S.mode === 'client') Net.send({ t: 'bye' }); Net.leave(); });
+  // 一開網頁就喚醒伺服器，之後每 4 分鐘再叫一次，避免在選單或大廳等待時又睡著
+  Net.warm(); setInterval(function () { if (!document.hidden) Net.warm(); }, 240000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) Net.warm(); });
 }
 
 function boot() {
