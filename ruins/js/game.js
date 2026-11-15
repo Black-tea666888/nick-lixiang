@@ -12,6 +12,52 @@ let myId = null, active = false;
 const me = { x: W.VAN[0], z: W.VAN[1], yaw: -Math.PI * 0.75, pitch: 0, stam: 1, tired: false, walkT: 0, running: false, alive: true, bagN: 0, hp: 100 };
 let atkT = 0, swingT = 0, pipe = null, hurtFlash = 0;
 const view = { phase: 'lobby', day: 1, money: 0, quota: 0, time: 0, players: new Map(), monsters: [], items: [] };
+// 藍色（冰）怪物附近：減速
+function iceNear() {
+  for (let i = 1; i < view.monsters.length; i += 2) {
+    const m = view.monsters[i];
+    if (m.group.visible && Math.hypot(m.x - me.x, m.z - me.z) < 4) return true;
+  }
+  return false;
+}
+// 太空人月光波：淡藍光環向外擴散
+function showMoon(x, z) {
+  const r = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.9, 48), new THREE.MeshBasicMaterial({ color: 0xe8f4ff, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
+  r.rotation.x = -Math.PI / 2; r.position.set(x, 0.1, z); scene.add(r);
+  let t = 0;
+  const id = setInterval(function () {
+    t += 0.05; const s = 1 + t * 12; r.scale.set(s, s, s); r.material.opacity = Math.max(0, 0.9 - t * 1.5);
+    if (t >= 0.6) { clearInterval(id); scene.remove(r); }
+  }, 50);
+  Sfx.tone(880, 0.5, 'sine', 0.1, 440);
+}
+// 圈圈叉叉面板：站在棋盤旁邊才會出現
+function renderTT() {
+  if (!ttBox) {
+    ttBox = document.createElement('div');
+    ttBox.style.cssText = 'position:fixed;left:50%;top:14%;transform:translateX(-50%);z-index:22;background:rgba(10,12,16,.82);border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:10px;color:#fff;font:14px sans-serif;text-align:center;display:none';
+    ttSub = document.createElement('div'); ttSub.style.marginBottom = '6px'; ttBox.appendChild(ttSub);
+    const grid = document.createElement('div'); grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,56px);gap:4px;justify-content:center';
+    for (let i = 0; i < 9; i++) {
+      const b = document.createElement('button'); b.type = 'button'; b.dataset.i = i;
+      b.style.cssText = 'width:56px;height:56px;font:700 24px sans-serif;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);border-radius:8px;pointer-events:auto';
+      b.addEventListener('click', function () { ttQ = i; });
+      b.addEventListener('touchstart', function (e) { e.preventDefault(); ttQ = i; }, { passive: false });
+      grid.appendChild(b);
+    }
+    ttBox.appendChild(grid); document.body.appendChild(ttBox);
+  }
+  const near = view.bp && view.tt && canControl() && Math.hypot(view.bp[0] - me.x, view.bp[1] - me.z) < 4.5;
+  ttBox.style.display = near ? 'block' : 'none';
+  if (!near) return;
+  const t = view.tt, cells = ttBox.querySelectorAll('button');
+  for (let i = 0; i < 9; i++) {
+    const c = t[0][i]; cells[i].textContent = c === '.' ? '' : c;
+    cells[i].disabled = c !== '.' || t[4] !== null;
+  }
+  const who = t[4] ? (t[4] === 'win' ? (t[5] + ' 獲勝！') : '平手') : (t[1] + ' 的回合' + (t[2] ? '' : '（等待玩家落子）'));
+  ttSub.textContent = '圈圈叉叉　' + who;
+}
 // 煙霧干擾：畫面模糊 5 秒
 function showSmoke() {
   let el = document.getElementById('smokeFx');
@@ -35,7 +81,7 @@ function showSub(text) {
   clearTimeout(subHide); subHide = setTimeout(function () { subEl.style.opacity = '0'; }, 2000);
 }
 const keys = {};
-let smQ = false, smokeT = null, padMesh = null;   // Q 丟煙霧彈（按一下送一次）
+let smQ = false, skQ = false, smokeT = null, padMesh = null, ttQ = null, trophyMesh = null, boardMesh = null, ttBox = null, ttSub = null;   // Q 丟煙霧彈（按一下送一次）
 const touch = { joyId: null, lookId: null, ox: 0, oy: 0, jx: 0, jy: 0, lx: 0, ly: 0, run: false };
 const settings = { sens: 1 };
 let specId = null, beatT = 0, toastT = 0, fullHintT = 0, loudT = 0, spk = false, hudT = 0, lastL = me, dragging = false;
@@ -138,18 +184,19 @@ function buildLevel() {
   buildMini();
 }
 
-function buildMonster() {
+function buildMonster(kind) {
+  const fire = kind === 'fire';   // 紅色＝火、藍色＝冰
   const g = new THREE.Group();
   const dark = new THREE.MeshPhongMaterial({ color: 0x0c0c0e, shininess: 30 });
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.34, 2.2, 10), dark); body.position.y = 1.1;
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 12), dark); head.position.y = 2.5; head.scale.y = 1.25;
-  const eyeM = new THREE.MeshBasicMaterial({ color: 0xff1a1a });
+  const eyeM = new THREE.MeshBasicMaterial({ color: fire ? 0xff6a1a : 0x6ad8ff });
   const e1 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), eyeM); e1.position.set(-0.13, 2.56, 0.3);
   const e2 = e1.clone(); e2.position.x = 0.13;
   const armG = new THREE.CylinderGeometry(0.05, 0.04, 1.9, 6);
   const a1 = new THREE.Mesh(armG, dark); a1.position.set(-0.42, 1.35, 0.1); a1.rotation.z = 0.16;
   const a2 = new THREE.Mesh(armG, dark); a2.position.set(0.42, 1.35, 0.1); a2.rotation.z = -0.16;
-  const glow = new THREE.PointLight(0xff2020, 0.8, 7, 1.5); glow.position.set(0, 2.5, 0.5);
+  const glow = new THREE.PointLight(fire ? 0xff4a10 : 0x3ac8ff, 0.8, 7, 1.5); glow.position.set(0, 2.5, 0.5);
   g.add(body, head, e1, e2, a1, a2, glow);
   g.visible = false; scene.add(g);
   return { group: g, x: 0, z: 0, rot: 0, tx: 0, tz: 0, trot: 0, chase: false, fresh: true };
@@ -286,6 +333,7 @@ function bindInput() {
     if (canControl() && e.code.indexOf('Arrow') === 0) e.preventDefault();
     if (active && e.code === 'KeyM') RR.Game.toggleMic();
     if (e.code === 'KeyQ' && !e.repeat && canControl()) smQ = true;
+    if (e.code === 'KeyR' && !e.repeat && canControl()) skQ = true;
     if (e.code === 'KeyF' || e.code === 'Space') { if (canControl()) { e.preventDefault(); attack(); } }
   });
   window.addEventListener('keyup', function (e) { keys[e.code] = false; });
@@ -352,6 +400,18 @@ function bindInput() {
   const atkBtn = $('atk');
   atkBtn.addEventListener('touchstart', function (e) { e.preventDefault(); attack(); }, { passive: false });
   atkBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  // 手機：救援（按住）與煙霧彈（按一下）
+  const rescueBtn = $('rescue');
+  const rescueOff = function (e) { e.preventDefault(); keys.KeyE = false; rescueBtn.classList.remove('on'); };
+  rescueBtn.addEventListener('touchstart', function (e) { e.preventDefault(); keys.KeyE = true; rescueBtn.classList.add('on'); }, { passive: false });
+  rescueBtn.addEventListener('touchend', rescueOff, { passive: false }); rescueBtn.addEventListener('touchcancel', rescueOff, { passive: false });
+  rescueBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  const smokeBtn = $('smoke');
+  smokeBtn.addEventListener('touchstart', function (e) { e.preventDefault(); if (canControl()) smQ = true; }, { passive: false });
+  smokeBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  const skillBtn = $('skill');
+  skillBtn.addEventListener('touchstart', function (e) { e.preventDefault(); if (canControl()) skQ = true; }, { passive: false });
+  skillBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 }
 
 /* ---------- 每幀更新 ---------- */
@@ -370,7 +430,7 @@ function updateMe(dt) {
   const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run) && moving && !me.tired;
   if (wantRun) { me.stam -= 0.26 * dt; if (me.stam <= 0) { me.stam = 0; me.tired = true; } }
   else { me.stam = Math.min(1, me.stam + 0.17 * dt); if (me.tired && me.stam > 0.35) me.tired = false; }
-  const speed = (wantRun ? 9.0 : 3.9) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05);   // 長按跑：明顯加速；沒有回收物時 +5%
+  const speed = (wantRun ? 9.0 : 3.9) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05) * (iceNear() ? 0.75 : 1);   // 靠近藍色（冰）怪物減速 25%
   const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   const dx = (-sy * f + cy * s) * speed * dt, dz = (-cy * f - sy * s) * speed * dt;
   const R = 0.42;
@@ -386,6 +446,7 @@ function updateMe(dt) {
   const fovT = wantRun ? 88 : 75;
   if (Math.abs(camera.fov - fovT) > 0.1) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   camera.position.set(me.x, 1.65 + (moving ? Math.sin(me.walkT * 2) * 0.045 : 0), me.z);
+  renderTT();
   camera.rotation.set(me.pitch, me.yaw, 0);
   $('stamBar').style.width = (me.stam * 100).toFixed(0) + '%';
   $('stam').className = me.tired ? 'tired' : '';
@@ -573,7 +634,7 @@ RR.Game = {
     torch = new THREE.SpotLight(0xfff0cc, 1.7, 30, 0.55, 0.55, 1.4);
     torch.position.set(0.25, -0.2, 0); camera.add(torch); camera.add(torch.target); torch.target.position.set(0, -0.05, -1);
     buildLevel();
-    for (let i = 0; i < 3; i++) view.monsters.push(buildMonster());
+    for (let i = 0; i < 3; i++) view.monsters.push(buildMonster(i % 2 === 0 ? 'fire' : 'ice'));
     setViewWeapon(0);
     itemGeos = [
       new THREE.TorusGeometry(0.26, 0.1, 8, 16), new THREE.BoxGeometry(0.3, 0.5, 0.3), new THREE.CylinderGeometry(0.25, 0.25, 0.3, 12),
@@ -670,6 +731,20 @@ RR.Game = {
   },
   onSnapshot: function (s) {
     const prevSec = Math.ceil(view.time), prevMoney = view.money, prevBag = me.bagN;
+    // 搶獎盃與圈圈叉叉棋盤
+    if (s.tr && !trophyMesh) {
+      trophyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.3, 0.8, 12), new THREE.MeshPhongMaterial({ color: 0xffc83a, emissive: 0x553300, shininess: 80 }));
+      trophyMesh.position.y = 0.6; scene.add(trophyMesh);
+    }
+    if (s.tr) trophyMesh.position.set(s.tr[0], 0.6, s.tr[1]);
+    if (!s.tr && trophyMesh) { scene.remove(trophyMesh); trophyMesh = null; }
+    if (s.bp && !boardMesh) {
+      boardMesh = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.9, 2.4), new THREE.MeshPhongMaterial({ color: 0x6b4a2b }));
+      boardMesh.position.set(s.bp[0], 0.45, s.bp[1]); scene.add(boardMesh);
+    }
+    if (s.bp && s.tt) view.bp = s.bp;
+    if (s.tt) view.tt = s.tt;
+    else view.tt = null;
     // 傳送陣的顯示
     if (s.pad && !padMesh) {
       padMesh = new THREE.Mesh(new THREE.RingGeometry(0.6, 1.0, 40), new THREE.MeshBasicMaterial({ color: 0x66e0ff, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
@@ -732,6 +807,18 @@ RR.Game = {
     } else if (e.t === 'warp') {
       if (e.id === myId) { me.x = e.x; me.z = e.z; toast('已傳回基地'); }
       else { const p = view.players.get(e.id); if (p) { p.x = p.tx = e.x; p.z = p.tz = e.z; } }
+    } else if (e.t === 'trophy') {
+      toast(e.id === myId ? '搶到獎盃！+120' : nameOf(e.id) + ' 搶到獎盃！');
+      Sfx.tone(523, 0.2, 'triangle', 0.15, 784); Sfx.tone(784, 0.4, 'triangle', 0.15, 1046);
+    } else if (e.t === 'ttmove') {
+      Sfx.tone(e.mark === 'X' ? 440 : 330, 0.12, 'square', 0.1);
+    } else if (e.t === 'ttwin') {
+      toast((e.mark === 'X' ? 'X' : 'O') + ' 連線獲勝！團隊 +150');
+      Sfx.tone(523, 0.2, 'triangle', 0.15, 784); Sfx.tone(784, 0.4, 'triangle', 0.15, 1046);
+    } else if (e.t === 'ttdraw') {
+      toast('圈圈叉叉平手，下一局開始');
+    } else if (e.t === 'moon') {
+      showMoon(e.x, e.z);
     } else if (e.t === 'smoke') {
       if (e.id !== myId && me.alive && Math.hypot(e.x - me.x, e.z - me.z) < 6) showSmoke();
     } else if (e.t === 'revive') {
@@ -763,9 +850,9 @@ RR.Game = {
     }
   },
   input: function () {
-    const sm = smQ; smQ = false;
+    const sm = smQ; smQ = false; const sk = skQ; skQ = false; const tt = ttQ; ttQ = null;
     return { t: 'i', x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100,
-      run: me.running && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!keys.KeyE && me.alive, sm: sm };
+      run: me.running && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!keys.KeyE && me.alive, sm: sm, sk: sk, tt: tt === null ? undefined : tt };
   },
   toggleMic: function () {
     if (!Voice.hasMic()) { RR.UI.say('沒有麥克風權限。請在瀏覽器允許麥克風後，重新進入房間。'); return; }
