@@ -211,6 +211,12 @@ Sim.prototype.setInput = function (id, m) {
   p.rs = !!m.rs;   // 按住 E 救援
   if (this.phase !== 'play' || !p.alive) return;
   if (m.sm && (p.smCd || 0) <= 0) { p.smCd = 20; this.events.push({ t: 'smoke', id: p.id, x: p.x, z: p.z }); }   // 煙霧彈：冷卻 20 秒，不影響金額
+  // 太空人技能「月光波」：7 公尺內怪物暫停 3 秒，冷卻 25 秒
+  if (m.sk && p.c === 2 && (p.skCd || 0) <= 0) {
+    p.skCd = 25;
+    for (let i = 0; i < this.monsters.length; i++) { const mo = this.monsters[i]; if (Math.hypot(mo.x - p.x, mo.z - p.z) < 7) mo.cool = 3; }
+    this.events.push({ t: 'moon', id: p.id, x: p.x, z: p.z });
+  }
   const x = +m.x, z = +m.z, yaw = +m.yaw;
   if (isFinite(x) && isFinite(z) && !blocked(x, z, 0.3)) { p.x = x; p.z = z; }
   if (isFinite(yaw)) p.yaw = yaw;
@@ -328,7 +334,8 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
     }
   }
   const ddx = tx - m.x, ddz = tz - m.z, dd = Math.hypot(ddx, ddz);
-  const sp = m.state === 'chase' ? this.chaseSpeed : this.wanderSpeed;
+  // 紅色（火）怪物追逐時較快；藍色（冰）怪物的減速光環在客戶端計算
+  const sp = m.state === 'chase' ? this.chaseSpeed * (mi % 2 === 0 ? 1.25 : 1) : this.wanderSpeed;
   if (dd > 0.05) {
     const step = Math.min(dd, sp * dt), mx = ddx / dd * step, mz = ddz / dd * step;
     if (direct) {
@@ -358,6 +365,7 @@ Sim.prototype.step = function (dt) {
     const p = alive[k];
     if (p.atkCd > 0) p.atkCd -= dt;
     if ((p.smCd || 0) > 0) p.smCd -= dt;
+    if ((p.skCd || 0) > 0) p.skCd -= dt;
     p.hurtT += dt;
     if (p.hurtT > 5 && p.hp < 100) p.hp = Math.min(100, p.hp + 6 * dt);   // 5 秒沒受傷後慢慢回血
   }
