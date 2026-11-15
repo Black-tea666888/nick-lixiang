@@ -212,11 +212,11 @@ function drawMini(L) {
     g.fillStyle = CSSCOL[p.slot % 4];
     g.beginPath(); g.arc(p.x * k, p.z * k, MC * 0.38, 0, Math.PI * 2); g.fill();
   });
-  // 怪物：依種類上色（火紅、冰藍、毒綠、暗影紫），追人時外圈閃爍
+  // 怪物：靠近（14 公尺內）才顯示；依種類上色（火紅、冰藍、毒綠、暗影紫），追人時外圈閃爍
   const MC_COL = ['#ff5a2a', '#5ad0ff', '#8cff5a', '#b070ff'];
   for (let i = 0; i < view.monsters.length; i++) {
     const m = view.monsters[i];
-    if (!m.group.visible) continue;
+    if (!m.group.visible || Math.hypot(m.x - L.x, m.z - L.z) > 14) continue;   // 14 公尺內才顯示
     const mx = m.x * k, my = m.z * k;
     if (m.chase && Math.floor(Date.now() / 250) % 2) { g.strokeStyle = '#ffffff'; g.lineWidth = 1.5; g.beginPath(); g.arc(mx, my, MC * 0.75, 0, Math.PI * 2); g.stroke(); }
     g.fillStyle = MC_COL[i % 4]; g.strokeStyle = '#000'; g.lineWidth = 1;
