@@ -144,7 +144,8 @@ function floatText(text, bad) {
 let shakeT = 0, jumpQ = false, dashQ = false, dashT = 0, dashCd = 0, dashDir = [0, 0];
 me.y = 0; me.vy = 0;
 function toast(msg) { const el = $('toast'); el.textContent = msg; el.style.opacity = 1; toastT = 2.4; }
-function canControl() { return active && view.phase === 'play' && me.alive; }
+let editing = false;
+function canControl() { return active && view.phase === 'play' && me.alive && !editing; }
 function nameOf(id) { const p = view.players.get(id); return p ? p.name : '隊友'; }
 
 /* ---------- 建場景 ---------- */
@@ -162,24 +163,36 @@ function makeWinTex(base, windows) {
   }
   const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = maxAniso; return t;
 }
+// 材質貼圖：512px，柔和的色塊與細顆粒（不要一格一格的雜點），遠看是平滑的牆面／地面
 function makeTex(base, speck, lines) {
-  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
-  const g = cv.getContext('2d'); g.scale(2, 2);
+  const cv = document.createElement('canvas'); cv.width = cv.height = 512;
+  const g = cv.getContext('2d'); g.scale(4, 4);
   g.fillStyle = base; g.fillRect(0, 0, 128, 128);
-  for (let i = 0; i < 2200; i++) {
-    g.fillStyle = 'rgba(' + speck + ',' + (Math.random() * 0.18).toFixed(3) + ')';
-    g.fillRect(Math.random() * 128, Math.random() * 128, 0.5 + Math.random() * 2, 0.5 + Math.random() * 2);
+  for (let i = 0; i < 46; i++) {   // 大片柔和的明暗
+    const x = Math.random() * 128, y = Math.random() * 128, r = 10 + Math.random() * 26;
+    const gr = g.createRadialGradient(x, y, 0, x, y, r), c = Math.random() < 0.5 ? speck : '255,255,255';
+    gr.addColorStop(0, 'rgba(' + c + ',' + (0.05 + Math.random() * 0.07).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(' + c + ',0)');
+    g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  for (let i = 0; i < 5000; i++) {  // 很細的顆粒
+    g.fillStyle = 'rgba(' + speck + ',' + (Math.random() * 0.07).toFixed(3) + ')';
+    g.fillRect(Math.random() * 128, Math.random() * 128, 0.3, 0.3);
   }
   if (lines) {
-    g.strokeStyle = 'rgba(0,0,0,.45)'; g.lineWidth = 2; g.strokeRect(1, 1, 126, 126);
+    g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = 1; g.strokeRect(0.5, 0.5, 127, 127);
     g.beginPath(); g.moveTo(0, 64); g.lineTo(128, 64); g.stroke();
-    g.fillStyle = 'rgba(60,20,10,.25)';
-    for (let i = 0; i < 5; i++) g.fillRect(Math.random() * 120, Math.random() * 60, 3 + Math.random() * 5, 30 + Math.random() * 60);
+    for (let i = 0; i < 5; i++) {   // 水漬：由上往下淡出
+      const x = Math.random() * 120, y = Math.random() * 60, w = 3 + Math.random() * 5, h = 30 + Math.random() * 60;
+      const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, 'rgba(60,20,10,.22)'); gr.addColorStop(1, 'rgba(60,20,10,0)');
+      g.fillStyle = gr; g.fillRect(x, y, w, h);
+    }
   }
   const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = maxAniso; return t;
 }
 
 let maxAniso = 1;
+let solids = [];   // 擺設的碰撞圓（櫃子、木箱、鐵桶）：[x, z, 半徑]
+function hitSolid(x, z) { for (let i = 0; i < solids.length; i++) { const q = solids[i]; if (Math.hypot(q[0] - x, q[1] - z) < q[2] + 0.34) return true; } return false; }
 let level = null, builtMap = -1, ambient = null, hemi = null, sun = null, torchBase = 2.2;
 
 /* ---------- 小地圖（每張地圖自動產生；北方固定朝上，點一下放大） ---------- */
@@ -236,7 +249,7 @@ function buildLevel() {
     scene.remove(level);
     level.traverse(function (o) { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
   }
-  level = new THREE.Group(); builtMap = W.mapIndex;
+  level = new THREE.Group(); builtMap = W.mapIndex; solids = [];
   const COLS = W.COLS, ROWS = W.ROWS, MAP = W.MAP, T = W.theme, VAN = W.VAN;
   // 光線：室內也調亮；開放場景（海邊、城市、太空站）沒有天花板，有天空與陽光
   const open = !!T.open, br = T.bright || 1.5, skyC = open ? T.sky : 0x0a0f0d;
@@ -315,7 +328,7 @@ function buildLevel() {
       part(new THREE.BoxGeometry(0.3, 0.03, 0.02), lineM, -0.25, 1.75, 0.31), part(new THREE.BoxGeometry(0.3, 0.03, 0.02), lineM, 0.25, 1.75, 0.31),
       part(new THREE.BoxGeometry(0.04, 0.14, 0.04), lineM, -0.08, 1.05, 0.32), part(new THREE.BoxGeometry(0.04, 0.14, 0.04), lineM, 0.08, 1.05, 0.32),
       part(new THREE.BoxGeometry(0.22, 0.08, 0.02), tagM, 0, 2.22, 0.2));
-    lg.position.set(k[0], 0, k[1]); lg.rotation.y = k[2]; level.add(lg);
+    lg.position.set(k[0], 0, k[1]); lg.rotation.y = k[2]; level.add(lg); solids.push([k[0], k[1], 0.5]);
   });
   // 擺設：木箱、鐵桶貼牆放；天花板燈條（固定種子，每張地圖每次都一樣）
   let seed = 1234 + W.mapIndex * 77; const rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -332,9 +345,10 @@ function buildLevel() {
       const d = walls4[Math.floor(rnd() * walls4.length)], off = CS / 2 - 0.42, side = (rnd() - 0.5) * 1.6;
       const px = cx + d[0] * off + (d[0] ? 0 : side), pz = cz + d[1] * off + (d[1] ? 0 : side);
       if (roll < 0.12) {
-        const sz = 0.55 + rnd() * 0.25, cr = part(new THREE.BoxGeometry(sz, sz, sz), crateM, px, sz / 2, pz); cr.rotation.y = rnd() * 0.5; level.add(cr);
+        const sz = 0.55 + rnd() * 0.25, cr = part(new THREE.BoxGeometry(sz, sz, sz), crateM, px, sz / 2, pz); solids.push([px, pz, sz * 0.55]); cr.rotation.y = rnd() * 0.5; level.add(cr);
         if (rnd() < 0.4) { const s2 = sz * 0.7, c2 = part(new THREE.BoxGeometry(s2, s2, s2), crateM, px, sz + s2 / 2, pz); c2.rotation.y = rnd(); level.add(c2); }
       } else {
+        solids.push([px, pz, 0.32]);
         level.add(part(new THREE.CylinderGeometry(0.3, 0.3, 0.9, 12), barrelM, px, 0.45, pz), part(new THREE.CylinderGeometry(0.31, 0.31, 0.06, 12), bandM, px, 0.62, pz));
       }
     }
@@ -525,7 +539,7 @@ function buildWeapon(w) {
 
 function buildAvatar(p) {
   const g = buildChar(p.c || 0, p.slot, p.h || 0);
-  const wg = buildWeapon(p.w || 0); wg.position.set(0.36, 0.85, 0.12); wg.rotation.x = 0.5; g.add(wg);
+  const wg = buildWeapon(p.w || 0); wg.position.set(0.37, 0.67, 0.3); wg.rotation.x = 0.5; g.add(wg);   // 握在右手上
   const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
   const c = cv.getContext('2d');
   c.font = 'bold 30px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
@@ -571,6 +585,72 @@ function showShot(e) {
   Sfx.noise(0.09, v); Sfx.tone(520, 0.07, 'square', v * 0.6, 140);
   if (mine) { shakeT = Math.max(shakeT, 0.07); if (gunMesh) gunMesh.userData.kick = 1; me.ammo = e.ammo; }
   if (e.mi >= 0 && view.monsters[e.mi]) view.monsters[e.mi].hitT = 0.18;
+}
+// 畫質：high = 最高 3 倍像素（手機可到 1080p 以上）、mid = 2 倍、low = 1 倍。高畫質太卡時自動降一級。
+let quality = 'high', fpsT = 0, fpsN = 0, slowN = 0;
+function applyQuality() {
+  if (!renderer) return;
+  const cap = quality === 'low' ? 1 : quality === 'mid' ? 2 : 3;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, cap));
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+}
+function fpsWatch(dt) {
+  fpsT += dt; fpsN++;
+  if (fpsT < 2) return;
+  const fps = fpsN / fpsT; fpsT = 0; fpsN = 0;
+  if (!active || document.hidden) { slowN = 0; return; }
+  slowN = fps < 24 ? slowN + 1 : 0;
+  if (slowN >= 3 && quality !== 'low' && RR.Game.settings.autoQ !== false) {
+    slowN = 0; quality = quality === 'high' ? 'mid' : 'low'; applyQuality();
+    toast('畫面有點卡，已自動降低畫質（可在設定調回）'); if (RR.Game.onQuality) RR.Game.onQuality(quality);
+  }
+}
+/* ---------- 手機按鈕：位置與大小可自訂（直式、橫式各存一份） ---------- */
+const BTN = { run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
+let btnScale = 1, dragBtn = null;
+function layoutKey() { return 'rr_layout_' + (window.innerWidth > window.innerHeight ? 'l' : 'p'); }
+function loadLayout() { try { return JSON.parse(localStorage.getItem(layoutKey()) || 'null') || {}; } catch (e) { return {}; } }
+function layoutButtons() {
+  const Wv = window.innerWidth, Hv = window.innerHeight, saved = loadLayout();
+  Object.keys(BTN).forEach(function (id) {
+    const el = $(id), d = BTN[id], size = d[2] * btnScale, sv = saved[id];
+    let cx = sv ? sv[0] * Wv : Wv - d[0] * btnScale, cy = sv ? sv[1] * Hv : Hv - d[1] * btnScale;
+    cx = Math.max(size / 2, Math.min(Wv - size / 2, cx)); cy = Math.max(size / 2, Math.min(Hv - size / 2, cy));
+    el.style.width = el.style.height = size + 'px'; el.style.fontSize = Math.round(size * 0.29) + 'px';
+    el.style.left = (cx - size / 2) + 'px'; el.style.top = (cy - size / 2) + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto';
+  });
+}
+function setEditing(on) {
+  editing = on; document.body.classList.toggle('btnedit', on); $('btnEdit').classList.toggle('hide', !on);
+  if (on) { for (const k in keys) keys[k] = false; touch.run = false; layoutButtons(); }
+}
+function initLayout() {
+  Object.keys(BTN).forEach(function (id) {
+    const el = $(id);
+    el.addEventListener('pointerdown', function (e) {
+      if (!editing) return;
+      e.preventDefault(); e.stopPropagation(); dragBtn = { id: id, el: el };
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+    }, true);
+    el.addEventListener('pointermove', function (e) {
+      if (!editing || !dragBtn || dragBtn.id !== id) return;
+      const size = BTN[id][2] * btnScale;
+      el.style.left = Math.max(0, Math.min(window.innerWidth - size, e.clientX - size / 2)) + 'px';
+      el.style.top = Math.max(0, Math.min(window.innerHeight - size, e.clientY - size / 2)) + 'px';
+    });
+    const drop = function (e) {
+      if (!dragBtn || dragBtn.id !== id) return;
+      dragBtn = null;
+      const size = BTN[id][2] * btnScale, saved = loadLayout();
+      saved[id] = [(parseFloat(el.style.left) + size / 2) / window.innerWidth, (parseFloat(el.style.top) + size / 2) / window.innerHeight];
+      try { localStorage.setItem(layoutKey(), JSON.stringify(saved)); } catch (err) {}
+    };
+    el.addEventListener('pointerup', drop); el.addEventListener('pointercancel', drop);
+  });
+  $('btnEditDone').addEventListener('click', function () { setEditing(false); });
+  $('btnEditReset').addEventListener('click', function () { try { localStorage.removeItem(layoutKey()); } catch (e) {} layoutButtons(); });
+  window.addEventListener('resize', layoutButtons);
+  layoutButtons();
 }
 function attack() {
   if (!canControl() || atkT > 0) return;
@@ -702,7 +782,7 @@ function bindInput() {
   skillBtn.addEventListener('touchstart', function (e) { e.preventDefault(); trySkill(); }, { passive: false });
   skillBtn.addEventListener('click', trySkill);
   skillBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-  initMini();
+  initMini(); initLayout();
 }
 
 /* ---------- 每幀更新 ---------- */
@@ -735,8 +815,10 @@ function updateMe(dt) {
   let dx = (-sy * f + cy * s) * speed * dt, dz = (-cy * f - sy * s) * speed * dt;
   if (dashT > 0) { dashT -= dt; dx += dashDir[0] * 22 * dt; dz += dashDir[1] * 22 * dt; }
   const R = 0.42;
-  if (!W.blocked(me.x + dx, me.z, R)) me.x += dx;
-  if (!W.blocked(me.x, me.z + dz, R)) me.z += dz;
+  if (editing) { dx = 0; dz = 0; }   // 調整按鈕位置時不移動
+  const inS = hitSolid(me.x, me.z);   // 萬一已經卡在擺設裡就放行，讓玩家走得出來
+  if (!W.blocked(me.x + dx, me.z, R) && (inS || !hitSolid(me.x + dx, me.z))) me.x += dx;
+  if (!W.blocked(me.x, me.z + dz, R) && (inS || !hitSolid(me.x, me.z + dz))) me.z += dz;
   if (moving) {
     const before = Math.floor(me.walkT / Math.PI);
     me.walkT += dt * (wantRun ? 13 : 8.5) * mag;
@@ -747,6 +829,7 @@ function updateMe(dt) {
   const fovT = dashT > 0 ? 96 : wantRun ? 88 : 75;
   if (Math.abs(camera.fov - fovT) > 0.1) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   if (gunT > 0) gunT -= dt;
+  fpsWatch(dt);
   if (gunMesh) { const kk = gunMesh.userData.kick || 0; gunMesh.userData.kick = Math.max(0, kk - dt * 9); gunMesh.position.set(-0.3, -0.3 + kk * 0.03, -0.62 + kk * 0.07); gunMesh.rotation.x = kk * 0.22; }
   if (shakeT > 0) shakeT = Math.max(0, shakeT - dt);
   const sk2 = shakeT * 0.22;
@@ -890,7 +973,7 @@ function tickHud() {
   });
   const b = $('micBtn');
   b.className = !Voice.hasMic() ? 'nomic' : Voice.isMuted() ? 'muted' : loudT > 0 ? 'loud' : spk ? 'spk' : '';
-  b.textContent = !Voice.hasMic() ? '無麥克風' : Voice.isMuted() ? '麥克風 關' : loudT > 0 ? '太大聲！' : '麥克風 開';
+  b.textContent = !Voice.hasMic() ? '開麥克風' : Voice.isMuted() ? '麥克風 關' : loudT > 0 ? '太大聲！' : '麥克風 開';
 }
 
 let last = 0, pv = null;
@@ -943,7 +1026,7 @@ RR.Game = {
     if (!window.THREE) return false;
     canvas = $('c');
     try { renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true }); } catch (e) { return false; }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    applyQuality();
     try { maxAniso = Math.min(8, renderer.capabilities.getMaxAnisotropy()); } catch (e) {}
     scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000);
     scene.fog = new THREE.FogExp2(0x0a0f0d, 0.04);
@@ -992,7 +1075,7 @@ RR.Game = {
     }
     if (pv.model) pv.sc.remove(pv.model);
     const g = buildChar(c, 0, h || 0), wg = buildWeapon(w);
-    wg.position.set(0.36, 0.85, 0.12); wg.rotation.x = 0.5; g.add(wg);
+    wg.position.set(0.37, 0.67, 0.3); wg.rotation.x = 0.5; g.add(wg);
     pv.model = g; pv.sc.add(g);
   },
   setMe: function (id) { myId = id; },
@@ -1210,8 +1293,15 @@ RR.Game = {
     return { t: 'i', x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100,
       run: me.running && me.alive, air: me.y > 0.25 && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!keys.KeyE && me.alive, sm: sm, sk: sk, tt: tt === null ? undefined : tt };
   },
+  setQuality: function (q) { quality = q === 'low' || q === 'mid' ? q : 'high'; applyQuality(); },
+  setBtnScale: function (v) { btnScale = Math.max(0.7, Math.min(1.5, +v || 1)); layoutButtons(); },
+  editButtons: function () { setEditing(true); },
   toggleMic: function () {
-    if (!Voice.hasMic()) { RR.UI.say('沒有麥克風權限。請在瀏覽器允許麥克風後，重新進入房間。'); return; }
+    if (!Voice.hasMic()) {
+      toast('正在開啟麥克風…');
+      Voice.enableMic().then(function (ok) { if (ok) { Voice.setMuted(false); toast('麥克風已開啟'); } else RR.UI.say('無法開啟麥克風。請在瀏覽器允許麥克風權限後再按一次。'); tickHud(); });
+      return;
+    }
     Voice.setMuted(!Voice.isMuted()); tickHud();
   },
   toast: toast

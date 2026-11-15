@@ -276,6 +276,28 @@ body.solo #gun { bottom: 116px; }
 body.hunt .bagrow > b:first-of-type, body.hunt #pips { opacity: .35; }
 .mode.hunt { grid-column: 1 / -1; min-height: 0; background: linear-gradient(135deg, #ff8a5c, #c2362b); border-color: rgba(255,255,255,.35); }
 .mode.hunt span { color: rgba(255,255,255,.9); }
+#btnEdit { position: fixed; inset: 0; z-index: 40; background: rgba(8,14,34,.72); display: flex; align-items: flex-start; justify-content: center; padding: max(14px, env(safe-area-inset-top)) 14px 0; }
+#btnEdit.hide { display: none; }
+#btnEdit { pointer-events: none; }
+#btnEdit .panel { pointer-events: auto; }
+#btnEdit .panel { max-width: 340px; text-align: center; padding: 14px 16px; }
+body.btnedit #run, body.btnedit #atk, body.btnedit #gun, body.btnedit #rescue, body.btnedit #jump, body.btnedit #dash, body.btnedit #skill, body.btnedit #smoke { display: block !important; z-index: 41; touch-action: none; outline: 2px dashed rgba(255,255,255,.7); outline-offset: 3px; }
+.field select { font: inherit; color: #fff; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3); border-radius: 8px; padding: 6px 8px; }
+.field select option { color: #111; }
+/* 橫式：面板加寬、模式卡片排三欄，HUD 靠邊 */
+@media (orientation: landscape) and (max-height: 520px) {
+  .panel.lobby { max-width: 760px; }
+  .modes { grid-template-columns: 2fr 1fr 1fr; }
+  .mode.main { grid-column: auto; min-height: 92px; }
+  .mode.hunt { grid-column: 1 / -1; }
+  .logo { margin: 8px 0 !important; font-size: 26px !important; }
+  .cards.c3 { grid-template-columns: repeat(6, 1fr); }
+  #mini { top: 112px; width: 110px !important; height: auto; }
+  #plist { top: 84px; }
+  #hudBtns { top: 60px; flex-direction: row; flex-wrap: wrap; justify-content: flex-end; max-width: 250px; }
+  body.touch #toast { bottom: 46%; }
+  #helpMenu { display: grid; grid-template-columns: 1fr 1fr; }
+}
 /* ---------- 說明：主題選單 ---------- */
 #helpMenu { display: flex; flex-direction: column; gap: 8px; }
 .hrow { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; font: inherit; text-align: left; color: var(--ink); cursor: pointer;
@@ -342,3 +364,6 @@ input[type=text]::placeholder { color: rgba(255,255,255,.6); }
 .topbar, .hero, .stage, #missions, #lobbyList, #resStats, .card, .hrow { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .panel h1, .panel .sub, .sec, .link, .note { text-shadow: 0 1px 6px rgba(10,22,60,.6); }
 .logo { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: #ffe39a !important; filter: none; text-shadow: 0 3px 14px rgba(10,22,60,.65), 0 0 22px rgba(255,200,90,.35); }
+body.touch #toast { bottom: 318px; }
+#hideTag { bottom: 356px; }
+@media (orientation: landscape) and (max-height: 520px) { body.touch #toast { bottom: 46%; } #hideTag { bottom: auto; top: 14%; } #bars { bottom: 10px; } }

@@ -16,3 +16,7 @@
 npm install
 npm start    # 預設 port 9000
 ```
+
+## 中繼（/relay）
+
+有些網路無法讓玩家直連（WebRTC `negotiation-failed`）。伺服器另外提供 WebSocket 中繼：`/relay?room=<代碼>&role=host|client&id=<id>`，遊戲資料由伺服器轉送。`GET /relay-health` 回傳 `{ ok: true }` 代表這個版本已部署。語音不走中繼。
