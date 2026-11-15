@@ -71,17 +71,7 @@
     <h1>廢墟回收隊</h1>
     <div class="sub"><span id="whoProv"></span> · 最佳紀錄：第 <span id="best">0</span> 天</div>
     <label class="field">暱稱<input id="nick" type="text" maxlength="12"></label>
-    <div id="lookBox">
-      <canvas id="lookPrev" width="150" height="170"></canvas>
-      <div id="lookPick">
-        <div class="note">角色</div>
-        <div class="picker"><button id="cPrev" type="button" aria-label="上一個角色">‹</button><span id="cName"></span><button id="cNext" type="button" aria-label="下一個角色">›</button></div>
-        <div class="note">攻擊物</div>
-        <div class="picker"><button id="wPrev" type="button" aria-label="上一個攻擊物">‹</button><span id="wName"></span><button id="wNext" type="button" aria-label="下一個攻擊物">›</button></div>
-        <div class="note">地圖</div>
-        <div class="picker"><button id="mPrev" type="button" aria-label="上一張地圖">‹</button><span id="mName"></span><button id="mNext" type="button" aria-label="下一張地圖">›</button></div>
-      </div>
-    </div>
+    <button class="btn" id="pickBtn" type="button">角色與地圖：<span id="pickSum"></span></button>
     <div class="col">
       <button class="btn primary" id="createBtn" type="button">建立房間</button>
       <div class="row">
@@ -96,9 +86,28 @@
       <label class="field">音效音量<input id="setSfx" type="range" min="0" max="1" step="0.05"></label>
       <label class="field">背景音樂<input id="setMusic" type="range" min="0" max="1" step="0.05"></label>
       <label class="field">語音音量<input id="setVoice" type="range" min="0" max="1.5" step="0.05"></label>
-      <p class="note">背景音樂會隨局勢變化：大廳平靜、怪物靠近變緊張、被追逐時強烈，過關與失敗各有提示音。<br>手機：左半邊拖曳移動、右半邊拖曳轉視角、按住「跑」奔跑、按「打」揮武器。<br>電腦：WASD 移動、滑鼠轉視角、Shift 奔跑、滑鼠左鍵或 F 揮武器、M 開關麥克風、Enter 聊天、Esc 釋放滑鼠、E 按住救援倒地隊友、Q 丟煙霧彈（干擾附近隊友的視野）。<br>左側小地圖會顯示你的位置與方向、隊友和回收車（點一下放大）；怪物和廢料不會顯示。<br>怪物看得到你，也聽得到跑步聲和太大聲的麥克風；身上集滿 3 件廢料時，附近怪物會被引過來。<br>集滿 3 件廢料後，附近會出現傳送陣，踩上去就能傳回基地。<br>怪物靠近時會有恐怖低鳴；非常近時會出現「發現你了！」字幕。<br>怪物有四種：紅色是火（追逐較快）、藍色是冰（靠近減速）、綠色是毒（緩慢，靠近會持續扣血，最低留 1 點）、紫色是暗影（追逐更快）。第 6 天起會出現四隻。<br>角色技能（電腦按 R、手機按「技」）：回收員「鼓舞」6 公尺內隊友加速 5 秒；機器人「護盾」4 秒內不會被抓；太空人「月光波」7 公尺內怪物暫停 3 秒；貓貓「潛行」6 秒內怪物較難發現你；南瓜頭「加血」回復 35；紙箱人「隱身」4 秒內怪物看不到你。<br>地圖上有一座獎盃，站在旁邊按住 E 3 秒就能搶到，團隊 +120。<br>基地旁有棋盤，站近後可以玩圈圈叉叉：前兩位落子的人分別是 X 與 O，連成一線團隊 +150。<br>沒有廢料時移動速度會略快；長按跑會明顯加速。<br>兩下可以打死隊友，他身上的廢料會掉在原地（房主可在大廳關閉）。手機：右下角「救」按住救援倒地隊友，「煙」丟煙霧彈。</p>
+      <p class="note">背景音樂會隨局勢變化：大廳平靜、怪物靠近變緊張、被追逐時強烈，過關與失敗各有提示音。<br>主選單的「角色與地圖」會開啟獨立畫面，可以選角色、攻擊物與地圖，按「完成」回主選單。<br>手機：左半邊拖曳移動、右半邊拖曳轉視角、按住「跑」奔跑、按「打」揮武器。<br>電腦：WASD 移動、滑鼠轉視角、Shift 奔跑、滑鼠左鍵或 F 揮武器、M 開關麥克風、Enter 聊天、Esc 釋放滑鼠、E 按住救援倒地隊友、Q 丟煙霧彈（干擾附近隊友的視野）。<br>左側小地圖會顯示你的位置與方向、隊友和回收車（點一下放大）；怪物和廢料不會顯示。<br>怪物看得到你，也聽得到跑步聲和太大聲的麥克風；身上集滿 3 件廢料時，附近怪物會被引過來。<br>集滿 3 件廢料後，附近會出現傳送陣，踩上去就能傳回基地。<br>怪物靠近時會有恐怖低鳴；非常近時會出現「發現你了！」字幕。<br>怪物有四種：紅色是火（追逐較快）、藍色是冰（靠近減速）、綠色是毒（緩慢，靠近會持續扣血，最低留 1 點）、紫色是暗影（追逐更快）。第 6 天起會出現四隻。<br>角色技能（電腦按 R、手機按「技」）：回收員「鼓舞」6 公尺內隊友加速 5 秒；機器人「護盾」4 秒內不會被抓；太空人「月光波」7 公尺內怪物暫停 3 秒；貓貓「潛行」6 秒內怪物較難發現你；南瓜頭「加血」回復 35；紙箱人「隱身」4 秒內怪物看不到你。<br>地圖上有一座獎盃，站在旁邊按住 E 3 秒就能搶到，團隊 +120。<br>基地旁有棋盤，站近後可以玩圈圈叉叉：前兩位落子的人分別是 X 與 O，連成一線團隊 +150。<br>沒有廢料時移動速度會略快；長按跑會明顯加速。<br>兩下可以打死隊友，他身上的廢料會掉在原地（房主可在大廳關閉）。手機：右下角「救」按住救援倒地隊友，「煙」丟煙霧彈。</p>
     </details>
     <button class="link" id="logoutBtn" type="button">登出</button>
+  </div>
+</div>
+
+<!-- 角色與地圖選擇 -->
+<div class="screen hide" id="scrPick">
+  <div class="panel">
+    <h1>角色與地圖</h1>
+    <div class="sub">選好再回主選單</div>
+    <div id="lookBox">
+      <canvas id="lookPrev" width="150" height="170"></canvas>
+    </div>
+    <div class="col">
+      <div class="field"><span>角色</span><span class="picker"><button id="cPrev" type="button" aria-label="上一個角色">‹</button><span id="cName"></span><button id="cNext" type="button" aria-label="下一個角色">›</button></span></div>
+      <div class="field"><span>攻擊物</span><span class="picker"><button id="wPrev" type="button" aria-label="上一個攻擊物">‹</button><span id="wName"></span><button id="wNext" type="button" aria-label="下一個攻擊物">›</button></span></div>
+      <div class="field"><span>地圖</span><span class="picker"><button id="mPrev" type="button" aria-label="上一張地圖">‹</button><span id="mName"></span><button id="mNext" type="button" aria-label="下一張地圖">›</button></span></div>
+    </div>
+    <div class="col">
+      <button class="btn primary" id="pickDone" type="button">完成</button>
+    </div>
   </div>
 </div>
 
