@@ -298,6 +298,17 @@ body.btnedit #run, body.btnedit #atk, body.btnedit #gun, body.btnedit #rescue, b
   body.touch #toast { bottom: 46%; }
   #helpMenu { display: grid; grid-template-columns: 1fr 1fr; }
 }
+.mode.wheel { grid-column: 1 / -1; min-height: 0; background: linear-gradient(135deg, #b98cff, #6a4bd8); border-color: rgba(255,255,255,.35); }
+.mode.wheel span { color: rgba(255,255,255,.9); }
+#wheelBox { position: relative; width: 280px; height: 280px; margin: 14px auto 6px; }
+#wheel { position: absolute; inset: 0; border-radius: 50%; border: 5px solid #ffe39a; box-shadow: 0 10px 30px rgba(10,22,60,.5), inset 0 0 0 3px rgba(0,0,0,.2); transition: transform 3.2s cubic-bezier(.12,.75,.12,1);
+  background: conic-gradient(#ff7a7a 0 45deg, #ffb35c 45deg 90deg, #ffe066 90deg 135deg, #8be28b 135deg 180deg, #5cc8ff 180deg 225deg, #7f8cff 225deg 270deg, #c08cff 270deg 315deg, #ff8ad0 315deg 360deg); }
+#wheel span { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+#wheel span i { position: absolute; left: -44px; top: -128px; width: 88px; text-align: center; font-style: normal; font-size: 13px; font-weight: 800; line-height: 1.2; color: #1b1305; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+#wheelPtr { position: absolute; left: 50%; top: -12px; z-index: 2; margin-left: -12px; border: 12px solid transparent; border-top: 22px solid #fff; filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
+#wheelMsg { text-align: center; min-height: 22px; font-size: 16px; }
+.wsel .card { min-height: 46px; }
+@media (orientation: landscape) and (max-height: 520px) { .cards.c3.wsel { grid-template-columns: repeat(4, 1fr); } #wheelBox { width: 220px; height: 220px; } #wheel span i { top: -100px; } }
 /* ---------- 說明：主題選單 ---------- */
 #helpMenu { display: flex; flex-direction: column; gap: 8px; }
 .hrow { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; font: inherit; text-align: left; color: var(--ink); cursor: pointer;
