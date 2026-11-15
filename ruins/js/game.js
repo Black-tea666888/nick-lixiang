@@ -12,6 +12,17 @@ let myId = null, active = false;
 const me = { x: W.VAN[0], z: W.VAN[1], yaw: -Math.PI * 0.75, pitch: 0, stam: 1, tired: false, walkT: 0, running: false, alive: true, bagN: 0, hp: 100 };
 let atkT = 0, swingT = 0, pipe = null, hurtFlash = 0;
 const view = { phase: 'lobby', day: 1, money: 0, quota: 0, time: 0, players: new Map(), monsters: [], items: [] };
+// 字幕（畫面中央下方，約 2 秒後淡出）
+let subEl = null, subHide = 0;
+function showSub(text) {
+  if (!subEl) {
+    subEl = document.createElement('div');
+    subEl.style.cssText = 'position:fixed;left:50%;bottom:22%;transform:translateX(-50%);color:#ff6b5e;font:700 22px/1.2 sans-serif;letter-spacing:.08em;text-shadow:0 0 8px #000;pointer-events:none;transition:opacity .4s;opacity:0;z-index:20;white-space:nowrap';
+    document.body.appendChild(subEl);
+  }
+  subEl.textContent = text; subEl.style.opacity = '1';
+  clearTimeout(subHide); subHide = setTimeout(function () { subEl.style.opacity = '0'; }, 2000);
+}
 const keys = {};
 const touch = { joyId: null, lookId: null, ox: 0, oy: 0, jx: 0, jy: 0, lx: 0, ly: 0, run: false };
 const settings = { sens: 1 };
@@ -346,7 +357,7 @@ function updateMe(dt) {
   const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run) && moving && !me.tired;
   if (wantRun) { me.stam -= 0.26 * dt; if (me.stam <= 0) { me.stam = 0; me.tired = true; } }
   else { me.stam = Math.min(1, me.stam + 0.17 * dt); if (me.tired && me.stam > 0.35) me.tired = false; }
-  const speed = (wantRun ? 6.6 : 3.9) * (1 - 0.07 * me.bagN);
+  const speed = (wantRun ? 6.6 : 3.9) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05);   // 沒有回收物時移動速度 +5%
   const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   const dx = (-sy * f + cy * s) * speed * dt, dz = (-cy * f - sy * s) * speed * dt;
   const R = 0.42;
@@ -426,6 +437,13 @@ function atmosphere(L, dt) {
   }
   let danger = Math.max(0, 1 - dist / 30);
   if (chase && danger > 0) danger = Math.min(1, danger + 0.35);
+  // 怪物靠近：恐怖低鳴；非常近且追逐時顯示字幕並播放音效
+  view.scareT = Math.max(0, (view.scareT || 0) - dt); view.subT = Math.max(0, (view.subT || 0) - dt);
+  if (dist < 12 && view.scareT <= 0 && me.alive) { Sfx.tone(44, 1.2, 'sawtooth', 0.05, 30); view.scareT = 6; }
+  if (dist < 5 && chase && view.subT <= 0 && me.alive) {
+    Sfx.tone(92, 0.35, 'square', 0.16, 46); view.subT = 4;
+    showSub('發現你了！');
+  }
   RR.Music.setMood(chase ? 'chase' : danger > 0.4 ? 'tense' : 'calm');
   $('vig').style.opacity = (danger * danger * 0.9).toFixed(2);
   beatT -= dt;
