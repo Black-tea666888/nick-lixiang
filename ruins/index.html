@@ -141,6 +141,9 @@
     </div>
     <div class="helpBody">
       <div class="sec">設定</div>
+      <label class="field">畫質<select id="setQ"><option value="high">高（1080p 以上）</option><option value="mid">標準</option><option value="low">省電</option></select></label>
+      <label class="field">手機按鈕大小<input id="setBtn" type="range" min="0.8" max="1.4" step="0.05"></label>
+      <div class="col"><button class="btn" id="btnEditOpen" type="button">自訂手機按鈕位置</button></div>
       <label class="field">視角靈敏度<input id="setSens" type="range" min="0.4" max="2" step="0.1"></label>
       <label class="field">音效音量<input id="setSfx" type="range" min="0" max="1" step="0.05"></label>
       <label class="field">背景音樂<input id="setMusic" type="range" min="0" max="1" step="0.05"></label>
@@ -169,6 +172,8 @@
       <section class="htopic hide" data-topic="ctrl"><h2><span class="hico">🎮</span>操作方式</h2>
 <h3>手機</h3>
 <table><tr><td>移動</td><td>左半邊拖曳</td></tr><tr><td>轉視角</td><td>右半邊拖曳</td></tr>
+<tr><td>橫式</td><td>把手機轉橫就能橫著玩</td></tr>
+<tr><td>按鈕</td><td>設定裡可調大小、拖曳自訂位置</td></tr>
 <tr><td><kbd>跑</kbd></td><td>按住奔跑</td></tr><tr><td><kbd>跳</kbd> <kbd>衝</kbd></td><td>跳躍、衝刺</td></tr>
 <tr><td><kbd>技</kbd> <kbd>煙</kbd></td><td>角色技能、煙霧彈</td></tr><tr><td><kbd>槍</kbd></td><td>開槍</td></tr><tr><td><kbd>打</kbd> <kbd>救</kbd></td><td>揮武器、按住救隊友</td></tr></table>
 <h3>電腦</h3>
@@ -231,6 +236,8 @@
 <ul><li>隊友語音音量固定，不會因為距離變小聲。</li>
 <li>麥克風太大聲會引來怪物，按鈕會變紅提醒。</li>
 <li>打隊友兩下會把他打倒，身上的廢料掉在原地；房主可在大廳關閉。</li>
+<li>麥克風<b>預設關閉</b>，不會打斷 Discord 等其他通話；要講話再按遊戲右上角「開麥克風」。</li>
+<li>網路無法直連時會自動改走伺服器中繼（遊戲照常，但語音可能不通）。</li>
 <li><b>聽不到聲音</b>：檢查手機靜音鍵（iPhone 側邊）並調高媒體音量。</li></ul>
       </section>
       <div class="col"><button class="btn" id="helpBack" type="button">‹ 回到主題選單</button></div>
@@ -294,6 +301,12 @@
       <button class="link" id="resLeave" type="button">離開</button>
     </div>
   </div>
+</div>
+
+<!-- 自訂手機按鈕位置 -->
+<div id="btnEdit" class="hide">
+  <div class="panel small"><b>拖曳按鈕到你順手的位置</b><p class="note">直式和橫式會分開記住。</p>
+    <div class="row"><button class="btn" id="btnEditReset" type="button">恢復預設</button><button class="btn primary" id="btnEditDone" type="button">完成</button></div></div>
 </div>
 
 <!-- 新手教學（第一次進遊戲時出現） -->

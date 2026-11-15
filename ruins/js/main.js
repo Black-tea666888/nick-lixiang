@@ -195,6 +195,7 @@ function startSolo(gmode) {
 function netErr(e) {
   const t = e && e.type;
   if (t === 'peer-unavailable') return '找不到這個房間，請確認代碼。';
+  if (t === 'full') return '房間已滿。';
   if (t === 'timeout') return '連線逾時。伺服器可能還在喚醒，請等 10 秒再試一次。';
   if (t === 'browser-incompatible') return '這裡無法使用連線功能。如果你是在 Claude 的預覽頁，預覽頁會擋掉連線與麥克風，只能玩單人；把專案部署到自己的網址（例如 GitHub Pages）後用 Safari 或 Chrome 開啟就能連線。';
   return '無法連線到配對伺服器（' + (t || (e && e.message) || '未知錯誤') + '）。請檢查網路後再試。';
@@ -230,11 +231,11 @@ function wireNet() {
   Net.on('error', function (e) { console.warn('net', e && e.type); });
 }
 function micNotice() {
-  if (!Voice.hasMic()) chatAdd(null, '沒有麥克風權限：你聽得到隊友，但他們聽不到你。');
+  if (!Voice.hasMic()) chatAdd(null, '麥克風預設關閉。要講話請在遊戲中按右上角「麥克風」。');
 }
 async function createRoom() {
   Sfx.unlock(); busy(true, '建立房間中…（第一次連線要先喚醒伺服器，最多約 40 秒）');
-  await Voice.init(true);
+  await Voice.init(false);   // 不主動要求麥克風（會打斷 Discord 等其他通話）；要講話再按遊戲裡的「麥克風」
   Net.host(function (err) {
     busy(false);
     if (err) { say(netErr(err)); return; }
@@ -252,7 +253,7 @@ async function joinRoom() {
   const code = Net.normalizeCode($('codeInput').value);
   if (code.length !== 5) { say('請輸入 5 碼房間代碼。'); return; }
   Sfx.unlock(); busy(true, '加入房間中…（第一次連線要先喚醒伺服器，最多約 40 秒）');
-  await Voice.init(true);
+  await Voice.init(false);   // 不主動要求麥克風（會打斷 Discord 等其他通話）；要講話再按遊戲裡的「麥克風」
   const u = Auth.user();
   const look = myLook();
   Net.join(code, { name: myName(), uid: u ? u.uid : '', c: look.c, w: look.w, h: look.h }, function (err, id) {
@@ -510,6 +511,12 @@ function bind() {
   $('miniInfoBtn').addEventListener('click', function () { Game.openMini(); });
   // 設定
   const sens = parseFloat(ls('rr_sens') || '1'), sfx = parseFloat(ls('rr_sfx') || '0.8'), vv = parseFloat(ls('rr_voice') || '1');
+  $('setQ').value = ls('rr_q') || 'high'; Game.setQuality($('setQ').value);
+  $('setQ').addEventListener('change', function () { lsSet('rr_q', $('setQ').value); Game.setQuality($('setQ').value); });
+  Game.onQuality = function (q) { $('setQ').value = q; };
+  $('setBtn').value = ls('rr_btn') || '1'; Game.setBtnScale($('setBtn').value);
+  $('setBtn').addEventListener('input', function () { lsSet('rr_btn', $('setBtn').value); Game.setBtnScale($('setBtn').value); });
+  $('btnEditOpen').addEventListener('click', function () { $('scrHelp').classList.add('hide'); Game.editButtons(); });
   $('setSens').value = sens; $('setSfx').value = sfx; $('setVoice').value = vv; $('setMusic').value = ls('rr_music') || '0.6';
   Game.settings.sens = sens;
   const apply = function () {

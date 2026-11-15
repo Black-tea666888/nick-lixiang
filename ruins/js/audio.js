@@ -87,6 +87,22 @@ const Voice = {
     if (!local) { try { local = ac.createMediaStreamDestination().stream; } catch (e) { local = null; } hasMic = false; }
     return hasMic;
   },
+  /** 玩家自己按「麥克風」才要求權限；拿到後把已接通的通話換成真的麥克風音軌 */
+  enableMic: async function () {
+    if (hasMic) return true;
+    const silent = local;
+    local = null;
+    const ok = await Voice.init(true);
+    if (!ok) { if (!local) local = silent; return false; }
+    const track = local.getAudioTracks()[0];
+    calls.forEach(function (e) {
+      try {
+        const pc = e.call.peerConnection;
+        if (pc) pc.getSenders().forEach(function (sd) { if (sd.track && sd.track.kind === 'audio') sd.replaceTrack(track); });
+      } catch (err) {}
+    });
+    return true;
+  },
   hasMic: function () { return hasMic; },
   micError: function () { return micError; },
   isMuted: function () { return muted; },
