@@ -15,7 +15,7 @@ function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 /** 週次：以台灣時間每週一 00:00 換週 */
 function weekId(off) { return Math.floor((Date.now() / 864e5 + 8 / 24 + 3) / 7) + (off || 0); }
 
-let db = null, uid = null, me = null, saveT = null, beatT = null, room = null;
+let db = null, uid = null, me = null, saveT = null, beatT = null, room = null, fsLoading = false;
 const H = { prog: function () { return {}; }, adopt: function () {}, name: function () { return '玩家'; }, level: function () { return 1; } };
 
 function userRef(id) { return db.collection('users').doc(id || uid); }
@@ -46,7 +46,16 @@ const Cloud = {
   onUser: function (user, cb) {
     clearInterval(beatT); beatT = null; uid = null; me = null;
     const fb = window.firebase;
-    if (!user || !fb || !fb.firestore || !(RR.CONFIG && RR.CONFIG.firebase) || /^guest-/.test(user.uid)) { if (cb) cb(false); return; }
+    if (!user || !fb || !(RR.CONFIG && RR.CONFIG.firebase) || /^guest-/.test(user.uid)) { if (cb) cb(false); return; }
+    // Firestore SDK 有 550 KB，只在真的登入雲端帳號時才下載，訪客與首次載入都更快
+    if (!fb.firestore) {
+      if (fsLoading) return;
+      fsLoading = true;
+      const sc = document.createElement('script'); sc.src = 'vendor/firebase-firestore-compat.js';
+      sc.onload = function () { fsLoading = false; Cloud.onUser(user, cb); };
+      sc.onerror = function () { fsLoading = false; if (cb) cb(false); };
+      document.head.appendChild(sc); return;
+    }
     try { db = db || fb.firestore(); } catch (e) { db = null; if (cb) cb(false); return; }
     uid = user.uid;
     userRef().get().then(function (snap) {
