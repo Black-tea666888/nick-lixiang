@@ -43,6 +43,7 @@
   <button id="run" type="button">跑</button>
   <button id="atk" type="button">打</button>
   <button id="gun" type="button">槍</button>
+  <button id="tower" type="button">塔</button>
   <button id="veh" type="button">車</button>
   <button id="jump" type="button">跳</button>
   <button id="dash" type="button">衝</button>
@@ -94,6 +95,7 @@
       <button class="mode main" id="createBtn" type="button"><b>多人合作</b><span>建立房間，邀請最多 3 位隊友</span></button>
       <button class="mode" id="soloBtn" type="button"><b>單人遊玩</b><span>自己練習</span></button>
       <button class="mode" id="miniInfoBtn" type="button"><b>小遊戲</b><span>圈圈叉叉 · 搶獎盃</span></button>
+      <button class="mode td" id="tdBtn" type="button"><b>塔防模式</b><span>守住回收車：怪物一波波進攻，開槍並花錢蓋砲塔（單人；多人請在大廳切換模式）</span></button>
       <button class="mode br" id="brBtn" type="button"><b>大逃殺</b><span>6 人混戰（不足由電腦補滿），安全區會縮小，活到最後的人獲勝</span></button>
       <button class="mode gear" id="gearOpen" type="button"><b>裝備與寶石</b><span>配件最多裝 2 個，對局中也能換；寶石可升級</span></button>
       <button class="mode wheel" id="wheelOpen" type="button"><b>造型轉盤</b><span>用金幣抽服裝、寵物、造型與特效 · 每天免費一次</span></button>
@@ -225,7 +227,7 @@
 <h3>電腦</h3>
 <table><tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>移動（滑鼠轉視角）</td></tr><tr><td><kbd>Shift</kbd></td><td>奔跑</td></tr>
 <tr><td><kbd>空白鍵</kbd> <kbd>C</kbd></td><td>跳躍、衝刺</td></tr><tr><td><kbd>R</kbd> <kbd>Q</kbd></td><td>角色技能、煙霧彈</td></tr>
-<tr><td><kbd>左鍵</kbd> / <kbd>F</kbd></td><td>揮武器</td></tr><tr><td><kbd>右鍵</kbd> / <kbd>X</kbd></td><td>開槍</td></tr><tr><td><kbd>E</kbd></td><td>按住救隊友、搶獎盃</td></tr>
+<tr><td><kbd>左鍵</kbd> / <kbd>F</kbd></td><td>揮武器</td></tr><tr><td><kbd>右鍵</kbd> / <kbd>X</kbd></td><td>開槍</td></tr><tr><td><kbd>T</kbd></td><td>塔防：蓋砲塔</td></tr><tr><td><kbd>E</kbd></td><td>按住救隊友、搶獎盃</td></tr>
 <tr><td><kbd>V</kbd></td><td>上／下推車</td></tr><tr><td><kbd>G</kbd></td><td>小遊戲</td></tr><tr><td><kbd>M</kbd> <kbd>Enter</kbd></td><td>麥克風、聊天</td></tr><tr><td><kbd>Esc</kbd></td><td>釋放滑鼠</td></tr></table>
       </section>
       <section class="htopic hide" data-topic="mon"><h2><span class="hico">👾</span>怪物</h2>
@@ -270,6 +272,7 @@
       </section>
       <section class="htopic hide" data-topic="bonus"><h2><span class="hico">🎲</span>加分與小遊戲</h2>
 <ul><li><b>獵殺模式</b>：沒有廢料，改成用槍獵殺怪物。3 槍擊倒一隻得 $50，彈匣 12 發打完自動裝填；怪物 3 秒後在遠處重生。在時間內擊倒指定數量就過關，小地圖會顯示所有怪物。</li>
+<li><b>塔防模式</b>：怪物從遠處一波波走向回收車，每闖入一隻核心 -15，核心歸零就輸。開槍打怪（每隻 $50），按「塔」／T 花 $100 在腳邊蓋砲塔（最多 6 座，會自動射擊 11 公尺內的怪物）。清完整波就過關。這個模式怪物不會抓人。</li>
 <li><b>大逃殺</b>：6 人各自為戰（人數不足由電腦補滿），用槍或近戰淘汰對手。白色圓圈是安全區，20 秒後開始縮小，圈外會持續扣血。補給箱：綠色 急救 +40、藍色 護甲（生命上限 150）、紅色 火力（傷害 ×1.5）。小地圖不顯示對手。多人由房主在大廳切換模式。</li>
 <li><b>天氣</b>（第 2 天起隨機）：下雨（雨聲蓋過腳步）、濃霧（大家都看不遠）、停電（室內很暗）、風暴（小地圖看不到怪物）。</li>
 <li><b>天然災害</b>（第 2 天起每天一次）：地震會讓所有人變慢、怪物站不穩；落石或隕石會先出現紅圈，2.5 秒後砸下，圈內扣 40 血，也能砸暈怪物。</li>

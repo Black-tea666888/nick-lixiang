@@ -293,7 +293,7 @@ function hostStart(day) { const info = S.sim.startDay(day || 1); hostBroadcast(r
 /* ---------- 進入各種模式 ---------- */
 function startSolo(gmode) {
   Sfx.unlock();
-  S.mode = 'solo'; S.myId = 'me'; S.sim = new W.Sim(); S.sim.mode = gmode === 'hunt' || gmode === 'br' ? gmode : 'coop'; S.gmode = S.sim.mode;
+  S.mode = 'solo'; S.myId = 'me'; S.sim = new W.Sim(); S.sim.mode = gmode === 'hunt' || gmode === 'br' || gmode === 'td' ? gmode : 'coop'; S.gmode = S.sim.mode;
   document.body.classList.add('solo');
   S.sim.map = myMap();
   S.sim.addPlayer('me', myName(), myLook());
@@ -333,6 +333,7 @@ function wireNet() {
       else if (d.t === 'chat') hostChat(from, d.text);
       else if (d.t === 'atk') S.sim.attack(from, d.yaw);
       else if (d.t === 'gun') S.sim.shoot(from, d.yaw);
+      else if (d.t === 'tower') S.sim.buildTower(from);
       else if (d.t === 'eq') { const pl = S.sim.player(from); if (pl && S.sim.setEquip(from, d.eq)) { if (Array.isArray(d.gems)) pl.gems = [0, 1, 2].map(function (k) { return Math.max(0, Math.min(5, d.gems[k] | 0)); }); hostBroadcast(rosterMsg()); } }
       else if (d.t === 'bye') { Net.drop(from); hostRemove(from); }
     } else if (S.mode === 'client') { S.lastHost = Date.now(); dispatch(d); }
@@ -453,7 +454,7 @@ function tickLobby() {
   const pv = $('pvpBtn');
   pv.textContent = '互相傷害：' + (S.pvp ? '開' : '關') + (S.mode === 'host' ? '' : '（房主設定）');
   pv.classList.toggle('off', !S.pvp);
-  $('modeBtn').textContent = '模式：' + (S.gmode === 'hunt' ? '獵殺（用槍打怪物）' : S.gmode === 'br' ? '大逃殺（互相對戰，活到最後）' : '回收（撿廢料賣錢）') + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
+  $('modeBtn').textContent = '模式：' + (S.gmode === 'td' ? '塔防（守住回收車）' : S.gmode === 'hunt' ? '獵殺（用槍打怪物）' : S.gmode === 'br' ? '大逃殺（互相對戰，活到最後）' : '回收（撿廢料賣錢）') + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
   $('mapBtn').textContent = '地圖：' + W.MAPS[S.map || 0].name + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
 }
 // 新手教學：第一次開始遊戲時出現，之後可從「設定與說明」重看
@@ -503,13 +504,19 @@ function showResult(e) {
   for (let k = 0; k < 3; k++) { const x = document.createElement(k < stars ? 'span' : 'i'); x.textContent = '★'; sb.appendChild(x); }
   $('resGain').textContent = progOnResult(e, stars);
   let top = null; if (e.stats) e.stats.forEach(function (p) { if (p.earned > 0 && (!top || p.earned > top.earned)) top = p; });
-  const hunt = S.gmode === 'hunt';
+  const hunt = S.gmode === 'hunt', td = S.gmode === 'td';
   if (hunt) $('resTitle').textContent = e.win ? '獵殺第 ' + e.day + ' 關完成！' : '獵殺失敗';
   $('resText').textContent = hunt ? (e.win
     ? '擊倒 ' + (e.money / 50) + ' 隻怪物（目標 ' + (e.quota / 50) + ' 隻），還剩 ' + e.time + ' 秒。下一關目標更多、怪物更快。'
     : (e.why === 'time' ? '時間到，只擊倒 ' + (e.money / 50) + ' / ' + (e.quota / 50) + ' 隻。' : '全員被抓，擊倒 ' + (e.money / 50) + ' / ' + (e.quota / 50) + ' 隻。') + ' 止步第 ' + e.day + ' 關。') : e.win
     ? '賺到 $' + e.money + '（目標 $' + e.quota + '），還剩 ' + e.time + ' 秒。明天目標更高，怪物也更快。'
     : (e.why === 'time' ? '時間到，只賺到 $' + e.money + ' / $' + e.quota + '。' : '全員被抓。帶回 $' + e.money + ' / $' + e.quota + '。') + ' 止步第 ' + e.day + ' 天。';
+  if (td) {
+    $('resTitle').textContent = e.win ? '塔防第 ' + e.day + ' 關守住了！' : '回收車被攻破';
+    $('resText').textContent = e.win ? '核心還剩 ' + e.core + '。下一關怪物更多、更硬、更快。' : (e.why === 'time' ? '時間到，怪物還沒清完。' : '核心歸零。') + ' 止步第 ' + e.day + ' 關。';
+    const ts = e.win ? 1 + (e.core >= 70 ? 1 : 0) + (e.core >= 100 ? 1 : 0) : 0, sb2 = $('resStars'); sb2.textContent = '';
+    for (let k = 0; k < 3; k++) { const x = document.createElement(k < ts ? 'span' : 'i'); x.textContent = '★'; sb2.appendChild(x); }
+  }
   const st = $('resStats'); st.textContent = '';
   if (!solo && e.stats) e.stats.forEach(function (p) {
     const row = document.createElement('div'); row.className = 'prow' + (p.alive ? '' : ' dead');
@@ -554,8 +561,9 @@ function bind() {
     S.sim.map = (S.sim.map + 1) % W.MAPS.length; lsSet('rr_map', String(S.sim.map));
     hostBroadcast(rosterMsg()); tickLobby(); showMapName();
   });
-  $('modeBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.mode = S.sim.mode === 'coop' ? 'hunt' : S.sim.mode === 'hunt' ? 'br' : 'coop'; hostBroadcast(rosterMsg()); tickLobby(); });
+  $('modeBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.mode = S.sim.mode === 'coop' ? 'hunt' : S.sim.mode === 'hunt' ? 'br' : S.sim.mode === 'br' ? 'td' : 'coop'; hostBroadcast(rosterMsg()); tickLobby(); });
   $('brBtn').addEventListener('click', function () { startSolo('br'); });
+  $('tdBtn').addEventListener('click', function () { startSolo('td'); });
   $('huntBtn').addEventListener('click', function () { startSolo('hunt'); });
   $('pvpBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.pvp = !S.sim.pvp; hostBroadcast(rosterMsg()); tickLobby(); });
   $('lobbyMic').addEventListener('click', function () { if (Voice.hasMic()) Voice.setMuted(!Voice.isMuted()); else say('沒有麥克風權限。請在瀏覽器允許麥克風後，重新進入房間。'); tickLobby(); });
@@ -702,6 +710,10 @@ function boot() {
   Game.onAttack = function (yaw) {
     if (S.mode === 'client') Net.send({ t: 'atk', yaw: yaw });
     else if (S.sim) S.sim.attack(S.myId, yaw);
+  };
+  Game.onTower = function () {
+    if (S.mode === 'client') Net.send({ t: 'tower' });
+    else if (S.sim) S.sim.buildTower(S.myId);
   };
   Game.onShoot = function (yaw) {
     if (S.mode === 'client') Net.send({ t: 'gun', yaw: yaw });
