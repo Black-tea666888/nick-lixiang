@@ -838,7 +838,7 @@ function bind() {
   $('miniInfoBtn').addEventListener('click', function () { Game.openMini(); });
   // 設定
   const sens = parseFloat(ls('rr_sens') || '1'), sfx = parseFloat(ls('rr_sfx') || '0.8'), vv = parseFloat(ls('rr_voice') || '1');
-  $('setQ').value = ls('rr_q') || 'high'; Game.setQuality($('setQ').value);
+  $('setQ').value = ls('rr_q') || (('ontouchstart' in window) ? 'mid' : 'high'); Game.setQuality($('setQ').value);
   $('setQ').addEventListener('change', function () { lsSet('rr_q', $('setQ').value); Game.setQuality($('setQ').value); });
   Game.onQuality = function (q) { $('setQ').value = q; };
   $('setBtn').value = ls('rr_btn') || '1'; Game.setBtnScale($('setBtn').value);

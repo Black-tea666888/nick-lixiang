@@ -450,9 +450,9 @@ function buildMonster(kind) {
     const hood = part(new THREE.ConeGeometry(0.4, 0.7, 9), new THREE.MeshPhongMaterial({ color: 0x140a22, emissive: 0x1a0a30 }), 0, 3.05, -0.05);
     g.add(cloak, hood);
   }
-  const glow = new THREE.PointLight(col[1], 0.8, 7, 1.5); glow.position.set(0, 2.5, 0.5);
+  // 不再每隻怪掛一盞點光源：光源數一變，所有材質都要重新編譯（手機會頓一下），怪多時每個像素也要多算一盞光
   addOutline(g, col[1], 1.06); addShadow(g, 0.6);
-  g.add(glow); g.scale.set(1, tall, 1);
+  g.scale.set(1, tall, 1);
   g.visible = false; scene.add(g);
   return { group: g, arms: [a1, a2], x: 0, z: 0, rot: 0, tx: 0, tz: 0, trot: 0, chase: false, fresh: true };
 }
@@ -764,12 +764,14 @@ function showShot(e) {
   if (mine) { shakeT = Math.max(shakeT, 0.07); if (gunMesh) gunMesh.userData.kick = 1; me.ammo = e.ammo; }
   if (e.mi >= 0 && view.monsters[e.mi]) view.monsters[e.mi].hitT = 0.18;
 }
-// 畫質：high = 最高 3 倍像素（手機可到 1080p 以上）、mid = 2 倍、low = 1 倍。高畫質太卡時自動降一級。
+function isTouchDev() { return ('ontouchstart' in window) || !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); }
+// 畫質依「短邊像素」決定：high = 1080、mid = 720、low = 480（不超過螢幕本身的倍率）。太卡時自動降一級。
 let quality = 'high', fpsT = 0, fpsN = 0, slowN = 0;
 function applyQuality() {
   if (!renderer) return;
-  const cap = quality === 'low' ? 1 : quality === 'mid' ? 2 : 3;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, cap));
+  const short = Math.max(1, Math.min(window.innerWidth, window.innerHeight));
+  const target = quality === 'low' ? 480 : quality === 'mid' ? 720 : 1080;
+  renderer.setPixelRatio(Math.max(0.75, Math.min(window.devicePixelRatio || 1, target / short)));
   renderer.setSize(window.innerWidth, window.innerHeight, false);
 }
 function fpsWatch(dt) {
@@ -777,8 +779,8 @@ function fpsWatch(dt) {
   if (fpsT < 2) return;
   const fps = fpsN / fpsT; fpsT = 0; fpsN = 0;
   if (!active || document.hidden) { slowN = 0; return; }
-  slowN = fps < 24 ? slowN + 1 : 0;
-  if (slowN >= 3 && quality !== 'low' && RR.Game.settings.autoQ !== false) {
+  slowN = fps < 28 ? slowN + 1 : 0;
+  if (slowN >= 2 && quality !== 'low' && RR.Game.settings.autoQ !== false) {
     slowN = 0; quality = quality === 'high' ? 'mid' : 'low'; applyQuality();
     toast('畫面有點卡，已自動降低畫質（可在設定調回）'); if (RR.Game.onQuality) RR.Game.onQuality(quality);
   }
@@ -1214,7 +1216,8 @@ RR.Game = {
     if (ready) return true;
     if (!window.THREE) return false;
     canvas = $('c');
-    try { renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true }); } catch (e) { return false; }
+    // 觸控裝置螢幕倍率高，反鋸齒的效益小、耗能大，所以關掉
+    try { renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !isTouchDev(), powerPreference: 'high-performance' }); } catch (e) { return false; }
     applyQuality();
     try { maxAniso = Math.min(8, renderer.capabilities.getMaxAnisotropy()); } catch (e) {}
     scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000);
