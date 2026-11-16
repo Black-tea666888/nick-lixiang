@@ -192,6 +192,7 @@
     <div class="helpBody">
       <div class="sec">設定</div>
       <label class="field">畫質<select id="setQ"><option value="high">高（1080p）</option><option value="mid">標準（720p，手機預設）</option><option value="low">省電（480p）</option></select></label>
+      <label class="field">顯示 FPS（卡頓時回報用）<input id="setFps" type="checkbox"></label>
       <label class="field">手機按鈕大小<input id="setBtn" type="range" min="0.8" max="1.4" step="0.05"></label>
       <div class="col"><button class="btn" id="btnEditOpen" type="button">自訂手機按鈕位置</button></div>
       <label class="field">視角靈敏度<input id="setSens" type="range" min="0.4" max="2" step="0.1"></label>
@@ -302,7 +303,8 @@
 <li>打隊友兩下會把他打倒，身上的廢料掉在原地；房主可在大廳關閉。</li>
 <li>麥克風<b>預設關閉</b>，不會打斷 Discord 等其他通話；要講話再按遊戲右上角「開麥克風」。</li>
 <li>網路無法直連時會自動改走伺服器中繼（遊戲照常，但語音可能不通）。</li>
-<li><b>聽不到聲音</b>：檢查手機靜音鍵（iPhone 側邊）並調高媒體音量。</li></ul>
+<li><b>聽不到聲音</b>：檢查手機靜音鍵（iPhone 側邊）並調高媒體音量。</li>
+<li><b>畫面卡</b>：設定把畫質改「標準」或「省電」；太卡也會自動降畫質。可開「顯示 FPS」看每秒幾格，回報時附上。關掉其他 App、別開省電模式也有幫助。</li></ul>
       </section>
       <div class="col"><button class="btn" id="helpBack" type="button">‹ 回到主題選單</button></div>
     </div>

@@ -139,6 +139,14 @@ const keys = {};
 let smQ = false, skQ = false, smokeT = null, padMesh = null, ttQ = null, trophyMesh = null, boardMesh = null;   // Q 丟煙霧彈（按一下送一次）
 const touch = { joyId: null, lookId: null, ox: 0, oy: 0, jx: 0, jy: 0, lx: 0, ly: 0, run: false };
 const settings = { sens: 1 };
+// 手機改用 Lambert 材質（逐頂點打光），GPU 負擔約少一半，畫面差異很小；電腦維持 Phong
+const LITE = ('ontouchstart' in window) || !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+function litMat(o) {
+  if (!LITE) return new THREE.MeshPhongMaterial(o);
+  const m = new THREE.MeshLambertMaterial(), p = {};
+  Object.keys(o || {}).forEach(function (k) { if (m[k] !== undefined) p[k] = o[k]; });
+  m.setValues(p); return m;
+}
 let specId = null, beatT = 0, toastT = 0, fullHintT = 0, loudT = 0, spk = false, hudT = 0, lastL = me, dragging = false;
 let itemGeos = null, skinGeos = null;
 
@@ -303,17 +311,17 @@ function buildLevel() {
   const style = T.style || 'ruin', wallH = T.wallH || WH;
   const floorTex = makeTex(T.floor, style === 'beach' ? '255,255,255' : '0,0,0', false); floorTex.repeat.set(COLS, ROWS);
   const Wd = COLS * CS, D = ROWS * CS;
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(Wd, D), new THREE.MeshPhongMaterial({ map: floorTex, shininess: style === 'space' ? 40 : 8 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(Wd, D, LITE ? COLS * 2 : 1, LITE ? ROWS * 2 : 1), litMat({ map: floorTex, shininess: style === 'space' ? 40 : 8 }));
   floor.rotation.x = -Math.PI / 2; floor.position.set(Wd / 2, 0, D / 2); level.add(floor);
   if (!open) {
     const ceilTex = makeTex(T.ceil, '0,0,0', false); ceilTex.repeat.set(COLS, ROWS);
-    const ceil = new THREE.Mesh(new THREE.PlaneGeometry(Wd, D), new THREE.MeshPhongMaterial({ map: ceilTex, shininess: 2 }));
+    const ceil = new THREE.Mesh(new THREE.PlaneGeometry(Wd, D, LITE ? COLS : 1, LITE ? ROWS : 1), litMat({ map: ceilTex, shininess: 2 }));
     ceil.rotation.x = Math.PI / 2; ceil.position.set(Wd / 2, WH, D / 2); level.add(ceil);
   }
   const wallTex = style === 'city' ? makeWinTex(T.wall, true) : style === 'space' ? makeWinTex(T.wall, false) : makeTex(T.wall, '20,20,20', style !== 'beach' && style !== 'office');
   let n = 0;
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (MAP[r][c] === '#') n++;
-  const walls = new THREE.InstancedMesh(new THREE.BoxGeometry(CS, 1, CS), new THREE.MeshPhongMaterial({ map: wallTex, shininess: style === 'space' ? 50 : 4 }), n);
+  const walls = new THREE.InstancedMesh(new THREE.BoxGeometry(CS, 1, CS), litMat({ map: wallTex, shininess: style === 'space' ? 50 : 4 }), n);
   const m4 = new THREE.Matrix4(), v3 = new THREE.Vector3(), q4 = new THREE.Quaternion(), sc3 = new THREE.Vector3(); let i = 0;
   let hs = 99 + W.mapIndex; const hr = function () { hs = (hs * 16807) % 2147483647; return hs / 2147483647; };
   const tops = [];
@@ -330,9 +338,9 @@ function buildLevel() {
   walls.instanceMatrix.needsUpdate = true; level.add(walls); wallsMesh = walls;
   // 開放場景的布景
   if (style === 'beach') {
-    const sea = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.MeshPhongMaterial({ color: 0x2a9fd6, emissive: 0x0a3a5a, shininess: 90 }));
+    const sea = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), litMat({ color: 0x2a9fd6, emissive: 0x0a3a5a, shininess: 90 }));
     sea.rotation.x = -Math.PI / 2; sea.position.set(Wd / 2, -0.25, D / 2); level.add(sea);
-    const trunkM = pmat(0x8a6238, 0.15), leafM = new THREE.MeshPhongMaterial({ color: 0x2f9a4a, emissive: 0x0c3a16, side: THREE.DoubleSide });
+    const trunkM = pmat(0x8a6238, 0.15), leafM = litMat({ color: 0x2f9a4a, emissive: 0x0c3a16, side: THREE.DoubleSide });
     tops.forEach(function (t, k) {
       if (k % 2) return;
       const pg = new THREE.Group(), tr = part(new THREE.CylinderGeometry(0.12, 0.2, 3.2, 7), trunkM, 0, 1.6, 0); tr.rotation.z = 0.12; pg.add(tr);
@@ -351,7 +359,7 @@ function buildLevel() {
     for (let k = 0; k < 900; k++) { const a = hr() * 6.283, e = hr() * 1.45 + 0.05, R = 260; pos[k * 3] = Wd / 2 + Math.cos(a) * Math.cos(e) * R; pos[k * 3 + 1] = Math.sin(e) * R; pos[k * 3 + 2] = D / 2 + Math.sin(a) * Math.cos(e) * R; }
     sg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     level.add(new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xffffff, size: 1.6, sizeAttenuation: false, fog: false })));
-    const planet = part(new THREE.SphereGeometry(46, 28, 20), new THREE.MeshPhongMaterial({ color: 0x3a78c8, emissive: 0x0f2a55, shininess: 12, fog: false }), Wd / 2 - 90, 70, D / 2 - 190); level.add(planet);
+    const planet = part(new THREE.SphereGeometry(46, 28, 20), litMat({ color: 0x3a78c8, emissive: 0x0f2a55, shininess: 12, fog: false }), Wd / 2 - 90, 70, D / 2 - 190); level.add(planet);
     level.add(part(new THREE.SphereGeometry(8, 16, 12), new THREE.MeshBasicMaterial({ color: 0xd9d9d0, fog: false }), Wd / 2 + 150, 110, D / 2 + 60));
     const glowM = new THREE.MeshBasicMaterial({ color: 0x6ad8ff });
     tops.forEach(function (t) { const gl = part(new THREE.BoxGeometry(CS * 0.9, 0.06, 0.12), glowM, t[0], t[1] + 0.03, t[2]); gl.userData.cell = t[3]; level.add(gl); });
@@ -375,7 +383,7 @@ function buildLevel() {
   });
   // 擺設：木箱、鐵桶貼牆放；天花板燈條（固定種子，每張地圖每次都一樣）
   let seed = 1234 + W.mapIndex * 77; const rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-  const crateM = new THREE.MeshPhongMaterial({ map: makeTex('#7a5a3a', '30,20,10', true), shininess: 4 }), barrelM = new THREE.MeshPhongMaterial({ color: 0x556b5a, emissive: 0x0c140e, shininess: 40 });
+  const crateM = litMat({ map: makeTex('#7a5a3a', '30,20,10', true), shininess: 4 }), barrelM = litMat({ color: 0x556b5a, emissive: 0x0c140e, shininess: 40 });
   const lampM = new THREE.MeshBasicMaterial({ color: 0xdfeee6 }), bandM = new THREE.MeshBasicMaterial({ color: 0xc9a227 });
   let lamps = 0;
   W.floorCells.forEach(function (fc) {
@@ -417,8 +425,8 @@ function buildMonster(kind) {
   const col = MON_COL[kind] || MON_COL.fire;
   const g = new THREE.Group();
   const skinM = RR.Game && RR.Game.settings ? RR.Game.settings.monSkin | 0 : 0;   // 怪物造型：0 預設（黑）、1 骸骨白、2 霓虹
-  const dark = new THREE.MeshPhongMaterial({ color: skinM === 1 ? 0xe8e2d0 : skinM === 2 ? 0x101018 : 0x0c0c0e, shininess: 30, emissive: new THREE.Color(col[1]).multiplyScalar(skinM === 2 ? 0.75 : skinM === 1 ? 0.02 : 0.07) });
-  const tint = new THREE.MeshPhongMaterial({ color: col[1], emissive: new THREE.Color(col[1]).multiplyScalar(0.5), shininess: 40 });
+  const dark = litMat({ color: skinM === 1 ? 0xe8e2d0 : skinM === 2 ? 0x101018 : 0x0c0c0e, shininess: 30, emissive: new THREE.Color(col[1]).multiplyScalar(skinM === 2 ? 0.75 : skinM === 1 ? 0.02 : 0.07) });
+  const tint = litMat({ color: col[1], emissive: new THREE.Color(col[1]).multiplyScalar(0.5), shininess: 40 });
   const eyeM = new THREE.MeshBasicMaterial({ color: col[0] });
   const tall = kind === 'shadow' ? 1.12 : kind === 'poison' ? 0.9 : 1;
   const body = part(new THREE.CylinderGeometry(kind === 'poison' ? 0.3 : 0.2, kind === 'poison' ? 0.46 : 0.34, 2.2, 20), dark, 0, 1.1, 0);
@@ -446,8 +454,8 @@ function buildMonster(kind) {
     [[-0.3, 1.5, 0.15, 0.2], [0.34, 1.0, 0.1, 0.24], [0.1, 1.8, -0.28, 0.18], [-0.2, 0.6, -0.2, 0.22], [0.28, 2.0, 0.05, 0.13]].forEach(function (q) { g.add(part(new THREE.SphereGeometry(q[3], 20, 16), tint, q[0], q[1], q[2])); });
     head.position.set(0, 2.3, 0.18); e1.position.set(-0.13, 2.36, 0.48); e2.position.set(0.13, 2.36, 0.48); mouth.position.set(0, 2.14, 0.49);
   } else {                          // 暗影：破斗篷、尖帽
-    const cloak = part(new THREE.ConeGeometry(0.62, 2.3, 9, 1, true), new THREE.MeshPhongMaterial({ color: 0x140a22, emissive: 0x1a0a30, side: THREE.DoubleSide, shininess: 5 }), 0, 1.25, -0.05);
-    const hood = part(new THREE.ConeGeometry(0.4, 0.7, 9), new THREE.MeshPhongMaterial({ color: 0x140a22, emissive: 0x1a0a30 }), 0, 3.05, -0.05);
+    const cloak = part(new THREE.ConeGeometry(0.62, 2.3, 9, 1, true), litMat({ color: 0x140a22, emissive: 0x1a0a30, side: THREE.DoubleSide, shininess: 5 }), 0, 1.25, -0.05);
+    const hood = part(new THREE.ConeGeometry(0.4, 0.7, 9), litMat({ color: 0x140a22, emissive: 0x1a0a30 }), 0, 3.05, -0.05);
     g.add(cloak, hood);
   }
   // 不再每隻怪掛一盞點光源：光源數一變，所有材質都要重新編譯（手機會頓一下），怪多時每個像素也要多算一盞光
@@ -473,13 +481,13 @@ function addShadow(group, r) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(r * 2.4, r * 2.4), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
   m.rotation.x = -Math.PI / 2; m.position.y = 0.02; group.add(m);
 }
-function pmat(col, em) { return new THREE.MeshPhongMaterial({ color: col, emissive: new THREE.Color(col).multiplyScalar(em == null ? 0.22 : em), shininess: 20 }); }
+function pmat(col, em) { return litMat({ color: col, emissive: new THREE.Color(col).multiplyScalar(em == null ? 0.22 : em), shininess: 20 }); }
 function part(geo, m, x, y, z) { const o = new THREE.Mesh(geo, m); o.position.set(x || 0, y || 0, z || 0); return o; }
 
 /** 角色造型（純外觀）。身體用玩家顏色，正面朝 +z。 */
 function buildChar(c, slot, h, o, pet) {
   const g = new THREE.Group();
-  const M = o && COSTUME_COL[o] ? new THREE.MeshPhongMaterial({ color: COSTUME_COL[o], emissive: new THREE.Color(COSTUME_COL[o]).multiplyScalar(o === 2 ? 0.55 : o === 3 ? 0.3 : 0.12), shininess: o === 3 ? 90 : 20 }) : pmat(COLORS[slot % 4]);
+  const M = o && COSTUME_COL[o] ? litMat({ color: COSTUME_COL[o], emissive: new THREE.Color(COSTUME_COL[o]).multiplyScalar(o === 2 ? 0.55 : o === 3 ? 0.3 : 0.12), shininess: o === 3 ? 90 : 20 }) : pmat(COLORS[slot % 4]);
   const dark = new THREE.MeshBasicMaterial({ color: 0x0a0f0c }), glow = new THREE.MeshBasicMaterial({ color: 0xfff0cc });
   const body = function () { return part(new THREE.CylinderGeometry(0.27, 0.25, 0.8, 28), M, 0, 0.99, 0); };   // 上身；腿另外做，走路會擺動
   if (c === 1) {            // 機器人
@@ -580,7 +588,7 @@ function buildPet(k) {
       part(new THREE.CylinderGeometry(0.07, 0.07, 0.05, 14), pmat(0x22262b, 0.05), -0.16, 0.1, 0), part(new THREE.CylinderGeometry(0.07, 0.07, 0.05, 14), pmat(0x22262b, 0.05), 0.16, 0.1, 0));
     g.children[4].rotation.z = Math.PI / 2; g.children[5].rotation.z = Math.PI / 2;
   } else {
-    const b = part(new THREE.SphereGeometry(0.22, 24, 18), new THREE.MeshPhongMaterial({ color: 0x6ad8ff, emissive: 0x1a4a7a, shininess: 90, transparent: true, opacity: 0.85 }), 0, 0.17, 0); b.scale.y = 0.75;
+    const b = part(new THREE.SphereGeometry(0.22, 24, 18), litMat({ color: 0x6ad8ff, emissive: 0x1a4a7a, shininess: 90, transparent: true, opacity: 0.85 }), 0, 0.17, 0); b.scale.y = 0.75;
     g.add(b, part(new THREE.SphereGeometry(0.03, 10, 8), dark, -0.07, 0.22, 0.18), part(new THREE.SphereGeometry(0.03, 10, 8), dark, 0.07, 0.22, 0.18));
   }
   addShadow(g, k === 2 ? 0.16 : 0.2);
@@ -611,7 +619,7 @@ function buildHat(h) {
 /** 攻擊物造型（純外觀，傷害相同）。握把在原點，往 +y 延伸。 */
 function buildWeapon(w) {
   const g = new THREE.Group();
-  const steel = new THREE.MeshPhongMaterial({ color: 0x8a8f93, shininess: 60, emissive: 0x15171a });
+  const steel = litMat({ color: 0x8a8f93, shininess: 60, emissive: 0x15171a });
   if (w === 1) {            // 扳手
     g.add(part(new THREE.CylinderGeometry(0.022, 0.022, 0.6, 8), steel, 0, 0.25, 0), part(new THREE.BoxGeometry(0.15, 0.13, 0.04), steel, 0, 0.6, 0),
       part(new THREE.BoxGeometry(0.06, 0.08, 0.05), new THREE.MeshBasicMaterial({ color: 0x050505 }), 0, 0.64, 0));
@@ -709,7 +717,7 @@ function tickWeather(dt) {
 }
 function showBoom(x, z) {
   const m = part(new THREE.SphereGeometry(0.6, 14, 10), new THREE.MeshBasicMaterial({ color: 0xffa24a, transparent: true, opacity: 0.9, fog: false }), x, 0.8, z);
-  const rock = part(new THREE.DodecahedronGeometry(0.55, 0), new THREE.MeshPhongMaterial({ color: 0x5a4a40, emissive: 0x301808 }), x, 0.4, z);
+  const rock = part(new THREE.DodecahedronGeometry(0.55, 0), litMat({ color: 0x5a4a40, emissive: 0x301808 }), x, 0.4, z);
   scene.add(m, rock);
   const t0 = Date.now(), id = setInterval(function () {
     const k = (Date.now() - t0) / 500; m.scale.setScalar(1 + k * 3.5); m.material.opacity = Math.max(0, 0.9 - k);
@@ -778,6 +786,12 @@ function fpsWatch(dt) {
   fpsT += dt; fpsN++;
   if (fpsT < 2) return;
   const fps = fpsN / fpsT; fpsT = 0; fpsN = 0;
+  if (settings.showFps) {
+    let el = document.getElementById('fpsBox');
+    if (!el) { el = document.createElement('div'); el.id = 'fpsBox'; document.body.appendChild(el); }
+    const c = renderer.domElement; el.style.display = active ? '' : 'none';
+    el.textContent = Math.round(fps) + ' FPS · ' + c.width + '×' + c.height;
+  } else { const el = document.getElementById('fpsBox'); if (el) el.style.display = 'none'; }
   if (!active || document.hidden) { slowN = 0; return; }
   slowN = fps < 28 ? slowN + 1 : 0;
   if (slowN >= 2 && quality !== 'low' && RR.Game.settings.autoQ !== false) {
@@ -1211,6 +1225,8 @@ function frame(nowMs) {
 
 /* ---------- 對外介面 ---------- */
 RR.Game = {
+  dbg: function () { return { scene: scene, renderer: renderer, camera: camera }; },
+  stats: function () { const i = renderer.info; let n = 0, lights = 0, outl = 0; scene.traverse(function (o) { if (o.isMesh && o.visible) n++; if (o.isLight) lights++; if (o.userData && o.userData.outline) outl++; }); return { calls: i.render.calls, tris: i.render.triangles, geo: i.memory.geometries, tex: i.memory.textures, progs: i.programs ? i.programs.length : 0, meshes: n, lights: lights, outl: outl, pr: renderer.getPixelRatio() }; },
   openMini: openMini,
   init: function () {
     if (ready) return true;
@@ -1356,13 +1372,13 @@ RR.Game = {
     const prevSec = Math.ceil(view.time), prevMoney = view.money, prevBag = me.bagN;
     // 搶獎盃與圈圈叉叉棋盤
     if (s.tr && !trophyMesh) {
-      trophyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.3, 0.8, 12), new THREE.MeshPhongMaterial({ color: 0xffc83a, emissive: 0x553300, shininess: 80 }));
+      trophyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.3, 0.8, 12), litMat({ color: 0xffc83a, emissive: 0x553300, shininess: 80 }));
       trophyMesh.position.y = 0.6; scene.add(trophyMesh);
     }
     if (s.tr) trophyMesh.position.set(s.tr[0], 0.6, s.tr[1]);
     if (!s.tr && trophyMesh) { scene.remove(trophyMesh); trophyMesh = null; }
     if (s.bp && !boardMesh) {
-      boardMesh = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.9, 2.4), new THREE.MeshPhongMaterial({ color: 0x6b4a2b }));
+      boardMesh = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.9, 2.4), litMat({ color: 0x6b4a2b }));
       boardMesh.position.set(s.bp[0], 0.45, s.bp[1]); scene.add(boardMesh);
     }
     if (s.bp && s.tt) view.bp = s.bp;

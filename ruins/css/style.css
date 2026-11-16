@@ -431,3 +431,10 @@ body.touch #toast { bottom: 318px; }
 @media (orientation: landscape) and (max-height: 520px) { body.touch #toast { bottom: 46%; } #hideTag { bottom: auto; top: 14%; } #bars { bottom: 10px; } }
 body.br #mini { top: 262px; }
 @media (orientation: landscape) and (max-height: 520px) { body.br #mini { top: 112px; left: 170px; } }
+
+/* 手機效能：毛玻璃（backdrop-filter）疊在 3D 畫面上，每一幀都要重新模糊，安卓會很卡，所以觸控裝置一律關掉，改用比較不透明的底色 */
+body.touch *, body.touch *::before, body.touch *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+body.touch #hudTop > div, body.touch #hudBtns button { background: rgba(9,13,22,.74); }
+body.touch #run, body.touch #atk, body.touch #rescue, body.touch #smoke, body.touch #skill, body.touch #jump, body.touch #dash { background: rgba(9,13,22,.66); }
+body.touch .topbar, body.touch .hero, body.touch .stage, body.touch #missions, body.touch #lobbyList, body.touch #resStats, body.touch .card, body.touch .hrow { background: rgba(18,26,43,.94); }
+#fpsBox { position: fixed; left: 8px; top: calc(env(safe-area-inset-top, 0px) + 70px); z-index: 30; font: 700 12px monospace; color: #9fe870; background: rgba(0,0,0,.6); padding: 2px 6px; border-radius: 6px; pointer-events: none; }
