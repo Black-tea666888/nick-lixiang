@@ -898,4 +898,11 @@ function boot() {
   });
 }
 boot();
+let installEv = null;
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEv = e; const b = document.getElementById('installBtn'); if (b) b.classList.remove('hide'); });
+window.addEventListener('appinstalled', function () { installEv = null; const b = document.getElementById('installBtn'); if (b) b.classList.add('hide'); });
+{ const ib = document.getElementById('installBtn'); if (ib) ib.addEventListener('click', function () { if (!installEv) return; installEv.prompt(); installEv.userChoice.finally(function () { installEv = null; ib.classList.add('hide'); }); }); }
+// 離線快取與「加到主畫面」（只在 https 上啟用；本機測試不註冊）
+if ('serviceWorker' in navigator && location.protocol === 'https:') window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+{ const bt = document.getElementById('boot'); if (bt) { bt.classList.add('gone'); setTimeout(function () { bt.remove(); }, 400); } }
 })();

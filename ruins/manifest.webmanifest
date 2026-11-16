@@ -1,0 +1,17 @@
+{
+  "name": "廢墟回收隊",
+  "short_name": "廢墟回收隊",
+  "description": "最多 4 人的 3D 合作恐怖遊戲",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#070a12",
+  "theme_color": "#0b1020",
+  "lang": "zh-Hant",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

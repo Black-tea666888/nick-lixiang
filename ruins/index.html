@@ -5,11 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>廢墟回收隊</title>
 <meta name="description" content="最多 4 人的 3D 合作恐怖遊戲：潛入廢墟撿廢料、躲怪物、用近距離語音合作。">
-<meta name="theme-color" content="#4f7be0">
-<link rel="icon" href="data:,">
+<meta name="theme-color" content="#0b1020">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<div id="boot"><div class="bootIn"><b>廢墟回收隊</b><i class="spin"></i><small id="bootTxt">載入中…</small></div></div>
 <canvas id="c"></canvas>
 <div id="vig"></div>
 <div id="flash"></div>
@@ -191,6 +198,7 @@
     </div>
     <div class="helpBody">
       <div class="sec">設定</div>
+      <div class="col"><button class="btn hide" id="installBtn" type="button">📲 安裝到主畫面（全螢幕、開更快）</button></div>
       <label class="field">畫質<select id="setQ"><option value="high">高（1080p）</option><option value="mid">標準（720p，手機預設）</option><option value="low">省電（480p）</option></select></label>
       <label class="field">顯示 FPS（卡頓時回報用）<input id="setFps" type="checkbox"></label>
       <label class="field">手機按鈕大小<input id="setBtn" type="range" min="0.8" max="1.4" step="0.05"></label>
@@ -304,6 +312,7 @@
 <li>麥克風<b>預設關閉</b>，不會打斷 Discord 等其他通話；要講話再按遊戲右上角「開麥克風」。</li>
 <li>網路無法直連時會自動改走伺服器中繼（遊戲照常，但語音可能不通）。</li>
 <li><b>聽不到聲音</b>：檢查手機靜音鍵（iPhone 側邊）並調高媒體音量。</li>
+<li><b>安裝成 App</b>：安卓 Chrome 在設定按「安裝到主畫面」；iPhone Safari 按分享 →「加入主畫面」。從主畫面開是全螢幕，第二次開會更快，沒網路也能打開（連線玩仍要網路）。</li>
 <li><b>畫面卡</b>：設定把畫質改「標準」或「省電」；太卡也會自動降畫質。可開「顯示 FPS」看每秒幾格，回報時附上。關掉其他 App、別開省電模式也有幫助。</li></ul>
       </section>
       <div class="col"><button class="btn" id="helpBack" type="button">‹ 回到主題選單</button></div>
@@ -406,7 +415,6 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="vendor/firebase-firestore-compat.js"></script>
 <script src="js/config.js"></script>
 <script src="js/sim.js"></script>
 <script src="js/audio.js"></script>
