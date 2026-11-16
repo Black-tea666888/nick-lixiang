@@ -5,7 +5,14 @@ window.RR = window.RR || {};
 RR.CONFIG = {
   // 1) Firebase 專案設定（Firebase Console → 專案設定 → 你的應用程式 → SDK 設定）
   //    留 null 時：只有「訪客登入」可用，連線與語音照常運作。
-  firebase: null,
+  firebase: {
+    apiKey: 'AIzaSyALZALthpWkonz2QVdlqCGIANkRM-lgfYQ',
+    authDomain: 'ruins-recovery-team.firebaseapp.com',
+    projectId: 'ruins-recovery-team',
+    storageBucket: 'ruins-recovery-team.firebasestorage.app',
+    messagingSenderId: '307577807603',
+    appId: '1:307577807603:web:16aa3851df35b987cbcd86'
+  },
   /* 範例：
   firebase: {
     apiKey: 'AIza...',
@@ -16,7 +23,7 @@ RR.CONFIG = {
   */
 
   // 2) 要顯示哪些登入按鈕（沒在 Firebase 啟用的請設成 false）
-  providers: { google: true, apple: true, line: true, facebook: true },
+  providers: { google: true, apple: false, line: false, facebook: false },   // 目前只在 Firebase 啟用了 Google 與匿名
 
   // 3) LINE 在 Firebase（Identity Platform）裡的 OIDC 供應商 ID
   lineProviderId: 'oidc.line',

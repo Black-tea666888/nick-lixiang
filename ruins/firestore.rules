@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+
+    // 玩家資料：登入的人都能讀（好友列表要看名字與上線狀態），只有本人能寫
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid;
+      // 好友：加好友時雙方各寫一筆，所以對方也能寫進（或刪掉）自己那一筆
+      match /friends/{fid} {
+        allow read: if signedIn() && request.auth.uid == uid;
+        allow write: if signedIn() && (request.auth.uid == uid || request.auth.uid == fid);
+      }
+    }
+
+    // 戰隊：任何登入的人可建立（owner 必須是自己）；之後只能改積分與人數
+    match /clans/{cid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.owner == request.auth.uid;
+      allow update: if signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['score', 'count']);
+      match /members/{uid} {
+        allow read: if signedIn();
+        allow write: if signedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // 排行榜（集合名稱以 lb_ 開頭）：只能寫自己的那一筆，分數要是合理的數字
+    match /{board}/{uid} {
+      allow read: if signedIn() && board.matches('lb_.*');
+      allow write: if signedIn() && board.matches('lb_.*') && request.auth.uid == uid
+        && request.resource.data.score is number
+        && request.resource.data.score >= 0 && request.resource.data.score < 100000
+        && request.resource.data.name is string && request.resource.data.name.size() <= 20;
+    }
+  }
+}

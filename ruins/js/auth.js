@@ -81,7 +81,12 @@ RR.Auth = {
   },
   guest: function () {
     const local = function () { if (!ls(LS_GUEST)) { memGuest = 'guest-' + rid(10); lsSet(LS_GUEST, memGuest); } build(); };
-    if (auth) return auth.signInAnonymously().catch(function () { local(); });
+    if (auth) {
+      // 雲端連不上（離線、被擋）時不要卡在登入頁：6 秒沒回應就改用本機訪客
+      let done = false;
+      const t = setTimeout(function () { if (!done && !fbUser) { done = true; local(); } }, 6000);
+      return auth.signInAnonymously().then(function () { done = true; clearTimeout(t); }).catch(function () { if (!done) { done = true; clearTimeout(t); local(); } });
+    }
     local(); return Promise.resolve();
   },
   signOut: function () {

@@ -98,6 +98,7 @@
       <button class="mode" id="miniInfoBtn" type="button"><b>小遊戲</b><span>圈圈叉叉 · 搶獎盃</span></button>
       <button class="mode td" id="tdBtn" type="button"><b>塔防模式</b><span>守住回收車：怪物一波波進攻，開槍並花錢蓋砲塔（單人；多人請在大廳切換模式）</span></button>
       <button class="mode br" id="brBtn" type="button"><b>大逃殺</b><span>6 人混戰（不足由電腦補滿），安全區會縮小，活到最後的人獲勝</span></button>
+      <button class="mode social" id="socialOpen" type="button"><b>社群</b><span>排行榜 · 區域賽季 · 好友 · 戰隊 · 成就（需要登入與網路）</span></button>
       <button class="mode gear" id="gearOpen" type="button"><b>裝備與寶石</b><span>配件最多裝 2 個，對局中也能換；寶石可升級</span></button>
       <button class="mode wheel" id="wheelOpen" type="button"><b>造型轉盤</b><span>用金幣抽服裝、寵物、造型與特效 · 每天免費一次</span></button>
       <button class="mode hunt" id="huntBtn" type="button"><b>獵殺模式</b><span>新模式：拿槍反過來獵殺怪物，在時間內擊倒指定數量（單人；多人請在大廳切換模式）</span></button>
@@ -285,6 +286,9 @@
       </section>
       <section class="htopic hide" data-topic="grow"><h2><span class="hico">⭐</span>星等與成長</h2>
 <ul><li>過關給 <b>1～3 顆星</b>：超過目標 30%、剩 60 秒以上各加一顆。</li>
+<li><b>雲端存檔</b>：用 Google 登入後，金幣、等級、造型會存到雲端，換手機也拿得回來。訪客的進度只跟著這台裝置。</li>
+<li><b>每日登入</b>：每天第一次進主選單送金幣，連續登入越多天送越多。</li>
+<li><b>社群</b>（主選單）：各模式排行榜、每週區域賽季（上週前 10 名可領金幣）、好友（用 6 碼代碼互加，可看到誰在線上並直接加入他的房間）、戰隊（建立要 200 金幣，用 4 碼代碼加入，每局得分會累積到戰隊）、成就。</li>
 <li>過關拿<b>金幣</b>和<b>經驗</b>，經驗會提升等級。</li>
 <li>主選單有 3 個<b>每日任務</b>，完成另外給金幣。</li>
 <li>金幣可在「出戰角色」解鎖<b>頭飾</b>，隊友也看得到。</li>
@@ -369,6 +373,20 @@
     <div class="row"><button class="btn" id="btnEditReset" type="button">恢復預設</button><button class="btn primary" id="btnEditDone" type="button">完成</button></div></div>
 </div>
 
+<!-- 社群：排行榜、賽季、好友、戰隊、成就 -->
+<div class="screen hide" id="scrSocial">
+  <div class="panel lobby">
+    <div class="topbar">
+      <button class="icon" id="socDone" type="button" aria-label="返回">‹</button>
+      <div class="who"><b class="ttl">社群</b></div>
+    </div>
+    <div class="tabs" id="socTabs">
+      <button type="button" data-tab="rank" class="on">排行榜</button><button type="button" data-tab="season">賽季</button><button type="button" data-tab="friends">好友</button><button type="button" data-tab="clan">戰隊</button><button type="button" data-tab="ach">成就</button>
+    </div>
+    <div id="socBody"></div>
+  </div>
+</div>
+
 <!-- 新手教學（第一次進遊戲時出現） -->
 <div class="modal hide" id="tut"><div class="panel small tut">
   <div class="tag" id="tutN">1 / 4</div>
@@ -386,10 +404,12 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
+<script src="vendor/firebase-firestore-compat.js"></script>
 <script src="js/config.js"></script>
 <script src="js/sim.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/cloud.js"></script>
 <script src="js/net.js"></script>
 <script src="js/game.js"></script>
 <script src="js/main.js"></script>
