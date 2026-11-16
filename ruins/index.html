@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
-<link rel="stylesheet" href="css/style.css?v=41">
+<link rel="stylesheet" href="css/style.css?v=43">
 </head>
 <body>
 <div id="boot"><div class="bootIn"><b>廢墟回收隊</b><i class="spin"></i><small id="bootTxt">載入中…</small></div></div>
@@ -136,29 +136,39 @@
         <p class="note" id="cAttr"></p>
       </div>
     </div>
-    <div class="sec">角色</div>
-    <div class="cards c3" id="cGrid"></div>
-    <div class="sec">攻擊物</div>
-    <div class="cards c3" id="wGrid"></div>
-    <div class="sec">槍（手槍免費，其他用金幣解鎖）</div>
-    <div class="cards c3" id="gGrid"></div>
-    <div id="gStats"></div>
-    <div class="sec">頭飾（用金幣解鎖）· 金幣 <b id="coinTag2">0</b></div>
-    <div class="cards c3" id="hGrid"></div>
-    <div class="sec">服裝（轉盤取得）</div>
-    <div class="cards c3" id="oGrid"></div>
-    <div class="sec">寵物（轉盤取得，有加成）</div>
-    <div class="cards c3" id="petGrid"></div>
-    <div class="sec">回收品造型</div>
-    <div class="cards c3" id="isGrid"></div>
-    <div class="sec">怪物造型</div>
-    <div class="cards c3" id="msGrid"></div>
-    <div class="sec">彈道特效</div>
-    <div class="cards c3" id="fxGrid"></div>
-    <div class="col"><button class="btn" id="wheelOpen2" type="button">去抽獎機抽造型</button></div>
-    <div class="sec">地圖</div>
-    <div class="cards c3" id="mGrid"></div>
-    <div class="col"><button class="btn primary" id="pickOk" type="button">確定</button></div>
+    <details class="fold" data-fold="char"><summary><b>角色</b><em id="fsChar"></em></summary>
+      <div class="cards c3" id="cGrid"></div>
+    </details>
+    <details class="fold" data-fold="arms"><summary><b>武器</b><em id="fsArms"></em></summary>
+      <div class="sec">近戰攻擊物</div>
+      <div class="cards c3" id="wGrid"></div>
+      <div class="sec">槍（全部免費）</div>
+      <div class="cards c3" id="gGrid"></div>
+      <div id="gStats"></div>
+      <div class="sec">槍枝造型（抽獎機取得）</div>
+      <div class="cards c3" id="gsGrid"></div>
+    </details>
+    <details class="fold" data-fold="look"><summary><b>外觀</b><em id="fsLook"></em></summary>
+      <div class="sec">頭飾（用金幣解鎖）　金幣 <b id="coinTag2">0</b></div>
+      <div class="cards c3" id="hGrid"></div>
+      <div class="sec">服裝（抽獎機取得）</div>
+      <div class="cards c3" id="oGrid"></div>
+      <div class="sec">寵物（抽獎機取得，有加成）</div>
+      <div class="cards c3" id="petGrid"></div>
+    </details>
+    <details class="fold" data-fold="fx"><summary><b>特效造型</b><em id="fsFx"></em></summary>
+      <div class="sec">回收品造型</div>
+      <div class="cards c3" id="isGrid"></div>
+      <div class="sec">怪物造型</div>
+      <div class="cards c3" id="msGrid"></div>
+      <div class="sec">彈道特效</div>
+      <div class="cards c3" id="fxGrid"></div>
+    </details>
+    <details class="fold" data-fold="map"><summary><b>地圖</b><em id="fsMap"></em></summary>
+      <div class="cards c3" id="mGrid"></div>
+    </details>
+    <div class="col"><button class="btn" id="wheelOpen2" type="button">去抽獎機抽造型</button>
+      <button class="btn primary" id="pickOk" type="button">確定</button></div>
   </div>
 </div>
 
@@ -268,7 +278,7 @@
 <li>怪物靠近到 14 公尺內，小地圖才會出現牠的三角形。</li></ul>
       </section>
       <section class="htopic hide" data-topic="safe"><h2>保命方法</h2>
-<ul><li><b>槍</b>：在「出戰角色」選槍（手槍免費，其他用金幣解鎖）：手槍穩定、霰彈槍一次 6 顆近距離強、步槍和衝鋒槍按住連發、狙擊槍一發高傷害射最遠。回收模式每天子彈有限，打中怪物讓牠暈（打不死）；對準怪物、中間不能有牆。</li>
+<ul><li><b>槍</b>：在「出戰角色」的「武器」選槍（全部免費；槍枝造型到抽獎機抽）：手槍穩定、霰彈槍一次 6 顆近距離強、步槍和衝鋒槍按住連發、狙擊槍一發高傷害射最遠。回收模式每天子彈有限，打中怪物讓牠暈（打不死）；對準怪物、中間不能有牆。</li>
 <li><b>配件與寶石</b>：主選單「裝備與寶石」購買。配件最多同時裝 2 個，對局中按右上角「背包」可以換；寶石升級後永久有效。</li>
 <li><b>炸藥</b>：每天 2 顆。站在牆前按「炸」／B，面前 3.5 公尺內的那格牆會被炸開，變成新的路（最外圈炸不開）。附近的怪物會暈 2 秒，但牠之後也能走這條新路。隔天牆會恢復。</li>
 <li><b>櫃子</b>（小地圖藍點）：站在旁邊不要跑，怪物看不到你；貼太近還是會被抓。</li>
@@ -309,7 +319,7 @@
 <li><b>分類回收</b>：主選單「小遊戲」就能玩，不用進房間。30 秒內把廢棄物點進正確的桶子（紙類、塑膠、金屬、有害），分錯扣 2 秒，連續答對 5 個以上每個 2 分。每 3 分換 1 金幣，一局最多 10。</li>
 <li><b>圈圈叉叉（單機）</b>：主選單「小遊戲」可以和電腦下（簡單贏 +5、困難贏 +12 金幣），或兩人用同一支手機輪流。單機小遊戲每天最多拿 60 金幣。</li>
 <li><b>隊伍圈圈叉叉</b>：遊戲中按「小遊戲」。前兩位落子的人是 X 與 O，連成一線團隊 +150。</li>
-<li><b>回收抽獎機</b>：用金幣抽服裝、寵物、頭飾、造型和特效。每台機器的獎品和機率都列在下方，每格機率相同；綜合機每天免費一次，抽到已有的換成 25 金幣。</li>
+<li><b>回收抽獎機</b>：用金幣抽服裝、寵物、頭飾、造型、特效和槍枝造型（綜合、服裝、寵物、特效、槍械五台）。每台機器的獎品和機率都列在下方，每格機率相同；綜合機每天免費一次，抽到已有的換成 25 金幣。</li>
 <li><b>傳送陣</b>：背包滿 3 件後附近會出現，踩上去直接傳回回收車。</li></ul>
       </section>
       <section class="htopic hide" data-topic="grow"><h2>星等與成長</h2>
@@ -320,7 +330,6 @@
 <li>過關拿<b>金幣</b>和<b>經驗</b>，經驗會提升等級。</li>
 <li>主選單有 3 個<b>每日任務</b>，完成另外給金幣。</li>
 <li>金幣可在「出戰角色」解鎖<b>頭飾</b>，隊友也看得到。</li>
-<li><b>造型轉盤</b>：用金幣抽服裝、寵物、回收品造型、怪物造型、彈道特效，每天免費一次；可選綜合、服裝、寵物、造型特效四種轉盤。</li>
 <li><b>寵物加成</b>：小狗 速度 +5%、貓頭鷹 怪物在小地圖顯示的距離 14→22 公尺、小機器人 賣出 +10%、史萊姆 體力回復 +20%。</li>
 <li>進度只存在這台裝置上。</li></ul>
       </section>
@@ -332,6 +341,7 @@
 <li>網路無法直連時會自動改走伺服器中繼（遊戲照常，但語音可能不通）。</li>
 <li><b>聽不到聲音</b>：檢查手機靜音鍵（iPhone 側邊）並調高媒體音量。</li>
 <li><b>連不上房間</b>：免費伺服器閒置會休眠，第一次連線會自動等它醒來（最多約 1 分鐘，可按取消）。如果提示「伺服器是舊版本」，到 Render 後台按 Manual Deploy。</li>
+<li><b>回收車光圈是安全區</b>：站在黃色光圈裡怪物打不到你，還會每秒回 15 血（光圈會變綠）。大逃殺沒有安全區。</li>
 <li><b>按鈕太多</b>：設定裡「手機上顯示的按鈕」取消勾選就能暫時隱藏（鍵盤快捷鍵照樣能用）。</li>
 <li><b>改名字</b>：主選單點自己的名字（旁邊有「改名」）直接輸入，按完成就會儲存。</li>
 <li><b>安裝成 App</b>：安卓 Chrome 在設定按「安裝到主畫面」；iPhone Safari 按分享 →「加入主畫面」。從主畫面開是全螢幕，第二次開會更快，沒網路也能打開（連線玩仍要網路）。</li>
@@ -465,14 +475,14 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=41"></script>
-<script src="js/sim.js?v=41"></script>
-<script src="js/audio.js?v=41"></script>
-<script src="js/auth.js?v=41"></script>
-<script src="js/cloud.js?v=41"></script>
-<script src="js/net.js?v=41"></script>
-<script src="js/game.js?v=41"></script>
-<script src="js/minigames.js?v=41"></script>
-<script src="js/main.js?v=41"></script>
+<script src="js/config.js?v=43"></script>
+<script src="js/sim.js?v=43"></script>
+<script src="js/audio.js?v=43"></script>
+<script src="js/auth.js?v=43"></script>
+<script src="js/cloud.js?v=43"></script>
+<script src="js/net.js?v=43"></script>
+<script src="js/game.js?v=43"></script>
+<script src="js/minigames.js?v=43"></script>
+<script src="js/main.js?v=43"></script>
 </body>
 </html>
