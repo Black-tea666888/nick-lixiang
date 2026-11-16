@@ -187,6 +187,15 @@ const CHARS = ['回收員', '機器人', '太空人', '貓貓', '南瓜頭', '�
 const COSTUMES = ['隊伍色', '迷彩', '霓虹', '黃金', '忍者', '雪白'];        // 服裝（純外觀）
 const PETS = ['無', '小狗', '貓頭鷹', '小機器人', '史萊姆'];   // 寵物：小狗 速度+5%、貓頭鷹 怪物偵測距離+8 公尺、小機器人 賣出+10%、史萊姆 體力回復+20%
 const WEAPONS = ['鐵管', '扳手', '球棒', '平底鍋', '雨傘', '鹹魚'];
+// 槍械：dmg＝對怪物（獵殺／塔防）每顆傷害、pvp＝大逃殺對人傷害、cd＝射擊間隔、clip＝[回收模式每天子彈, 其他模式彈匣]、
+// range＝射程、w＝命中寬度、n＝一次幾顆、spread＝散布（弧度）、stun＝回收模式暈眩秒數、reload＝換彈秒數、auto＝按住連發、cost＝解鎖金幣
+const GUNS = [
+  { name: '手槍', dmg: 34, pvp: 25, cd: 0.22, clip: [6, 12], range: 45, w: 0.8, n: 1, spread: 0, stun: 2.5, reload: 1.4, auto: false, cost: 0 },
+  { name: '霰彈槍', dmg: 15, pvp: 11, cd: 0.75, clip: [3, 6], range: 16, w: 0.9, n: 6, spread: 0.16, stun: 2.2, reload: 1.9, auto: false, cost: 150 },
+  { name: '步槍', dmg: 22, pvp: 17, cd: 0.13, clip: [12, 24], range: 52, w: 0.7, n: 1, spread: 0.025, stun: 1.6, reload: 1.8, auto: true, cost: 250 },
+  { name: '衝鋒槍', dmg: 15, pvp: 11, cd: 0.08, clip: [16, 32], range: 28, w: 0.8, n: 1, spread: 0.07, stun: 1.1, reload: 1.6, auto: true, cost: 300 },
+  { name: '狙擊槍', dmg: 95, pvp: 75, cd: 1.1, clip: [3, 5], range: 80, w: 0.45, n: 1, spread: 0, stun: 4.2, reload: 2.3, auto: false, cost: 400 }
+];
 const HATS = ['無', '安全帽', '頭燈', '天線', '光環', '皇冠'];   // 頭飾（純外觀）
 const pick = (v, n) => { v = Math.floor(+v); return v >= 0 && v < n ? v : 0; };
 
@@ -265,7 +274,7 @@ Sim.prototype.addPlayer = function (id, name, look) {
   let slot = 0;
   while (this.players.some(function (p) { return p.slot === slot; })) slot++;
   look = look || {};
-  const p = { id: id, name: String(name || '玩家').slice(0, 12), slot: slot, c: pick(look.c, CHARS.length), w: pick(look.w, WEAPONS.length), h: pick(look.h, HATS.length), o: pick(look.o, COSTUMES.length), pet: pick(look.pet, PETS.length), eq: cleanEq(look.eq), gems: cleanGems(look.gems), x: VAN[0], z: VAN[1], yaw: 0,
+  const p = { id: id, name: String(name || '玩家').slice(0, 12), slot: slot, c: pick(look.c, CHARS.length), w: pick(look.w, WEAPONS.length), h: pick(look.h, HATS.length), o: pick(look.o, COSTUMES.length), pet: pick(look.pet, PETS.length), gun: pick(look.gun, GUNS.length), eq: cleanEq(look.eq), gems: cleanGems(look.gems), x: VAN[0], z: VAN[1], yaw: 0,
     run: false, loud: false, spk: false, alive: true, bag: [], hp: 100, atkCd: 0, hurtT: 99, earned: 0, kills: 0 };
   this.players.push(p);
   return p;
@@ -278,7 +287,7 @@ Sim.prototype.removePlayer = function (id) {
   if (this.phase === 'play' && this.mode !== 'br' && !this.players.some(function (q) { return q.alive; })) this._end(false, 'dead');
 };
 Sim.prototype.roster = function () {
-  return this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, c: p.c, w: p.w, h: p.h || 0, o: p.o || 0, pet: p.pet || 0, eq: p.eq || [], gems: p.gems || [0, 0, 0] }; });
+  return this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, c: p.c, w: p.w, h: p.h || 0, o: p.o || 0, pet: p.pet || 0, gun: p.gun || 0, eq: p.eq || [], gems: p.gems || [0, 0, 0] }; });
 };
 
 Sim.prototype.startDay = function (day) {
@@ -326,7 +335,7 @@ Sim.prototype.startDay = function (day) {
     p.alive = true; p.bag = []; p.x = VAN[0] + o[0]; p.z = VAN[1] + o[1]; p.yaw = -Math.PI * 0.75;
     p.bombs = 2;   // 每天 2 顆炸藥
     p.run = p.loud = false; p.hp = maxHp(p); p.atkCd = 0; p.hurtT = 99; p.esc = false;
-    p.clip = Math.round((hunt || br ? 12 : 6) * (hasAcc(p, 3) ? 1.5 : 1)); p.ammo = p.clip; p.gunCd = 0; p.reload = 0;   // 回收模式每天 6 發（擊中讓怪物暈 2.5 秒）；獵殺模式彈匣 12 發、自動裝填
+    p.clip = Math.round(GUNS[p.gun | 0].clip[hunt || br ? 1 : 0] * (hasAcc(p, 3) ? 1.5 : 1)); p.ammo = p.clip; p.gunCd = 0; p.reload = 0;   // 回收模式每天 6 發（擊中讓怪物暈 2.5 秒）；獵殺模式彈匣 12 發、自動裝填
     if (day === 1) { p.earned = 0; p.kills = 0; p.mk = 0; }
   });
   this.zone = null;
@@ -405,54 +414,59 @@ Sim.prototype.setEquip = function (id, eq) {
   p.eq = cleanEq(eq); p.hp = Math.min(p.hp, maxHp(p));
   return true;
 };
-/** 開槍：沿面對方向的直線，打中最近、沒被牆擋住的怪物。回收模式＝暈 2.5 秒；獵殺模式＝扣 34 血，歸零擊倒並得 $50，3 秒後在遠處重生。 */
+/** 開槍：依槍種（GUNS）沿面對方向打出一或多顆子彈，每顆打中最近、沒被牆擋住的怪物（大逃殺也會打到人）。
+ *  回收模式＝暈眩；獵殺／塔防＝扣血，歸零擊倒並得 $50。 */
 Sim.prototype.shoot = function (id, yaw) {
   const p = this.player(id);
   if (!p || this.phase !== 'play' || !p.alive || p.gunCd > 0 || p.reload > 0) return;
   if (!(p.ammo > 0)) { this.events.push({ t: 'noammo', id: id }); p.gunCd = 0.4; return; }
   if (isFinite(+yaw)) p.yaw = +yaw;
-  const td = this.mode === 'td', hunt = this.mode === 'hunt' || td, fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
-  p.gunCd = 0.22; p.ammo--;
-  if ((hunt || this.mode === 'br') && p.ammo <= 0) p.reload = 1.4;
-  let hit = -1, hd = 45;
-  for (let i = 0; i < this.monsters.length; i++) {
-    const m = this.monsters[i];
-    if (m.dead > 0) continue;
-    const dx = m.x - p.x, dz = m.z - p.z, along = dx * fx + dz * fz;
-    if (along <= 0 || along > hd || Math.abs(dx * fz - dz * fx) > 0.8) continue;
-    if (!los(p.x, p.z, m.x, m.z)) continue;
-    hit = i; hd = along;
-  }
-  // 大逃殺：子彈也會打到其他玩家（含機器人）
-  let hitP = null;
-  if (this.mode === 'br') {
-    for (let i = 0; i < this.players.length; i++) {
-      const q = this.players[i];
-      if (q === p || !q.alive) continue;
-      const dx = q.x - p.x, dz = q.z - p.z, along = dx * fx + dz * fz;
-      if (along <= 0 || along > hd || Math.abs(dx * fz - dz * fx) > 0.55) continue;
-      if (!los(p.x, p.z, q.x, q.z)) continue;
-      hitP = q; hd = along; hit = -1;
+  const G = GUNS[p.gun | 0], td = this.mode === 'td', hunt = this.mode === 'hunt' || td, br = this.mode === 'br';
+  const gem = 1 + 0.08 * (p.gems ? p.gems[0] : 0);
+  p.gunCd = G.cd; p.ammo--;
+  if ((hunt || br) && p.ammo <= 0) p.reload = G.reload;
+  for (let k = 0; k < G.n; k++) {
+    const a = p.yaw + (G.spread ? (this.rng() - 0.5) * 2 * G.spread : 0), fx = -Math.sin(a), fz = -Math.cos(a);
+    let hit = -1, hd = G.range;
+    for (let i = 0; i < this.monsters.length; i++) {
+      const m = this.monsters[i];
+      if (m.dead > 0) continue;
+      const dx = m.x - p.x, dz = m.z - p.z, along = dx * fx + dz * fz;
+      if (along <= 0 || along > hd || Math.abs(dx * fz - dz * fx) > G.w) continue;
+      if (!los(p.x, p.z, m.x, m.z)) continue;
+      hit = i; hd = along;
     }
+    let hitP = null;
+    if (br) {
+      for (let i = 0; i < this.players.length; i++) {
+        const q = this.players[i];
+        if (q === p || !q.alive) continue;
+        const dx = q.x - p.x, dz = q.z - p.z, along = dx * fx + dz * fz;
+        if (along <= 0 || along > hd || Math.abs(dx * fz - dz * fx) > G.w * 0.7) continue;
+        if (!los(p.x, p.z, q.x, q.z)) continue;
+        hitP = q; hd = along; hit = -1;
+      }
+    }
+    let hx, hz, kill = false;
+    if (hitP) {
+      hx = hitP.x; hz = hitP.z;
+      hitP.hp -= G.pvp * (p.boost ? 1.5 : 1) * gem; hitP.hurtT = 0;
+      if (hitP.hp <= 0) { kill = true; this._brKill(hitP, p); }
+      else this.events.push({ t: 'hit', id: hitP.id, by: p.id, hp: Math.round(hitP.hp) });
+    } else if (hit >= 0) {
+      const m = this.monsters[hit]; hx = m.x; hz = m.z;
+      if (hunt) {
+        m.hp -= G.dmg * gem; m.cool = 0.25;
+        if (m.hp <= 0) { kill = true; m.dead = td ? 1e9 : 3; m.idle = td; m.state = 'wander'; m.path = null; this.money += 50; p.earned += 50; p.mk = (p.mk || 0) + 1; }
+        else if (!td) { m.state = 'chase'; m.target = p.id; m.goal = cellOf(p.x, p.z); m.lost = 0; m.repath = 0; }
+      } else m.cool = Math.max(m.cool || 0, G.stun + 0.2 * (p.gems ? p.gems[0] : 0));
+    } else {
+      let d = 0; hx = p.x; hz = p.z;
+      while (d < G.range && !isWall(Math.floor((p.x + fx * (d + 0.5)) / CS), Math.floor((p.z + fz * (d + 0.5)) / CS))) { d += 0.5; hx = p.x + fx * d; hz = p.z + fz * d; }
+    }
+    // 第一顆帶聲音與後座力；霰彈其餘顆 q=1 只畫彈道
+    this.events.push({ t: 'shot', id: id, g: p.gun | 0, q: k ? 1 : undefined, x: r2(p.x), z: r2(p.z), hx: r2(hx), hz: r2(hz), mi: hit, kill: kill && !hitP, pk: hitP ? hitP.id : undefined, ammo: p.ammo });
   }
-  let hx, hz, kill = false;
-  if (hitP) {
-    hx = hitP.x; hz = hitP.z;
-    hitP.hp -= 25 * (p.boost ? 1.5 : 1) * (1 + 0.08 * (p.gems ? p.gems[0] : 0)); hitP.hurtT = 0;
-    if (hitP.hp <= 0) { kill = true; this._brKill(hitP, p); }
-    else this.events.push({ t: 'hit', id: hitP.id, by: p.id, hp: Math.round(hitP.hp) });
-  } else if (hit >= 0) {
-    const m = this.monsters[hit]; hx = m.x; hz = m.z;
-    if (hunt) {
-      m.hp -= 34 * (1 + 0.08 * (p.gems ? p.gems[0] : 0)); m.cool = 0.25;
-      if (m.hp <= 0) { kill = true; m.dead = td ? 1e9 : 3; m.idle = td; m.state = 'wander'; m.path = null; this.money += 50; p.earned += 50; p.mk = (p.mk || 0) + 1; }
-      else if (!td) { m.state = 'chase'; m.target = p.id; m.goal = cellOf(p.x, p.z); m.lost = 0; m.repath = 0; }
-    } else m.cool = 2.5 + 0.2 * (p.gems ? p.gems[0] : 0);
-  } else {
-    let d = 0; hx = p.x; hz = p.z;
-    while (d < 45 && !isWall(Math.floor((p.x + fx * (d + 0.5)) / CS), Math.floor((p.z + fz * (d + 0.5)) / CS))) { d += 0.5; hx = p.x + fx * d; hz = p.z + fz * d; }
-  }
-  this.events.push({ t: 'shot', id: id, x: r2(p.x), z: r2(p.z), hx: r2(hx), hz: r2(hz), mi: hit, kill: kill && !hitP, pk: hitP ? hitP.id : undefined, ammo: p.ammo });
 };
 /* ---------- 大逃殺 ---------- */
 const BR_TOTAL = 6;   // 真人 + 機器人的總人數
@@ -462,8 +476,9 @@ Sim.prototype._startBR = function () {
   // 機器人補滿人數
   for (let i = 0; this.players.length < BR_TOTAL; i++) {
     let slot = 0; while (this.players.some(function (q) { return q.slot === slot; })) slot++;
-    this.players.push({ id: 'bot' + i, name: BOT_NAMES[i % BOT_NAMES.length], slot: slot, c: Math.floor(this.rng() * CHARS.length), w: Math.floor(this.rng() * WEAPONS.length), h: Math.floor(this.rng() * HATS.length), o: 0, pet: 0, eq: [], gems: [0, 0, 0],
+    this.players.push({ id: 'bot' + i, name: BOT_NAMES[i % BOT_NAMES.length], slot: slot, c: Math.floor(this.rng() * CHARS.length), w: Math.floor(this.rng() * WEAPONS.length), h: Math.floor(this.rng() * HATS.length), o: 0, pet: 0, gun: Math.floor(this.rng() * 4), eq: [], gems: [0, 0, 0],
       ai: true, x: 0, z: 0, yaw: 0, run: false, loud: false, spk: false, alive: true, bag: [], hp: 100, atkCd: 0, hurtT: 99, earned: 0, kills: 0, mk: 0, gunCd: 0, reload: 0, clip: 12, ammo: 12 });
+    { const b = this.players[this.players.length - 1]; b.clip = b.ammo = GUNS[b.gun].clip[1]; }
   }
   // 出生點：盡量彼此分開
   const used = [];
@@ -984,7 +999,7 @@ Sim.prototype.snapshot = function () {
 };
 
 const api = { MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
-  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, breakWall: breakWall, restoreMap: restoreMap, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
+  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, GUNS: GUNS, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, breakWall: breakWall, restoreMap: restoreMap, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
   quotaFor: quotaFor, Sim: Sim, setMap: setMap };
 
 /** 切換目前地圖（碰撞、視線、尋路都跟著換）。房主與每位玩家各自呼叫。 */

@@ -114,7 +114,7 @@ function renderGear() {
 function myLook() {
   const p = prog(), n = function (k) { return parseInt(ls(k) || '0', 10) || 0; }, own = function (cat, v) { return p.own[cat].indexOf(v) >= 0 ? v : 0; };
   const h = n('rr_h');
-  return { c: n('rr_c'), w: n('rr_w'), h: p.hats.indexOf(h) >= 0 ? h : 0, o: own('o', n('rr_o')), pet: own('pet', n('rr_pet')), eq: myEquip(p), gems: p.gems };
+  return { c: n('rr_c'), w: n('rr_w'), h: p.hats.indexOf(h) >= 0 ? h : 0, o: own('o', n('rr_o')), pet: own('pet', n('rr_pet')), gun: own('gun', n('rr_gun')), eq: myEquip(p), gems: p.gems };
 }
 // 只影響自己畫面的造型：回收品、怪物、彈道
 function applyLocalSkins() {
@@ -244,7 +244,7 @@ function prog() {
   p.coins = Math.max(0, Math.floor(+p.coins || 0)); p.xp = Math.max(0, Math.floor(+p.xp || 0));
   if (!Array.isArray(p.hats)) p.hats = [0];
   if (!p.own || typeof p.own !== 'object') p.own = {};
-  ['o', 'pet', 'is', 'ms', 'fx'].forEach(function (k) { if (!Array.isArray(p.own[k])) p.own[k] = [0]; });
+  ['o', 'pet', 'is', 'ms', 'fx', 'gun'].forEach(function (k) { if (!Array.isArray(p.own[k])) p.own[k] = [0]; });
   if (!Array.isArray(p.acc)) p.acc = [];
   if (!Array.isArray(p.gems) || p.gems.length !== 3) p.gems = [0, 0, 0];
   if (p.day !== today() || !Array.isArray(p.m)) { p.day = today(); p.m = [0, 0, 0]; p.done = [false, false, false]; }
@@ -294,6 +294,23 @@ function miniReward(n, why, el, add) {
   if (el) el.textContent = add && el.textContent ? el.textContent + '，' + txt : txt;
 }
 RR.UI = { say: say, miniReward: miniReward };
+// 槍的數值條：傷害（單發×顆數）、射速、射程、彈量，用最強的那把當 100%
+function renderGunStats(i) {
+  const box = $('gStats'); if (!box) return;
+  const G = W.GUNS[i], all = W.GUNS;
+  const v = function (g) { return [g.dmg * g.n, 1 / g.cd, g.range, g.clip[1]]; }, mx = [0, 0, 0, 0];
+  all.forEach(function (g) { v(g).forEach(function (x, k) { mx[k] = Math.max(mx[k], x); }); });
+  const vals = v(G), names = ['傷害', '射速', '射程', '彈量'];
+  box.textContent = '';
+  const title = document.createElement('p'); title.className = 'gNote';
+  title.textContent = G.name + (G.n > 1 ? '：一次 ' + G.n + ' 顆，近距離很強' : G.auto ? '：按住連發' : G.cost >= 400 ? '：一發入魂，射得最遠' : '：穩定好用') + '。回收模式每天 ' + G.clip[0] + ' 發，命中讓怪物暈 ' + G.stun + ' 秒。';
+  box.appendChild(title);
+  vals.forEach(function (x, k) {
+    const row = document.createElement('div'); row.className = 'gRow';
+    row.innerHTML = '<span></span><i><b></b></i>'; row.firstChild.textContent = names[k];
+    row.querySelector('b').style.width = Math.max(6, Math.round(x / mx[k] * 100)) + '%'; box.appendChild(row);
+  });
+}
 
 /* ---------- 聊天 ---------- */
 function chatAdd(name, text, slot) {
@@ -483,7 +500,7 @@ async function joinRoom() {
   await Voice.init(false);   // 不主動要求麥克風（會打斷 Discord 等其他通話）；要講話再按遊戲裡的「麥克風」
   const u = Auth.user();
   const look = myLook();
-  const meta = { name: myName(), uid: u ? u.uid : '', c: look.c, w: look.w, h: look.h, o: look.o, pet: look.pet, eq: look.eq, gems: look.gems };
+  const meta = { name: myName(), uid: u ? u.uid : '', c: look.c, w: look.w, h: look.h, o: look.o, pet: look.pet, gun: look.gun, eq: look.eq, gems: look.gems };
   connectRetry('加入房間中…', function (cb) { Net.join(code, meta, cb); }, function (id) {
     S.mode = 'client'; S.myId = id; S.lastHost = Date.now();
     Game.setMe(id); wireNet();
@@ -519,7 +536,7 @@ function leave() {
 /* ---------- 畫面 ---------- */
 function refreshPickSummary() {
   const ci = (+ls('rr_c') || 0) % W.CHARS.length, c = W.CHARS[ci], w = W.WEAPONS[((+ls('rr_w') || 0) % W.WEAPONS.length)], m = W.MAPS[myMap()];
-  $('pickSum').textContent = c + '、' + w + '、' + (m ? m.name : '');
+  $('pickSum').textContent = c + '、' + (W.GUNS[myLook().gun] || W.GUNS[0]).name + '、' + (m ? m.name : '');
   $('avatar').textContent = c.charAt(0);
 }
 function showMenu() {
@@ -881,6 +898,15 @@ function bind() {
   let mapSel = myMap();
   const cBtns = cards($('cGrid'), W.CHARS, function (i) { return CINFO[i] ? CINFO[i][0] : ''; }, function (i) { look.c = i; showLook(); });
   const wBtns = cards($('wGrid'), W.WEAPONS, null, function (i) { look.w = i; showLook(); });
+  // 槍：手槍免費，其他用金幣解鎖
+  const gBtns = cards($('gGrid'), W.GUNS.map(function (g) { return g.name; }), function () { return ''; }, function (i) {
+    const p = prog(), G = W.GUNS[i];
+    if (!owns(p, 'gun', i)) {
+      if (p.coins < G.cost) { say('金幣不夠：「' + G.name + '」要 ' + G.cost + ' 金幣，你有 ' + p.coins + '。過關、每日任務和小遊戲可以賺金幣。'); return; }
+      p.coins -= G.cost; p.own.gun.push(i); progSave(p); Sfx.tone(660, 0.12, 'triangle', 0.12, 990);
+    }
+    look.gun = i; lsSet('rr_gun', String(i)); showLook();
+  });
   const hBtns = cards($('hGrid'), W.HATS, function (i) { return ''; }, function (i) {
     const p = prog();
     if (p.hats.indexOf(i) < 0) {
@@ -905,6 +931,9 @@ function bind() {
     $('cName').textContent = W.CHARS[look.c]; $('cSkill').textContent = info[0];
     $('cDesc').textContent = info[1]; $('cAttr').textContent = '屬性：' + info[2];
     mark(cBtns, look.c); mark(wBtns, look.w); mark(hBtns, look.h);
+    { const pg0 = prog(); look.gun = owns(pg0, 'gun', look.gun) ? look.gun : 0; mark(gBtns, look.gun);
+      gBtns.forEach(function (b, i) { const own = owns(pg0, 'gun', i); b.classList.toggle('lock', !own); b.lastChild.textContent = own ? (i === look.gun ? '使用中' : '已擁有') : W.GUNS[i].cost + ' 金幣'; });
+      renderGunStats(look.gun); Game.setGun(look.gun); }
     const pg = prog();
     hBtns.forEach(function (b, i) { const own = pg.hats.indexOf(i) >= 0; b.classList.toggle('lock', !own); b.lastChild.textContent = own ? (i === look.h ? '使用中' : '已擁有') : HAT_COST[i] + ' 金幣'; });
     wardrobe.forEach(function (wd) {
@@ -959,6 +988,10 @@ function bind() {
   // 設定
   const sens = parseFloat(ls('rr_sens') || '1'), sfx = parseFloat(ls('rr_sfx') || '0.8'), vv = parseFloat(ls('rr_voice') || '1');
   $('setQ').value = ls('rr_q') || (('ontouchstart' in window) ? 'mid' : 'high'); Game.setQuality($('setQ').value);
+  // 隱藏的手機按鈕：存在 rr_hidebtn（逗號分隔），套用成 body 的 hb-xxx class
+  const applyHide = function () { const h = (ls('rr_hidebtn') || '').split(',').filter(Boolean); Array.prototype.forEach.call($('btnChks').querySelectorAll('input'), function (c) { const id = c.dataset.btn, off = h.indexOf(id) >= 0; c.checked = !off; document.body.classList.toggle('hb-' + id, off); }); };
+  Array.prototype.forEach.call($('btnChks').querySelectorAll('input'), function (c) { c.addEventListener('change', function () { const h = Array.prototype.filter.call($('btnChks').querySelectorAll('input'), function (x) { return !x.checked; }).map(function (x) { return x.dataset.btn; }); lsSet('rr_hidebtn', h.join(',')); applyHide(); }); });
+  applyHide();
   $('setFps').checked = ls('rr_fps') === '1'; Game.settings.showFps = $('setFps').checked;
   $('setFps').addEventListener('change', function () { lsSet('rr_fps', $('setFps').checked ? '1' : '0'); Game.settings.showFps = $('setFps').checked; });
   $('setQ').addEventListener('change', function () { lsSet('rr_q', $('setQ').value); Game.setQuality($('setQ').value); });
