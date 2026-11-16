@@ -1,7 +1,7 @@
 // 離線快取：第三方套件（vendor/、icons/）先用快取，遊戲本體先抓網路、失敗才用快取，
 // 這樣每次更新後重新整理就是最新版，沒網路時也還能開。
 // 換了 vendor 檔案時，把 VER 加一。
-const VER = 'rr-v1';
+const VER = 'rr-v2';
 const CORE = ['./', 'index.html', 'css/style.css', 'js/config.js', 'js/sim.js', 'js/audio.js', 'js/auth.js', 'js/cloud.js', 'js/net.js', 'js/game.js', 'js/minigames.js', 'js/main.js',
   'vendor/three.min.js', 'vendor/peerjs.min.js', 'vendor/firebase-app-compat.js', 'vendor/firebase-auth-compat.js', 'icons/icon-192.png'];
 
@@ -25,7 +25,8 @@ self.addEventListener('fetch', function (e) {
     }));
     return;
   }
-  e.respondWith(fetch(req).then(function (res) {
+  // no-cache：每次都向伺服器確認有沒有新版（沒變就回 304，很快），避免手機一直用舊的樣式
+  e.respondWith(fetch(req, { cache: 'no-cache' }).then(function (res) {
     if (res.ok) { const cp = res.clone(); caches.open(VER).then(function (c) { c.put(req, cp); }); }
     return res;
   }).catch(function () {
