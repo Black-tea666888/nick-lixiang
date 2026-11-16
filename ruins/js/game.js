@@ -67,14 +67,14 @@ function trySmoke() {
 }
 // 小遊戲獨立頁面：先選小遊戲，再進圈圈叉叉棋盤
 let miniInPlay = false, skEnd = 0, smEnd = 0;
-function miniShowList(on) { $('miniList').classList.toggle('hide', !on); $('miniTTBox').classList.toggle('hide', on); }
+function miniShowList(on) { if (RR.Mini) RR.Mini.showBox(on ? 'miniList' : 'miniTTBox'); else { $('miniList').classList.toggle('hide', !on); $('miniTTBox').classList.toggle('hide', on); } }
 function openMini() {
   miniInPlay = canControl();
   miniShowList(true);
   $('scrMini').classList.remove('hide');
   try { if (document.exitPointerLock) document.exitPointerLock(); } catch (err) {}
 }
-function closeMini() { $('scrMini').classList.add('hide'); miniInPlay = false; }
+function closeMini() { $('scrMini').classList.add('hide'); miniInPlay = false; if (RR.Mini) RR.Mini.stop(); }
 function initMini() {
   const grid = $('ttGrid');
   for (let i = 0; i < 9; i++) {
@@ -86,7 +86,7 @@ function initMini() {
   $('miniClose').addEventListener('click', closeMini);
   $('miniBack').addEventListener('click', function () { miniShowList(true); });
   $('miniTT').addEventListener('click', function () {
-    if (!canControl()) { RR.UI.say('圈圈叉叉要在遊戲中玩：開始遊戲後，按右上角「小遊戲」（電腦按 G）。'); return; }
+    if (!canControl()) { RR.UI.say('隊伍圈圈叉叉要在遊戲中和隊友玩：開始遊戲後按右上角「小遊戲」（電腦按 G）。想現在玩可以選「圈圈叉叉」和電腦下。'); return; }
     miniShowList(false);
   });
 }
@@ -801,14 +801,23 @@ function fpsWatch(dt) {
 }
 /* ---------- 手機按鈕：位置與大小可自訂（直式、橫式各存一份） ---------- */
 const BTN = { bomb: [154, 314, 58], tower: [244, 296, 58], veh: [244, 218, 58], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
+// 橫式：畫面矮，改成 4 欄 × 3 列，避免按鍵疊到上方的資訊和按鈕
+const BTN_L = { run: [62, 68, 76], atk: [150, 60, 64], gun: [150, 136, 58], rescue: [150, 212, 58], jump: [58, 154, 58], dash: [58, 226, 58],
+  skill: [232, 56, 58], smoke: [232, 134, 58], bomb: [232, 212, 58], tower: [314, 56, 58], veh: [314, 134, 58] };
+function btnMap() { return window.innerWidth > window.innerHeight ? BTN_L : BTN; }
+// 按鍵區太高、畫面放不下時自動縮小（上方留 84px 給資訊列）
+function fitScale(map) {
+  let ext = 0; Object.keys(map).forEach(function (k) { ext = Math.max(ext, map[k][1] + map[k][2] / 2); });
+  return Math.max(0.6, Math.min(1, (window.innerHeight - 84) / (ext * btnScale)));
+}
 let btnScale = 1, dragBtn = null;
 function layoutKey() { return 'rr_layout_' + (window.innerWidth > window.innerHeight ? 'l' : 'p'); }
 function loadLayout() { try { return JSON.parse(localStorage.getItem(layoutKey()) || 'null') || {}; } catch (e) { return {}; } }
 function layoutButtons() {
-  const Wv = window.innerWidth, Hv = window.innerHeight, saved = loadLayout();
-  Object.keys(BTN).forEach(function (id) {
-    const el = $(id), d = BTN[id], size = d[2] * btnScale, sv = saved[id];
-    let cx = sv ? sv[0] * Wv : Wv - d[0] * btnScale, cy = sv ? sv[1] * Hv : Hv - d[1] * btnScale;
+  const Wv = window.innerWidth, Hv = window.innerHeight, saved = loadLayout(), map = btnMap(), k = btnScale * fitScale(map);
+  Object.keys(map).forEach(function (id) {
+    const el = $(id), d = map[id], size = d[2] * k, sv = saved[id];
+    let cx = sv ? sv[0] * Wv : Wv - d[0] * k, cy = sv ? sv[1] * Hv : Hv - d[1] * k;
     cx = Math.max(size / 2, Math.min(Wv - size / 2, cx)); cy = Math.max(size / 2, Math.min(Hv - size / 2, cy));
     el.style.width = el.style.height = size + 'px'; el.style.fontSize = Math.round(size * 0.29) + 'px';
     el.style.left = (cx - size / 2) + 'px'; el.style.top = (cy - size / 2) + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto';
@@ -828,14 +837,14 @@ function initLayout() {
     }, true);
     el.addEventListener('pointermove', function (e) {
       if (!editing || !dragBtn || dragBtn.id !== id) return;
-      const size = BTN[id][2] * btnScale;
+      const size = el.offsetWidth;
       el.style.left = Math.max(0, Math.min(window.innerWidth - size, e.clientX - size / 2)) + 'px';
       el.style.top = Math.max(0, Math.min(window.innerHeight - size, e.clientY - size / 2)) + 'px';
     });
     const drop = function (e) {
       if (!dragBtn || dragBtn.id !== id) return;
       dragBtn = null;
-      const size = BTN[id][2] * btnScale, saved = loadLayout();
+      const size = el.offsetWidth, saved = loadLayout();
       saved[id] = [(parseFloat(el.style.left) + size / 2) / window.innerWidth, (parseFloat(el.style.top) + size / 2) / window.innerHeight];
       try { localStorage.setItem(layoutKey(), JSON.stringify(saved)); } catch (err) {}
     };
