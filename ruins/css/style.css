@@ -40,9 +40,11 @@ input { -webkit-user-select: text; user-select: text; }
 #hudTop { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; align-items: flex-start; line-height: 1.5; }
 #hudTop .r { text-align: right; }
 #timer.low { color: var(--red); }
-#compass { position: absolute; top: 64px; left: 50%; transform: translateX(-50%); text-align: center; font-size: 11px; font-weight: 700; color: var(--haz); text-shadow: 0 1px 0 #000; }
+#compass { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); text-align: center; color: var(--haz); }
+#compass em { display: inline-block; margin-top: 2px; padding: 2px 8px; font-style: normal; font-size: 13px; font-weight: 800; color: var(--chalk); background: rgba(28,32,36,.9); border-radius: 2px; }
 #arrow { font-size: 22px; line-height: 22px; display: block; }
-#plist { position: absolute; top: 92px; left: 12px; font-size: 12px; line-height: 1.6; text-shadow: 0 1px 0 #000, 0 0 3px #000; }
+#plist { position: absolute; top: 92px; left: 12px; font-size: 13px; line-height: 1.5; }
+#plist .prow { display: table; margin-bottom: 3px; padding: 2px 8px; background: rgba(28,32,36,.85); border-radius: 2px; }
 .prow i { display: inline-block; width: 8px; height: 8px; border-radius: 1px; margin-right: 6px; opacity: .55; }
 .prow.spk i { opacity: 1; outline: 2px solid var(--chalk); }
 .prow.dead span { text-decoration: line-through; opacity: .6; }
@@ -56,10 +58,18 @@ body.solo #micBtn, body.solo #chatBtn { display: none; }
 #micBtn.spk { background: var(--haz); color: var(--ink); }
 #micBtn.loud { background: var(--rust); color: var(--chalk); }
 #micBtn.muted, #micBtn.nomic { color: var(--chalk-2); }
-#spec { position: absolute; top: 112px; left: 0; right: 0; text-align: center; font-size: 13px; text-shadow: 0 1px 0 #000; }
-#warn { position: absolute; top: 30%; left: 0; right: 0; text-align: center; font-size: 22px; font-weight: 900; color: var(--red); text-shadow: 0 2px 0 #000; opacity: 0; transition: opacity .25s; }
-#toast { position: absolute; bottom: 38px; left: 0; right: 0; text-align: center; font-size: 15px; font-weight: 700; opacity: 0; transition: opacity .3s; padding: 0 16px; text-shadow: 0 1px 0 #000, 0 0 4px #000; text-wrap: balance; }
-body.touch #toast { bottom: 318px; }
+#spec { position: absolute; top: 112px; left: 50%; transform: translateX(-50%); padding: 8px 14px; font-size: 15px; font-weight: 700; background: rgba(28,32,36,.94); border: 2px solid #111417; border-radius: 3px; white-space: nowrap; }
+#warn { position: absolute; top: 29%; left: 50%; transform: translateX(-50%); padding: 10px 18px; font-size: 20px; font-weight: 900; color: var(--chalk); background: var(--rust); border: 2px solid #111417; border-radius: 3px; box-shadow: inset 0 -4px 0 rgba(0,0,0,.25); white-space: nowrap; opacity: 0; transition: opacity .2s; }
+/* 提示訊息條：放在左上資訊列下方（直式）或上方中間（橫式），不會壓到按鍵 */
+#toast { position: absolute; top: 36%; left: 50%; width: max-content; max-width: calc(100% - 48px);
+  padding: 9px 12px 9px 18px; font-size: 15px; font-weight: 700; line-height: 1.45; color: var(--chalk); text-align: left;
+  background: rgba(28,32,36,.95); border: 2px solid #111417; border-radius: 3px; z-index: 6;
+  opacity: 0; transform: translate(-50%, -6px); transition: opacity .18s ease-out, transform .18s ease-out; pointer-events: none; }
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+#toast::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--haz); }
+#toast.k-warn::before { background: var(--rust); }
+#toast.k-good::before { background: #3f9a52; }
+#toast:empty { display: none; }
 /* 血量與體力：方形分段量表 */
 #hp, #stam { position: absolute; left: calc(12px + env(safe-area-inset-left)); width: 150px; height: 8px; background: rgba(17,20,23,.85); border: 1px solid #111417; overflow: hidden; }
 #hp { bottom: calc(26px + env(safe-area-inset-bottom)); }
@@ -112,7 +122,7 @@ body.br #mini { top: 262px; }
 #pips i { display: inline-block; width: 11px; height: 11px; margin-left: 3px; border: 2px solid var(--haz); vertical-align: -1px; }
 #pips i.on { background: var(--haz); }
 #pips.full i { background: #fff; border-color: #fff; }
-#floats { position: absolute; left: 0; right: 0; top: 38%; height: 0; text-align: center; }
+#floats { position: absolute; left: 0; right: 0; top: 47%; height: 0; text-align: center; }
 #floats span { position: absolute; left: 0; right: 0; font-size: 26px; font-weight: 900; color: var(--haz); text-shadow: 0 2px 0 #000; animation: floatUp 1.3s ease-out forwards; }
 #floats span.bad { color: var(--red); }
 @keyframes floatUp { from { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } to { transform: translateY(-60px); opacity: 0; } }
@@ -121,6 +131,7 @@ body.br #mini { top: 262px; }
 #chat { position: fixed; left: 10px; bottom: 10px; width: min(300px, calc(100vw - 20px)); z-index: 20; font-size: 13px; pointer-events: none; }
 #chatLog { max-height: 132px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; text-shadow: 0 1px 0 #000, 0 0 3px #000; }
 #chatLog div { padding: 1px 0; line-height: 1.45; word-break: break-word; }
+body.playing #chatLog div { display: table; margin-top: 3px; padding: 2px 8px; background: rgba(28,32,36,.85); border-radius: 2px; text-shadow: none; }
 #chatLog .sys { color: var(--chalk-2); }
 #chatForm { display: flex; gap: 6px; margin-top: 6px; pointer-events: auto; }
 #chatForm input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 7px 9px; background: var(--chalk); color: var(--ink); border: 2px solid var(--ink); border-radius: 3px; outline: none; }
@@ -458,7 +469,7 @@ body.btnedit #hud > #jump, body.btnedit #hud > #dash, body.btnedit #hud > #rescu
   #plist { top: 84px; }
   #hudBtns { top: 8px; right: 118px; flex-direction: row; flex-wrap: wrap; justify-content: flex-end; max-width: 210px; gap: 5px; }
   #hudBtns button { min-width: 0; padding: 5px 8px; min-height: 32px; }
-  body.touch #toast { bottom: 46%; }
+  #toast { top: 84px; max-width: min(440px, 48%); }
   #hideTag { bottom: auto; top: 14%; }
   #helpMenu { display: grid; grid-template-columns: 1fr 1fr; }
   #helpMenu .hrow:nth-child(odd) { border-right: 1px solid rgba(30,26,22,.3); }
