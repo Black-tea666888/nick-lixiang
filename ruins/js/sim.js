@@ -255,7 +255,7 @@ Sim.prototype.startDay = function (day) {
   this.boardPos = this._spotAt(VAN[0], VAN[1], 2.5, 4) || [VAN[0] + 2.5, VAN[1]];
   this.tt = newTT();
   this.trophy = this._spotAt(VAN[0], VAN[1], 12, 25);   // 搶獎盃：地圖上一座獎盃，按住 E 3 秒的人拿走
-  const hunt = this.mode === 'hunt', br = this.mode === 'br';
+  const td = this.mode === 'td', hunt = this.mode === 'hunt' || td, br = this.mode === 'br';   // 塔防沿用獵殺的槍與彈匣
   this.players = this.players.filter(function (p) { return !p.ai; });   // 上一局的機器人先清掉
   this.quota = br ? 0 : hunt ? 50 * (5 + 2 * (day - 1) + 2 * (n - 1)) : quotaFor(day, n); this.events = [];   // 獵殺：每擊倒一隻 $50
   this.smokes = [];
@@ -277,7 +277,7 @@ Sim.prototype.startDay = function (day) {
       value: Math.round((k.lo + this.rng() * (k.hi - k.lo)) / 5) * 5, taken: false });
   }
   // 怪物：第 3 天起 2 隻，第 6 天起 3 隻
-  const mc = br ? 0 : hunt ? Math.min(4, 1 + day) : day >= 6 ? 4 : day >= 3 ? 2 : 1;
+  const mc = br || td ? 0 : hunt ? Math.min(4, 1 + day) : day >= 6 ? 4 : day >= 3 ? 2 : 1;
   this.monsters = [];
   for (let i = 0; i < mc; i++) {
     const mcell = MONSTER_CELLS[i] || floorCells[Math.floor(this.rng() * floorCells.length)];   // 地圖的怪物點不夠時，隨機放在地板上
@@ -295,6 +295,14 @@ Sim.prototype.startDay = function (day) {
     if (day === 1) { p.earned = 0; p.kills = 0; p.mk = 0; }
   });
   this.zone = null;
+  // 塔防：怪物一波一波走向回收車（核心），玩家開槍、花錢蓋砲塔守住它
+  this.td = null; this.towers = [];
+  if (td) {
+    const total = 10 + 4 * (day - 1) + 3 * (n - 1);
+    this.td = { core: 100, total: total, left: total, spawnT: 3, gap: Math.max(1.3, 3.2 - 0.2 * day), hp: 55 + 15 * day, speed: Math.min(2.4 + 0.15 * day, 4) };
+    this.money = 100; this.quota = 0;   // 開局 $100，剛好蓋一座砲塔；每擊倒一隻 +$50
+    for (let i = 0; i < 6; i++) this.monsters.push({ x: VAN[0], z: VAN[1], rot: 0, state: 'wander', path: null, goal: null, lost: 0, repath: 0, cool: 0, target: null, hp: 0, dead: 1e9, idle: true });
+  }
   // 天氣與天然災害（第 1 天固定晴朗、沒有災害；大逃殺不啟用）
   const openMap = !!MAPS[this.map].theme.open;
   this.weather = 0; this.disT = -1; this.strikes = [];
@@ -351,7 +359,7 @@ Sim.prototype._dropBag = function (p) {
 Sim.prototype._end = function (win, why) {
   if (this.phase !== 'play') return;
   this.phase = win ? 'won' : 'lost';
-  this.events.push({ t: 'end', win: win, why: why, day: this.day, money: this.money, quota: this.quota, time: Math.max(0, Math.ceil(this.time)),
+  this.events.push({ t: 'end', win: win, why: why, core: this.td ? this.td.core : undefined, day: this.day, money: this.money, quota: this.quota, time: Math.max(0, Math.ceil(this.time)),
     stats: this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, earned: p.earned, kills: p.kills, mk: p.mk || 0, alive: p.alive, rank: p.rank || 0, ai: !!p.ai }; }) });
 };
 
@@ -368,7 +376,7 @@ Sim.prototype.shoot = function (id, yaw) {
   if (!p || this.phase !== 'play' || !p.alive || p.gunCd > 0 || p.reload > 0) return;
   if (!(p.ammo > 0)) { this.events.push({ t: 'noammo', id: id }); p.gunCd = 0.4; return; }
   if (isFinite(+yaw)) p.yaw = +yaw;
-  const hunt = this.mode === 'hunt', fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
+  const td = this.mode === 'td', hunt = this.mode === 'hunt' || td, fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
   p.gunCd = 0.22; p.ammo--;
   if ((hunt || this.mode === 'br') && p.ammo <= 0) p.reload = 1.4;
   let hit = -1, hd = 45;
@@ -402,8 +410,8 @@ Sim.prototype.shoot = function (id, yaw) {
     const m = this.monsters[hit]; hx = m.x; hz = m.z;
     if (hunt) {
       m.hp -= 34 * (1 + 0.08 * (p.gems ? p.gems[0] : 0)); m.cool = 0.25;
-      if (m.hp <= 0) { kill = true; m.dead = 3; m.state = 'wander'; m.path = null; this.money += 50; p.earned += 50; p.mk = (p.mk || 0) + 1; }
-      else { m.state = 'chase'; m.target = p.id; m.goal = cellOf(p.x, p.z); m.lost = 0; m.repath = 0; }
+      if (m.hp <= 0) { kill = true; m.dead = td ? 1e9 : 3; m.idle = td; m.state = 'wander'; m.path = null; this.money += 50; p.earned += 50; p.mk = (p.mk || 0) + 1; }
+      else if (!td) { m.state = 'chase'; m.target = p.id; m.goal = cellOf(p.x, p.z); m.lost = 0; m.repath = 0; }
     } else m.cool = 2.5 + 0.2 * (p.gems ? p.gems[0] : 0);
   } else {
     let d = 0; hx = p.x; hz = p.z;
@@ -629,6 +637,73 @@ Sim.prototype._pickWander = function (m) {
   m.path = null;
 };
 
+/** 塔防：花 $100 在腳邊蓋一座砲塔（最多 6 座、彼此至少隔 3 公尺） */
+Sim.prototype.buildTower = function (id) {
+  const p = this.player(id);
+  if (!p || this.phase !== 'play' || this.mode !== 'td' || !p.alive) return;
+  let why = null;
+  if (this.towers.length >= 6) why = 'max';
+  else if (this.money < 100) why = 'money';
+  else if (this.towers.some(function (t) { return Math.hypot(t.x - p.x, t.z - p.z) < 3; })) why = 'near';
+  if (why) { this.events.push({ t: 'notower', id: id, why: why }); return; }
+  this.money -= 100; this.towers.push({ x: r2(p.x), z: r2(p.z), cd: 0.5 });
+  this.events.push({ t: 'tower', id: id, x: r2(p.x), z: r2(p.z) });
+};
+Sim.prototype._stepTD = function (dt) {
+  const T = this.td, self = this;
+  // 出怪：從離回收車最遠的幾個點進場
+  T.spawnT -= dt;
+  if (T.left > 0 && T.spawnT <= 0) {
+    const slot = this.monsters.find(function (m) { return m.idle; });
+    if (slot) {
+      let best = null, bd = -1;
+      for (let k = 0; k < 10; k++) {
+        const fc = floorCells[Math.floor(this.rng() * floorCells.length)], c = center(fc[0], fc[1]), d = Math.hypot(c[0] - VAN[0], c[1] - VAN[1]) + this.rng() * 6;
+        if (d > bd) { bd = d; best = c; }
+      }
+      slot.x = best[0]; slot.z = best[1]; slot.hp = T.hp; slot.dead = 0; slot.idle = false; slot.path = null; slot.repath = 0; slot.cool = 0; slot.state = 'chase';
+      T.left--; T.spawnT = T.gap;
+    } else T.spawnT = 0.3;
+  }
+  // 怪物沿最短路走向回收車；走到就扣核心
+  for (let i = 0; i < this.monsters.length; i++) {
+    const m = this.monsters[i];
+    if (m.idle) continue;
+    if (m.cool > 0) { m.cool -= dt; continue; }
+    const mc = cellOf(m.x, m.z);
+    m.repath -= dt;
+    if (m.repath <= 0 || !m.path) { m.path = bfs(mc[0], mc[1], startCell[0], startCell[1]); m.repath = 1; }
+    const pth = m.path;
+    if (pth) { while (pth.length > 1 && pth[1][0] === mc[0] && pth[1][1] === mc[1]) pth.shift(); }
+    const next = pth ? (pth[1] || pth[0]) : startCell, cp = pth && pth.length > 1 ? center(next[0], next[1]) : VAN;
+    const dx = cp[0] - m.x, dz = cp[1] - m.z, dd = Math.hypot(dx, dz), sp = T.speed * KIND_CHASE[i % 4];
+    if (dd > 0.05) { const st = Math.min(dd, sp * dt); m.x += dx / dd * st; m.z += dz / dd * st; m.rot = Math.atan2(dx, dz); }
+    if (Math.hypot(m.x - VAN[0], m.z - VAN[1]) < 1.6) {
+      m.idle = true; m.dead = 1e9; T.core = Math.max(0, T.core - 15);
+      this.events.push({ t: 'leak', core: T.core });
+    }
+  }
+  // 砲塔：自動打 11 公尺內、沒被牆擋住的最近怪物
+  this.towers.forEach(function (t) {
+    t.cd -= dt;
+    if (t.cd > 0) return;
+    let best = -1, bd = 11;
+    for (let i = 0; i < self.monsters.length; i++) {
+      const m = self.monsters[i];
+      if (m.idle) continue;
+      const d = Math.hypot(m.x - t.x, m.z - t.z);
+      if (d < bd && los(t.x, t.z, m.x, m.z)) { bd = d; best = i; }
+    }
+    if (best < 0) { t.cd = 0.2; return; }
+    const m = self.monsters[best]; t.cd = 0.55; m.hp -= 25;
+    let kill = false;
+    if (m.hp <= 0) { kill = true; m.idle = true; m.dead = 1e9; self.money += 50; }
+    self.events.push({ t: 'tshot', x: t.x, z: t.z, hx: r2(m.x), hz: r2(m.z), mi: best, kill: kill });
+  });
+  if (T.core <= 0) { this._end(false, 'core'); return; }
+  if (T.left <= 0 && this.monsters.every(function (m) { return m.idle; })) { this._end(true, 'quota'); return; }
+  if (this.time <= 0) this._end(false, 'time');
+};
 Sim.prototype._monster = function (m, mi, dt, alive) {
   if (m.dead > 0) { m.dead -= dt; if (m.dead <= 0) this._respawn(m); return; }
   if (m.cool > 0) { m.cool -= dt; return; }
@@ -716,6 +791,7 @@ Sim.prototype.step = function (dt) {
     if (this.mode !== 'br' && p.hurtT > 5 && p.hp < maxHp(p)) p.hp = Math.min(maxHp(p), p.hp + 6 * dt);   // 5 秒沒受傷後慢慢回血
   }
   if (this.mode === 'br') { this._stepBR(dt, alive); return; }
+  if (this.mode === 'td') { this._stepTD(dt); return; }
   // 天然災害
   if (this.disT > 0 && this.time <= this.disT) {
     this.disT = -1;
@@ -841,6 +917,8 @@ Sim.prototype.snapshot = function () {
     p: this.players.map(function (p) {
       return [p.id, r2(p.x), r2(p.z), r2(p.yaw), p.alive ? 1 : 0, p.bag.length, (p.run ? 1 : 0) | (p.spk ? 2 : 0) | (p.loud ? 4 : 0) | (p.air ? 8 : 0), Math.round(p.hp), p.ammo || 0, p.reload > 0 ? 1 : 0];
     }),
+    td: this.td ? [this.td.core, this.td.left + this.monsters.filter(function (m) { return !m.idle; }).length, this.td.total] : undefined,
+    tw: this.towers && this.towers.length ? this.towers.map(function (t) { return [t.x, t.z]; }) : undefined,
     veh: this.veh ? [r2(this.veh.x), r2(this.veh.z), this.veh.rider || 0] : undefined,
     pad: this.pad ? [r2(this.pad[0]), r2(this.pad[1])] : null,
     tr: this.trophy ? [r2(this.trophy[0]), r2(this.trophy[1])] : null,

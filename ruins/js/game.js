@@ -216,6 +216,7 @@ function buildMini() {
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (W.MAP[r][c] !== '#') g.fillRect(c * MC, r * MC, MC, MC);
   // 回收車
   const v = W.VAN, k = MC / CS;
+  g.fillStyle = '#ffd27a'; towerMeshes.forEach(function (t) { g.fillRect(t.position.x * k - MC * 0.3, t.position.z * k - MC * 0.3, MC * 0.6, MC * 0.6); });   // 砲塔
   g.fillStyle = '#5fb4e6'; (W.lockers || []).forEach(function (q) { g.fillRect(q[0] * k - MC * 0.25, q[1] * k - MC * 0.25, MC * 0.5, MC * 0.5); });   // 櫃子
   g.fillStyle = '#ffc24a'; g.fillRect(v[0] * k - MC * 0.45, v[1] * k - MC * 0.45, MC * 0.9, MC * 0.9);
   g.fillStyle = '#1b1305'; g.font = 'bold ' + (MC * 0.8) + 'px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -238,7 +239,7 @@ function drawMini(L) {
   const MC_COL = ['#ff5a2a', '#5ad0ff', '#8cff5a', '#b070ff'];
   for (let i = 0; i < view.monsters.length; i++) {
     const m = view.monsters[i];
-    if (!m.group.visible || view.weather === 4 || (view.mode !== 'hunt' && Math.hypot(m.x - L.x, m.z - L.z) > (myPet() === 2 ? 22 : 14))) continue;   // 14 公尺內才顯示
+    if (!m.group.visible || view.weather === 4 || (view.mode !== 'hunt' && view.mode !== 'td' && Math.hypot(m.x - L.x, m.z - L.z) > (myPet() === 2 ? 22 : 14))) continue;   // 14 公尺內才顯示
     const mx = m.x * k, my = m.z * k;
     if (m.chase && Math.floor(Date.now() / 250) % 2) { g.strokeStyle = '#ffffff'; g.lineWidth = 1.5; g.beginPath(); g.arc(mx, my, MC * 0.75, 0, Math.PI * 2); g.stroke(); }
     g.fillStyle = MC_COL[i % 4]; g.strokeStyle = '#000'; g.lineWidth = 1;
@@ -695,9 +696,29 @@ function buildCart() {
   addShadow(g, 0.7);
   return g;
 }
+// 塔防：砲塔模型與射擊
+const towerMeshes = [];
+function syncTowers(list) {
+  list = list || [];
+  while (towerMeshes.length > list.length) scene.remove(towerMeshes.pop());
+  for (let i = towerMeshes.length; i < list.length; i++) {
+    const g = new THREE.Group(), base = pmat(0x4a5360, 0.1), gold = pmat(0xffc24a, 0.45);
+    const head = new THREE.Group(); head.position.y = 1.05;
+    head.add(part(new THREE.BoxGeometry(0.42, 0.3, 0.5), gold, 0, 0, 0), part(new THREE.CylinderGeometry(0.06, 0.06, 0.7, 12), base, 0, 0.02, 0.5));
+    head.children[1].rotation.x = Math.PI / 2;
+    g.add(part(new THREE.CylinderGeometry(0.42, 0.55, 0.3, 20), base, 0, 0.15, 0), part(new THREE.CylinderGeometry(0.14, 0.18, 0.75, 16), base, 0, 0.65, 0), head);
+    g.userData.head = head; addOutline(g, 0x05080a, 1.06); addShadow(g, 0.6);
+    g.position.set(list[i][0], 0, list[i][1]); scene.add(g); towerMeshes.push(g);
+  }
+}
+function showTowerShot(e) {
+  const tm = towerMeshes.find(function (t) { return Math.hypot(t.position.x - e.x, t.position.z - e.z) < 0.5; });
+  if (tm) tm.userData.head.rotation.y = Math.atan2(e.hx - e.x, e.hz - e.z);
+  showShot({ id: null, x: e.x, z: e.z, hx: e.hx, hz: e.hz, mi: e.mi, ty: 1.1 });
+}
 function showShot(e) {
   const mine = e.id === myId, sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
-  const from = mine ? new THREE.Vector3(me.x - sy * 0.5 + cy * 0.22, 1.42 + me.y, me.z - cy * 0.5 - sy * 0.22) : new THREE.Vector3(e.x, 1.25, e.z);
+  const from = mine ? new THREE.Vector3(me.x - sy * 0.5 + cy * 0.22, 1.42 + me.y, me.z - cy * 0.5 - sy * 0.22) : new THREE.Vector3(e.x, e.ty || 1.25, e.z);
   const to = new THREE.Vector3(e.hx, e.mi >= 0 ? 1.7 : 1.4, e.hz);
   const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([from, to]), new THREE.LineBasicMaterial({ color: mine ? FX_COL[RR.Game.settings.fx | 0] || 0xfff1b0 : 0xfff1b0, transparent: true, opacity: 0.95, fog: false }));
   const spark = part(new THREE.SphereGeometry(e.mi >= 0 ? 0.28 : 0.12, 10, 8), new THREE.MeshBasicMaterial({ color: e.mi >= 0 ? 0xff8a3a : 0xfff1b0, transparent: true, opacity: 0.9, fog: false }), to.x, to.y, to.z);
@@ -731,7 +752,7 @@ function fpsWatch(dt) {
   }
 }
 /* ---------- 手機按鈕：位置與大小可自訂（直式、橫式各存一份） ---------- */
-const BTN = { veh: [244, 218, 58], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
+const BTN = { tower: [244, 296, 58], veh: [244, 218, 58], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
 let btnScale = 1, dragBtn = null;
 function layoutKey() { return 'rr_layout_' + (window.innerWidth > window.innerHeight ? 'l' : 'p'); }
 function loadLayout() { try { return JSON.parse(localStorage.getItem(layoutKey()) || 'null') || {}; } catch (e) { return {}; } }
@@ -822,6 +843,7 @@ function bindInput() {
     if (e.code === 'Space') { if (canControl()) { e.preventDefault(); if (!e.repeat) jumpQ = true; } }
     if (e.code === 'KeyC' && !e.repeat && canControl()) dashQ = true;
     if (e.code === 'KeyX' && canControl()) shoot();
+    if (e.code === 'KeyT' && !e.repeat && canControl() && view.mode === 'td' && RR.Game.onTower) RR.Game.onTower();
     if (e.code === 'KeyV' && !e.repeat && canControl()) vhQ = true;
   });
   window.addEventListener('keyup', function (e) { keys[e.code] = false; });
@@ -887,7 +909,7 @@ function bindInput() {
   runBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   $('micBtn').addEventListener('click', function () { RR.Game.toggleMic(); });
   $('mini').addEventListener('click', function () { $('mini').classList.toggle('big'); });
-  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', shoot], ['veh', function () { vhQ = true; }]].forEach(function (q) {
+  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', shoot], ['veh', function () { vhQ = true; }], ['tower', function () { if (view.mode === 'td' && RR.Game.onTower) RR.Game.onTower(); }]].forEach(function (q) {
     const b = $(q[0]);
     b.addEventListener('touchstart', function (e) { e.preventDefault(); if (canControl()) q[1](); }, { passive: false });
     b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
@@ -1044,7 +1066,7 @@ function atmosphere(L, dt) {
   // 怪物靠近：恐怖低鳴；非常近且追逐時顯示字幕並播放音效
   view.scareT = Math.max(0, (view.scareT || 0) - dt); view.subT = Math.max(0, (view.subT || 0) - dt);
   if (dist < 12 && view.scareT <= 0 && me.alive) { Sfx.tone(44, 1.2, 'sawtooth', 0.05, 30); view.scareT = 6; }
-  if (dist < 5 && chase && view.subT <= 0 && me.alive) {
+  if (dist < 5 && chase && view.subT <= 0 && me.alive && view.mode !== 'td') {
     Sfx.tone(92, 0.35, 'square', 0.16, 46); view.subT = 4;
     showSub('發現你了！');
   }
@@ -1075,11 +1097,12 @@ function voiceSpatial(playing, L) {
 
 function updateHud() {
   if (view.mode === 'br') { let al = 0; view.players.forEach(function (p) { if (p.id === myId ? me.alive : p.alive) al++; }); $('money').textContent = al; $('quota').textContent = view.players.size + ' 人'; }
+  else if (view.mode === 'td' && view.td) { $('money').textContent = '$' + view.money; $('quota').textContent = '核心 ' + view.td[0] + '｜剩 ' + view.td[1] + ' 隻'; }
   else { $('money').textContent = '$' + view.money; $('quota').textContent = '$' + view.quota; }
   $('bag').textContent = me.bagN;
   const am = $('ammo'), at = me.reloading ? '裝填中' : String(me.ammo || 0); if (am.textContent !== at) am.textContent = at;
   const gb = $('gun'), gt = me.reloading ? '…' : '槍'; if (gb.textContent !== gt) gb.textContent = gt; gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
-  const qf = $('qfill'), pct = view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
+  const qf = $('qfill'), pct = view.mode === 'td' && view.td ? view.td[0] : view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
   qf.style.width = pct + '%'; qf.classList.toggle('done', pct >= 100);
   const cap = (myEq(2) ? 4 : 3) + (me.riding ? 2 : 0), pp = $('pips'); while (pp.children.length < 6) pp.appendChild(document.createElement('i')); if ($('bagCap').textContent !== String(cap)) $('bagCap').textContent = cap;
   for (let i = 0; i < 6; i++) { pp.children[i].className = i < me.bagN ? 'on' : ''; pp.children[i].style.display = i < cap ? '' : 'none'; } pp.className = me.bagN >= cap ? 'full' : '';
@@ -1175,7 +1198,7 @@ RR.Game = {
     cartView = new THREE.Group(); cartView.add(part(new THREE.BoxGeometry(0.9, 0.3, 0.6), pmat(0xd9902f, 0.25), 0, -0.78, -1.05), part(new THREE.CylinderGeometry(0.02, 0.02, 0.8, 8), pmat(0x9aa3a8, 0.15), 0, -0.5, -0.62)); cartView.children[1].rotation.z = Math.PI / 2; cartView.visible = false; camera.add(cartView);
     torch.position.set(0.25, -0.2, 0); camera.add(torch); camera.add(torch.target); torch.target.position.set(0, -0.05, -1);
     buildLevel();
-    for (let i = 0; i < 4; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));
+    for (let i = 0; i < 6; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));
     setViewWeapon(0);
     skinGeos = [new THREE.SphereGeometry(0.28, 18, 14), new THREE.OctahedronGeometry(0.34, 0)];
     itemGeos = [
@@ -1265,7 +1288,8 @@ RR.Game = {
       mesh.position.set(a[0], 0.75, a[1]); scene.add(mesh);
       return { x: a[0], z: a[1], kind: a[2], value: a[3], taken: false, mesh: mesh };
     });
-    view.mode = info.mode || 'coop'; document.body.classList.toggle('hunt', view.mode === 'hunt'); document.body.classList.toggle('br', view.mode === 'br');
+    view.mode = info.mode || 'coop'; document.body.classList.toggle('td', view.mode === 'td'); syncTowers([]); view.td = null;
+    document.body.classList.toggle('hunt', view.mode === 'hunt'); document.body.classList.toggle('br', view.mode === 'br');
     applyWeather(info.weather || 0); quakeT = 0; me.riding = false; rings.forEach(function (r) { scene.remove(r.mesh); }); rings.length = 0;
     if (info.weather) setTimeout(function () { toast('今天的天氣：' + W.WEATHERS[info.weather] + ['', '（雨聲蓋過腳步，怪物比較聽不到你）', '（你和怪物都看不遠）', '（很暗，靠手電筒；怪物也看不遠）', '（能見度低，小地圖看不到怪物）'][info.weather]); }, 2600);
     view.zone = info.zone || null; view.zr = info.zone ? info.zone[2] : 0; outT = 0;
@@ -1274,7 +1298,7 @@ RR.Game = {
       zoneMesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 30, 64, 1, true), new THREE.MeshBasicMaterial({ color: 0x8fd0ff, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false, fog: false }));
       zoneMesh.position.set(view.zone[0], 15, view.zone[1]); zoneMesh.scale.set(view.zr, 1, view.zr); scene.add(zoneMesh);
     }
-    $('moneyLbl').textContent = view.mode === 'hunt' ? '擊倒得分' : view.mode === 'br' ? '存活' : '收入'; me.ammo = view.mode === 'coop' ? 6 : 12; me.reloading = false;
+    $('moneyLbl').textContent = view.mode === 'td' ? '資金' : view.mode === 'hunt' ? '擊倒得分' : view.mode === 'br' ? '存活' : '收入'; me.ammo = view.mode === 'coop' ? 6 : 12; me.reloading = false;
     view.phase = 'play'; view.day = info.day; view.quota = info.quota; view.time = info.time; view.money = 0;
     view.players.forEach(function (p) {
       const s = info.spawns[p.id] || W.VAN;
@@ -1288,7 +1312,7 @@ RR.Game = {
     $('flash').style.opacity = 0; $('warn').style.opacity = 0; $('spec').classList.add('hide');
     Sfx.drone(true);
     updateHud();
-    toast(view.mode === 'br' ? '大逃殺：活到最後！白圈外會扣血，補給箱：綠 急救、藍 護甲、紅 火力' : view.mode === 'hunt' ? '獵殺第 ' + info.day + ' 關：用槍擊倒 ' + (info.quota / 50) + ' 隻怪物（每隻 $50）' : '第 ' + info.day + ' 天：把廢料帶回金色回收車，賺到 $' + info.quota);
+    toast(view.mode === 'td' ? '塔防第 ' + info.day + ' 關：守住回收車！開槍打怪，按「塔」花 $100 蓋砲塔' : view.mode === 'br' ? '大逃殺：活到最後！白圈外會扣血，補給箱：綠 急救、藍 護甲、紅 火力' : view.mode === 'hunt' ? '獵殺第 ' + info.day + ' 關：用槍擊倒 ' + (info.quota / 50) + ' 隻怪物（每隻 $50）' : '第 ' + info.day + ' 天：把廢料帶回金色回收車，賺到 $' + info.quota);
     lockPointer();
   },
   onSnapshot: function (s) {
@@ -1309,6 +1333,8 @@ RR.Game = {
     else view.tt = null;
     // 傳送陣的顯示
     // 推車
+    if (s.td) view.td = s.td;
+    if (view.mode === 'td') syncTowers(s.tw);
     if (s.veh) {
       if (!cartMesh) { cartMesh = buildCart(); scene.add(cartMesh); }
       const rid = s.veh[2]; me.riding = rid === myId && me.alive;
@@ -1451,6 +1477,14 @@ RR.Game = {
         me.x -= sy * d; me.z -= cy * d; toast('瞬移！');
       }
       Sfx.tone(900, 0.25, 'sine', 0.12, 1800);
+    } else if (e.t === 'tshot') {
+      showTowerShot(e); if (e.kill) floatText('+$50');
+    } else if (e.t === 'leak') {
+      toast('怪物闖進回收車！核心剩 ' + e.core); shakeT = Math.max(shakeT, 0.35); Sfx.tone(140, 0.3, 'sawtooth', 0.16, 60);
+    } else if (e.t === 'tower') {
+      Sfx.tone(520, 0.1, 'triangle', 0.1, 780); if (e.id === myId) toast('砲塔蓋好了（-$100）');
+    } else if (e.t === 'notower') {
+      if (e.id === myId) toast(e.why === 'money' ? '資金不足：砲塔要 $100' : e.why === 'max' ? '最多 6 座砲塔' : '離另一座砲塔太近');
     } else if (e.t === 'shot') {
       showShot(e);
       if (e.kill) { Sfx.tone(180, 0.35, 'sawtooth', 0.14, 60); floatText('+$50'); toast((e.id === myId ? '你' : nameOf(e.id)) + '擊倒了怪物！'); }
@@ -1499,7 +1533,7 @@ RR.Game = {
     RR.Game.settings.monSkin = v | 0;
     if (!ready) return;
     view.monsters.forEach(function (m) { scene.remove(m.group); });
-    view.monsters = []; for (let i = 0; i < 4; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));
+    view.monsters = []; for (let i = 0; i < 6; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));
   },
   setQuality: function (q) { quality = q === 'low' || q === 'mid' ? q : 'high'; applyQuality(); },
   setBtnScale: function (v) { btnScale = Math.max(0.7, Math.min(1.5, +v || 1)); layoutButtons(); },
