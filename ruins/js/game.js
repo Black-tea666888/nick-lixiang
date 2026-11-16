@@ -1560,7 +1560,7 @@ function tickHud() {
   b.textContent = !Voice.hasMic() ? '開麥克風' : Voice.isMuted() ? '麥克風 關' : loudT > 0 ? '太大聲！' : '麥克風 開';
 }
 
-let last = 0, pv = null;
+let last = 0, pvs = [];
 function frame(nowMs) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, (nowMs - last) / 1000); last = nowMs;
@@ -1598,7 +1598,7 @@ function frame(nowMs) {
   voiceSpatial(playing, lastL);
   hudT -= dt; if (hudT <= 0) { hudT = 0.15; tickHud(); }
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('show'); }
-  if (pv && pv.model && pv.canvas.offsetParent) { pv.model.rotation.y = now * 0.9; pv.r.render(pv.sc, pv.cam); }
+  pvs.forEach(function (pv) { if (pv.model && pv.canvas.offsetParent) { pv.model.rotation.y = pv.sway ? -0.35 + Math.sin(now * 0.6) * 0.3 : now * 0.9; pv.r.render(pv.sc, pv.cam); } });
   renderer.render(scene, camera);
 }
 
@@ -1647,18 +1647,22 @@ RR.Game = {
   /** 選單／大廳換地圖時，背景跟著換 */
   showMap: function (i) { if (!ready || active) return; W.setMap(i); if (builtMap !== W.mapIndex) buildLevel(); },
   /** 選單裡的造型預覽 */
-  preview: function (canvas, c, w, h, o, pet) {
+  // 角色預覽：每張畫布各有一個（出戰角色、大廳），大小照畫布的 width／height；sway＝大廳用的輕微左右擺動
+  preview: function (canvas, c, w, h, o, pet, sway) {
     if (!ready) return;
+    let pv = pvs.filter(function (q) { return q.canvas === canvas; })[0];
     if (!pv) {
       try {
-        const r = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-        r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); r.setSize(150, 170, false);
+        const W0 = canvas.width || 150, H0 = canvas.height || 170;
+        const r = new THREE.WebGLRenderer({ canvas: canvas, antialias: !LITE, alpha: true });
+        r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); r.setSize(W0, H0, false);
         const sc = new THREE.Scene();
-        sc.add(new THREE.AmbientLight(0xffffff, 0.75));
-        const d = new THREE.DirectionalLight(0xffffff, 0.9); d.position.set(2, 4, 3); sc.add(d);
-        const cam = new THREE.PerspectiveCamera(35, 150 / 170, 0.1, 20); cam.position.set(0, 1.3, 4.7); cam.lookAt(0, 1.08, 0);
-        pv = { r: r, sc: sc, cam: cam, canvas: canvas, model: null };
-      } catch (e) { pv = null; return; }
+        sc.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const d = new THREE.DirectionalLight(0xfff2dc, 0.95); d.position.set(2, 4, 3); sc.add(d);
+        const d2 = new THREE.DirectionalLight(0x9fc4ff, 0.35); d2.position.set(-3, 2, -2); sc.add(d2);
+        const cam = new THREE.PerspectiveCamera(35, W0 / H0, 0.1, 20); cam.position.set(0, 1.3, 4.7); cam.lookAt(0, 1.08, 0);
+        pv = { r: r, sc: sc, cam: cam, canvas: canvas, model: null, sway: !!sway }; pvs.push(pv);
+      } catch (e) { return; }
     }
     if (pv.model) pv.sc.remove(pv.model);
     const g = buildChar(c, 0, h || 0, o || 0, pet || 0), wg = buildWeapon(w);

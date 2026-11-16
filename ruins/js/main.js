@@ -4,7 +4,7 @@
 const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx, Auth = RR.Auth, Game = RR.Game;
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult'];
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -270,6 +270,7 @@ function renderProg() {
     const s = document.createElement('small'); s.textContent = p.done[i] ? '已領 +' + m[2] : Math.min(p.m[i], m[1]) + ' / ' + m[1] + '，金幣 +' + m[2];
     row.appendChild(t); row.appendChild(s); box.appendChild(row);
   });
+  { const fm = $('fsMis'); if (fm) fm.textContent = p.done.filter(Boolean).length + ' / ' + MISSIONS.length + ' 完成'; }
 }
 // 一局結束時結算：回傳要顯示的文字
 function progOnResult(e, stars) {
@@ -549,7 +550,32 @@ function showMenu() {
   $('nickPen').classList.toggle('pulse', !ls('rr_named') && /^訪客/.test(u.name || ''));
   $('best').textContent = ls('rr_best') || '0';
   show('scrMenu');
-  refreshPickSummary(); renderProg();
+  refreshPickSummary(); renderProg(); refreshLobby();
+}
+// 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
+const LOBBY_MODE = { coop: '多人合作', solo: '單人遊玩', hunt: '獵殺模式', td: '塔防模式', br: '大逃殺' };
+function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
+function refreshLobby() {
+  const m = selMode();
+  Array.prototype.forEach.call($('modeStrip').children, function (b) { const on = b.dataset.mode === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+  $('startMode').textContent = LOBBY_MODE[m] + (m === 'coop' ? '：建立房間' : '');
+  $('mapName').textContent = (W.MAPS[myMap()] || W.MAPS[0]).name;
+  const look = myLook();
+  $('lbName').textContent = W.CHARS[look.c] + '　' + (W.GUNS[look.gun] || W.GUNS[0]).name;
+  Game.preview($('lobbyChar'), look.c, look.w, look.h, look.o, look.pet, true);
+}
+function renderMapGrid() {
+  const g = $('mapGrid'), cur = myMap(); g.textContent = '';
+  W.MAPS.forEach(function (mp, i) {
+    const T = mp.theme, b = document.createElement('button'); b.type = 'button'; b.className = 'mapCard' + (i === cur ? ' on' : '');
+    const sky = T.open ? '#' + (T.sky || 0).toString(16).padStart(6, '0') : '#1a1d20';
+    b.innerHTML = '<i class="sw"><u></u><s></s></i><b></b><span></span>';
+    b.querySelector('u').style.background = sky; b.querySelector('s').style.background = T.wall;
+    b.querySelector('.sw').style.background = T.floor;
+    b.querySelector('b').textContent = mp.name; b.querySelector('span').textContent = T.open ? '開放場景' : '室內';
+    b.addEventListener('click', function () { lsSet('rr_map', String(i)); Game.showMap(i); renderMapGrid(); });
+    g.appendChild(b);
+  });
 }
 function shareUrl(code) { return location.origin + location.pathname + '?room=' + code; }
 function showLobby(code) {
@@ -845,6 +871,16 @@ function bind() {
   $('nick').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('nick').blur(); });
 
   $('soloBtn').addEventListener('click', function () { startSolo('coop'); });
+  Array.prototype.forEach.call($('modeStrip').children, function (b) { b.addEventListener('click', function () { lsSet('rr_mode', b.dataset.mode); Sfx.tone(520, 0.04, 'square', 0.04); refreshLobby(); }); });
+  $('goBtn').addEventListener('click', function () { const b = $('modeStrip').querySelector('[data-mode="' + selMode() + '"]'); if (b) $(b.dataset.go).click(); });
+  $('mapChip').addEventListener('click', function () { renderMapGrid(); show('scrMap'); });
+  $('mapOk').addEventListener('click', function () { showMenu(); }); $('mapDone').addEventListener('click', function () { showMenu(); });
+  $('joinOpen').addEventListener('click', function () { $('joinModal').classList.remove('hide'); setTimeout(function () { $('codeInput').focus(); }, 50); });
+  $('joinClose').addEventListener('click', function () { $('joinModal').classList.add('hide'); });
+  $('joinBtn').addEventListener('click', function () { $('joinModal').classList.add('hide'); });
+  $('misBtn').addEventListener('click', function () { $('misModal').classList.remove('hide'); });
+  $('misClose').addEventListener('click', function () { $('misModal').classList.add('hide'); });
+  $('coinBtn').addEventListener('click', function () { $('wheelOpen').click(); });
   $('createBtn').addEventListener('click', createRoom);
   $('joinBtn').addEventListener('click', joinRoom);
   $('codeInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') joinRoom(); });
@@ -951,7 +987,8 @@ function bind() {
   };
   showMapName = function () { mapSel = myMap(); mark(mBtns, mapSel); refreshPickSummary(); $('fsMap').textContent = W.MAPS[mapSel].name; };
   // 收合狀態記在 rr_fold（預設只展開「角色」）
-  { let open = null; try { open = JSON.parse(ls('rr_fold') || 'null'); } catch (e) {} if (!open) open = { char: 1 };
+  { let open = null; try { open = JSON.parse(ls('rr_fold') || 'null'); } catch (e) {} if (!open) open = { char: 1, m_play: 1, m_mis: 1, h_help: 1, g_acc: 1 };
+    ['m_play', 'h_help', 'g_acc'].forEach(function (k) { if (open[k] == null) open[k] = 1; });
     Array.prototype.forEach.call(document.querySelectorAll('details.fold'), function (d) { d.open = !!open[d.dataset.fold]; d.addEventListener('toggle', function () { open[d.dataset.fold] = d.open ? 1 : 0; lsSet('rr_fold', JSON.stringify(open)); }); }); }
   showMapName(); Game.showMap(mapSel);
   showLook();
@@ -1042,7 +1079,7 @@ function boot() {
   };
   try {
     const m = /[?&]room=([A-Za-z0-9]{5})/.exec(location.search);
-    if (m) $('codeInput').value = m[1].toUpperCase();
+    if (m) { $('codeInput').value = m[1].toUpperCase(); $('joinModal').classList.remove('hide'); }
   } catch (e) {}
   RR.Cloud.hooks({ prog: prog, name: myName, level: function () { return levelOf(prog().xp); },
     adopt: function (p) { lsSet('rr_prog', JSON.stringify(p)); renderProg(); if (!S.mode && Auth.user()) { refreshPickSummary(); say('已從雲端取回你的進度。'); } } });

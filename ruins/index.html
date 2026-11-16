@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
-<link rel="stylesheet" href="css/style.css?v=43">
+<link rel="stylesheet" href="css/style.css?v=45">
 </head>
 <body>
 <div id="boot"><div class="bootIn"><b>廢墟回收隊</b><i class="spin"></i><small id="bootTxt">載入中…</small></div></div>
@@ -87,36 +87,67 @@
 
 <!-- 主選單（大廳） -->
 <div class="screen hide" id="scrMenu">
-  <div class="panel lobby">
-    <div class="topbar">
-      <div class="avatar" id="avatar"></div>
-      <div class="who">
-        <label class="nickRow"><input id="nick" type="text" maxlength="12" aria-label="暱稱（點一下改名）" placeholder="輸入你的名字" enterkeyhint="done"><span class="pen" id="nickPen" aria-hidden="true">改名</span></label>
-        <div class="stats"><span>等級<b id="lvTag">Lv.1</b></span><span>金幣<b id="coinTag">0</b></span><span>最佳<b id="best">0</b>天</span></div>
-        <div id="xpBar"><i id="xpFill"></i></div>
+  <div class="lb">
+    <header class="lbTop">
+      <div class="topbar lbId">
+        <div class="avatar" id="avatar"></div>
+        <div class="who">
+          <label class="nickRow"><input id="nick" type="text" maxlength="12" aria-label="暱稱（點一下改名）" placeholder="輸入你的名字" enterkeyhint="done"><span class="pen" id="nickPen" aria-hidden="true">改名</span></label>
+          <div class="stats"><span>等級<b id="lvTag">Lv.1</b></span><span>最佳<b id="best">0</b>天</span></div>
+          <div id="xpBar"><i id="xpFill"></i></div>
+        </div>
       </div>
-      <button class="icon" id="helpBtn" type="button" aria-label="設定與說明">設定</button>
-    </div>
-    <h1 class="logo">廢墟回收隊</h1>
-    <button class="hero" id="pickBtn" type="button"><span class="tag">出戰角色</span><b id="pickSum"></b><span class="go">更換 ›</span></button>
-    <div class="modes">
-      <button class="mode main" id="createBtn" type="button"><b>多人合作</b><span>建立房間，邀請最多 3 位隊友</span></button>
-      <button class="mode" id="soloBtn" type="button"><b>單人遊玩</b><span>自己練習</span></button>
-      <button class="mode" id="miniInfoBtn" type="button"><b>小遊戲</b><span>分類回收、圈圈叉叉，不用進遊戲也能玩</span></button>
-      <button class="mode td" id="tdBtn" type="button"><b>塔防模式</b><span>守住回收車：怪物一波波進攻，開槍並花錢蓋砲塔（單人；多人請在大廳切換模式）</span></button>
-      <button class="mode br" id="brBtn" type="button"><b>大逃殺</b><span>6 人混戰（不足由電腦補滿），安全區會縮小，活到最後的人獲勝</span></button>
-      <button class="mode social" id="socialOpen" type="button"><b>社群</b><span>排行榜、區域賽季、好友、戰隊、成就（要登入和網路）</span></button>
-      <button class="mode gear" id="gearOpen" type="button"><b>裝備與寶石</b><span>配件最多裝 2 個，對局中也能換；寶石可升級</span></button>
-      <button class="mode wheel" id="wheelOpen" type="button"><b>回收抽獎機</b><span>用金幣抽服裝、寵物、造型和特效，每天免費一次</span></button>
-      <button class="mode hunt" id="huntBtn" type="button"><b>獵殺模式</b><span>新模式：拿槍反過來獵殺怪物，在時間內擊倒指定數量（單人；多人請在大廳切換模式）</span></button>
-    </div>
-    <div class="sec">每日任務</div>
-    <div id="missions"></div>
-    <div class="row join">
-      <input id="codeInput" type="text" maxlength="5" placeholder="房間代碼" autocapitalize="characters" autocomplete="off">
-      <button class="btn" id="joinBtn" type="button">加入房間</button>
-    </div>
-    <button class="link" id="logoutBtn" type="button">登出（<span id="whoProv"></span>）</button>
+      <button class="lbCoin" id="coinBtn" type="button" aria-label="金幣，點一下去抽獎機"><span>金幣</span><b id="coinTag">0</b><i>+</i></button>
+      <div class="lbIcons">
+        <button class="icon" id="socialOpen" type="button">社群</button>
+        <button class="icon" id="helpBtn" type="button" aria-label="設定與說明">設定</button>
+      </div>
+    </header>
+    <nav class="lbSide" aria-label="功能">
+      <button class="tile big" id="pickBtn" type="button"><span class="tag">出戰角色</span><b id="pickSum"></b><span class="go">更換</span></button>
+      <button class="tile" id="gearOpen" type="button"><b>裝備與寶石</b><span>配件、寶石升級</span></button>
+      <button class="tile hot" id="wheelOpen" type="button"><b>回收抽獎機</b><span>每天免費一次</span></button>
+      <button class="tile" id="miniInfoBtn" type="button"><b>小遊戲</b><span>不用進遊戲也能玩</span></button>
+      <button class="tile" id="misBtn" type="button"><b>每日任務</b><span id="fsMis">0 / 3 完成</span></button>
+    </nav>
+    <div class="lbStage"><canvas id="lobbyChar" width="300" height="380" aria-hidden="true"></canvas><div class="lbName" id="lbName"></div></div>
+    <footer class="lbBottom">
+      <div class="modeStrip" id="modeStrip" role="radiogroup" aria-label="選擇模式">
+        <button class="mcard" type="button" data-mode="coop" data-go="createBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c0-4 2.5-6 5-6s5 2 5 6M11 20c0-4 2.5-6 5-6s5 2 5 6"/></svg><b>多人合作</b><span>建房邀 3 位隊友</span></button>
+        <button class="mcard" type="button" data-mode="solo" data-go="soloBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-5 3-8 7-8s7 3 7 8"/></svg><b>單人遊玩</b><span>自己練習回收</span></button>
+        <button class="mcard" type="button" data-mode="hunt" data-go="huntBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><b>獵殺模式</b><span>拿槍獵殺怪物</span></button>
+        <button class="mcard" type="button" data-mode="td" data-go="tdBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V9l6-5 6 5v12z"/><path d="M10 21v-5h4v5M9 11h6"/></svg><b>塔防模式</b><span>守住回收車</span></button>
+        <button class="mcard" type="button" data-mode="br" data-go="brBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="3 2.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg><b>大逃殺</b><span>6 人混戰</span></button>
+      </div>
+      <div class="startBox">
+        <button class="mapChip" id="mapChip" type="button"><span>地圖</span><b id="mapName">廢棄設施</b></button>
+        <button class="startBtn" id="goBtn" type="button"><small id="startMode">多人合作</small><b>開始</b></button>
+      </div>
+      <div class="lbLinks"><button class="link" id="joinOpen" type="button">用房間代碼加入</button><button class="link" id="logoutBtn" type="button">登出（<span id="whoProv"></span>）</button></div>
+    </footer>
+    <div class="hide" id="modeHidden"><button id="createBtn" type="button" tabindex="-1">多人合作</button><button id="soloBtn" type="button" tabindex="-1">單人遊玩</button><button id="huntBtn" type="button" tabindex="-1">獵殺模式</button><button id="tdBtn" type="button" tabindex="-1">塔防模式</button><button id="brBtn" type="button" tabindex="-1">大逃殺</button></div>
+  </div>
+</div>
+
+<!-- 加入房間 -->
+<div class="modal hide" id="joinModal"><div class="panel small">
+  <b class="mTitle">用房間代碼加入</b>
+  <p class="note">向房主要 5 碼代碼。</p>
+  <div class="row join"><input id="codeInput" type="text" maxlength="5" placeholder="房間代碼" autocapitalize="characters" autocomplete="off"><button class="btn primary" id="joinBtn" type="button">加入</button></div>
+  <div class="col"><button class="btn" id="joinClose" type="button">取消</button></div>
+</div></div>
+<!-- 每日任務 -->
+<div class="modal hide" id="misModal"><div class="panel small">
+  <b class="mTitle">每日任務</b>
+  <div id="missions"></div>
+  <div class="col"><button class="btn" id="misClose" type="button">關閉</button></div>
+</div></div>
+<!-- 選地圖 -->
+<div class="screen hide" id="scrMap">
+  <div class="panel lobby">
+    <div class="topbar"><button class="icon" id="mapDone" type="button" aria-label="返回">‹</button><div class="who"><b class="ttl">選地圖</b></div></div>
+    <div class="mapGrid" id="mapGrid"></div>
+    <div class="col"><button class="btn primary" id="mapOk" type="button">確定</button></div>
   </div>
 </div>
 
@@ -205,10 +236,12 @@
       <button class="icon" id="gearDone" type="button" aria-label="返回">‹</button>
       <div class="who"><b class="ttl">裝備與寶石</b><div class="note">金幣 <b id="coinTag4">0</b>，已裝備 <b id="eqCount">0</b> / 2</div></div>
     </div>
-    <div class="sec">配件（點一下購買／裝備／卸下）</div>
-    <div id="accList"></div>
-    <div class="sec">寶石（用金幣升級，最高 5 級）</div>
-    <div id="gemList"></div>
+    <details class="fold" data-fold="g_acc"><summary><b>配件</b><em>點一下購買、裝備或卸下</em></summary>
+      <div id="accList"></div>
+    </details>
+    <details class="fold" data-fold="g_gem"><summary><b>寶石</b><em>用金幣升級，最高 5 級</em></summary>
+      <div id="gemList"></div>
+    </details>
   </div>
 </div>
 
@@ -221,7 +254,7 @@
       <button class="btn" id="tutAgain" type="button" style="flex:none;font-size:13px;padding:8px 10px">新手教學</button>
     </div>
     <div class="helpBody">
-      <div class="sec">設定</div>
+      <details class="fold" data-fold="h_set"><summary><b>設定</b><em>畫質、按鈕、音量</em></summary>
       <div class="col"><button class="btn hide" id="installBtn" type="button">安裝到主畫面（全螢幕、開得更快）</button></div>
       <label class="field">畫質<select id="setQ"><option value="high">高（1080p）</option><option value="mid">標準（720p，手機預設）</option><option value="low">省電（480p）</option></select></label>
       <label class="field">顯示 FPS（卡頓時回報用）<input id="setFps" type="checkbox"></label>
@@ -233,7 +266,8 @@
       <label class="field">音效音量<input id="setSfx" type="range" min="0" max="1" step="0.05"></label>
       <label class="field">背景音樂<input id="setMusic" type="range" min="0" max="1" step="0.05"></label>
       <label class="field">語音音量<input id="setVoice" type="range" min="0" max="1.5" step="0.05"></label>
-      <div class="sec">玩法說明</div>
+      </details>
+      <details class="fold" data-fold="h_help"><summary><b>玩法說明</b><em>選一個主題</em></summary>
       <div id="helpMenu">
         <button class="hrow" type="button" data-topic="goal"><span class="htxt"><b>目標與流程</b><small>撿廢料、賣錢、達成當天目標</small></span><span class="go">›</span></button>
         <button class="hrow" type="button" data-topic="ctrl"><span class="htxt"><b>操作方式</b><small>手機按鈕與電腦按鍵對照</small></span><span class="go">›</span></button>
@@ -245,6 +279,7 @@
         <button class="hrow" type="button" data-topic="grow"><span class="htxt"><b>星等與成長</b><small>星星、金幣、每日任務、頭飾</small></span><span class="go">›</span></button>
         <button class="hrow" type="button" data-topic="team"><span class="htxt"><b>語音與隊友</b><small>麥克風、聊天、互相傷害、沒聲音時</small></span><span class="go">›</span></button>
       </div>
+      </details>
     </div>
     <div id="helpTopic" class="hide">
       <section class="htopic hide" data-topic="goal"><h2>目標與流程</h2>
@@ -341,6 +376,7 @@
 <li>網路無法直連時會自動改走伺服器中繼（遊戲照常，但語音可能不通）。</li>
 <li><b>聽不到聲音</b>：檢查手機靜音鍵（iPhone 側邊）並調高媒體音量。</li>
 <li><b>連不上房間</b>：免費伺服器閒置會休眠，第一次連線會自動等它醒來（最多約 1 分鐘，可按取消）。如果提示「伺服器是舊版本」，到 Render 後台按 Manual Deploy。</li>
+<li><b>怎麼開始</b>：主選單下方先點一張模式卡片（多人合作、單人、獵殺、塔防、大逃殺），旁邊的「地圖」可以換地圖，再按大大的「開始」。朋友給你房間代碼時，按最下面「用房間代碼加入」。</li>
 <li><b>回收車光圈是安全區</b>：站在黃色光圈裡怪物打不到你，還會每秒回 15 血（光圈會變綠）。大逃殺沒有安全區。</li>
 <li><b>按鈕太多</b>：設定裡「手機上顯示的按鈕」取消勾選就能暫時隱藏（鍵盤快捷鍵照樣能用）。</li>
 <li><b>改名字</b>：主選單點自己的名字（旁邊有「改名」）直接輸入，按完成就會儲存。</li>
@@ -475,14 +511,14 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=43"></script>
-<script src="js/sim.js?v=43"></script>
-<script src="js/audio.js?v=43"></script>
-<script src="js/auth.js?v=43"></script>
-<script src="js/cloud.js?v=43"></script>
-<script src="js/net.js?v=43"></script>
-<script src="js/game.js?v=43"></script>
-<script src="js/minigames.js?v=43"></script>
-<script src="js/main.js?v=43"></script>
+<script src="js/config.js?v=45"></script>
+<script src="js/sim.js?v=45"></script>
+<script src="js/audio.js?v=45"></script>
+<script src="js/auth.js?v=45"></script>
+<script src="js/cloud.js?v=45"></script>
+<script src="js/net.js?v=45"></script>
+<script src="js/game.js?v=45"></script>
+<script src="js/minigames.js?v=45"></script>
+<script src="js/main.js?v=45"></script>
 </body>
 </html>
