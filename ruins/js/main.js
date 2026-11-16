@@ -24,7 +24,46 @@ function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 let showMapName = function () {};
 function show(id) { SCREENS.forEach(function (s) { $(s).classList.toggle('hide', s !== id); }); }
 function say(text) { $('msgText').textContent = text; $('msg').classList.remove('hide'); }
-function busy(on, text) { $('busyText').textContent = text || '請稍候…'; $('busy').classList.toggle('hide', !on); }
+function busy(on, text) { $('busyText').textContent = text || '請稍候…'; $('busy').classList.toggle('hide', !on); if (!on) $('busyCancel').classList.add('hide'); }
+// 配對伺服器（Render 免費方案閒置 15 分鐘會休眠，喚醒要 30～60 秒）：開遊戲就先叫醒，連線失敗時自動重試並判斷原因
+function peerBase() { const k = RR.CONFIG && RR.CONFIG.peer; if (!k || !k.host) return null; return (k.secure === false ? 'http://' : 'https://') + k.host + (k.port && k.port !== 443 && k.port !== 80 ? ':' + k.port : ''); }
+function serverCheck(cb) {
+  const b = peerBase(); if (!b || !window.fetch) { cb('unknown'); return; }
+  let done = false; const t = setTimeout(function () { if (!done) { done = true; cb('down'); } }, 8000);
+  fetch(b + '/relay-health', { cache: 'no-store' }).then(function (r) {
+    if (done) return; done = true; clearTimeout(t);
+    if (r.status === 404) { cb('old'); return; }
+    return r.json().then(function (j) { cb(j && j.ok ? 'ok' : 'old'); }, function () { cb('old'); });
+  }, function () { if (!done) { done = true; clearTimeout(t); cb('down'); } });
+}
+function wakeServer() { serverCheck(function () {}); }
+const NO_RETRY = { 'peer-unavailable': 1, 'full': 1, 'browser-incompatible': 1 };
+let netCancel = false;
+function connectRetry(label, attempt, ok) {
+  const t0 = Date.now(); netCancel = false;
+  const go = function () {
+    attempt(function (err, a, b) {
+      if (netCancel) return;
+      if (!err) { busy(false); ok(a, b); return; }
+      const waited = Math.round((Date.now() - t0) / 1000);
+      if (NO_RETRY[err.type] || waited > 75) {
+        serverCheck(function (st) {
+          busy(false);
+          if (NO_RETRY[err.type]) say(netErr(err));
+          else if (st === 'old') say('配對伺服器是舊版本，沒有「中繼」功能，所以手機之間常常連不上。請到 Render 後台的 nick-lixiang 服務按「Manual Deploy → Deploy latest commit」（分支 main），等 2～3 分鐘再試。');
+          else if (st === 'down') say('配對伺服器一直沒有回應（' + waited + ' 秒）。可能還在喚醒或暫時故障，請稍後再試；也可以先玩單人。');
+          else say(netErr(err));
+        });
+        return;
+      }
+      $('busyCancel').classList.remove('hide');
+      busy(true, label + ' 伺服器喚醒中…已等 ' + waited + ' 秒（免費伺服器閒置會休眠，最多約 1 分鐘）');
+      $('busyCancel').classList.remove('hide');
+      setTimeout(function () { if (!netCancel) go(); }, 2500);
+    });
+  };
+  busy(true, label); go();
+}
 function cleanName(n) { return String(n || '').replace(/\s+/g, ' ').trim().slice(0, 12) || '玩家'; }
 function myName() { const u = Auth.user(); return cleanName(u ? u.name : '玩家'); }
 /* ---------- 配件與寶石 ---------- */
@@ -351,11 +390,9 @@ function micNotice() {
   if (!Voice.hasMic()) chatAdd(null, '麥克風預設關閉。要講話請在遊戲中按右上角「麥克風」。');
 }
 async function createRoom() {
-  Sfx.unlock(); busy(true, '建立房間中…（第一次連線要先喚醒伺服器，最多約 40 秒）');
+  Sfx.unlock(); wakeServer();
   await Voice.init(false);   // 不主動要求麥克風（會打斷 Discord 等其他通話）；要講話再按遊戲裡的「麥克風」
-  Net.host(function (err) {
-    busy(false);
-    if (err) { say(netErr(err)); return; }
+  connectRetry('建立房間中…', function (cb) { Net.host(cb); }, function () {
     S.mode = 'host'; S.myId = Net.id(); S.sim = new W.Sim();
     S.sim.map = myMap();
     S.sim.addPlayer(S.myId, myName(), myLook());
@@ -369,13 +406,12 @@ async function createRoom() {
 async function joinRoom() {
   const code = Net.normalizeCode($('codeInput').value);
   if (code.length !== 5) { say('請輸入 5 碼房間代碼。'); return; }
-  Sfx.unlock(); busy(true, '加入房間中…（第一次連線要先喚醒伺服器，最多約 40 秒）');
+  Sfx.unlock(); wakeServer();
   await Voice.init(false);   // 不主動要求麥克風（會打斷 Discord 等其他通話）；要講話再按遊戲裡的「麥克風」
   const u = Auth.user();
   const look = myLook();
-  Net.join(code, { name: myName(), uid: u ? u.uid : '', c: look.c, w: look.w, h: look.h, o: look.o, pet: look.pet, eq: look.eq, gems: look.gems }, function (err, id) {
-    busy(false);
-    if (err) { say(netErr(err)); return; }
+  const meta = { name: myName(), uid: u ? u.uid : '', c: look.c, w: look.w, h: look.h, o: look.o, pet: look.pet, eq: look.eq, gems: look.gems };
+  connectRetry('加入房間中…', function (cb) { Net.join(code, meta, cb); }, function (id) {
     S.mode = 'client'; S.myId = id; S.lastHost = Date.now();
     Game.setMe(id); wireNet();
     enterRoom();
@@ -418,6 +454,7 @@ function showMenu() {
   if (!u) { show('scrLogin'); return; }
   $('whoProv').textContent = u.providerLabel + ' 登入';
   if (document.activeElement !== $('nick')) $('nick').value = u.name;
+  $('nickPen').classList.toggle('pulse', !ls('rr_named') && /^訪客/.test(u.name || ''));
   $('best').textContent = ls('rr_best') || '0';
   show('scrMenu');
   refreshPickSummary(); renderProg();
@@ -705,7 +742,16 @@ function bind() {
   if (!Auth.configured()) $('loginNote').textContent = '社群登入尚未設定金鑰（見 README），目前可用訪客登入。';
   $('guestBtn').addEventListener('click', function () { Sfx.unlock(); Auth.guest(); });
   $('logoutBtn').addEventListener('click', function () { Auth.signOut(); });
-  $('nick').addEventListener('change', function () { Auth.setNick($('nick').value); RR.Cloud.saveSoon(); });
+  $('nick').addEventListener('change', function () {
+    const v = $('nick').value.trim();
+    if (!v) { const u = Auth.user(); $('nick').value = u ? u.name : ''; return; }
+    Auth.setNick(v); RR.Cloud.saveSoon();
+    const pen = $('nickPen'); pen.textContent = '✓ 已儲存'; pen.classList.add('saved'); pen.classList.remove('pulse');
+    try { localStorage.setItem('rr_named', '1'); } catch (e) {}
+    setTimeout(function () { pen.textContent = '✎ 改名'; pen.classList.remove('saved'); }, 2000);
+  });
+  $('nick').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('nick').blur(); });
+
   $('soloBtn').addEventListener('click', function () { startSolo('coop'); });
   $('createBtn').addEventListener('click', createRoom);
   $('joinBtn').addEventListener('click', joinRoom);
@@ -898,6 +944,8 @@ function boot() {
   });
 }
 boot();
+wakeServer();
+$('busyCancel').addEventListener('click', function () { netCancel = true; Net.leave(); busy(false); });
 let installEv = null;
 window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEv = e; const b = document.getElementById('installBtn'); if (b) b.classList.remove('hide'); });
 window.addEventListener('appinstalled', function () { installEv = null; const b = document.getElementById('installBtn'); if (b) b.classList.add('hide'); });

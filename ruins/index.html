@@ -91,7 +91,7 @@
     <div class="topbar">
       <div class="avatar" id="avatar"></div>
       <div class="who">
-        <input id="nick" type="text" maxlength="12" aria-label="暱稱">
+        <label class="nickRow"><input id="nick" type="text" maxlength="12" aria-label="暱稱（點一下改名）" placeholder="輸入你的名字" enterkeyhint="done"><span class="pen" id="nickPen" aria-hidden="true">✎ 改名</span></label>
         <div class="note"><b id="lvTag">Lv.1</b> · 金幣 <b id="coinTag">0</b> · 最佳第 <span id="best">0</span> 天</div>
         <div id="xpBar"><i id="xpFill"></i></div>
       </div>
@@ -312,6 +312,8 @@
 <li>麥克風<b>預設關閉</b>，不會打斷 Discord 等其他通話；要講話再按遊戲右上角「開麥克風」。</li>
 <li>網路無法直連時會自動改走伺服器中繼（遊戲照常，但語音可能不通）。</li>
 <li><b>聽不到聲音</b>：檢查手機靜音鍵（iPhone 側邊）並調高媒體音量。</li>
+<li><b>連不上房間</b>：免費伺服器閒置會休眠，第一次連線會自動等它醒來（最多約 1 分鐘，可按取消）。如果提示「伺服器是舊版本」，到 Render 後台按 Manual Deploy。</li>
+<li><b>改名字</b>：主選單點自己的名字（旁邊有「✎ 改名」）直接輸入，按完成就會儲存。</li>
 <li><b>安裝成 App</b>：安卓 Chrome 在設定按「安裝到主畫面」；iPhone Safari 按分享 →「加入主畫面」。從主畫面開是全螢幕，第二次開會更快，沒網路也能打開（連線玩仍要網路）。</li>
 <li><b>畫面卡</b>：設定把畫質改「標準」或「省電」；太卡也會自動降畫質。可開「顯示 FPS」看每秒幾格，回報時附上。關掉其他 App、別開省電模式也有幫助。</li></ul>
       </section>
@@ -380,7 +382,7 @@
 
 <!-- 自訂手機按鈕位置 -->
 <div id="btnEdit" class="hide">
-  <div class="panel small"><b>拖曳按鈕到你順手的位置</b><p class="note">直式和橫式會分開記住。</p>
+  <div class="panel small"><b>按住按鈕拖曳到你順手的位置</b><p class="note">畫面左半邊是移動搖桿區（不用擺）。直式和橫式會分開記住，轉手機可以分別調整。</p>
     <div class="row"><button class="btn" id="btnEditReset" type="button">恢復預設</button><button class="btn primary" id="btnEditDone" type="button">完成</button></div></div>
 </div>
 
@@ -409,7 +411,7 @@
 <!-- 訊息／確認／忙碌 -->
 <div class="modal hide" id="msg"><div class="panel small"><p id="msgText"></p><button class="btn primary" id="msgOk" type="button">好</button></div></div>
 <div class="modal hide" id="confirm"><div class="panel small"><p>確定要離開這場遊戲嗎？</p><div class="row"><button class="btn" id="confirmNo" type="button">取消</button><button class="btn primary" id="confirmYes" type="button">離開</button></div></div></div>
-<div class="modal hide" id="busy"><div class="panel small"><p id="busyText">請稍候…</p></div></div>
+<div class="modal hide" id="busy"><div class="panel small"><p id="busyText">請稍候…</p><button class="btn hide" id="busyCancel" type="button">取消</button></div></div>
 
 <script src="vendor/three.min.js"></script>
 <script src="vendor/peerjs.min.js"></script>

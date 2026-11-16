@@ -447,3 +447,24 @@ body.touch .topbar, body.touch .hero, body.touch .stage, body.touch #missions, b
 #boot small { color: #9fb0d0; font-size: 13px; }
 #boot .spin { width: 34px; height: 34px; border-radius: 50%; border: 4px solid rgba(255,227,154,.2); border-top-color: #ffc24a; animation: bootSpin .8s linear infinite; }
 @keyframes bootSpin { to { transform: rotate(360deg); } }
+
+/* 名字欄：看得出可以點來改名 */
+.nickRow { display: flex; align-items: center; gap: 6px; cursor: text; }
+.nickRow input { flex: 1; min-width: 0; border-bottom: 1px dashed rgba(255,217,138,.45) !important; border-radius: 0 !important; }
+.nickRow .pen { flex: none; font-size: 12px; font-weight: 700; color: #1b1300; background: #ffc24a; border-radius: 999px; padding: 3px 8px; pointer-events: none; }
+.nickRow input:focus + .pen { display: none; }
+.nickRow .pen.saved { background: #6ee7a0; }
+.nickRow .pen.pulse { animation: penPulse 1.4s ease-in-out infinite; }
+@keyframes penPulse { 50% { transform: scale(1.12); box-shadow: 0 0 0 4px rgba(255,194,74,.25); } }
+
+/* 自訂按鈕：遊戲介面在主選單是隱藏的，編輯時只把按鈕叫出來，其他介面先藏起來 */
+body.btnedit #hud { display: block !important; }
+body.btnedit #hud > * { visibility: hidden; }
+body.btnedit #hud > #run, body.btnedit #hud > #atk, body.btnedit #hud > #gun, body.btnedit #hud > #tower, body.btnedit #hud > #bomb, body.btnedit #hud > #veh,
+body.btnedit #hud > #jump, body.btnedit #hud > #dash, body.btnedit #hud > #rescue, body.btnedit #hud > #smoke, body.btnedit #hud > #skill { visibility: visible; }
+body.btnedit #btnEdit { background: rgba(8,14,34,.9); }
+body.btnedit #btnEdit::after { content: '搖桿區'; position: fixed; left: 14px; bottom: 30%; color: rgba(255,255,255,.35); font-size: 15px; font-weight: 700; pointer-events: none; }
+#btnEdit .panel { margin: 0; }
+body.btnedit .screen { visibility: hidden; }
+body.btnedit #hud { z-index: 41; }
+body.btnedit #hud > button { background: rgba(58,92,182,.9) !important; color: #fff !important; opacity: 1 !important; }
