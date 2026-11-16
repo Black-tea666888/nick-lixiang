@@ -790,7 +790,7 @@ function fpsWatch(dt) {
     let el = document.getElementById('fpsBox');
     if (!el) { el = document.createElement('div'); el.id = 'fpsBox'; document.body.appendChild(el); }
     const c = renderer.domElement; el.style.display = active ? '' : 'none';
-    el.textContent = Math.round(fps) + ' FPS · ' + c.width + '×' + c.height;
+    el.textContent = Math.round(fps) + ' FPS  ' + c.width + '×' + c.height;
   } else { const el = document.getElementById('fpsBox'); if (el) el.style.display = 'none'; }
   if (!active || document.hidden) { slowN = 0; return; }
   slowN = fps < 28 ? slowN + 1 : 0;
