@@ -41,7 +41,7 @@
   <div id="spec" class="hide">觀戰中：<b id="specName"></b>（點畫面切換）</div>
   <div id="floats"></div>
   <div id="wx" class="hide"></div>
-  <div id="hideTag" class="hide">躲藏中 · 怪物看不到你</div>
+  <div id="hideTag" class="hide">躲藏中，怪物看不到你</div>
   <div id="warn">它發現你了</div>
   <div id="toast"></div>
   <div id="hp"><i id="hpBar"></i></div>
@@ -73,7 +73,7 @@
 <div class="screen" id="scrLogin">
   <div class="panel">
     <h1>廢墟回收隊</h1>
-    <div class="sub">1–4 人合作恐怖 · 近距離語音</div>
+    <div class="sub">1–4 人合作恐怖，近距離語音</div>
     <div class="col">
       <button class="btn prov" data-provider="google" type="button">使用 Google 登入</button>
       <button class="btn prov" data-provider="apple" type="button">使用 Apple 登入</button>
@@ -91,23 +91,23 @@
     <div class="topbar">
       <div class="avatar" id="avatar"></div>
       <div class="who">
-        <label class="nickRow"><input id="nick" type="text" maxlength="12" aria-label="暱稱（點一下改名）" placeholder="輸入你的名字" enterkeyhint="done"><span class="pen" id="nickPen" aria-hidden="true">✎ 改名</span></label>
-        <div class="note"><b id="lvTag">Lv.1</b> · 金幣 <b id="coinTag">0</b> · 最佳第 <span id="best">0</span> 天</div>
+        <label class="nickRow"><input id="nick" type="text" maxlength="12" aria-label="暱稱（點一下改名）" placeholder="輸入你的名字" enterkeyhint="done"><span class="pen" id="nickPen" aria-hidden="true">改名</span></label>
+        <div class="stats"><span>等級<b id="lvTag">Lv.1</b></span><span>金幣<b id="coinTag">0</b></span><span>最佳<b id="best">0</b>天</span></div>
         <div id="xpBar"><i id="xpFill"></i></div>
       </div>
-      <button class="icon" id="helpBtn" type="button" aria-label="設定與說明">⚙</button>
+      <button class="icon" id="helpBtn" type="button" aria-label="設定與說明">設定</button>
     </div>
     <h1 class="logo">廢墟回收隊</h1>
     <button class="hero" id="pickBtn" type="button"><span class="tag">出戰角色</span><b id="pickSum"></b><span class="go">更換 ›</span></button>
     <div class="modes">
       <button class="mode main" id="createBtn" type="button"><b>多人合作</b><span>建立房間，邀請最多 3 位隊友</span></button>
       <button class="mode" id="soloBtn" type="button"><b>單人遊玩</b><span>自己練習</span></button>
-      <button class="mode" id="miniInfoBtn" type="button"><b>小遊戲</b><span>圈圈叉叉 · 搶獎盃</span></button>
+      <button class="mode" id="miniInfoBtn" type="button"><b>小遊戲</b><span>圈圈叉叉、搶獎盃</span></button>
       <button class="mode td" id="tdBtn" type="button"><b>塔防模式</b><span>守住回收車：怪物一波波進攻，開槍並花錢蓋砲塔（單人；多人請在大廳切換模式）</span></button>
       <button class="mode br" id="brBtn" type="button"><b>大逃殺</b><span>6 人混戰（不足由電腦補滿），安全區會縮小，活到最後的人獲勝</span></button>
-      <button class="mode social" id="socialOpen" type="button"><b>社群</b><span>排行榜 · 區域賽季 · 好友 · 戰隊 · 成就（需要登入與網路）</span></button>
+      <button class="mode social" id="socialOpen" type="button"><b>社群</b><span>排行榜、區域賽季、好友、戰隊、成就（要登入和網路）</span></button>
       <button class="mode gear" id="gearOpen" type="button"><b>裝備與寶石</b><span>配件最多裝 2 個，對局中也能換；寶石可升級</span></button>
-      <button class="mode wheel" id="wheelOpen" type="button"><b>造型轉盤</b><span>用金幣抽服裝、寵物、造型與特效 · 每天免費一次</span></button>
+      <button class="mode wheel" id="wheelOpen" type="button"><b>造型轉盤</b><span>用金幣抽服裝、寵物、造型和特效，每天免費一次</span></button>
       <button class="mode hunt" id="huntBtn" type="button"><b>獵殺模式</b><span>新模式：拿槍反過來獵殺怪物，在時間內擊倒指定數量（單人；多人請在大廳切換模式）</span></button>
     </div>
     <div class="sec">每日任務</div>
@@ -179,7 +179,7 @@
   <div class="panel lobby">
     <div class="topbar">
       <button class="icon" id="gearDone" type="button" aria-label="返回">‹</button>
-      <div class="who"><b class="ttl">裝備與寶石</b><div class="note">金幣 <b id="coinTag4">0</b> · 已裝備 <b id="eqCount">0</b> / 2</div></div>
+      <div class="who"><b class="ttl">裝備與寶石</b><div class="note">金幣 <b id="coinTag4">0</b>，已裝備 <b id="eqCount">0</b> / 2</div></div>
     </div>
     <div class="sec">配件（點一下購買／裝備／卸下）</div>
     <div id="accList"></div>
@@ -198,7 +198,7 @@
     </div>
     <div class="helpBody">
       <div class="sec">設定</div>
-      <div class="col"><button class="btn hide" id="installBtn" type="button">📲 安裝到主畫面（全螢幕、開更快）</button></div>
+      <div class="col"><button class="btn hide" id="installBtn" type="button">安裝到主畫面（全螢幕、開得更快）</button></div>
       <label class="field">畫質<select id="setQ"><option value="high">高（1080p）</option><option value="mid">標準（720p，手機預設）</option><option value="low">省電（480p）</option></select></label>
       <label class="field">顯示 FPS（卡頓時回報用）<input id="setFps" type="checkbox"></label>
       <label class="field">手機按鈕大小<input id="setBtn" type="range" min="0.8" max="1.4" step="0.05"></label>
@@ -207,28 +207,28 @@
       <label class="field">音效音量<input id="setSfx" type="range" min="0" max="1" step="0.05"></label>
       <label class="field">背景音樂<input id="setMusic" type="range" min="0" max="1" step="0.05"></label>
       <label class="field">語音音量<input id="setVoice" type="range" min="0" max="1.5" step="0.05"></label>
-      <div class="sec">玩法說明 · 選一個主題</div>
+      <div class="sec">玩法說明</div>
       <div id="helpMenu">
-        <button class="hrow" type="button" data-topic="goal"><span class="hico">🎯</span><span class="htxt"><b>目標與流程</b><small>撿廢料、賣錢、達成當天目標</small></span><span class="go">›</span></button>
-        <button class="hrow" type="button" data-topic="ctrl"><span class="hico">🎮</span><span class="htxt"><b>操作方式</b><small>手機按鈕與電腦按鍵對照</small></span><span class="go">›</span></button>
-        <button class="hrow" type="button" data-topic="mon"><span class="hico">👾</span><span class="htxt"><b>怪物</b><small>四種怪物與牠怎麼發現你</small></span><span class="go">›</span></button>
-        <button class="hrow" type="button" data-topic="safe"><span class="hico">🛡</span><span class="htxt"><b>保命方法</b><small>技能、煙霧彈、櫃子、跳與衝、救隊友</small></span><span class="go">›</span></button>
-        <button class="hrow" type="button" data-topic="char"><span class="hico">🧑‍🚀</span><span class="htxt"><b>角色技能</b><small>六個角色的技能與特色</small></span><span class="go">›</span></button>
-        <button class="hrow" type="button" data-topic="map"><span class="hico">🗺</span><span class="htxt"><b>地圖與小地圖</b><small>7 張地圖、小地圖上的標記</small></span><span class="go">›</span></button>
-        <button class="hrow" type="button" data-topic="bonus"><span class="hico">🎲</span><span class="htxt"><b>加分與小遊戲</b><small>獎盃、圈圈叉叉、傳送陣</small></span><span class="go">›</span></button>
-        <button class="hrow" type="button" data-topic="grow"><span class="hico">⭐</span><span class="htxt"><b>星等與成長</b><small>星星、金幣、每日任務、頭飾</small></span><span class="go">›</span></button>
-        <button class="hrow" type="button" data-topic="team"><span class="hico">🔊</span><span class="htxt"><b>語音與隊友</b><small>麥克風、聊天、互相傷害、沒聲音時</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="goal"><span class="htxt"><b>目標與流程</b><small>撿廢料、賣錢、達成當天目標</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="ctrl"><span class="htxt"><b>操作方式</b><small>手機按鈕與電腦按鍵對照</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="mon"><span class="htxt"><b>怪物</b><small>四種怪物與牠怎麼發現你</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="safe"><span class="htxt"><b>保命方法</b><small>技能、煙霧彈、櫃子、跳與衝、救隊友</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="char"><span class="htxt"><b>角色技能</b><small>六個角色的技能與特色</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="map"><span class="htxt"><b>地圖與小地圖</b><small>7 張地圖、小地圖上的標記</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="bonus"><span class="htxt"><b>加分與小遊戲</b><small>獎盃、圈圈叉叉、傳送陣</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="grow"><span class="htxt"><b>星等與成長</b><small>星星、金幣、每日任務、頭飾</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="team"><span class="htxt"><b>語音與隊友</b><small>麥克風、聊天、互相傷害、沒聲音時</small></span><span class="go">›</span></button>
       </div>
     </div>
     <div id="helpTopic" class="hide">
-      <section class="htopic hide" data-topic="goal"><h2><span class="hico">🎯</span>目標與流程</h2>
+      <section class="htopic hide" data-topic="goal"><h2>目標與流程</h2>
 <ul><li>在時間內把廢料帶回<b>金色回收車</b>，賺到當天的目標金額就過關。</li>
 <li>走近發亮的廢料會自動撿起，背包最多 <b>3 件</b>；走回回收車自動賣出。</li>
 <li>畫面上方的箭頭指向回收車，左上的進度條是今天的進度。</li>
 <li>背包是空的時候走得比較快；背越多越慢。</li>
 <li>每過一天，目標更高、怪物更快；第 6 天起有 4 隻怪物。</li></ul>
       </section>
-      <section class="htopic hide" data-topic="ctrl"><h2><span class="hico">🎮</span>操作方式</h2>
+      <section class="htopic hide" data-topic="ctrl"><h2>操作方式</h2>
 <h3>手機</h3>
 <table><tr><td>移動</td><td>左半邊拖曳</td></tr><tr><td>轉視角</td><td>右半邊拖曳</td></tr>
 <tr><td>橫式</td><td>把手機轉橫就能橫著玩</td></tr>
@@ -241,7 +241,7 @@
 <tr><td><kbd>左鍵</kbd> / <kbd>F</kbd></td><td>揮武器</td></tr><tr><td><kbd>右鍵</kbd> / <kbd>X</kbd></td><td>開槍</td></tr><tr><td><kbd>T</kbd></td><td>塔防：蓋砲塔</td></tr><tr><td><kbd>B</kbd></td><td>炸藥：炸開面前的牆</td></tr><tr><td><kbd>E</kbd></td><td>按住救隊友、搶獎盃</td></tr>
 <tr><td><kbd>V</kbd></td><td>上／下推車</td></tr><tr><td><kbd>G</kbd></td><td>小遊戲</td></tr><tr><td><kbd>M</kbd> <kbd>Enter</kbd></td><td>麥克風、聊天</td></tr><tr><td><kbd>Esc</kbd></td><td>釋放滑鼠</td></tr></table>
       </section>
-      <section class="htopic hide" data-topic="mon"><h2><span class="hico">👾</span>怪物</h2>
+      <section class="htopic hide" data-topic="mon"><h2>怪物</h2>
 <table><tr><td><i class="dot" style="background:#ff5a2a"></i>火</td><td>追得比較快</td></tr>
 <tr><td><i class="dot" style="background:#5ad0ff"></i>冰</td><td>靠近牠你會變慢</td></tr>
 <tr><td><i class="dot" style="background:#8cff5a"></i>毒</td><td>走得慢，靠近會持續扣血（最低留 1）</td></tr>
@@ -251,7 +251,7 @@
 <li>心跳聲變快代表牠在附近；出現「發現你了！」就快跑。</li>
 <li>怪物靠近到 14 公尺內，小地圖才會出現牠的三角形。</li></ul>
       </section>
-      <section class="htopic hide" data-topic="safe"><h2><span class="hico">🛡</span>保命方法</h2>
+      <section class="htopic hide" data-topic="safe"><h2>保命方法</h2>
 <ul><li><b>槍</b>：回收模式每天 6 發，打中怪物讓牠暈 2.5 秒（打不死）。對準怪物、中間不能有牆。</li>
 <li><b>配件與寶石</b>：主選單「裝備與寶石」購買。配件最多同時裝 2 個，對局中按右上角「背包」可以換；寶石升級後永久有效。</li>
 <li><b>炸藥</b>：每天 2 顆。站在牆前按「炸」／B，面前 3.5 公尺內的那格牆會被炸開，變成新的路（最外圈炸不開）。附近的怪物會暈 2 秒，但牠之後也能走這條新路。隔天牆會恢復。</li>
@@ -263,7 +263,7 @@
 <li><b>技能</b>：每個角色不同，見「角色技能」。按鈕上的數字是冷卻秒數。</li>
 <li><b>救隊友</b>：隊友倒地時靠近按住「救」2 秒。</li></ul>
       </section>
-      <section class="htopic hide" data-topic="char"><h2><span class="hico">🧑‍🚀</span>角色技能</h2>
+      <section class="htopic hide" data-topic="char"><h2>角色技能</h2>
 <table><tr><td>回收員</td><td><b>鼓舞</b>　6 公尺內隊友加速 5 秒</td></tr>
 <tr><td>機器人</td><td><b>護盾</b>　4 秒內不會被抓；攻擊力高</td></tr>
 <tr><td>太空人</td><td><b>月光波</b>　7 公尺內怪物暫停 3 秒；速度 +5%</td></tr>
@@ -274,7 +274,7 @@
 <tr><td>外星人</td><td><b>瞬移</b>　往前瞬間移動 6 公尺；體力回復 +15%</td></tr></table>
 <ul><li>在主選單點「出戰角色」更換角色、攻擊物、頭飾、服裝和寵物。</li></ul>
       </section>
-      <section class="htopic hide" data-topic="map"><h2><span class="hico">🗺</span>地圖與小地圖</h2>
+      <section class="htopic hide" data-topic="map"><h2>地圖與小地圖</h2>
 <ul><li><b>室內</b>：廢棄設施、大倉庫、地下水道、辦公室。</li>
 <li><b>開放場景</b>：海邊、城市、太空站，有天空和陽光。</li>
 <li>在「出戰角色」選地圖；房主也能在大廳切換。</li></ul>
@@ -282,7 +282,7 @@
 <table><tr><td>白色箭頭</td><td>你的位置與方向</td></tr><tr><td>彩色圓點</td><td>隊友</td></tr>
 <tr><td>金色方塊</td><td>回收車</td></tr><tr><td>藍色方塊</td><td>櫃子（躲藏點）</td></tr><tr><td>彩色三角</td><td>靠近的怪物（閃白圈代表正在追人）</td></tr></table>
       </section>
-      <section class="htopic hide" data-topic="bonus"><h2><span class="hico">🎲</span>加分與小遊戲</h2>
+      <section class="htopic hide" data-topic="bonus"><h2>加分與小遊戲</h2>
 <ul><li><b>獵殺模式</b>：沒有廢料，改成用槍獵殺怪物。3 槍擊倒一隻得 $50，彈匣 12 發打完自動裝填；怪物 3 秒後在遠處重生。在時間內擊倒指定數量就過關，小地圖會顯示所有怪物。</li>
 <li><b>塔防模式</b>：怪物從遠處一波波走向回收車，每闖入一隻核心 -15，核心歸零就輸。開槍打怪（每隻 $50），按「塔」／T 花 $100 在腳邊蓋砲塔（最多 6 座，會自動射擊 11 公尺內的怪物）。清完整波就過關。這個模式怪物不會抓人。</li>
 <li><b>大逃殺</b>：6 人各自為戰（人數不足由電腦補滿），用槍或近戰淘汰對手。白色圓圈是安全區，20 秒後開始縮小，圈外會持續扣血。補給箱：綠色 急救 +40、藍色 護甲（生命上限 150）、紅色 火力（傷害 ×1.5）。小地圖不顯示對手。多人由房主在大廳切換模式。</li>
@@ -293,7 +293,7 @@
 <li><b>圈圈叉叉</b>：遊戲中按「小遊戲」。前兩位落子的人是 X 與 O，連成一線團隊 +150。</li>
 <li><b>傳送陣</b>：背包滿 3 件後附近會出現，踩上去直接傳回回收車。</li></ul>
       </section>
-      <section class="htopic hide" data-topic="grow"><h2><span class="hico">⭐</span>星等與成長</h2>
+      <section class="htopic hide" data-topic="grow"><h2>星等與成長</h2>
 <ul><li>過關給 <b>1～3 顆星</b>：超過目標 30%、剩 60 秒以上各加一顆。</li>
 <li><b>雲端存檔</b>：用 Google 登入後，金幣、等級、造型會存到雲端，換手機也拿得回來。訪客的進度只跟著這台裝置。</li>
 <li><b>每日登入</b>：每天第一次進主選單送金幣，連續登入越多天送越多。</li>
@@ -305,7 +305,7 @@
 <li><b>寵物加成</b>：小狗 速度 +5%、貓頭鷹 怪物在小地圖顯示的距離 14→22 公尺、小機器人 賣出 +10%、史萊姆 體力回復 +20%。</li>
 <li>進度只存在這台裝置上。</li></ul>
       </section>
-      <section class="htopic hide" data-topic="team"><h2><span class="hico">🔊</span>語音與隊友</h2>
+      <section class="htopic hide" data-topic="team"><h2>語音與隊友</h2>
 <ul><li>隊友語音音量固定，不會因為距離變小聲。</li>
 <li>麥克風太大聲會引來怪物，按鈕會變紅提醒。</li>
 <li>打隊友兩下會把他打倒，身上的廢料掉在原地；房主可在大廳關閉。</li>
@@ -313,7 +313,7 @@
 <li>網路無法直連時會自動改走伺服器中繼（遊戲照常，但語音可能不通）。</li>
 <li><b>聽不到聲音</b>：檢查手機靜音鍵（iPhone 側邊）並調高媒體音量。</li>
 <li><b>連不上房間</b>：免費伺服器閒置會休眠，第一次連線會自動等它醒來（最多約 1 分鐘，可按取消）。如果提示「伺服器是舊版本」，到 Render 後台按 Manual Deploy。</li>
-<li><b>改名字</b>：主選單點自己的名字（旁邊有「✎ 改名」）直接輸入，按完成就會儲存。</li>
+<li><b>改名字</b>：主選單點自己的名字（旁邊有「改名」）直接輸入，按完成就會儲存。</li>
 <li><b>安裝成 App</b>：安卓 Chrome 在設定按「安裝到主畫面」；iPhone Safari 按分享 →「加入主畫面」。從主畫面開是全螢幕，第二次開會更快，沒網路也能打開（連線玩仍要網路）。</li>
 <li><b>畫面卡</b>：設定把畫質改「標準」或「省電」；太卡也會自動降畫質。可開「顯示 FPS」看每秒幾格，回報時附上。關掉其他 App、別開省電模式也有幫助。</li></ul>
       </section>

@@ -195,13 +195,13 @@ function progSave(p) { lsSet('rr_prog', JSON.stringify(p)); if (RR.Cloud) RR.Clo
 function levelOf(xp) { return 1 + Math.floor(Math.sqrt(xp / 60)); }
 function renderProg() {
   const p = prog(), lv = levelOf(p.xp), lo = 60 * (lv - 1) * (lv - 1), hi = 60 * lv * lv;
-  $('lvTag').textContent = 'Lv.' + lv; $('coinTag').textContent = p.coins; $('coinTag2').textContent = p.coins;
+  $('lvTag').textContent = lv; $('coinTag').textContent = p.coins; $('coinTag2').textContent = p.coins;
   $('xpFill').style.width = Math.min(100, (p.xp - lo) / (hi - lo) * 100) + '%';
   const box = $('missions'); box.textContent = '';
   MISSIONS.forEach(function (m, i) {
     const row = document.createElement('div'); if (p.done[i]) row.className = 'ok';
     const t = document.createElement('span'); t.textContent = (p.done[i] ? '✓ ' : '') + m[0];
-    const s = document.createElement('small'); s.textContent = p.done[i] ? '已領 +' + m[2] : Math.min(p.m[i], m[1]) + ' / ' + m[1] + ' · 金幣 +' + m[2];
+    const s = document.createElement('small'); s.textContent = p.done[i] ? '已領 +' + m[2] : Math.min(p.m[i], m[1]) + ' / ' + m[1] + '，金幣 +' + m[2];
     row.appendChild(t); row.appendChild(s); box.appendChild(row);
   });
 }
@@ -215,7 +215,7 @@ function progOnResult(e, stars) {
   let bonus = 0;
   MISSIONS.forEach(function (m, i) { if (!p.done[i] && p.m[i] >= m[1]) { p.done[i] = true; p.coins += m[2]; bonus += m[2]; } });
   progSave(p);
-  return '金幣 +' + coins + ' · 經驗 +' + xp + (bonus ? ' · 每日任務完成 +' + bonus : '');
+  return '金幣 +' + coins + '，經驗 +' + xp + (bonus ? '，每日任務完成 +' + bonus : '');
 }
 function myMap() { const m = parseInt(ls('rr_map') || '0', 10) || 0; return m >= 0 && m < W.MAPS.length ? m : 0; }
 function rosterEntry(id) { for (let i = 0; i < S.roster.length; i++) if (S.roster[i].id === id) return S.roster[i]; return null; }
@@ -446,7 +446,7 @@ function leave() {
 /* ---------- 畫面 ---------- */
 function refreshPickSummary() {
   const ci = (+ls('rr_c') || 0) % W.CHARS.length, c = W.CHARS[ci], w = W.WEAPONS[((+ls('rr_w') || 0) % W.WEAPONS.length)], m = W.MAPS[myMap()];
-  $('pickSum').textContent = c + ' · ' + w + ' · ' + (m ? m.name : '');
+  $('pickSum').textContent = c + '、' + w + '、' + (m ? m.name : '');
   $('avatar').textContent = c.charAt(0);
 }
 function showMenu() {
@@ -542,7 +542,7 @@ function afterMatch(mode, win, day, myStat, coins) {
     else if (t[mode] > 0) RR.Cloud.submit(mode, t[mode]);
     RR.Cloud.clanAdd(coins);
   }
-  return got.length ? ' · 成就：' + got.join('、') : '';
+  return got.length ? '，成就：' + got.join('、') : '';
 }
 function dailyLogin() {
   const p = prog(), td = dayStr(0);
@@ -579,7 +579,7 @@ function renderSocial() {
     socNote('已完成 ' + p.ach.length + ' / ' + ACH.length);
     ACH.forEach(function (a) {
       const ok = p.ach.indexOf(a[0]) >= 0, row = mk('div', 'srow' + (ok ? ' done' : ''));
-      row.appendChild(mk('span', 'rk', ok ? '✓' : '·'));
+      row.appendChild(mk('span', 'rk', ok ? '✓' : ''));
       const nm = mk('span', 'nm', a[1]); nm.appendChild(mk('small', null, '　' + a[2])); row.appendChild(nm);
       row.appendChild(mk('span', 'sc', '+' + a[4])); b.appendChild(row);
     });
@@ -624,7 +624,7 @@ function renderSocial() {
       if (!rows.length) { socNote('還沒有好友。把上面的代碼傳給朋友，或輸入他的代碼。'); return; }
       rows.forEach(function (f) {
         const r = mk('div', 'srow'); r.appendChild(mk('span', f.online ? 'dotOn' : 'dotOff'));
-        const nm = mk('span', 'nm', f.name); nm.appendChild(mk('small', null, '　Lv.' + f.lv + (f.clan ? ' [' + f.clan + ']' : '') + (f.online ? (f.room ? ' · 在房間 ' + f.room : ' · 線上') : ' · 離線'))); r.appendChild(nm);
+        const nm = mk('span', 'nm', f.name); nm.appendChild(mk('small', null, '　Lv.' + f.lv + (f.clan ? ' [' + f.clan + ']' : '') + (f.online ? (f.room ? '，在房間 ' + f.room : '，線上') : '，離線'))); r.appendChild(nm);
         if (f.online && f.room) { const j = mk('button', 'btn primary', '加入'); j.type = 'button'; j.addEventListener('click', function () { $('scrSocial').classList.add('hide'); $('codeInput').value = f.room; joinRoom(); }); r.appendChild(j); }
         const del = mk('button', 'btn', '刪除'); del.type = 'button'; del.addEventListener('click', function () { C.removeFriend(f.uid, function () { renderSocial(); }); }); r.appendChild(del);
         b.appendChild(r);
@@ -648,7 +648,7 @@ function renderSocial() {
         });
         r2.appendChild(nm); r2.appendChild(cb); b.appendChild(r2);
       } else {
-        b.appendChild(mk('p', 'note', '戰隊「' + info.clan.name + '」· 積分 ' + (info.clan.score | 0) + ' · ' + info.members.length + ' / 30 人 · 代碼'));
+        b.appendChild(mk('p', 'note', '戰隊「' + info.clan.name + '」，積分 ' + (info.clan.score | 0) + '，' + info.members.length + ' / 30 人，代碼'));
         b.appendChild(mk('div', 'bigcode', info.clan.tag));
         socRows(info.members, function (v) { return v + ' 分'; });
         const lv = mk('button', 'btn', '退出戰隊'); lv.type = 'button'; lv.addEventListener('click', function () { C.leaveClan(function (err) { if (err) say(C.message(err)); renderSocial(); }); }); b.appendChild(lv);
@@ -666,12 +666,12 @@ function showResultBR(e) {
   const host = S.mode === 'host', solo = S.mode === 'solo';
   const mine = (e.stats || []).filter(function (p) { return p.id === S.myId; })[0] || { rank: e.stats ? e.stats.length : 1, kills: 0 };
   const win = mine.rank === 1, n = e.stats ? e.stats.length : 1;
-  $('resTitle').textContent = win ? '第 1 名！你活到最後' : '第 ' + mine.rank + ' 名'; $('resTitle').style.color = win ? '' : '#ffd98a';
+  $('resTitle').textContent = win ? '第 1 名！你活到最後' : '第 ' + mine.rank + ' 名'; $('resTitle').style.color = '';
   const stars = win ? 3 : mine.rank <= 3 ? 2 : 1, sb = $('resStars'); sb.textContent = '';
   for (let k = 0; k < 3; k++) { const x = document.createElement(k < stars ? 'span' : 'i'); x.textContent = '★'; sb.appendChild(x); }
   $('resText').textContent = '共 ' + n + ' 人，你淘汰了 ' + (mine.kills || 0) + ' 人。';
   const p = prog(), coins = 15 + (mine.kills || 0) * 15 + (win ? 60 : mine.rank <= 3 ? 20 : 0); p.coins += coins; p.xp += coins + 10; if (win) p.m[0] += 1; progSave(p);
-  $('resGain').textContent = '金幣 +' + coins + ' · 經驗 +' + (coins + 10) + afterMatch('br', win, 1, null, coins);
+  $('resGain').textContent = '金幣 +' + coins + '，經驗 +' + (coins + 10) + afterMatch('br', win, 1, null, coins);
   const st = $('resStats'); st.textContent = '';
   (e.stats || []).slice().sort(function (a, b) { return a.rank - b.rank; }).forEach(function (q) {
     const row = document.createElement('div'); row.className = 'prow' + (q.rank === 1 ? '' : ' dead');
@@ -689,7 +689,7 @@ function showResult(e) {
   const host = S.mode === 'host', solo = S.mode === 'solo';
   if (e.win) { const best = parseInt(ls('rr_best') || '0', 10); if (e.day > best) lsSet('rr_best', String(e.day)); }
   $('resTitle').textContent = e.win ? '第 ' + e.day + ' 天完成！' : '任務失敗';
-  $('resTitle').style.color = e.win ? '' : '#ff4a3d';
+  $('resTitle').style.color = e.win ? '' : '#b8432b';
   // 星等：過關 1 顆，超過目標 30% 或剩 60 秒以上各再加 1 顆
   const stars = e.win ? 1 + (e.money >= e.quota * 1.3 ? 1 : 0) + (e.time >= 60 ? 1 : 0) : 0;
   const sb = $('resStars'); sb.textContent = '';
@@ -715,7 +715,7 @@ function showResult(e) {
     const row = document.createElement('div'); row.className = 'prow' + (p.alive ? '' : ' dead');
     const dot = document.createElement('i'); dot.style.background = CSSCOL[p.slot % 4];
     const nm = document.createElement('span'); nm.textContent = p.name;
-    const sm = document.createElement('small'); sm.textContent = hunt ? '擊倒怪物 ' + (p.mk || 0) + ' 隻' : '賣出 $' + p.earned + ' · 擊殺 ' + p.kills;
+    const sm = document.createElement('small'); sm.textContent = hunt ? '擊倒怪物 ' + (p.mk || 0) + ' 隻' : '賣出 $' + p.earned + '，擊殺 ' + p.kills;
     row.appendChild(dot); row.appendChild(nm);
     if (top && top.id === p.id) { const mv = document.createElement('span'); mv.className = 'mvp'; mv.textContent = 'MVP'; row.appendChild(mv); }
     row.appendChild(sm); st.appendChild(row);
@@ -746,9 +746,9 @@ function bind() {
     const v = $('nick').value.trim();
     if (!v) { const u = Auth.user(); $('nick').value = u ? u.name : ''; return; }
     Auth.setNick(v); RR.Cloud.saveSoon();
-    const pen = $('nickPen'); pen.textContent = '✓ 已儲存'; pen.classList.add('saved'); pen.classList.remove('pulse');
+    const pen = $('nickPen'); pen.textContent = '已儲存'; pen.classList.add('saved'); pen.classList.remove('pulse');
     try { localStorage.setItem('rr_named', '1'); } catch (e) {}
-    setTimeout(function () { pen.textContent = '✎ 改名'; pen.classList.remove('saved'); }, 2000);
+    setTimeout(function () { pen.textContent = '改名'; pen.classList.remove('saved'); }, 2000);
   });
   $('nick').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('nick').blur(); });
 
