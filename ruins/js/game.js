@@ -125,16 +125,8 @@ function showSmoke() {
   Sfx.noise(0.3, 0.12);
 }
 // 字幕（畫面中央下方，約 2 秒後淡出）
-let subEl = null, subHide = 0;
-function showSub(text) {
-  if (!subEl) {
-    subEl = document.createElement('div');
-    subEl.style.cssText = 'position:fixed;left:50%;bottom:22%;transform:translateX(-50%);color:#ff6b5e;font:700 22px/1.2 sans-serif;letter-spacing:.08em;text-shadow:0 0 8px #000;pointer-events:none;transition:opacity .4s;opacity:0;z-index:20;white-space:nowrap';
-    document.body.appendChild(subEl);
-  }
-  subEl.textContent = text; subEl.style.opacity = '1';
-  clearTimeout(subHide); subHide = setTimeout(function () { subEl.style.opacity = '0'; }, 2000);
-}
+// 字幕改用提示訊息條（紅色）
+function showSub(text) { toast(text, 'warn'); }
 const keys = {};
 let smQ = false, skQ = false, smokeT = null, padMesh = null, ttQ = null, trophyMesh = null, boardMesh = null;   // Q 丟煙霧彈（按一下送一次）
 const touch = { joyId: null, lookId: null, ox: 0, oy: 0, jx: 0, jy: 0, lx: 0, ly: 0, run: false };
@@ -157,7 +149,16 @@ function floatText(text, bad) {
 }
 let shakeT = 0, jumpQ = false, dashQ = false, dashT = 0, dashCd = 0, dashDir = [0, 0];
 me.y = 0; me.vy = 0;
-function toast(msg) { const el = $('toast'); el.textContent = msg; el.style.opacity = 1; toastT = 2.4; }
+// 提示訊息條：深色底板＋左側色條（warn 紅、good 綠、info 黃），時間依字數調整
+const WARN_RE = /用完|不夠|冷卻|不能|沒子彈|滿了|扣血|被抓|殺了|你被|危險|小心|闖進|發現你|地震|失敗|中斷/;
+const GOOD_RE = /獲得|撿到|加血|救起|成功|蓋好|命中|已傳回|掙脫|護盾|隱身|開啟了|完成/;
+function toast(msg, kind) {
+  const el = $('toast');
+  kind = kind || (WARN_RE.test(msg) ? 'warn' : GOOD_RE.test(msg) ? 'good' : 'info');
+  el.textContent = msg; el.className = 'k-' + kind;
+  void el.offsetWidth; el.classList.add('show');
+  toastT = Math.min(4.2, 1.8 + msg.length * 0.07);
+}
 let editing = false;
 function canControl() { return active && view.phase === 'play' && me.alive && !editing; }
 function nameOf(id) { const p = view.players.get(id); return p ? p.name : '隊友'; }
@@ -1227,7 +1228,7 @@ function frame(nowMs) {
   }
   voiceSpatial(playing, lastL);
   hudT -= dt; if (hudT <= 0) { hudT = 0.15; tickHud(); }
-  if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').style.opacity = 0; }
+  if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('show'); }
   if (pv && pv.model && pv.canvas.offsetParent) { pv.model.rotation.y = now * 0.9; pv.r.render(pv.sc, pv.cam); }
   renderer.render(scene, camera);
 }
