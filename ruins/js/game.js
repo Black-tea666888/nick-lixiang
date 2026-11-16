@@ -197,6 +197,37 @@ function makeTex(base, speck, lines) {
 }
 
 let maxAniso = 1;
+let wallsMesh = null, wallIdx = {}, brokenVis = {};
+// 牆被炸開：藏起那一格牆（和它上面的布景）、噴碎塊、重畫小地圖
+function showBreak(c, r, quiet) {
+  const key = r * W.COLS + c;
+  if (brokenVis[key]) return;
+  brokenVis[key] = true;
+  W.breakWall(c, r);   // 房主／單人已經炸過了，這裡只對其他玩家的地圖生效
+  if (wallsMesh && wallIdx[key] != null) { wallsMesh.setMatrixAt(wallIdx[key], new THREE.Matrix4().makeScale(0, 0, 0)); wallsMesh.instanceMatrix.needsUpdate = true; }
+  if (level) level.children.filter(function (o) { return o.userData && o.userData.cell === key; }).forEach(function (o) { level.remove(o); });
+  // 缺口旁貼牆的木箱、鐵桶一起炸掉（不然會擋住新開的路）
+  const bx = c * CS + CS / 2, bz = r * CS + CS / 2, near = function (x, z) { return Math.abs(x - bx) < CS / 2 + 0.9 && Math.abs(z - bz) < CS / 2 + 0.9; };
+  solids = solids.filter(function (q) { return q[2] >= 0.5 || !near(q[0], q[1]); });   // 櫃子（半徑 0.5）留著
+  if (level) level.children.filter(function (o) { const t = o.isMesh && !o.isInstancedMesh && o.geometry && o.geometry.type; return (t === 'BoxGeometry' || t === 'CylinderGeometry') && o.position.y < 1.6 && near(o.position.x, o.position.z); }).forEach(function (o) { level.remove(o); });
+  buildMini();
+  if (quiet) return;
+  const cx = bx, cz = bz, bits = [], col = new THREE.Color(W.theme.wall);
+  for (let i = 0; i < 16; i++) {
+    const s = 0.18 + Math.random() * 0.4, m = part(new THREE.BoxGeometry(s, s, s), new THREE.MeshLambertMaterial({ color: col }), cx + (Math.random() - 0.5) * CS * 0.8, 0.4 + Math.random() * 2, cz + (Math.random() - 0.5) * CS * 0.8);
+    m.userData.v = [(Math.random() - 0.5) * 7, 2 + Math.random() * 5, (Math.random() - 0.5) * 7]; scene.add(m); bits.push(m);
+  }
+  showCloud(cx, cz);
+  const t0 = Date.now(); let last = t0;
+  const id = setInterval(function () {
+    const now = Date.now(), dt = Math.min(0.05, (now - last) / 1000); last = now;
+    bits.forEach(function (m) { const v = m.userData.v; v[1] -= 16 * dt; m.position.x += v[0] * dt; m.position.z += v[2] * dt; m.position.y = Math.max(m.geometry.parameters.height / 2, m.position.y + v[1] * dt); if (m.position.y <= m.geometry.parameters.height / 2 + 0.001) { v[0] *= 0.8; v[2] *= 0.8; } m.rotation.x += v[0] * dt; m.rotation.z += v[2] * dt; });
+    if (now - t0 > 2600) { clearInterval(id); bits.forEach(function (m) { scene.remove(m); m.geometry.dispose(); m.material.dispose(); }); }
+  }, 30);
+  const d = Math.hypot(cx - me.x, cz - me.z);
+  Sfx.noise(0.7, Math.max(0.06, 0.45 - d * 0.012)); Sfx.tone(90, 0.5, 'sawtooth', Math.max(0.04, 0.3 - d * 0.008), 30);
+  if (d < 14) shakeT = Math.max(shakeT, 0.5 - d * 0.03);
+}
 let solids = [];   // 擺設的碰撞圓（櫃子、木箱、鐵桶）：[x, z, 半徑]
 function hitSolid(x, z) { for (let i = 0; i < solids.length; i++) { const q = solids[i]; if (Math.hypot(q[0] - x, q[1] - z) < q[2] + 0.34) return true; } return false; }
 let level = null, builtMap = -1, ambient = null, hemi = null, sun = null, torchBase = 2.2;
@@ -259,7 +290,7 @@ function buildLevel() {
     scene.remove(level);
     level.traverse(function (o) { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
   }
-  level = new THREE.Group(); builtMap = W.mapIndex; solids = [];
+  level = new THREE.Group(); builtMap = W.mapIndex; solids = []; wallIdx = {}; brokenVis = {};
   const COLS = W.COLS, ROWS = W.ROWS, MAP = W.MAP, T = W.theme, VAN = W.VAN;
   // 光線：室內也調亮；開放場景（海邊、城市、太空站）沒有天花板，有天空與陽光
   const open = !!T.open, br = T.bright || 1.5, skyC = open ? T.sky : 0x0a0f0d;
@@ -293,9 +324,10 @@ function buildLevel() {
     else if (style === 'beach') hgt = edge ? 1.5 : 1.9 + hr() * 0.9;
     else if (style === 'space') hgt = edge ? 1.4 : 3;
     v3.set(c * CS + CS / 2, hgt / 2, r * CS + CS / 2); sc3.set(1, hgt, 1); m4.compose(v3, q4, sc3); walls.setMatrixAt(i++, m4);
-    if (!edge) tops.push([c * CS + CS / 2, hgt, r * CS + CS / 2]);
+    wallIdx[r * COLS + c] = i - 1;
+    if (!edge) tops.push([c * CS + CS / 2, hgt, r * CS + CS / 2, r * COLS + c]);
   }
-  walls.instanceMatrix.needsUpdate = true; level.add(walls);
+  walls.instanceMatrix.needsUpdate = true; level.add(walls); wallsMesh = walls;
   // 開放場景的布景
   if (style === 'beach') {
     const sea = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.MeshPhongMaterial({ color: 0x2a9fd6, emissive: 0x0a3a5a, shininess: 90 }));
@@ -305,7 +337,7 @@ function buildLevel() {
       if (k % 2) return;
       const pg = new THREE.Group(), tr = part(new THREE.CylinderGeometry(0.12, 0.2, 3.2, 7), trunkM, 0, 1.6, 0); tr.rotation.z = 0.12; pg.add(tr);
       for (let j = 0; j < 6; j++) { const lf = part(new THREE.ConeGeometry(0.35, 2.1, 4), leafM, Math.cos(j * 1.047) * 0.85 + 0.2, 3.25, Math.sin(j * 1.047) * 0.85); lf.rotation.z = Math.PI / 2 - 0.5; lf.rotation.y = -j * 1.047; lf.scale.z = 0.25; pg.add(lf); }
-      pg.position.set(t[0], t[1] - 0.1, t[2]); level.add(pg);
+      pg.position.set(t[0], t[1] - 0.1, t[2]); pg.userData.cell = t[3]; level.add(pg);
     });
     const sunDisc = part(new THREE.SphereGeometry(9, 16, 12), new THREE.MeshBasicMaterial({ color: 0xfff6c0, fog: false }), Wd / 2 + 120, 90, D / 2 - 160); level.add(sunDisc);
   } else if (style === 'city') {
@@ -322,7 +354,7 @@ function buildLevel() {
     const planet = part(new THREE.SphereGeometry(46, 28, 20), new THREE.MeshPhongMaterial({ color: 0x3a78c8, emissive: 0x0f2a55, shininess: 12, fog: false }), Wd / 2 - 90, 70, D / 2 - 190); level.add(planet);
     level.add(part(new THREE.SphereGeometry(8, 16, 12), new THREE.MeshBasicMaterial({ color: 0xd9d9d0, fog: false }), Wd / 2 + 150, 110, D / 2 + 60));
     const glowM = new THREE.MeshBasicMaterial({ color: 0x6ad8ff });
-    tops.forEach(function (t) { level.add(part(new THREE.BoxGeometry(CS * 0.9, 0.06, 0.12), glowM, t[0], t[1] + 0.03, t[2])); });
+    tops.forEach(function (t) { const gl = part(new THREE.BoxGeometry(CS * 0.9, 0.06, 0.12), glowM, t[0], t[1] + 0.03, t[2]); gl.userData.cell = t[3]; level.add(gl); });
   }
   // 回收車
   const ring = new THREE.Mesh(new THREE.RingGeometry(1.5, 1.85, 40), new THREE.MeshBasicMaterial({ color: 0xffc24a, side: THREE.DoubleSide }));
@@ -752,7 +784,7 @@ function fpsWatch(dt) {
   }
 }
 /* ---------- 手機按鈕：位置與大小可自訂（直式、橫式各存一份） ---------- */
-const BTN = { tower: [244, 296, 58], veh: [244, 218, 58], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
+const BTN = { bomb: [154, 314, 58], tower: [244, 296, 58], veh: [244, 218, 58], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
 let btnScale = 1, dragBtn = null;
 function layoutKey() { return 'rr_layout_' + (window.innerWidth > window.innerHeight ? 'l' : 'p'); }
 function loadLayout() { try { return JSON.parse(localStorage.getItem(layoutKey()) || 'null') || {}; } catch (e) { return {}; } }
@@ -843,6 +875,7 @@ function bindInput() {
     if (e.code === 'Space') { if (canControl()) { e.preventDefault(); if (!e.repeat) jumpQ = true; } }
     if (e.code === 'KeyC' && !e.repeat && canControl()) dashQ = true;
     if (e.code === 'KeyX' && canControl()) shoot();
+    if (e.code === 'KeyB' && !e.repeat && canControl() && RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100);
     if (e.code === 'KeyT' && !e.repeat && canControl() && view.mode === 'td' && RR.Game.onTower) RR.Game.onTower();
     if (e.code === 'KeyV' && !e.repeat && canControl()) vhQ = true;
   });
@@ -909,7 +942,7 @@ function bindInput() {
   runBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   $('micBtn').addEventListener('click', function () { RR.Game.toggleMic(); });
   $('mini').addEventListener('click', function () { $('mini').classList.toggle('big'); });
-  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', shoot], ['veh', function () { vhQ = true; }], ['tower', function () { if (view.mode === 'td' && RR.Game.onTower) RR.Game.onTower(); }]].forEach(function (q) {
+  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', shoot], ['bomb', function () { if (RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100); }], ['veh', function () { vhQ = true; }], ['tower', function () { if (view.mode === 'td' && RR.Game.onTower) RR.Game.onTower(); }]].forEach(function (q) {
     const b = $(q[0]);
     b.addEventListener('touchstart', function (e) { e.preventDefault(); if (canControl()) q[1](); }, { passive: false });
     b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
@@ -1100,6 +1133,7 @@ function updateHud() {
   else if (view.mode === 'td' && view.td) { $('money').textContent = '$' + view.money; $('quota').textContent = '核心 ' + view.td[0] + '｜剩 ' + view.td[1] + ' 隻'; }
   else { $('money').textContent = '$' + view.money; $('quota').textContent = '$' + view.quota; }
   $('bag').textContent = me.bagN;
+  const bm = $('bombs'), bt = String(me.bombs == null ? 2 : me.bombs); if (bm.textContent !== bt) bm.textContent = bt;
   const am = $('ammo'), at = me.reloading ? '裝填中' : String(me.ammo || 0); if (am.textContent !== at) am.textContent = at;
   const gb = $('gun'), gt = me.reloading ? '…' : '槍'; if (gb.textContent !== gt) gb.textContent = gt; gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
   const qf = $('qfill'), pct = view.mode === 'td' && view.td ? view.td[0] : view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
@@ -1272,9 +1306,9 @@ RR.Game = {
     buildPlist();
   },
   onDay: function (info) {
-    skEnd = 0; smEnd = 0;
-    W.setMap(info.map || 0);
-    if (builtMap !== W.mapIndex) buildLevel();
+    skEnd = 0; smEnd = 0; me.bombs = 2;
+    W.setMap(info.map || 0); W.restoreMap();
+    if (builtMap !== W.mapIndex || Object.keys(brokenVis).length) buildLevel();   // 前一天炸開的牆恢復原狀
     view.items.forEach(function (it) { scene.remove(it.mesh); });
     view.items = info.items.map(function (a) {
       const isk = RR.Game.settings.itemSkin | 0;   // 回收品造型：0 預設、1 糖果（圓球粉彩）、2 寶石（八面體亮色）
@@ -1333,6 +1367,7 @@ RR.Game = {
     else view.tt = null;
     // 傳送陣的顯示
     // 推車
+    if (s.bk) s.bk.forEach(function (q) { showBreak(q[0], q[1], true); });   // 補上漏掉的（例如中途才連上）
     if (s.td) view.td = s.td;
     if (view.mode === 'td') syncTowers(s.tw);
     if (s.veh) {
@@ -1361,6 +1396,7 @@ RR.Game = {
         me.bagN = a[5]; if (s.ph === 'play' && !a[4]) me.alive = false;
         if (s.zr != null) { view.zr = s.zr; if (zoneMesh) zoneMesh.scale.set(s.zr, 1, s.zr); }
         if (a[8] != null) { me.ammo = a[8]; me.reloading = !!a[9]; }
+        if (a[10] != null) me.bombs = a[10];
         if (a[7] != null && a[7] !== me.hp) { me.hp = a[7]; $('hpBar').style.width = hpPct(); }
         continue;
       }
@@ -1477,6 +1513,10 @@ RR.Game = {
         me.x -= sy * d; me.z -= cy * d; toast('瞬移！');
       }
       Sfx.tone(900, 0.25, 'sine', 0.12, 1800);
+    } else if (e.t === 'break') {
+      showBreak(e.c, e.r); if (e.id === myId) { me.bombs = e.n; toast('炸開了！還剩 ' + e.n + ' 顆炸藥'); }
+    } else if (e.t === 'nobomb') {
+      if (e.id === myId) toast(e.why === 'none' ? '炸藥用完了（每天 2 顆）' : e.why === 'edge' ? '最外圈的牆炸不開' : '面前沒有牆，再靠近一點');
     } else if (e.t === 'tshot') {
       showTowerShot(e); if (e.kill) floatText('+$50');
     } else if (e.t === 'leak') {

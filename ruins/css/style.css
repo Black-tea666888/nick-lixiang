@@ -319,6 +319,10 @@ body.btnedit #run, body.btnedit #atk, body.btnedit #gun, body.btnedit #rescue, b
 .grow em { flex: none; font-style: normal; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,.25); color: #ffe39a; }
 .grow.on em { background: var(--g); color: #1b1305; }
 .grow:active { transform: scale(.98); }
+#bomb { position: fixed; width: 58px; height: 58px; border-radius: 50%; display: none; pointer-events: auto; font: 800 16px sans-serif; color: #ff9d7a; background: rgba(9,13,22,.5); border: 1px solid rgba(255,157,122,.8); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); box-shadow: 0 4px 12px rgba(0,0,0,.35); }
+body.touch.playing #bomb, body.btnedit #bomb { display: block; }
+#bomb:active { transform: scale(.93); background: rgba(255,157,122,.3); }
+body.btnedit #bomb { z-index: 41; touch-action: none; outline: 2px dashed rgba(255,255,255,.7); outline-offset: 3px; }
 .mode.td { grid-column: 1 / -1; min-height: 0; background: linear-gradient(135deg, #5fd0c0, #2b7fb8); border-color: rgba(255,255,255,.35); }
 .mode.td span { color: rgba(255,255,255,.92); }
 #tower { position: fixed; width: 58px; height: 58px; border-radius: 50%; display: none; pointer-events: auto; font: 800 16px sans-serif; color: #7fe3d4; background: rgba(9,13,22,.5); border: 1px solid rgba(127,227,212,.8); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); box-shadow: 0 4px 12px rgba(0,0,0,.35); }
