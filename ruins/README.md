@@ -48,6 +48,7 @@
 - 連線：開遊戲就先打 `/relay-health` 叫醒 Render 伺服器；建立／加入失敗會自動重試最多約 75 秒（畫面顯示已等秒數，可取消），最後用 `/relay-health` 判斷是「伺服器沒回應」還是「舊版沒有中繼」（404），並提示到 Render 按 Manual Deploy
 - 改名：主選單名字旁有「✎ 改名」標籤（還沒改過時會閃），改完顯示「✓ 已儲存」
 - 自訂按鈕：從設定進入時會暫時藏起選單、叫出所有遊戲按鈕供拖曳
+- 發版：`index.html` 裡 css／js 後面的 `?v=` 每次發版加一，避免手機用到舊快取；`sw.js` 對遊戲本體一律 `cache: 'no-cache'` 重新確認
 - 安裝成 App（PWA）：`manifest.webmanifest`、`icons/`、`sw.js`。遊戲本體先抓網路（更新立刻生效），`vendor/` 與圖示先用快取；換 vendor 檔要把 `sw.js` 的 `VER` 加一。安卓 Chrome 在設定頁顯示「安裝到主畫面」按鈕
 - 載入：開場載入畫面蓋住未就緒的按鈕；Firestore SDK（550 KB）只在雲端帳號登入時才動態載入
 - 雲端（`js/cloud.js`，Firebase Firestore，專案 `ruins-recovery-team`）：
