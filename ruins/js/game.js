@@ -40,24 +40,33 @@ function showMoon(x, z) {
   }, 50);
   Sfx.tone(880, 0.5, 'sine', 0.1, 440);
 }
-// 煙霧彈：場景中冒出一團看得到的煙，約 6 秒後散掉
+// 煙霧彈：地上一個冒煙的罐子，煙團（柔邊雲朵貼圖）一顆顆冒出、擴散、往上飄，約 7 秒後散掉
 function showCloud(x, z) {
-  const g = new THREE.Group(), puffs = [];
-  for (let i = 0; i < 9; i++) {
-    const m = new THREE.Mesh(new THREE.SphereGeometry(0.9 + Math.random() * 0.5, 10, 8), new THREE.MeshBasicMaterial({ color: 0xc9cdc4, transparent: true, opacity: 0, depthWrite: false, fog: false, side: THREE.DoubleSide }));
-    const a = Math.random() * 6.283, r = i ? 0.6 + Math.random() * 1.6 : 0;
-    m.position.set(Math.cos(a) * r, 0.7 + Math.random() * 1.3, Math.sin(a) * r); g.add(m); puffs.push(m);
+  const g = new THREE.Group(), puffs = [], tex = getPuffTex();
+  const can = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.22, 10), new THREE.MeshLambertMaterial({ color: 0x4a5a3a }));
+  can.position.set(0, 0.11, 0); can.rotation.z = Math.PI / 2; g.add(can);
+  const N = 26;
+  for (let i = 0; i < N; i++) {
+    const shade = 0.72 + Math.random() * 0.22, sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: new THREE.Color(shade, shade, shade * 0.97), transparent: true, opacity: 0, depthWrite: false }));
+    const a = Math.random() * 6.283, r = Math.random() * 1.9;
+    sp.userData = { born: i * 0.07 + Math.random() * 0.1, x: Math.cos(a) * r, z: Math.sin(a) * r, y: 0.3 + Math.random() * 1.6, s: 1.4 + Math.random() * 1.4, rise: 0.08 + Math.random() * 0.12, spin: (Math.random() - 0.5) * 0.6, peak: 0.55 + Math.random() * 0.3 };
+    sp.position.set(0, 0.2, 0); sp.scale.setScalar(0.1); g.add(sp); puffs.push(sp);
   }
-  g.position.set(x, 0, z); g.scale.set(0.2, 0.2, 0.2); scene.add(g);
-  const t0 = Date.now();
+  g.position.set(x, 0, z); scene.add(g);
+  const t0 = Date.now(); let last = t0;
   const id = setInterval(function () {
-    const t = (Date.now() - t0) / 1000;
-    const s = Math.min(1, 0.2 + t * 1.6), o = t < 0.5 ? t * 1.3 : t > 5 ? Math.max(0, (6 - t) * 0.65) : 0.65;
-    g.scale.set(s, s, s); g.rotation.y += 0.01;
-    puffs.forEach(function (m) { m.material.opacity = o; });
-    if (t >= 6) { clearInterval(id); scene.remove(g); puffs.forEach(function (m) { m.geometry.dispose(); m.material.dispose(); }); }
-  }, 50);
-  Sfx.noise(0.5, 0.14);
+    const now = Date.now(), t = (now - t0) / 1000, dt = (now - last) / 1000; last = now;
+    puffs.forEach(function (sp) {
+      const u = sp.userData, a = t - u.born; if (a < 0) return;
+      const grow = Math.min(1, a / 1.2), ease = 1 - Math.pow(1 - grow, 3);
+      sp.position.set(u.x * ease, 0.2 + (u.y - 0.2) * ease + a * u.rise, u.z * ease);
+      sp.scale.setScalar(0.3 + u.s * ease + a * 0.08);
+      sp.material.rotation += u.spin * dt;
+      sp.material.opacity = (a < 0.4 ? a / 0.4 : t > 5.5 ? Math.max(0, (7 - t) / 1.5) : 1) * u.peak;
+    });
+    if (t >= 7) { clearInterval(id); scene.remove(g); can.geometry.dispose(); can.material.dispose(); puffs.forEach(function (sp) { sp.material.dispose(); }); }
+  }, 30);
+  Sfx.noise(0.5, 0.14); setTimeout(function () { Sfx.noise(1.6, 0.05); }, 200);   // 噗一聲＋嘶嘶聲
 }
 function trySmoke() {
   if (!canControl()) return;
@@ -118,7 +127,7 @@ function showSmoke() {
   let el = document.getElementById('smokeFx');
   if (!el) {
     el = document.createElement('div'); el.id = 'smokeFx';
-    el.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:15;backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);background:rgba(120,120,110,.55);opacity:0;transition:opacity .5s';
+    el.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:15;opacity:0;transition:opacity .6s;background:radial-gradient(60% 50% at 20% 30%,rgba(205,205,198,.85),rgba(205,205,198,0) 70%),radial-gradient(55% 45% at 80% 25%,rgba(190,192,186,.8),rgba(190,192,186,0) 70%),radial-gradient(70% 60% at 50% 80%,rgba(200,200,194,.9),rgba(200,200,194,0) 75%),rgba(160,162,156,.45)';
     document.body.appendChild(el);
   }
   el.style.opacity = '1'; clearTimeout(smokeT); smokeT = setTimeout(function () { el.style.opacity = '0'; }, 5000);
@@ -589,8 +598,10 @@ function buildLevel() {
   // 回收車
   const ring = new THREE.Mesh(new THREE.RingGeometry(1.5, 1.85, 40), new THREE.MeshBasicMaterial({ color: 0xffc24a, side: THREE.DoubleSide }));
   ring.rotation.x = -Math.PI / 2; ring.position.set(VAN[0], 0.03, VAN[1]); level.add(ring);
+  // 光柱：只畫外側（站在裡面抬頭不會看到一個圓），由下往上淡出
+  const bcv = document.createElement('canvas'); bcv.width = 4; bcv.height = 64; { const bg = bcv.getContext('2d'), gr = bg.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, '#000'); gr.addColorStop(1, '#fff'); bg.fillStyle = gr; bg.fillRect(0, 0, 4, 64); }
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 1.65, WH, 28, 1, true),
-    new THREE.MeshBasicMaterial({ color: 0xffc24a, transparent: true, opacity: 0.08, side: THREE.DoubleSide, depthWrite: false }));
+    new THREE.MeshBasicMaterial({ color: 0xffc24a, transparent: true, opacity: 0.16, alphaMap: new THREE.CanvasTexture(bcv), side: THREE.FrontSide, depthWrite: false }));
   beam.position.set(VAN[0], WH / 2, VAN[1]); level.add(beam);
   const vl = new THREE.PointLight(0xffc24a, 0.9, 12, 1.6); vl.position.set(VAN[0], 2.4, VAN[1]); level.add(vl);
   // 櫃子（躲藏點）
@@ -890,11 +901,11 @@ function setViewWeapon(w) {
   if (renderer) resize();
 }
 // 開槍（電腦 X 或滑鼠右鍵、手機「槍」）：實際命中由房主判定
-let gunT = 0, gunMesh = null;
+let gunT = 0, gunMesh = null, gunHeld = false;
 function shoot() {
   if (!canControl() || gunT > 0) return;
   if (me.riding) { toast('在推車上不能開槍'); return; }
-  gunT = 0.22;
+  gunT = (W.GUNS[settings.gun | 0] || W.GUNS[0]).cd;
   if (RR.Game.onShoot) RR.Game.onShoot(Math.round(me.yaw * 100) / 100);
 }
 let zoneMesh = null, outT = 0;
@@ -979,20 +990,136 @@ function showTowerShot(e) {
   if (tm) tm.userData.head.rotation.y = Math.atan2(e.hx - e.x, e.hz - e.z);
   showShot({ id: null, x: e.x, z: e.z, hx: e.hx, hz: e.hz, mi: e.mi, ty: 1.1 });
 }
+/* ---------- 槍：第一人稱模型、開槍特效 ---------- */
+const GM = { dark: 0x2a2e33, steel: 0x50565e, poly: 0x1c1f23, wood: 0x7a4b28, brass: 0xc9a24a, glass: 0x3a7fa8, green: 0x3e4a32 };
+const B = function (w, h, d, x, y, z, c, rx, ry, rz) { return [new THREE.BoxGeometry(w, h, d), M4(x, y, z, rx, ry, rz), c]; };
+const C = function (r, l, x, y, z, c, r2, seg) { return [new THREE.CylinderGeometry(r2 == null ? r : r2, r, l, seg || 12), M4(x, y, z, Math.PI / 2, 0, 0), c]; };
+// 每把槍都是一個合成的網格（一次繪製），muzzle＝槍口位置（相機座標）
+function gunParts(i) {
+  const p = [];
+  if (i === 1) {   // 霰彈槍：長槍管、管狀彈倉、木製護木與槍托
+    p.push(B(0.05, 0.07, 0.2, 0, 0, 0.02, GM.dark), C(0.014, 0.5, 0, 0.018, -0.32, GM.steel), C(0.012, 0.38, 0, -0.016, -0.26, GM.dark),
+      C(0.024, 0.15, 0, -0.016, -0.2, GM.wood), B(0.042, 0.075, 0.24, 0, -0.03, 0.2, GM.wood, 0.18), B(0.035, 0.09, 0.045, 0, -0.07, 0.08, GM.wood, 0.35),
+      B(0.006, 0.012, 0.008, 0, 0.034, -0.56, GM.brass), B(0.012, 0.018, 0.05, 0, -0.045, 0.03, GM.dark));
+    return [p, [0, 0.018, -0.58]];
+  }
+  if (i === 2) {   // 步槍：機匣、護木、彎彈匣、槍托、紅點瞄具
+    p.push(B(0.05, 0.065, 0.26, 0, 0, 0, GM.dark), B(0.056, 0.056, 0.2, 0, -0.004, -0.22, GM.poly), C(0.008, 0.16, 0, 0.004, -0.4, GM.steel), C(0.014, 0.04, 0, 0.004, -0.48, GM.dark),
+      B(0.03, 0.09, 0.05, 0, -0.07, -0.04, GM.dark, -0.2), B(0.03, 0.06, 0.05, 0, -0.13, -0.06, GM.dark, -0.45),
+      B(0.035, 0.09, 0.045, 0, -0.07, 0.08, GM.poly, 0.3), B(0.04, 0.07, 0.2, 0, -0.02, 0.22, GM.poly), B(0.045, 0.085, 0.04, 0, -0.025, 0.33, GM.poly),
+      B(0.03, 0.012, 0.2, 0, 0.038, -0.02, GM.steel), B(0.03, 0.035, 0.05, 0, 0.06, -0.02, GM.poly), C(0.011, 0.012, 0, 0.062, -0.047, GM.glass));
+    return [p, [0, 0.004, -0.5]];
+  }
+  if (i === 3) {   // 衝鋒槍：短小、長直彈匣、前握把、折疊槍托
+    p.push(B(0.048, 0.065, 0.2, 0, 0, 0, GM.dark), C(0.01, 0.1, 0, 0.008, -0.15, GM.steel), C(0.016, 0.05, 0, 0.008, -0.2, GM.dark),
+      B(0.028, 0.17, 0.04, 0, -0.11, -0.05, GM.dark, -0.08), B(0.03, 0.08, 0.035, 0, -0.07, -0.13, GM.poly, -0.2), B(0.033, 0.085, 0.04, 0, -0.07, 0.06, GM.poly, 0.3),
+      B(0.008, 0.008, 0.18, 0.018, -0.005, 0.18, GM.steel), B(0.008, 0.008, 0.18, -0.018, -0.005, 0.18, GM.steel), B(0.045, 0.05, 0.012, 0, -0.01, 0.27, GM.steel),
+      B(0.006, 0.016, 0.006, 0, 0.042, -0.08, GM.steel), B(0.02, 0.012, 0.012, 0, 0.04, 0.07, GM.steel));
+    return [p, [0, 0.008, -0.23]];
+  }
+  if (i === 4) {   // 狙擊槍：長槍管＋制退器、瞄準鏡、槍機拉柄、迷彩綠槍托、腳架
+    p.push(B(0.05, 0.06, 0.3, 0, 0, 0, GM.dark), C(0.011, 0.55, 0, 0.006, -0.42, GM.dark), B(0.03, 0.03, 0.06, 0, 0.006, -0.71, GM.steel),
+      C(0.022, 0.28, 0, 0.065, -0.02, GM.poly), C(0.03, 0.06, 0, 0.065, -0.17, GM.poly, 0.022), C(0.027, 0.05, 0, 0.065, 0.13, GM.poly, 0.022), C(0.022, 0.004, 0, 0.065, -0.2, GM.glass), C(0.019, 0.004, 0, 0.065, 0.155, GM.glass),
+      B(0.01, 0.025, 0.02, 0, 0.04, -0.08, GM.steel), B(0.01, 0.025, 0.02, 0, 0.04, 0.06, GM.steel), C(0.006, 0.05, 0.03, 0.01, 0.06, GM.steel), [new THREE.SphereGeometry(0.01, 8, 6), M4(0.055, 0.01, 0.06), GM.steel],
+      B(0.045, 0.09, 0.26, 0, -0.035, 0.24, GM.green, 0.1), B(0.04, 0.05, 0.12, 0, -0.03, -0.2, GM.green), B(0.035, 0.09, 0.045, 0, -0.08, 0.1, GM.green, 0.35),
+      B(0.006, 0.1, 0.006, 0.012, -0.05, -0.3, GM.steel, 1.2), B(0.006, 0.1, 0.006, -0.012, -0.05, -0.3, GM.steel, 1.2), B(0.028, 0.05, 0.05, 0, -0.06, 0.0, GM.dark));
+    return [p, [0, 0.006, -0.75]];
+  }
+  // 手槍：滑套（後方防滑紋）、槍身、前後準星、斜握把、扳機護弓
+  p.push(B(0.044, 0.048, 0.2, 0, 0.022, 0, GM.dark), B(0.04, 0.03, 0.17, 0, -0.016, 0.005, GM.poly), C(0.009, 0.02, 0, 0.022, -0.105, GM.steel),
+    B(0.006, 0.01, 0.008, 0, 0.051, -0.09, GM.steel), B(0.02, 0.01, 0.008, 0, 0.051, 0.09, GM.steel),
+    B(0.038, 0.115, 0.05, 0, -0.075, 0.07, GM.poly, 0.26), B(0.04, 0.012, 0.055, 0, -0.13, 0.085, GM.dark, 0.26),
+    B(0.008, 0.006, 0.05, 0, -0.04, -0.01, GM.poly), B(0.008, 0.03, 0.006, 0, -0.03, -0.035, GM.poly), B(0.004, 0.02, 0.006, 0, -0.03, 0.005, GM.steel, 0.3));
+  for (let k = 0; k < 5; k++) p.push(B(0.046, 0.04, 0.003, 0, 0.022, 0.06 + k * 0.009, 0x1a1d20));
+  return [p, [0, 0.022, -0.115]];
+}
+let flashTex = null, puffTex = null;
+function radialTex(stops, size) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = size || 64; const g = cv.getContext('2d'), r = cv.width / 2;
+  const gr = g.createRadialGradient(r, r, 0, r, r, r); stops.forEach(function (s) { gr.addColorStop(s[0], s[1]); }); g.fillStyle = gr; g.fillRect(0, 0, cv.width, cv.width);
+  return new THREE.CanvasTexture(cv);
+}
+// 槍口火光：星形，加亮混色
+function getFlashTex() {
+  if (flashTex) return flashTex;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64; const g = cv.getContext('2d');
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,230,1)'); gr.addColorStop(0.25, 'rgba(255,210,120,.9)'); gr.addColorStop(1, 'rgba(255,120,30,0)');
+  g.fillStyle = gr; g.beginPath();
+  for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, rr = k % 2 ? 9 : 31; g.lineTo(32 + Math.cos(a) * rr, 32 + Math.sin(a) * rr); }
+  g.fill(); flashTex = new THREE.CanvasTexture(cv); return flashTex;
+}
+function getPuffTex() {
+  if (puffTex) return puffTex;
+  // 煙：不規則的柔邊雲團（幾個小圓疊起來），不是一顆硬邊球
+  const cv = document.createElement('canvas'); cv.width = cv.height = 128; const g = cv.getContext('2d');
+  for (let k = 0; k < 14; k++) { const x = 64 + (Math.random() - 0.5) * 50, y = 64 + (Math.random() - 0.5) * 50, r = 22 + Math.random() * 22, gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, 'rgba(255,255,255,.55)'); gr.addColorStop(0.6, 'rgba(255,255,255,.2)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); }
+  const fade = g.createRadialGradient(64, 64, 30, 64, 64, 64); fade.addColorStop(0, 'rgba(0,0,0,0)'); fade.addColorStop(1, 'rgba(0,0,0,1)');
+  g.globalCompositeOperation = 'destination-out'; g.fillStyle = fade; g.fillRect(0, 0, 128, 128);
+  puffTex = new THREE.CanvasTexture(cv); return puffTex;
+}
+function buildGunView(i) {
+  if (gunMesh) { camera.remove(gunMesh); gunMesh.traverse(function (o) { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
+  const gp = gunParts(i | 0);
+  gunMesh = new THREE.Group();
+  const body = new THREE.Mesh(mergeGeos(gp[0]), litMat({ vertexColors: true, shininess: 70, specular: 0x666666 }));
+  gunMesh.add(body);
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.22), new THREE.MeshBasicMaterial({ map: getFlashTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+  const fl2 = fl.clone(); fl2.rotation.y = Math.PI / 2; fl.add(fl2);
+  fl.position.set(gp[1][0], gp[1][1], gp[1][2] - 0.05); fl.visible = false; gunMesh.add(fl);
+  gunMesh.userData = { kick: 0, flash: fl, muzzle: new THREE.Vector3(gp[1][0], gp[1][1], gp[1][2]), kind: i | 0 };
+  gunMesh.position.set(-0.26, -0.27, -0.5); camera.add(gunMesh);
+}
+// 彈殼：從槍側邊彈出，受重力掉落（相機座標，只給自己看）
+function ejectShell() {
+  if (!gunMesh || gunMesh.userData.kind === 1) return;
+  const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.022, 6), new THREE.MeshLambertMaterial({ color: GM.brass, emissive: 0x3a2a08 }));
+  sh.position.copy(gunMesh.position).add(new THREE.Vector3(0.03, 0.04, 0.02)); camera.add(sh);
+  const v = new THREE.Vector3(0.6 + Math.random() * 0.3, 0.8 + Math.random() * 0.4, 0.2), t0 = Date.now(); let last = t0;
+  const id = setInterval(function () { const now = Date.now(), dt = (now - last) / 1000; last = now; v.y -= 4 * dt; sh.position.addScaledVector(v, dt); sh.rotation.x += 14 * dt; sh.rotation.z += 9 * dt;
+    if (now - t0 > 500) { clearInterval(id); camera.remove(sh); sh.geometry.dispose(); sh.material.dispose(); } }, 16);
+}
+// 擊中點：火花＋小煙塵
+function impactFx(to, hitMon) {
+  const n = hitMon ? 8 : 5, bits = [];
+  for (let k = 0; k < n; k++) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.03), new THREE.MeshBasicMaterial({ color: hitMon ? 0xff7a2a : 0xffe2a0, fog: false }));
+    m.position.copy(to); m.userData.v = new THREE.Vector3((Math.random() - 0.5) * 4, Math.random() * 3, (Math.random() - 0.5) * 4); scene.add(m); bits.push(m);
+  }
+  const dust = new THREE.Sprite(new THREE.SpriteMaterial({ map: getPuffTex(), color: hitMon ? 0x8a4a3a : 0xbdb6a8, transparent: true, opacity: 0.7, depthWrite: false }));
+  dust.position.copy(to); dust.scale.setScalar(0.3); scene.add(dust);
+  const t0 = Date.now(); let last = t0;
+  const id = setInterval(function () {
+    const now = Date.now(), dt = (now - last) / 1000, t = (now - t0) / 1000; last = now;
+    bits.forEach(function (m) { m.userData.v.y -= 9 * dt; m.position.addScaledVector(m.userData.v, dt); m.material.opacity = 1; m.scale.setScalar(Math.max(0.01, 1 - t * 3)); });
+    dust.scale.setScalar(0.3 + t * 1.6); dust.material.opacity = Math.max(0, 0.7 - t * 1.6);
+    if (t > 0.45) { clearInterval(id); bits.forEach(function (m) { scene.remove(m); m.geometry.dispose(); m.material.dispose(); }); scene.remove(dust); dust.material.dispose(); }
+  }, 16);
+}
+const GUN_SND = [[0.09, 0.22, 520, 140], [0.22, 0.32, 220, 60], [0.07, 0.2, 620, 180], [0.05, 0.15, 720, 220], [0.32, 0.36, 160, 40]];
 function showShot(e) {
   const mine = e.id === myId, sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
-  const from = mine ? new THREE.Vector3(me.x - sy * 0.5 + cy * 0.22, 1.42 + me.y, me.z - cy * 0.5 - sy * 0.22) : new THREE.Vector3(e.x, e.ty || 1.25, e.z);
-  const to = new THREE.Vector3(e.hx, e.mi >= 0 ? 1.7 : 1.4, e.hz);
-  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([from, to]), new THREE.LineBasicMaterial({ color: mine ? FX_COL[RR.Game.settings.fx | 0] || 0xfff1b0 : 0xfff1b0, transparent: true, opacity: 0.95, fog: false }));
-  const spark = part(new THREE.SphereGeometry(e.mi >= 0 ? 0.28 : 0.12, 10, 8), new THREE.MeshBasicMaterial({ color: e.mi >= 0 ? 0xff8a3a : 0xfff1b0, transparent: true, opacity: 0.9, fog: false }), to.x, to.y, to.z);
-  scene.add(line, spark);
+  let from;
+  if (mine && gunMesh) { from = gunMesh.userData.muzzle.clone(); gunMesh.localToWorld(from); }
+  else from = new THREE.Vector3(e.x, e.ty || 1.25, e.z);
+  const to = new THREE.Vector3(e.hx, e.mi >= 0 ? 1.4 : 1.2 + Math.random() * 0.4, e.hz);
+  // 彈道：一條很細、很快消失的亮線（用細長方塊，手機上也看得到粗細）
+  const len = from.distanceTo(to), col = mine ? FX_COL[RR.Game.settings.fx | 0] || 0xfff1b0 : 0xfff1b0;
+  const tr = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, Math.max(0.1, len)), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+  tr.position.copy(from).lerp(to, 0.5); tr.lookAt(to); scene.add(tr);
   const t0 = Date.now(), id = setInterval(function () {
-    const k = (Date.now() - t0) / 160; line.material.opacity = Math.max(0, 0.95 - k); spark.material.opacity = Math.max(0, 0.9 - k); spark.scale.setScalar(1 + k * 1.5);
-    if (k >= 1) { clearInterval(id); scene.remove(line, spark); line.geometry.dispose(); line.material.dispose(); spark.geometry.dispose(); spark.material.dispose(); }
-  }, 30);
-  const d = Math.hypot(e.x - me.x, e.z - me.z), v = mine ? 0.22 : Math.max(0.03, 0.2 - d * 0.006);
-  Sfx.noise(0.09, v); Sfx.tone(520, 0.07, 'square', v * 0.6, 140);
-  if (mine) { shakeT = Math.max(shakeT, 0.07); if (gunMesh) gunMesh.userData.kick = 1; me.ammo = e.ammo; }
+    const k = (Date.now() - t0) / 90; tr.material.opacity = Math.max(0, 0.85 - k);
+    if (k >= 1) { clearInterval(id); scene.remove(tr); tr.geometry.dispose(); tr.material.dispose(); }
+  }, 16);
+  impactFx(to, e.mi >= 0 || !!e.pk);
+  if (e.q) return;   // 霰彈的其他顆：只畫彈道
+  const snd = GUN_SND[e.g | 0] || GUN_SND[0], d = Math.hypot(e.x - me.x, e.z - me.z), v = mine ? snd[1] : Math.max(0.03, snd[1] - d * 0.006);
+  Sfx.noise(snd[0], v); Sfx.tone(snd[2], 0.07, 'square', v * 0.6, snd[3]);
+  if (mine) {
+    shakeT = Math.max(shakeT, (e.g | 0) === 4 || (e.g | 0) === 1 ? 0.14 : 0.06); me.ammo = e.ammo;
+    if (gunMesh) { gunMesh.userData.kick = (e.g | 0) === 4 || (e.g | 0) === 1 ? 1.6 : 1; const fl = gunMesh.userData.flash; fl.visible = true; fl.rotation.z = Math.random() * 6.3; fl.scale.setScalar((e.g | 0) === 1 || (e.g | 0) === 4 ? 1.5 : 1); setTimeout(function () { fl.visible = false; }, 45); }
+    ejectShell();
+  }
   if (e.mi >= 0 && view.monsters[e.mi]) view.monsters[e.mi].hitT = 0.18;
 }
 function isTouchDev() { return ('ontouchstart' in window) || !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); }
@@ -1122,22 +1249,22 @@ function bindInput() {
     if (e.code === 'KeyF') { if (canControl()) { e.preventDefault(); attack(); } }
     if (e.code === 'Space') { if (canControl()) { e.preventDefault(); if (!e.repeat) jumpQ = true; } }
     if (e.code === 'KeyC' && !e.repeat && canControl()) dashQ = true;
-    if (e.code === 'KeyX' && canControl()) shoot();
+    if (e.code === 'KeyX' && canControl()) { gunHeld = true; if (!e.repeat) shoot(); }
     if (e.code === 'KeyB' && !e.repeat && canControl() && RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100);
     if (e.code === 'KeyT' && !e.repeat && canControl() && view.mode === 'td' && RR.Game.onTower) RR.Game.onTower();
     if (e.code === 'KeyV' && !e.repeat && canControl()) vhQ = true;
   });
-  window.addEventListener('keyup', function (e) { keys[e.code] = false; });
+  window.addEventListener('keyup', function (e) { keys[e.code] = false; if (e.code === 'KeyX') gunHeld = false; });
   window.addEventListener('blur', function () { for (const k in keys) keys[k] = false; });
   canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   canvas.addEventListener('mousedown', function (ev) {
     if (active && view.phase === 'play' && !me.alive) { nextSpec(); return; }
     if (!canControl()) return;
-    if (ev.button === 2) { shoot(); return; }
+    if (ev.button === 2) { gunHeld = true; shoot(); return; }
     dragging = true;
     if (document.pointerLockElement !== canvas) lockPointer(); else attack();   // 鎖定滑鼠後，左鍵 = 揮擊
   });
-  window.addEventListener('mouseup', function () { dragging = false; });
+  window.addEventListener('mouseup', function () { dragging = false; gunHeld = false; });
   window.addEventListener('mousemove', function (e) {
     if (!canControl()) return;
     if (document.pointerLockElement === canvas || dragging) look(e.movementX || 0, e.movementY || 0, 0.0024);
@@ -1192,7 +1319,8 @@ function bindInput() {
   $('mini').addEventListener('click', function () { $('mini').classList.toggle('big'); });
   [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', shoot], ['bomb', function () { if (RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100); }], ['veh', function () { vhQ = true; }], ['tower', function () { if (view.mode === 'td' && RR.Game.onTower) RR.Game.onTower(); }]].forEach(function (q) {
     const b = $(q[0]);
-    b.addEventListener('touchstart', function (e) { e.preventDefault(); if (canControl()) q[1](); }, { passive: false });
+    b.addEventListener('touchstart', function (e) { e.preventDefault(); if (q[0] === 'gun') gunHeld = true; if (canControl()) q[1](); }, { passive: false });
+    if (q[0] === 'gun') { const up = function (e) { e.preventDefault(); gunHeld = false; }; b.addEventListener('touchend', up, { passive: false }); b.addEventListener('touchcancel', up, { passive: false }); }
     b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   });
   const atkBtn = $('atk');
@@ -1263,7 +1391,9 @@ function updateMe(dt) {
   if (gunT > 0) gunT -= dt;
   fpsWatch(dt); tickWeather(dt);
   if (view.zone && me.alive && Math.hypot(me.x - view.zone[0], me.z - view.zone[1]) > view.zr) { outT -= dt; if (outT <= 0) { outT = 2.5; toast('你在安全區外，正在扣血！往白圈裡跑'); Sfx.tone(300, 0.15, 'square', 0.08); } hurtFlash = Math.max(hurtFlash, 0.35); }
-  if (gunMesh) { const kk = gunMesh.userData.kick || 0; gunMesh.userData.kick = Math.max(0, kk - dt * 9); gunMesh.position.set(-0.3, -0.3 + kk * 0.03, -0.62 + kk * 0.07); gunMesh.rotation.x = kk * 0.22; }
+  if (gunMesh) { const kk = gunMesh.userData.kick || 0, tt = performance.now() / 1000, mv = (keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD || Math.abs(touch.jx) + Math.abs(touch.jy) > 0.1) ? 1 : 0.25;
+    gunMesh.userData.kick = Math.max(0, kk - dt * 8); gunMesh.position.set(-0.26 + Math.sin(tt * 5) * 0.006 * mv, -0.27 + kk * 0.025 + Math.abs(Math.cos(tt * 5)) * 0.008 * mv, -0.5 + kk * 0.06); gunMesh.rotation.x = kk * 0.18; gunMesh.rotation.z = Math.sin(tt * 2.5) * 0.01 * mv; }
+  if (gunHeld && gunT <= 0 && (W.GUNS[settings.gun | 0] || {}).auto) shoot();
   if (shakeT > 0) shakeT = Math.max(0, shakeT - dt);
   const sk2 = shakeT * 0.22;
   camera.position.set(me.x + (Math.random() - 0.5) * sk2, 1.65 + me.y + (moving && me.y <= 0 ? Math.sin(me.walkT * 2) * 0.045 : 0) + (Math.random() - 0.5) * sk2, me.z + (Math.random() - 0.5) * sk2);
@@ -1457,7 +1587,7 @@ function frame(nowMs) {
 
 /* ---------- 對外介面 ---------- */
 RR.Game = {
-  dbg: function () { return { scene: scene, renderer: renderer, camera: camera }; },
+  dbg: function () { return { scene: scene, renderer: renderer, camera: camera, cloud: showCloud, me: me }; },
   stats: function () { const i = renderer.info; let n = 0, lights = 0, outl = 0; scene.traverse(function (o) { if (o.isMesh && o.visible) n++; if (o.isLight) lights++; if (o.userData && o.userData.outline) outl++; }); return { calls: i.render.calls, tris: i.render.triangles, geo: i.memory.geometries, tex: i.memory.textures, progs: i.programs ? i.programs.length : 0, meshes: n, lights: lights, outl: outl, pr: renderer.getPixelRatio() }; },
   openMini: openMini,
   init: function () {
@@ -1475,11 +1605,7 @@ RR.Game = {
     hemi = new THREE.HemisphereLight(0xcfd8e6, 0x3a3f3a, 0.45); scene.add(hemi);
     sun = new THREE.DirectionalLight(0xfff2d8, 0); sun.position.set(30, 60, 20); scene.add(sun);
     torch = new THREE.SpotLight(0xfff0cc, 2.2, 42, 0.62, 0.55, 1.2);
-    gunMesh = new THREE.Group();
-    { const gm = pmat(0x2b3038, 0.08), gg = pmat(0x8a6238, 0.12);
-      gunMesh.add(part(new THREE.BoxGeometry(0.07, 0.09, 0.34), gm, 0, 0, 0), part(new THREE.BoxGeometry(0.06, 0.16, 0.08), gg, 0, -0.11, 0.11), part(new THREE.CylinderGeometry(0.018, 0.018, 0.1, 10), gm, 0, 0.01, -0.21));
-      gunMesh.children[2].rotation.x = Math.PI / 2; }
-    gunMesh.position.set(-0.3, -0.3, -0.62); camera.add(gunMesh);
+    buildGunView(settings.gun | 0);
     cartView = new THREE.Group(); cartView.add(part(new THREE.BoxGeometry(0.9, 0.3, 0.6), pmat(0xd9902f, 0.25), 0, -0.78, -1.05), part(new THREE.CylinderGeometry(0.02, 0.02, 0.8, 8), pmat(0x9aa3a8, 0.15), 0, -0.5, -0.62)); cartView.children[1].rotation.z = Math.PI / 2; cartView.visible = false; camera.add(cartView);
     torch.position.set(0.25, -0.2, 0); camera.add(torch); camera.add(torch.target); torch.target.position.set(0, -0.05, -1);
     buildLevel();
@@ -1499,6 +1625,7 @@ RR.Game = {
     return true;
   },
   settings: settings,
+  setGun: function (i) { i = i | 0; if (settings.gun === i && gunMesh) return; settings.gun = i; if (camera) buildGunView(i); },
   /** 選單／大廳換地圖時，背景跟著換 */
   showMap: function (i) { if (!ready || active) return; W.setMap(i); if (builtMap !== W.mapIndex) buildLevel(); },
   /** 選單裡的造型預覽 */

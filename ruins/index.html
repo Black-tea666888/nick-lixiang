@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
-<link rel="stylesheet" href="css/style.css?v=40">
+<link rel="stylesheet" href="css/style.css?v=41">
 </head>
 <body>
 <div id="boot"><div class="bootIn"><b>廢墟回收隊</b><i class="spin"></i><small id="bootTxt">載入中…</small></div></div>
@@ -140,6 +140,9 @@
     <div class="cards c3" id="cGrid"></div>
     <div class="sec">攻擊物</div>
     <div class="cards c3" id="wGrid"></div>
+    <div class="sec">槍（手槍免費，其他用金幣解鎖）</div>
+    <div class="cards c3" id="gGrid"></div>
+    <div id="gStats"></div>
     <div class="sec">頭飾（用金幣解鎖）· 金幣 <b id="coinTag2">0</b></div>
     <div class="cards c3" id="hGrid"></div>
     <div class="sec">服裝（轉盤取得）</div>
@@ -214,6 +217,8 @@
       <label class="field">顯示 FPS（卡頓時回報用）<input id="setFps" type="checkbox"></label>
       <label class="field">手機按鈕大小<input id="setBtn" type="range" min="0.8" max="1.4" step="0.05"></label>
       <div class="col"><button class="btn" id="btnEditOpen" type="button">自訂手機按鈕位置</button></div>
+      <div class="field btnVisField"><span>手機上顯示的按鈕（取消勾選就暫時隱藏，「跑」一定會顯示）</span></div>
+      <div class="btnChks" id="btnChks"><label class="btnChk"><input type="checkbox" data-btn="atk" checked><span>打</span></label><label class="btnChk"><input type="checkbox" data-btn="gun" checked><span>槍</span></label><label class="btnChk"><input type="checkbox" data-btn="rescue" checked><span>救</span></label><label class="btnChk"><input type="checkbox" data-btn="jump" checked><span>跳</span></label><label class="btnChk"><input type="checkbox" data-btn="dash" checked><span>衝</span></label><label class="btnChk"><input type="checkbox" data-btn="skill" checked><span>技</span></label><label class="btnChk"><input type="checkbox" data-btn="smoke" checked><span>煙</span></label><label class="btnChk"><input type="checkbox" data-btn="bomb" checked><span>炸</span></label><label class="btnChk"><input type="checkbox" data-btn="tower" checked><span>塔</span></label><label class="btnChk"><input type="checkbox" data-btn="veh" checked><span>車</span></label></div>
       <label class="field">視角靈敏度<input id="setSens" type="range" min="0.4" max="2" step="0.1"></label>
       <label class="field">音效音量<input id="setSfx" type="range" min="0" max="1" step="0.05"></label>
       <label class="field">背景音樂<input id="setMusic" type="range" min="0" max="1" step="0.05"></label>
@@ -263,7 +268,7 @@
 <li>怪物靠近到 14 公尺內，小地圖才會出現牠的三角形。</li></ul>
       </section>
       <section class="htopic hide" data-topic="safe"><h2>保命方法</h2>
-<ul><li><b>槍</b>：回收模式每天 6 發，打中怪物讓牠暈 2.5 秒（打不死）。對準怪物、中間不能有牆。</li>
+<ul><li><b>槍</b>：在「出戰角色」選槍（手槍免費，其他用金幣解鎖）：手槍穩定、霰彈槍一次 6 顆近距離強、步槍和衝鋒槍按住連發、狙擊槍一發高傷害射最遠。回收模式每天子彈有限，打中怪物讓牠暈（打不死）；對準怪物、中間不能有牆。</li>
 <li><b>配件與寶石</b>：主選單「裝備與寶石」購買。配件最多同時裝 2 個，對局中按右上角「背包」可以換；寶石升級後永久有效。</li>
 <li><b>炸藥</b>：每天 2 顆。站在牆前按「炸」／B，面前 3.5 公尺內的那格牆會被炸開，變成新的路（最外圈炸不開）。附近的怪物會暈 2 秒，但牠之後也能走這條新路。隔天牆會恢復。</li>
 <li><b>櫃子</b>（小地圖藍點）：站在旁邊不要跑，怪物看不到你；貼太近還是會被抓。</li>
@@ -327,6 +332,7 @@
 <li>網路無法直連時會自動改走伺服器中繼（遊戲照常，但語音可能不通）。</li>
 <li><b>聽不到聲音</b>：檢查手機靜音鍵（iPhone 側邊）並調高媒體音量。</li>
 <li><b>連不上房間</b>：免費伺服器閒置會休眠，第一次連線會自動等它醒來（最多約 1 分鐘，可按取消）。如果提示「伺服器是舊版本」，到 Render 後台按 Manual Deploy。</li>
+<li><b>按鈕太多</b>：設定裡「手機上顯示的按鈕」取消勾選就能暫時隱藏（鍵盤快捷鍵照樣能用）。</li>
 <li><b>改名字</b>：主選單點自己的名字（旁邊有「改名」）直接輸入，按完成就會儲存。</li>
 <li><b>安裝成 App</b>：安卓 Chrome 在設定按「安裝到主畫面」；iPhone Safari 按分享 →「加入主畫面」。從主畫面開是全螢幕，第二次開會更快，沒網路也能打開（連線玩仍要網路）。</li>
 <li><b>畫面卡</b>：設定把畫質改「標準」或「省電」；太卡也會自動降畫質。可開「顯示 FPS」看每秒幾格，回報時附上。關掉其他 App、別開省電模式也有幫助。</li></ul>
@@ -459,14 +465,14 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=40"></script>
-<script src="js/sim.js?v=40"></script>
-<script src="js/audio.js?v=40"></script>
-<script src="js/auth.js?v=40"></script>
-<script src="js/cloud.js?v=40"></script>
-<script src="js/net.js?v=40"></script>
-<script src="js/game.js?v=40"></script>
-<script src="js/minigames.js?v=40"></script>
-<script src="js/main.js?v=40"></script>
+<script src="js/config.js?v=41"></script>
+<script src="js/sim.js?v=41"></script>
+<script src="js/audio.js?v=41"></script>
+<script src="js/auth.js?v=41"></script>
+<script src="js/cloud.js?v=41"></script>
+<script src="js/net.js?v=41"></script>
+<script src="js/game.js?v=41"></script>
+<script src="js/minigames.js?v=41"></script>
+<script src="js/main.js?v=41"></script>
 </body>
 </html>
