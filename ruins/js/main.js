@@ -334,6 +334,7 @@ function wireNet() {
       else if (d.t === 'atk') S.sim.attack(from, d.yaw);
       else if (d.t === 'gun') S.sim.shoot(from, d.yaw);
       else if (d.t === 'tower') S.sim.buildTower(from);
+      else if (d.t === 'bomb') S.sim.bomb(from, d.yaw);
       else if (d.t === 'eq') { const pl = S.sim.player(from); if (pl && S.sim.setEquip(from, d.eq)) { if (Array.isArray(d.gems)) pl.gems = [0, 1, 2].map(function (k) { return Math.max(0, Math.min(5, d.gems[k] | 0)); }); hostBroadcast(rosterMsg()); } }
       else if (d.t === 'bye') { Net.drop(from); hostRemove(from); }
     } else if (S.mode === 'client') { S.lastHost = Date.now(); dispatch(d); }
@@ -710,6 +711,10 @@ function boot() {
   Game.onAttack = function (yaw) {
     if (S.mode === 'client') Net.send({ t: 'atk', yaw: yaw });
     else if (S.sim) S.sim.attack(S.myId, yaw);
+  };
+  Game.onBomb = function (yaw) {
+    if (S.mode === 'client') Net.send({ t: 'bomb', yaw: yaw });
+    else if (S.sim) S.sim.bomb(S.myId, yaw);
   };
   Game.onTower = function () {
     if (S.mode === 'client') Net.send({ t: 'tower' });

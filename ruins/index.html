@@ -17,7 +17,7 @@
 <!-- 遊戲中介面 -->
 <div id="hud" class="hide">
   <div id="hudTop">
-    <div>第 <b id="day">1</b> 天　<span id="moneyLbl">收入</span> <b id="money">$0</b> / <span id="quota">$0</span><div id="qbar"><i id="qfill"></i></div><span class="bagrow">背包 <b id="bag">0</b> / <span id="bagCap">3</span> <span id="pips"><i></i><i></i><i></i><i></i></span>　子彈 <b id="ammo">6</b></span></div>
+    <div>第 <b id="day">1</b> 天　<span id="moneyLbl">收入</span> <b id="money">$0</b> / <span id="quota">$0</span><div id="qbar"><i id="qfill"></i></div><span class="bagrow">背包 <b id="bag">0</b> / <span id="bagCap">3</span> <span id="pips"><i></i><i></i><i></i><i></i></span>　子彈 <b id="ammo">6</b>　炸藥 <b id="bombs">2</b></span></div>
     <div class="r">剩餘時間<br><b id="timer">4:00</b></div>
   </div>
   <div id="compass"><span id="arrow">▲</span>回收車</div>
@@ -44,6 +44,7 @@
   <button id="atk" type="button">打</button>
   <button id="gun" type="button">槍</button>
   <button id="tower" type="button">塔</button>
+  <button id="bomb" type="button">炸</button>
   <button id="veh" type="button">車</button>
   <button id="jump" type="button">跳</button>
   <button id="dash" type="button">衝</button>
@@ -223,11 +224,11 @@
 <tr><td>橫式</td><td>把手機轉橫就能橫著玩</td></tr>
 <tr><td>按鈕</td><td>設定裡可調大小、拖曳自訂位置</td></tr>
 <tr><td><kbd>跑</kbd></td><td>按住奔跑</td></tr><tr><td><kbd>跳</kbd> <kbd>衝</kbd></td><td>跳躍、衝刺</td></tr>
-<tr><td><kbd>技</kbd> <kbd>煙</kbd></td><td>角色技能、煙霧彈</td></tr><tr><td><kbd>槍</kbd></td><td>開槍</td></tr><tr><td><kbd>打</kbd> <kbd>救</kbd></td><td>揮武器、按住救隊友</td></tr></table>
+<tr><td><kbd>技</kbd> <kbd>煙</kbd></td><td>角色技能、煙霧彈</td></tr><tr><td><kbd>槍</kbd></td><td>開槍</td></tr><tr><td><kbd>炸</kbd></td><td>炸開面前的牆</td></tr><tr><td><kbd>打</kbd> <kbd>救</kbd></td><td>揮武器、按住救隊友</td></tr></table>
 <h3>電腦</h3>
 <table><tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>移動（滑鼠轉視角）</td></tr><tr><td><kbd>Shift</kbd></td><td>奔跑</td></tr>
 <tr><td><kbd>空白鍵</kbd> <kbd>C</kbd></td><td>跳躍、衝刺</td></tr><tr><td><kbd>R</kbd> <kbd>Q</kbd></td><td>角色技能、煙霧彈</td></tr>
-<tr><td><kbd>左鍵</kbd> / <kbd>F</kbd></td><td>揮武器</td></tr><tr><td><kbd>右鍵</kbd> / <kbd>X</kbd></td><td>開槍</td></tr><tr><td><kbd>T</kbd></td><td>塔防：蓋砲塔</td></tr><tr><td><kbd>E</kbd></td><td>按住救隊友、搶獎盃</td></tr>
+<tr><td><kbd>左鍵</kbd> / <kbd>F</kbd></td><td>揮武器</td></tr><tr><td><kbd>右鍵</kbd> / <kbd>X</kbd></td><td>開槍</td></tr><tr><td><kbd>T</kbd></td><td>塔防：蓋砲塔</td></tr><tr><td><kbd>B</kbd></td><td>炸藥：炸開面前的牆</td></tr><tr><td><kbd>E</kbd></td><td>按住救隊友、搶獎盃</td></tr>
 <tr><td><kbd>V</kbd></td><td>上／下推車</td></tr><tr><td><kbd>G</kbd></td><td>小遊戲</td></tr><tr><td><kbd>M</kbd> <kbd>Enter</kbd></td><td>麥克風、聊天</td></tr><tr><td><kbd>Esc</kbd></td><td>釋放滑鼠</td></tr></table>
       </section>
       <section class="htopic hide" data-topic="mon"><h2><span class="hico">👾</span>怪物</h2>
@@ -243,6 +244,7 @@
       <section class="htopic hide" data-topic="safe"><h2><span class="hico">🛡</span>保命方法</h2>
 <ul><li><b>槍</b>：回收模式每天 6 發，打中怪物讓牠暈 2.5 秒（打不死）。對準怪物、中間不能有牆。</li>
 <li><b>配件與寶石</b>：主選單「裝備與寶石」購買。配件最多同時裝 2 個，對局中按右上角「背包」可以換；寶石升級後永久有效。</li>
+<li><b>炸藥</b>：每天 2 顆。站在牆前按「炸」／B，面前 3.5 公尺內的那格牆會被炸開，變成新的路（最外圈炸不開）。附近的怪物會暈 2 秒，但牠之後也能走這條新路。隔天牆會恢復。</li>
 <li><b>櫃子</b>（小地圖藍點）：站在旁邊不要跑，怪物看不到你；貼太近還是會被抓。</li>
 <li><b>煙霧彈</b>：冒出一團煙約 6 秒，站在煙裡怪物看不到你。冷卻 20 秒。</li>
 <li><b>跑</b>：跑步一定比怪物快，體力約可跑 6～7 秒；跑到牠看不到你，約 3.5 秒後牠會放棄。</li>

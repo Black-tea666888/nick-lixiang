@@ -128,6 +128,7 @@ const MAPS = [
 ];
 const CS = 4, WH = 3.6;
 let MAP = MAPS[0].rows, ROWS = MAP.length, COLS = MAP[0].length, mapIndex = -1;
+let BROKEN = [];   // 這一天被炸開的牆 [c, r]
 let startCell = [1, 1], floorCells = [], VAN = [6, 6], MONSTER_CELLS = [];
 const BAG_MAX = 3, DAY_TIME = 240, MAX_PLAYERS = 4;
 // 配件（最多同時裝 2 個，對局中可換）與寶石（每顆 0～5 級）
@@ -249,6 +250,7 @@ Sim.prototype.roster = function () {
 };
 
 Sim.prototype.startDay = function (day) {
+  restoreMap();
   this.map = setMap(this.map);
   const self = this, n = Math.max(1, this.players.length);
   this.day = day; this.phase = 'play'; this.money = 0; this.time = DAY_TIME; this.pad = null;
@@ -290,6 +292,7 @@ Sim.prototype.startDay = function (day) {
   this.players.forEach(function (p) {
     const o = SPAWN_OFF[p.slot % 4];
     p.alive = true; p.bag = []; p.x = VAN[0] + o[0]; p.z = VAN[1] + o[1]; p.yaw = -Math.PI * 0.75;
+    p.bombs = 2;   // 每天 2 顆炸藥
     p.run = p.loud = false; p.hp = maxHp(p); p.atkCd = 0; p.hurtT = 99; p.esc = false;
     p.clip = Math.round((hunt || br ? 12 : 6) * (hasAcc(p, 3) ? 1.5 : 1)); p.ammo = p.clip; p.gunCd = 0; p.reload = 0;   // 回收模式每天 6 發（擊中讓怪物暈 2.5 秒）；獵殺模式彈匣 12 發、自動裝填
     if (day === 1) { p.earned = 0; p.kills = 0; p.mk = 0; }
@@ -637,6 +640,25 @@ Sim.prototype._pickWander = function (m) {
   m.path = null;
 };
 
+/** 炸藥：炸開面前 3.5 公尺內的第一格牆，地形就此改變（怪物與玩家都能走新開的路）；8 公尺內的怪物暈 2 秒 */
+Sim.prototype.bomb = function (id, yaw) {
+  const p = this.player(id);
+  if (!p || this.phase !== 'play' || !p.alive) return;
+  if (!(p.bombs > 0)) { this.events.push({ t: 'nobomb', id: id, why: 'none' }); return; }
+  if (isFinite(+yaw)) p.yaw = +yaw;
+  const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
+  let hit = null;
+  for (let d = 0.4; d <= 3.5 && !hit; d += 0.2) {
+    const c = Math.floor((p.x + fx * d) / CS), r = Math.floor((p.z + fz * d) / CS);
+    if (isWall(c, r)) hit = [c, r];
+  }
+  if (!hit) { this.events.push({ t: 'nobomb', id: id, why: 'far' }); return; }
+  if (!breakWall(hit[0], hit[1])) { this.events.push({ t: 'nobomb', id: id, why: 'edge' }); return; }
+  p.bombs--;
+  const cp = center(hit[0], hit[1]);
+  this.monsters.forEach(function (m) { if (!(m.dead > 0) && Math.hypot(m.x - cp[0], m.z - cp[1]) < 8) { m.cool = Math.max(m.cool, 2); m.path = null; } });
+  this.events.push({ t: 'break', id: id, c: hit[0], r: hit[1], n: p.bombs });
+};
 /** 塔防：花 $100 在腳邊蓋一座砲塔（最多 6 座、彼此至少隔 3 公尺） */
 Sim.prototype.buildTower = function (id) {
   const p = this.player(id);
@@ -915,8 +937,9 @@ Sim.prototype.snapshot = function () {
   for (let i = 0; i < this.items.length; i++) it += this.items[i].taken ? '1' : '0';
   return { t: 's', zr: this.zone ? r2(this.zone.r) : undefined, ph: this.phase, day: this.day, money: this.money, quota: this.quota, time: Math.round(this.time * 10) / 10,
     p: this.players.map(function (p) {
-      return [p.id, r2(p.x), r2(p.z), r2(p.yaw), p.alive ? 1 : 0, p.bag.length, (p.run ? 1 : 0) | (p.spk ? 2 : 0) | (p.loud ? 4 : 0) | (p.air ? 8 : 0), Math.round(p.hp), p.ammo || 0, p.reload > 0 ? 1 : 0];
+      return [p.id, r2(p.x), r2(p.z), r2(p.yaw), p.alive ? 1 : 0, p.bag.length, (p.run ? 1 : 0) | (p.spk ? 2 : 0) | (p.loud ? 4 : 0) | (p.air ? 8 : 0), Math.round(p.hp), p.ammo || 0, p.reload > 0 ? 1 : 0, p.bombs || 0];
     }),
+    bk: BROKEN.length ? BROKEN : undefined,
     td: this.td ? [this.td.core, this.td.left + this.monsters.filter(function (m) { return !m.idle; }).length, this.td.total] : undefined,
     tw: this.towers && this.towers.length ? this.towers.map(function (t) { return [t.x, t.z]; }) : undefined,
     veh: this.veh ? [r2(this.veh.x), r2(this.veh.z), this.veh.rider || 0] : undefined,
@@ -929,14 +952,27 @@ Sim.prototype.snapshot = function () {
 };
 
 const api = { MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
-  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
+  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, breakWall: breakWall, restoreMap: restoreMap, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
   quotaFor: quotaFor, Sim: Sim, setMap: setMap };
 
 /** 切換目前地圖（碰撞、視線、尋路都跟著換）。房主與每位玩家各自呼叫。 */
+/** 炸開一格牆（最外圈不能炸）。成功回傳 true。 */
+function breakWall(c, r) {
+  if (!(r > 0 && c > 0 && r < ROWS - 1 && c < COLS - 1) || MAP[r][c] !== '#') return false;
+  MAP[r] = MAP[r].slice(0, c) + '.' + MAP[r].slice(c + 1);
+  floorCells.push([c, r]); BROKEN.push([c, r]);
+  return true;
+}
+/** 把炸開的牆恢復原狀（每天開始時）。有恢復回傳 true。 */
+function restoreMap() {
+  if (!BROKEN.length) return false;
+  const i = mapIndex; mapIndex = -1; setMap(i);
+  return true;
+}
 function setMap(i) {
   i = pick(i, MAPS.length);
   if (i === mapIndex) return i;
-  mapIndex = i; MAP = MAPS[i].rows; ROWS = MAP.length; COLS = MAP[0].length;
+  mapIndex = i; MAP = MAPS[i].rows.slice(); BROKEN = []; ROWS = MAP.length;   // 複製一份：牆可以被炸開，但不能改到原始地圖 COLS = MAP[0].length;
   floorCells = []; MONSTER_CELLS = [];
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
     const ch = MAP[r][c];
