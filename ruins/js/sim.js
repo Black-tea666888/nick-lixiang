@@ -188,13 +188,13 @@ const COSTUMES = ['隊伍色', '迷彩', '霓虹', '黃金', '忍者', '雪白']
 const PETS = ['無', '小狗', '貓頭鷹', '小機器人', '史萊姆'];   // 寵物：小狗 速度+5%、貓頭鷹 怪物偵測距離+8 公尺、小機器人 賣出+10%、史萊姆 體力回復+20%
 const WEAPONS = ['鐵管', '扳手', '球棒', '平底鍋', '雨傘', '鹹魚'];
 // 槍械：dmg＝對怪物（獵殺／塔防）每顆傷害、pvp＝大逃殺對人傷害、cd＝射擊間隔、clip＝[回收模式每天子彈, 其他模式彈匣]、
-// range＝射程、w＝命中寬度、n＝一次幾顆、spread＝散布（弧度）、stun＝回收模式暈眩秒數、reload＝換彈秒數、auto＝按住連發、cost＝解鎖金幣
+// range＝射程、w＝命中寬度、n＝一次幾顆、spread＝散布（弧度）、stun＝回收模式暈眩秒數、reload＝換彈秒數、auto＝按住連發（槍全部免費，造型才要抽）
 const GUNS = [
   { name: '手槍', dmg: 34, pvp: 25, cd: 0.22, clip: [6, 12], range: 45, w: 0.8, n: 1, spread: 0, stun: 2.5, reload: 1.4, auto: false, cost: 0 },
-  { name: '霰彈槍', dmg: 15, pvp: 11, cd: 0.75, clip: [3, 6], range: 16, w: 0.9, n: 6, spread: 0.16, stun: 2.2, reload: 1.9, auto: false, cost: 150 },
-  { name: '步槍', dmg: 22, pvp: 17, cd: 0.13, clip: [12, 24], range: 52, w: 0.7, n: 1, spread: 0.025, stun: 1.6, reload: 1.8, auto: true, cost: 250 },
-  { name: '衝鋒槍', dmg: 15, pvp: 11, cd: 0.08, clip: [16, 32], range: 28, w: 0.8, n: 1, spread: 0.07, stun: 1.1, reload: 1.6, auto: true, cost: 300 },
-  { name: '狙擊槍', dmg: 95, pvp: 75, cd: 1.1, clip: [3, 5], range: 80, w: 0.45, n: 1, spread: 0, stun: 4.2, reload: 2.3, auto: false, cost: 400 }
+  { name: '霰彈槍', dmg: 15, pvp: 11, cd: 0.75, clip: [3, 6], range: 16, w: 0.9, n: 6, spread: 0.16, stun: 2.2, reload: 1.9, auto: false, cost: 0 },
+  { name: '步槍', dmg: 22, pvp: 17, cd: 0.13, clip: [12, 24], range: 52, w: 0.7, n: 1, spread: 0.025, stun: 1.6, reload: 1.8, auto: true, cost: 0 },
+  { name: '衝鋒槍', dmg: 15, pvp: 11, cd: 0.08, clip: [16, 32], range: 28, w: 0.8, n: 1, spread: 0.07, stun: 1.1, reload: 1.6, auto: true, cost: 0 },
+  { name: '狙擊槍', dmg: 95, pvp: 75, cd: 1.1, clip: [3, 5], range: 80, w: 0.45, n: 1, spread: 0, stun: 4.2, reload: 2.3, auto: false, cost: 0 }
 ];
 const HATS = ['無', '安全帽', '頭燈', '天線', '光環', '皇冠'];   // 頭飾（純外觀）
 const pick = (v, n) => { v = Math.floor(+v); return v >= 0 && v < n ? v : 0; };
@@ -787,7 +787,7 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
     const dh = d / WX_SIGHT[wx];
     const hears = (p.veh && dh < 20 * hf) || (p.run && dh < (hasAcc(p, 5) ? 7 : 12) * hf) || (p.loud && dh < 18 * hf) ||   // 推車很吵
       (p.bag.length >= bagCap(p) && d < 40);   // 身上集滿 3 件會把怪物引過來
-    if ((sees || hears) && d < bd) { best = p; bd = d; bestSees = sees; }
+    if ((sees || hears) && d < bd && !inBase(this, p)) { best = p; bd = d; bestSees = sees; }   // 在光圈裡的人不會被當成目標
   }
   const mc = cellOf(m.x, m.z);
   if (best) {
@@ -831,7 +831,7 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   }
   for (let i = 0; i < alive.length; i++) {
     const p = alive[i];
-    if (p.alive && !(p.shieldT > 0) && !p.air && Math.hypot(p.x - m.x, p.z - m.z) < 1.15) {   // 跳在空中時抓不到
+    if (p.alive && !(p.shieldT > 0) && !p.air && !inBase(this, p) && Math.hypot(p.x - m.x, p.z - m.z) < 1.15) {   // 跳在空中時、在光圈裡抓不到
       if (hasAcc(p, 6) && !p.esc) { p.esc = true; m.cool = 2.5; m.state = 'wander'; m.path = null; this.events.push({ t: 'escape', id: p.id }); break; }   // 急救針
       p.alive = false; p.run = p.loud = false;
       this.events.push({ t: 'caught', id: p.id, x: r2(m.x), z: r2(m.z) });
@@ -842,6 +842,9 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   }
 };
 
+// 回收車的黃色光圈＝安全區：怪物打不到、會回血（大逃殺沒有安全區）
+const BASE_R = 1.85;
+function inBase(sim, p) { return sim.mode !== 'br' && Math.hypot(p.x - VAN[0], p.z - VAN[1]) < BASE_R; }
 Sim.prototype.step = function (dt) {
   if (this.phase !== 'play') return;
   dt = Math.min(dt, 0.1);
@@ -857,7 +860,8 @@ Sim.prototype.step = function (dt) {
     if ((p.skCd || 0) > 0) p.skCd -= dt;
     for (const k of ['shieldT', 'hideT', 'stealthT', 'rallyT']) if ((p[k] || 0) > 0) p[k] -= dt;
     p.hurtT += dt;
-    if (this.mode !== 'br' && p.hurtT > 5 && p.hp < maxHp(p)) p.hp = Math.min(maxHp(p), p.hp + 6 * dt);   // 5 秒沒受傷後慢慢回血
+    if (inBase(this, p)) { if (p.hp < maxHp(p)) p.hp = Math.min(maxHp(p), p.hp + 15 * dt); }   // 光圈裡每秒回 15 血
+    else if (this.mode !== 'br' && p.hurtT > 5 && p.hp < maxHp(p)) p.hp = Math.min(maxHp(p), p.hp + 6 * dt);   // 5 秒沒受傷後慢慢回血
   }
   if (this.mode === 'br') { this._stepBR(dt, alive); return; }
   if (this.mode === 'td') { this._stepTD(dt); return; }
@@ -972,7 +976,7 @@ Sim.prototype.step = function (dt) {
     if (i % 4 !== 2) continue;
     const mo = this.monsters[i];
     if (mo.dead > 0) continue;
-    for (let k = 0; k < alive.length; k++) { const p = alive[k]; if (Math.hypot(p.x - mo.x, p.z - mo.z) < 3) { p.hp = Math.max(1, p.hp - 6 * dt); p.hurtT = 0; } }
+    for (let k = 0; k < alive.length; k++) { const p = alive[k]; if (!inBase(this, p) && Math.hypot(p.x - mo.x, p.z - mo.z) < 3) { p.hp = Math.max(1, p.hp - 6 * dt); p.hurtT = 0; } }
   }
   for (let i = 0; i < this.monsters.length; i++) this._monster(this.monsters[i], i, dt, alive);
   if (!this.players.some(function (p) { return p.alive; })) { this._end(false, 'dead'); return; }
@@ -999,7 +1003,7 @@ Sim.prototype.snapshot = function () {
 };
 
 const api = { MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
-  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, GUNS: GUNS, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, breakWall: breakWall, restoreMap: restoreMap, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
+  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, GUNS: GUNS, BASE_R: BASE_R, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, breakWall: breakWall, restoreMap: restoreMap, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
   quotaFor: quotaFor, Sim: Sim, setMap: setMap };
 
 /** 切換目前地圖（碰撞、視線、尋路都跟著換）。房主與每位玩家各自呼叫。 */

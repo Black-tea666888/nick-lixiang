@@ -114,28 +114,29 @@ function renderGear() {
 function myLook() {
   const p = prog(), n = function (k) { return parseInt(ls(k) || '0', 10) || 0; }, own = function (cat, v) { return p.own[cat].indexOf(v) >= 0 ? v : 0; };
   const h = n('rr_h');
-  return { c: n('rr_c'), w: n('rr_w'), h: p.hats.indexOf(h) >= 0 ? h : 0, o: own('o', n('rr_o')), pet: own('pet', n('rr_pet')), gun: own('gun', n('rr_gun')), eq: myEquip(p), gems: p.gems };
+  return { c: n('rr_c'), w: n('rr_w'), h: p.hats.indexOf(h) >= 0 ? h : 0, o: own('o', n('rr_o')), pet: own('pet', n('rr_pet')), gun: Math.min(W.GUNS.length - 1, n('rr_gun')), eq: myEquip(p), gems: p.gems };
 }
 // 只影響自己畫面的造型：回收品、怪物、彈道
 function applyLocalSkins() {
   const p = prog(), n = function (k) { return parseInt(ls(k) || '0', 10) || 0; }, own = function (cat, v) { return p.own[cat].indexOf(v) >= 0 ? v : 0; };
-  Game.settings.itemSkin = own('is', n('rr_is')); Game.settings.fx = own('fx', n('rr_fx'));
+  Game.settings.itemSkin = own('is', n('rr_is')); Game.settings.fx = own('fx', n('rr_fx')); Game.setGunSkin(own('gs', n('rr_gs')));
   const ms = own('ms', n('rr_ms')); if ((Game.settings.monSkin | 0) !== ms) Game.setMonSkin(ms);
 }
-const SKIN_NAMES = { is: ['預設', '糖果', '寶石'], ms: ['預設', '骸骨白', '霓虹'], fx: ['金黃', '冰藍', '粉紅', '紫光'] };
+const SKIN_NAMES = { is: ['預設', '糖果', '寶石'], ms: ['預設', '骸骨白', '霓虹'], fx: ['金黃', '冰藍', '粉紅', '紫光'], gs: ['原廠', '沙漠迷彩', '叢林迷彩', '黃金', '黑金', '霓虹粉', '寒冰'] };
 const PET_NOTE = ['', '速度 +5%', '偵測 +8m', '賣出 +10%', '體力 +20%'];
 function catNames(cat) { return cat === 'o' ? W.COSTUMES : cat === 'pet' ? W.PETS : cat === 'hat' ? W.HATS : SKIN_NAMES[cat]; }
-const CAT_LABEL = { o: '服裝', pet: '寵物', hat: '頭飾', is: '回收品造型', ms: '怪物造型', fx: '彈道特效' };
+const CAT_LABEL = { o: '服裝', pet: '寵物', hat: '頭飾', is: '回收品造型', ms: '怪物造型', fx: '彈道特效', gs: '槍枝造型' };
 function owns(p, cat, i) { return cat === 'hat' ? p.hats.indexOf(i) >= 0 : p.own[cat].indexOf(i) >= 0; }
-/* ---------- 造型轉盤 ---------- */
+/* ---------- 回收抽獎機 ---------- */
 const WHEELS = [
-  { n: '綜合', cost: 50, seg: [['o'], ['pet'], ['hat'], ['is'], ['coin', 30], ['ms'], ['fx'], ['coin', 80]] },
+  { n: '綜合', cost: 50, seg: [['o'], ['pet'], ['hat'], ['is'], ['coin', 30], ['ms'], ['fx'], ['gs']] },
   { n: '服裝', cost: 80, seg: [['o', 1], ['o', 2], ['o', 3], ['o', 4], ['o', 5], ['coin', 30], ['coin', 60], ['coin', 100]] },
   { n: '寵物', cost: 80, seg: [['pet', 1], ['coin', 20], ['pet', 2], ['coin', 40], ['pet', 3], ['coin', 60], ['pet', 4], ['coin', 100]] },
-  { n: '造型特效', cost: 60, seg: [['is', 1], ['is', 2], ['ms', 1], ['ms', 2], ['fx', 1], ['fx', 2], ['fx', 3], ['coin', 50]] }
+  { n: '造型特效', cost: 60, seg: [['is', 1], ['is', 2], ['ms', 1], ['ms', 2], ['fx', 1], ['fx', 2], ['fx', 3], ['coin', 50]] },
+  { n: '槍枝造型', cost: 60, seg: [['gs', 1], ['gs', 2], ['gs', 3], ['gs', 4], ['gs', 5], ['gs', 6], ['coin', 30], ['coin', 60]] }
 ];
 let wheelI = 0, wheelBusy = false;
-const M_NAME = ['綜合機', '服裝機', '寵物機', '特效機'];
+const M_NAME = ['綜合機', '服裝機', '寵物機', '特效機', '槍械機'];
 // 吊牌上的手繪圖示（墨線 SVG，不用 emoji）
 const ICON = {
   o: '<path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3c-1 2-2 3-4 3S9 5 8 3z"/>',
@@ -144,7 +145,8 @@ const ICON = {
   is: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
   ms: '<path d="M5 11a7 7 0 1 1 14 0v3l-2 1v3H7v-3l-2-1z"/><circle cx="9" cy="11" r="1.6"/><circle cx="15" cy="11" r="1.6"/><path d="M10 18v-2M14 18v-2"/>',
   fx: '<path d="M12 2v6M12 16v6M2 12h6M16 12h6M5 5l4 4M15 15l4 4M19 5l-4 4M9 15l-4 4"/>',
-  coin: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/>'
+  coin: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/>',
+  gs: '<path d="M3 9h15l2-2h1v4h-6l-1 2h-3l-1 5H6l1-5H3z"/><path d="M10 13l-1 2"/>'
 };
 function iconSvg(k) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[k] || ICON.coin) + '</svg>'; }
 function segLabel(sg) { return sg[0] === 'coin' ? '金幣 +' + sg[1] : sg.length > 1 ? catNames(sg[0])[sg[1]] : CAT_LABEL[sg[0]]; }
@@ -244,7 +246,7 @@ function prog() {
   p.coins = Math.max(0, Math.floor(+p.coins || 0)); p.xp = Math.max(0, Math.floor(+p.xp || 0));
   if (!Array.isArray(p.hats)) p.hats = [0];
   if (!p.own || typeof p.own !== 'object') p.own = {};
-  ['o', 'pet', 'is', 'ms', 'fx', 'gun'].forEach(function (k) { if (!Array.isArray(p.own[k])) p.own[k] = [0]; });
+  ['o', 'pet', 'is', 'ms', 'fx', 'gun', 'gs'].forEach(function (k) { if (!Array.isArray(p.own[k])) p.own[k] = [0]; });
   if (!Array.isArray(p.acc)) p.acc = [];
   if (!Array.isArray(p.gems) || p.gems.length !== 3) p.gems = [0, 0, 0];
   if (p.day !== today() || !Array.isArray(p.m)) { p.day = today(); p.m = [0, 0, 0]; p.done = [false, false, false]; }
@@ -303,7 +305,7 @@ function renderGunStats(i) {
   const vals = v(G), names = ['傷害', '射速', '射程', '彈量'];
   box.textContent = '';
   const title = document.createElement('p'); title.className = 'gNote';
-  title.textContent = G.name + (G.n > 1 ? '：一次 ' + G.n + ' 顆，近距離很強' : G.auto ? '：按住連發' : G.cost >= 400 ? '：一發入魂，射得最遠' : '：穩定好用') + '。回收模式每天 ' + G.clip[0] + ' 發，命中讓怪物暈 ' + G.stun + ' 秒。';
+  title.textContent = G.name + (G.n > 1 ? '：一次 ' + G.n + ' 顆，近距離很強' : G.auto ? '：按住連發' : G.range >= 70 ? '：一發入魂，射得最遠' : '：穩定好用') + '。回收模式每天 ' + G.clip[0] + ' 發，命中讓怪物暈 ' + G.stun + ' 秒。';
   box.appendChild(title);
   vals.forEach(function (x, k) {
     const row = document.createElement('div'); row.className = 'gRow';
@@ -898,13 +900,8 @@ function bind() {
   let mapSel = myMap();
   const cBtns = cards($('cGrid'), W.CHARS, function (i) { return CINFO[i] ? CINFO[i][0] : ''; }, function (i) { look.c = i; showLook(); });
   const wBtns = cards($('wGrid'), W.WEAPONS, null, function (i) { look.w = i; showLook(); });
-  // 槍：手槍免費，其他用金幣解鎖
+  // 槍：全部免費（造型才要抽）
   const gBtns = cards($('gGrid'), W.GUNS.map(function (g) { return g.name; }), function () { return ''; }, function (i) {
-    const p = prog(), G = W.GUNS[i];
-    if (!owns(p, 'gun', i)) {
-      if (p.coins < G.cost) { say('金幣不夠：「' + G.name + '」要 ' + G.cost + ' 金幣，你有 ' + p.coins + '。過關、每日任務和小遊戲可以賺金幣。'); return; }
-      p.coins -= G.cost; p.own.gun.push(i); progSave(p); Sfx.tone(660, 0.12, 'triangle', 0.12, 990);
-    }
     look.gun = i; lsSet('rr_gun', String(i)); showLook();
   });
   const hBtns = cards($('hGrid'), W.HATS, function (i) { return ''; }, function (i) {
@@ -916,9 +913,9 @@ function bind() {
     look.h = i; showLook();
   });
   // 服裝、寵物（隊友看得到）與只影響自己畫面的造型
-  const wardrobe = [['o', 'oGrid', 'rr_o'], ['pet', 'petGrid', 'rr_pet'], ['is', 'isGrid', 'rr_is'], ['ms', 'msGrid', 'rr_ms'], ['fx', 'fxGrid', 'rr_fx']].map(function (d) {
+  const wardrobe = [['o', 'oGrid', 'rr_o'], ['pet', 'petGrid', 'rr_pet'], ['is', 'isGrid', 'rr_is'], ['ms', 'msGrid', 'rr_ms'], ['fx', 'fxGrid', 'rr_fx'], ['gs', 'gsGrid', 'rr_gs']].map(function (d) {
     const cat = d[0], btns = cards($(d[1]), catNames(cat), function () { return ''; }, function (i) {
-      if (!owns(prog(), cat, i)) { say('「' + catNames(cat)[i] + '」還沒取得，到「造型轉盤」抽。'); return; }
+      if (!owns(prog(), cat, i)) { say('「' + catNames(cat)[i] + '」還沒取得，到「回收抽獎機」抽。'); return; }
       lsSet(d[2], String(i)); if (cat === 'o') look.o = i; if (cat === 'pet') look.pet = i; showLook();
     });
     return { cat: cat, key: d[2], btns: btns };
@@ -931,22 +928,31 @@ function bind() {
     $('cName').textContent = W.CHARS[look.c]; $('cSkill').textContent = info[0];
     $('cDesc').textContent = info[1]; $('cAttr').textContent = '屬性：' + info[2];
     mark(cBtns, look.c); mark(wBtns, look.w); mark(hBtns, look.h);
-    { const pg0 = prog(); look.gun = owns(pg0, 'gun', look.gun) ? look.gun : 0; mark(gBtns, look.gun);
-      gBtns.forEach(function (b, i) { const own = owns(pg0, 'gun', i); b.classList.toggle('lock', !own); b.lastChild.textContent = own ? (i === look.gun ? '使用中' : '已擁有') : W.GUNS[i].cost + ' 金幣'; });
+    { look.gun = ((look.gun | 0) % W.GUNS.length + W.GUNS.length) % W.GUNS.length; mark(gBtns, look.gun);
+      gBtns.forEach(function (b, i) { b.lastChild.textContent = i === look.gun ? '使用中' : ''; });
       renderGunStats(look.gun); Game.setGun(look.gun); }
     const pg = prog();
     hBtns.forEach(function (b, i) { const own = pg.hats.indexOf(i) >= 0; b.classList.toggle('lock', !own); b.lastChild.textContent = own ? (i === look.h ? '使用中' : '已擁有') : HAT_COST[i] + ' 金幣'; });
     wardrobe.forEach(function (wd) {
       const cur = parseInt(ls(wd.key) || '0', 10) || 0, sel = owns(pg, wd.cat, cur) ? cur : 0;
-      wd.btns.forEach(function (b, i) { const own = owns(pg, wd.cat, i); b.classList.toggle('lock', !own); b.classList.toggle('on', i === sel); b.lastChild.textContent = !own ? '轉盤取得' : i === sel ? '使用中' : wd.cat === 'pet' && i ? PET_NOTE[i] : '已擁有'; });
+      wd.btns.forEach(function (b, i) { const own = owns(pg, wd.cat, i); b.classList.toggle('lock', !own); b.classList.toggle('on', i === sel); b.lastChild.textContent = !own ? '抽獎機取得' : i === sel ? '使用中' : wd.cat === 'pet' && i ? PET_NOTE[i] : '已擁有'; });
     });
     look.o = owns(pg, 'o', look.o) ? look.o : 0; look.pet = owns(pg, 'pet', look.pet) ? look.pet : 0;
     applyLocalSkins();
     lsSet('rr_c', String(look.c)); lsSet('rr_w', String(look.w)); lsSet('rr_h', String(look.h)); renderProg();
     refreshPickSummary();
+    // 收合標題列：顯示目前選的東西
+    { const pg1 = prog(), cur = function (cat, key) { const v = parseInt(ls(key) || '0', 10) || 0; return catNames(cat)[owns(pg1, cat, v) ? v : 0]; };
+      $('fsChar').textContent = W.CHARS[look.c];
+      $('fsArms').textContent = W.WEAPONS[look.w] + '、' + W.GUNS[look.gun].name + (cur('gs', 'rr_gs') !== '原廠' ? '（' + cur('gs', 'rr_gs') + '）' : '');
+      $('fsLook').textContent = [look.h ? W.HATS[look.h] : '', look.o ? W.COSTUMES[look.o] : '', look.pet ? W.PETS[look.pet] : ''].filter(Boolean).join('、') || '預設';
+      $('fsFx').textContent = cur('fx', 'rr_fx') + '彈道'; }
     Game.preview($('lookPrev'), look.c, look.w, look.h, look.o, look.pet);
   };
-  showMapName = function () { mapSel = myMap(); mark(mBtns, mapSel); refreshPickSummary(); };
+  showMapName = function () { mapSel = myMap(); mark(mBtns, mapSel); refreshPickSummary(); $('fsMap').textContent = W.MAPS[mapSel].name; };
+  // 收合狀態記在 rr_fold（預設只展開「角色」）
+  { let open = null; try { open = JSON.parse(ls('rr_fold') || 'null'); } catch (e) {} if (!open) open = { char: 1 };
+    Array.prototype.forEach.call(document.querySelectorAll('details.fold'), function (d) { d.open = !!open[d.dataset.fold]; d.addEventListener('toggle', function () { open[d.dataset.fold] = d.open ? 1 : 0; lsSet('rr_fold', JSON.stringify(open)); }); }); }
   showMapName(); Game.showMap(mapSel);
   showLook();
   window.RR_refreshWardrobe = showLook;

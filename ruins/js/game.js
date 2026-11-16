@@ -382,6 +382,7 @@ function showBreak(c, r, quiet) {
 }
 let solids = [];   // 擺設的碰撞圓（櫃子、木箱、鐵桶）：[x, z, 半徑]
 function hitSolid(x, z) { for (let i = 0; i < solids.length; i++) { const q = solids[i]; if (Math.hypot(q[0] - x, q[1] - z) < q[2] + 0.34) return true; } return false; }
+let vanRing = null, inBaseNow = false;
 let level = null, builtMap = -1, ambient = null, hemi = null, sun = null, torchBase = 2.2;
 
 /* ---------- 小地圖（每張地圖自動產生；北方固定朝上，點一下放大） ---------- */
@@ -597,7 +598,7 @@ function buildLevel() {
   if (open) scatterGround(style, hr);
   // 回收車
   const ring = new THREE.Mesh(new THREE.RingGeometry(1.5, 1.85, 40), new THREE.MeshBasicMaterial({ color: 0xffc24a, side: THREE.DoubleSide }));
-  ring.rotation.x = -Math.PI / 2; ring.position.set(VAN[0], 0.03, VAN[1]); level.add(ring);
+  ring.rotation.x = -Math.PI / 2; ring.position.set(VAN[0], 0.03, VAN[1]); level.add(ring); vanRing = ring;
   // 光柱：只畫外側（站在裡面抬頭不會看到一個圓），由下往上淡出
   const bcv = document.createElement('canvas'); bcv.width = 4; bcv.height = 64; { const bg = bcv.getContext('2d'), gr = bg.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, '#000'); gr.addColorStop(1, '#fff'); bg.fillStyle = gr; bg.fillRect(0, 0, 4, 64); }
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 1.65, WH, 28, 1, true),
@@ -1058,11 +1059,20 @@ function getPuffTex() {
   g.globalCompositeOperation = 'destination-out'; g.fillStyle = fade; g.fillRect(0, 0, 128, 128);
   puffTex = new THREE.CanvasTexture(cv); return puffTex;
 }
+// 槍枝造型：替換配色（原廠、沙漠迷彩、叢林迷彩、黃金、黑金、霓虹粉、寒冰）
+const GUN_SKIN = [null,
+  { dark: 0x9c845e, poly: 0xb79c72, steel: 0x6b5a40, green: 0xa8915f, wood: 0x8a6a40 },
+  { dark: 0x3f4f2e, poly: 0x556b3a, steel: 0x3a3f33, green: 0x4a5e33, wood: 0x5a4a2a },
+  { dark: 0xd4ad52, poly: 0xb38a2e, steel: 0xf0d27a, green: 0xb38a2e, wood: 0x8a5a20, shine: 1 },
+  { dark: 0x111214, poly: 0x18191c, steel: 0xc9a24a, green: 0x111214, wood: 0x1e1a16, shine: 1 },
+  { dark: 0xe0559f, poly: 0x2a1630, steel: 0x7ad8ff, green: 0xe0559f, wood: 0x6a2a5a, glow: 0x3a0a28 },
+  { dark: 0xc4e6f4, poly: 0x7fb6d6, steel: 0xffffff, green: 0x9fd0e8, wood: 0x9fd0e8, shine: 1 }];
 function buildGunView(i) {
   if (gunMesh) { camera.remove(gunMesh); gunMesh.traverse(function (o) { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
-  const gp = gunParts(i | 0);
+  const gp = gunParts(i | 0), sk = GUN_SKIN[settings.gunSkin | 0];
+  if (sk) gp[0].forEach(function (e) { for (const k in GM) if (e[2] === GM[k] && sk[k] != null) { e[2] = sk[k]; break; } });
   gunMesh = new THREE.Group();
-  const body = new THREE.Mesh(mergeGeos(gp[0]), litMat({ vertexColors: true, shininess: 70, specular: 0x666666 }));
+  const body = new THREE.Mesh(mergeGeos(gp[0]), litMat({ vertexColors: true, shininess: sk && sk.shine ? 120 : 70, specular: sk && sk.shine ? 0xbbbbbb : 0x666666, emissive: sk && sk.glow ? sk.glow : 0x000000 }));
   gunMesh.add(body);
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.22), new THREE.MeshBasicMaterial({ map: getFlashTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
   const fl2 = fl.clone(); fl2.rotation.y = Math.PI / 2; fl.add(fl2);
@@ -1389,6 +1399,13 @@ function updateMe(dt) {
   const fovT = dashT > 0 ? 96 : wantRun ? 88 : 75;
   if (Math.abs(camera.fov - fovT) > 0.1) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   if (gunT > 0) gunT -= dt;
+  // 回收車光圈＝安全區：走進去提示一次，光圈變綠、會呼吸發亮
+  if (vanRing && view.phase === 'play') {
+    const inB = view.mode !== 'br' && me.alive && Math.hypot(me.x - W.VAN[0], me.z - W.VAN[1]) < (W.BASE_R || 1.85);
+    if (inB && !inBaseNow) toast('回到光圈：怪物打不到你，會慢慢回血', 'good');
+    inBaseNow = inB;
+    const t = performance.now() / 1000; vanRing.material.color.setHex(inB ? 0x5fd37a : 0xffc24a); vanRing.scale.setScalar(inB ? 1 + Math.sin(t * 4) * 0.03 : 1);
+  }
   fpsWatch(dt); tickWeather(dt);
   if (view.zone && me.alive && Math.hypot(me.x - view.zone[0], me.z - view.zone[1]) > view.zr) { outT -= dt; if (outT <= 0) { outT = 2.5; toast('你在安全區外，正在扣血！往白圈裡跑'); Sfx.tone(300, 0.15, 'square', 0.08); } hurtFlash = Math.max(hurtFlash, 0.35); }
   if (gunMesh) { const kk = gunMesh.userData.kick || 0, tt = performance.now() / 1000, mv = (keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD || Math.abs(touch.jx) + Math.abs(touch.jy) > 0.1) ? 1 : 0.25;
@@ -1626,6 +1643,7 @@ RR.Game = {
   },
   settings: settings,
   setGun: function (i) { i = i | 0; if (settings.gun === i && gunMesh) return; settings.gun = i; if (camera) buildGunView(i); },
+  setGunSkin: function (k) { k = k | 0; if (settings.gunSkin === k) return; settings.gunSkin = k; if (camera) buildGunView(settings.gun | 0); },
   /** 選單／大廳換地圖時，背景跟著換 */
   showMap: function (i) { if (!ready || active) return; W.setMap(i); if (builtMap !== W.mapIndex) buildLevel(); },
   /** 選單裡的造型預覽 */
