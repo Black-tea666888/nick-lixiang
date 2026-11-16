@@ -102,12 +102,12 @@
     <div class="modes">
       <button class="mode main" id="createBtn" type="button"><b>多人合作</b><span>建立房間，邀請最多 3 位隊友</span></button>
       <button class="mode" id="soloBtn" type="button"><b>單人遊玩</b><span>自己練習</span></button>
-      <button class="mode" id="miniInfoBtn" type="button"><b>小遊戲</b><span>圈圈叉叉、搶獎盃</span></button>
+      <button class="mode" id="miniInfoBtn" type="button"><b>小遊戲</b><span>分類回收、圈圈叉叉，不用進遊戲也能玩</span></button>
       <button class="mode td" id="tdBtn" type="button"><b>塔防模式</b><span>守住回收車：怪物一波波進攻，開槍並花錢蓋砲塔（單人；多人請在大廳切換模式）</span></button>
       <button class="mode br" id="brBtn" type="button"><b>大逃殺</b><span>6 人混戰（不足由電腦補滿），安全區會縮小，活到最後的人獲勝</span></button>
       <button class="mode social" id="socialOpen" type="button"><b>社群</b><span>排行榜、區域賽季、好友、戰隊、成就（要登入和網路）</span></button>
       <button class="mode gear" id="gearOpen" type="button"><b>裝備與寶石</b><span>配件最多裝 2 個，對局中也能換；寶石可升級</span></button>
-      <button class="mode wheel" id="wheelOpen" type="button"><b>造型轉盤</b><span>用金幣抽服裝、寵物、造型和特效，每天免費一次</span></button>
+      <button class="mode wheel" id="wheelOpen" type="button"><b>回收抽獎機</b><span>用金幣抽服裝、寵物、造型和特效，每天免費一次</span></button>
       <button class="mode hunt" id="huntBtn" type="button"><b>獵殺模式</b><span>新模式：拿槍反過來獵殺怪物，在時間內擊倒指定數量（單人；多人請在大廳切換模式）</span></button>
     </div>
     <div class="sec">每日任務</div>
@@ -152,25 +152,36 @@
     <div class="cards c3" id="msGrid"></div>
     <div class="sec">彈道特效</div>
     <div class="cards c3" id="fxGrid"></div>
-    <div class="col"><button class="btn" id="wheelOpen2" type="button">去轉盤抽造型</button></div>
+    <div class="col"><button class="btn" id="wheelOpen2" type="button">去抽獎機抽造型</button></div>
     <div class="sec">地圖</div>
     <div class="cards c3" id="mGrid"></div>
     <div class="col"><button class="btn primary" id="pickOk" type="button">確定</button></div>
   </div>
 </div>
 
-<!-- 造型轉盤 -->
+<!-- 造型抽獎機 -->
 <div class="screen hide" id="scrWheel">
   <div class="panel lobby">
     <div class="topbar">
       <button class="icon" id="wheelDone" type="button" aria-label="返回">‹</button>
-      <div class="who"><b class="ttl">造型轉盤</b><div class="note">金幣 <b id="coinTag3">0</b></div></div>
+      <div class="who"><b class="ttl">回收抽獎機</b><div class="stats"><span>金幣<b id="coinTag3">0</b></span></div></div>
     </div>
-    <div class="cards c3 wsel" id="wheelSel"></div>
-    <div id="wheelBox"><div id="wheelPtr"></div><div id="wheel"></div></div>
-    <p id="wheelMsg" class="gain"></p>
-    <div class="col"><button class="btn primary" id="wheelSpin" type="button">轉一次</button></div>
-    <p class="note" style="text-align:center">抽到已經有的會換成 25 金幣。金幣靠過關和每日任務取得，不需要也無法儲值。</p>
+    <div class="tabs" id="wheelSel" role="tablist"></div>
+    <div class="machine">
+      <div class="mHead"><b id="mName">綜合機</b><span id="mCost">一次 50 金幣</span></div>
+      <div class="reelWin" id="reelWin"><div class="reel" id="reel"></div><i class="reelMark" aria-hidden="true"></i></div>
+      <div class="mFoot"><i></i><i></i><i></i></div>
+    </div>
+    <div id="wheelResult" class="hide" aria-live="polite">
+      <div class="bigTag" id="resTag"></div>
+      <div class="resTxt"><b id="wheelMsg"></b><span id="wheelSub"></span>
+        <div class="row"><button class="btn" id="wheelWear" type="button">去換上</button></div>
+      </div>
+    </div>
+    <div class="col"><button class="btn primary" id="wheelSpin" type="button">抽一次</button></div>
+    <div class="sec">這台機器的獎品</div>
+    <div id="wheelPool"></div>
+    <p class="note" style="text-align:center">每格機率相同。抽到已經有的會換成 25 金幣。金幣靠過關和每日任務取得，不需要也無法儲值。</p>
   </div>
 </div>
 
@@ -215,7 +226,7 @@
         <button class="hrow" type="button" data-topic="safe"><span class="htxt"><b>保命方法</b><small>技能、煙霧彈、櫃子、跳與衝、救隊友</small></span><span class="go">›</span></button>
         <button class="hrow" type="button" data-topic="char"><span class="htxt"><b>角色技能</b><small>六個角色的技能與特色</small></span><span class="go">›</span></button>
         <button class="hrow" type="button" data-topic="map"><span class="htxt"><b>地圖與小地圖</b><small>7 張地圖、小地圖上的標記</small></span><span class="go">›</span></button>
-        <button class="hrow" type="button" data-topic="bonus"><span class="htxt"><b>加分與小遊戲</b><small>獎盃、圈圈叉叉、傳送陣</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="bonus"><span class="htxt"><b>加分與小遊戲</b><small>分類回收、圈圈叉叉、獎盃、傳送陣、抽獎機</small></span><span class="go">›</span></button>
         <button class="hrow" type="button" data-topic="grow"><span class="htxt"><b>星等與成長</b><small>星星、金幣、每日任務、頭飾</small></span><span class="go">›</span></button>
         <button class="hrow" type="button" data-topic="team"><span class="htxt"><b>語音與隊友</b><small>麥克風、聊天、互相傷害、沒聲音時</small></span><span class="go">›</span></button>
       </div>
@@ -290,7 +301,10 @@
 <li><b>天然災害</b>（第 2 天起每天一次）：地震會讓所有人變慢、怪物站不穩；落石或隕石會先出現紅圈，2.5 秒後砸下，圈內扣 40 血，也能砸暈怪物。</li>
 <li><b>推車</b>：回收車旁有一台推車，靠近按「車」（電腦 V）推著走：速度很快、可多放 2 件廢料，但很吵會引來怪物，而且不能跳、衝、開槍。再按一次下車。</li>
 <li><b>獎盃</b>：地圖上有一座金色獎盃，站旁按住「救」／E 3 秒，團隊 +120。</li>
-<li><b>圈圈叉叉</b>：遊戲中按「小遊戲」。前兩位落子的人是 X 與 O，連成一線團隊 +150。</li>
+<li><b>分類回收</b>：主選單「小遊戲」就能玩，不用進房間。30 秒內把廢棄物點進正確的桶子（紙類、塑膠、金屬、有害），分錯扣 2 秒，連續答對 5 個以上每個 2 分。每 3 分換 1 金幣，一局最多 10。</li>
+<li><b>圈圈叉叉（單機）</b>：主選單「小遊戲」可以和電腦下（簡單贏 +5、困難贏 +12 金幣），或兩人用同一支手機輪流。單機小遊戲每天最多拿 60 金幣。</li>
+<li><b>隊伍圈圈叉叉</b>：遊戲中按「小遊戲」。前兩位落子的人是 X 與 O，連成一線團隊 +150。</li>
+<li><b>回收抽獎機</b>：用金幣抽服裝、寵物、頭飾、造型和特效。每台機器的獎品和機率都列在下方，每格機率相同；綜合機每天免費一次，抽到已有的換成 25 金幣。</li>
 <li><b>傳送陣</b>：背包滿 3 件後附近會出現，踩上去直接傳回回收車。</li></ul>
       </section>
       <section class="htopic hide" data-topic="grow"><h2>星等與成長</h2>
@@ -330,8 +344,36 @@
       <div class="who"><b class="ttl">小遊戲</b></div>
     </div>
     <div id="miniList" class="modes">
-      <button class="mode main" id="miniTT" type="button"><b>圈圈叉叉</b><span>前兩位落子的人是 X 與 O，連成一線團隊 +150</span></button>
-      <div class="mode static"><b>搶獎盃</b><span>在地圖上找到金色獎盃，站旁按住 E（手機按住「救」）3 秒，團隊 +120</span></div>
+      <button class="mode main" id="miniSortBtn" type="button"><b>分類回收</b><span>30 秒內把廢棄物點進正確的回收桶，分數越高金幣越多</span></button>
+      <button class="mode" id="miniLocalTTBtn" type="button"><b>圈圈叉叉</b><span>和電腦下，或兩人輪流</span></button>
+      <button class="mode" id="miniTT" type="button"><b>隊伍圈圈叉叉</b><span>遊戲中和隊友對下</span></button>
+      <div class="mode static"><b>搶獎盃</b><span>遊戲中在地圖上找金色獎盃，站旁按住 E（手機按住「救」）3 秒，團隊 +120</span></div>
+    </div>
+    <div id="miniLocalTT" class="hide">
+      <div class="tabs" id="ttMode"><button type="button" data-vs="easy">電腦・簡單</button><button type="button" data-vs="hard">電腦・困難</button><button type="button" data-vs="two">兩人輪流</button></div>
+      <div id="ttLocalSub" class="ttSub"></div>
+      <div id="ttLocal" class="ttBoard"></div>
+      <p id="ttLocalMsg" class="miniMsg"></p>
+      <div class="col"><button class="btn primary hide" id="ttAgain" type="button">再下一局</button><button class="btn miniHome" type="button">返回小遊戲選單</button></div>
+    </div>
+    <div id="miniSort" class="hide">
+      <div id="sortStartBox">
+        <p class="sortRule">畫面會出現廢棄物，點下面正確的回收桶。分錯會扣 2 秒，連續答對 5 個以上每個 2 分。</p>
+        <div class="stats sortBestRow"><span>最佳<b id="sortBest">0</b>分</span></div>
+        <p id="sortMsg" class="miniMsg"></p>
+        <div class="col"><button class="btn primary" id="sortGo" type="button">開始（30 秒）</button></div>
+      </div>
+      <div id="sortPlay" class="hide">
+        <div class="sortTop"><span>分數 <b id="sortScore">0</b></span><span id="sortTimeTxt">30 秒</span></div>
+        <div class="sortBar"><i id="sortTime"></i></div>
+        <div id="sortItem" class="sortItem"></div>
+        <p id="sortCombo" class="sortCombo"></p>
+        <div id="sortBins" class="sortBins">
+          <button type="button" data-bin="paper" class="b-paper">紙類</button><button type="button" data-bin="plastic" class="b-plastic">塑膠</button>
+          <button type="button" data-bin="metal" class="b-metal">金屬</button><button type="button" data-bin="haz" class="b-haz">有害</button>
+        </div>
+      </div>
+      <div class="col"><button class="btn miniHome" type="button">返回小遊戲選單</button></div>
     </div>
     <div id="miniTTBox" class="hide">
       <div id="ttSub"></div>
@@ -424,6 +466,7 @@
 <script src="js/cloud.js"></script>
 <script src="js/net.js"></script>
 <script src="js/game.js"></script>
+<script src="js/minigames.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

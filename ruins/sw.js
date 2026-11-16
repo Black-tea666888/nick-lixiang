@@ -2,7 +2,7 @@
 // 這樣每次更新後重新整理就是最新版，沒網路時也還能開。
 // 換了 vendor 檔案時，把 VER 加一。
 const VER = 'rr-v1';
-const CORE = ['./', 'index.html', 'css/style.css', 'js/config.js', 'js/sim.js', 'js/audio.js', 'js/auth.js', 'js/cloud.js', 'js/net.js', 'js/game.js', 'js/main.js',
+const CORE = ['./', 'index.html', 'css/style.css', 'js/config.js', 'js/sim.js', 'js/audio.js', 'js/auth.js', 'js/cloud.js', 'js/net.js', 'js/game.js', 'js/minigames.js', 'js/main.js',
   'vendor/three.min.js', 'vendor/peerjs.min.js', 'vendor/firebase-app-compat.js', 'vendor/firebase-auth-compat.js', 'icons/icon-192.png'];
 
 self.addEventListener('install', function (e) {

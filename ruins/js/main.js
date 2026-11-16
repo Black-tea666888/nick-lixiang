@@ -134,42 +134,106 @@ const WHEELS = [
   { n: '寵物', cost: 80, seg: [['pet', 1], ['coin', 20], ['pet', 2], ['coin', 40], ['pet', 3], ['coin', 60], ['pet', 4], ['coin', 100]] },
   { n: '造型特效', cost: 60, seg: [['is', 1], ['is', 2], ['ms', 1], ['ms', 2], ['fx', 1], ['fx', 2], ['fx', 3], ['coin', 50]] }
 ];
-let wheelI = 0, wheelBusy = false, wheelTurn = 0;
+let wheelI = 0, wheelBusy = false;
+const M_NAME = ['綜合機', '服裝機', '寵物機', '特效機'];
+// 吊牌上的手繪圖示（墨線 SVG，不用 emoji）
+const ICON = {
+  o: '<path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3c-1 2-2 3-4 3S9 5 8 3z"/>',
+  pet: '<ellipse cx="12" cy="16" rx="4.5" ry="3.8"/><circle cx="6" cy="10" r="1.8"/><circle cx="10" cy="6.5" r="1.8"/><circle cx="14" cy="6.5" r="1.8"/><circle cx="18" cy="10" r="1.8"/>',
+  hat: '<path d="M5 15c0-5 3-8 7-8s7 3 7 8z"/><path d="M2 15h17l3 2H2z"/>',
+  is: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  ms: '<path d="M5 11a7 7 0 1 1 14 0v3l-2 1v3H7v-3l-2-1z"/><circle cx="9" cy="11" r="1.6"/><circle cx="15" cy="11" r="1.6"/><path d="M10 18v-2M14 18v-2"/>',
+  fx: '<path d="M12 2v6M12 16v6M2 12h6M16 12h6M5 5l4 4M15 15l4 4M19 5l-4 4M9 15l-4 4"/>',
+  coin: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/>'
+};
+function iconSvg(k) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[k] || ICON.coin) + '</svg>'; }
 function segLabel(sg) { return sg[0] === 'coin' ? '金幣 +' + sg[1] : sg.length > 1 ? catNames(sg[0])[sg[1]] : CAT_LABEL[sg[0]]; }
+function segKind(sg) { return sg[0] === 'coin' ? '金幣' : sg.length > 1 ? CAT_LABEL[sg[0]] : '隨機'; }
+function tagEl(sg, big) {
+  const d = document.createElement('div'); d.className = 'tagItem c-' + sg[0] + (big ? ' big' : '');
+  d.innerHTML = iconSvg(sg[0]) + '<b></b><small></small>';
+  d.querySelector('b').textContent = segLabel(sg); d.querySelector('small').textContent = segKind(sg);
+  return d;
+}
+function poolStatus(p, sg) {
+  if (sg[0] === 'coin') return '';
+  const names = catNames(sg[0]);
+  if (sg.length > 1) return owns(p, sg[0], sg[1]) ? '已擁有' : '';
+  let n = 0; for (let k = 1; k < names.length; k++) if (owns(p, sg[0], k)) n++;
+  return '已收集 ' + n + ' / ' + (names.length - 1);
+}
+function wheelFill(n, winSg) {
+  const wh = WHEELS[wheelI], r = $('reel'); r.textContent = ''; r.style.transition = 'none'; r.style.transform = 'translateX(0)';
+  for (let i = 0; i < n; i++) r.appendChild(tagEl(i === n - 4 && winSg ? winSg : wh.seg[Math.floor(Math.random() * wh.seg.length)]));
+}
 function wheelDraw() {
-  const wh = WHEELS[wheelI], box = $('wheel'), p = prog();
-  box.textContent = '';
-  wh.seg.forEach(function (sg, i) {
-    const sp = document.createElement('span'), t = document.createElement('i');
-    sp.style.transform = 'rotate(' + (i * 45 + 22.5) + 'deg)'; t.textContent = segLabel(sg); sp.appendChild(t); box.appendChild(sp);
-  });
+  const wh = WHEELS[wheelI], p = prog();
   const free = wheelI === 0 && p.freeDay !== today();
-  $('wheelSpin').textContent = free ? '免費轉一次' : '轉一次（' + wh.cost + ' 金幣）';
+  $('wheelSpin').textContent = free ? '今天免費抽一次' : '抽一次（' + wh.cost + ' 金幣）';
   $('coinTag3').textContent = p.coins;
-  Array.prototype.forEach.call($('wheelSel').children, function (b, k) { b.classList.toggle('on', k === wheelI); });
+  $('mName').textContent = M_NAME[wheelI]; $('mCost').textContent = '一次 ' + wh.cost + ' 金幣' + (wheelI === 0 ? '，每天免費一次' : '');
+  Array.prototype.forEach.call($('wheelSel').children, function (b, k) { b.classList.toggle('on', k === wheelI); b.setAttribute('aria-selected', k === wheelI); });
+  if (!wheelBusy) wheelFill(9);
+  const pool = $('wheelPool'); pool.textContent = '';
+  const pct = (100 / wh.seg.length).toFixed(1).replace(/\.0$/, '') + '%';
+  wh.seg.forEach(function (sg) {
+    const row = document.createElement('div'); row.className = 'poolRow c-' + sg[0];
+    row.innerHTML = iconSvg(sg[0]) + '<b></b><small></small><em></em>';
+    row.querySelector('b').textContent = segLabel(sg) + (sg.length === 1 && sg[0] !== 'coin' ? '（隨機一件）' : '');
+    const st = poolStatus(p, sg); row.querySelector('small').textContent = st; if (st === '已擁有') row.classList.add('own');
+    row.querySelector('em').textContent = pct; pool.appendChild(row);
+  });
 }
 function wheelSpin() {
   if (wheelBusy) return;
   const wh = WHEELS[wheelI], p = prog(), free = wheelI === 0 && p.freeDay !== today();
-  if (!free && p.coins < wh.cost) { say('金幣不夠：這個轉盤一次要 ' + wh.cost + ' 金幣，你有 ' + p.coins + '。過關和每日任務可以賺金幣。'); return; }
+  if (!free && p.coins < wh.cost) { say('金幣不夠：這台一次要 ' + wh.cost + ' 金幣，你有 ' + p.coins + '。過關和每日任務可以賺金幣。'); return; }
   if (free) p.freeDay = today(); else p.coins -= wh.cost;
-  const idx = Math.floor(Math.random() * 8), sg = wh.seg[idx];
-  let msg;
-  if (sg[0] === 'coin') { p.coins += sg[1]; msg = '金幣 +' + sg[1]; }
+  const idx = Math.floor(Math.random() * wh.seg.length), sg = wh.seg[idx];
+  let msg, sub, fresh = false, shown = sg;
+  if (sg[0] === 'coin') { p.coins += sg[1]; msg = '金幣 +' + sg[1]; sub = '直接加到你的金幣。'; }
   else {
     const cat = sg[0], names = catNames(cat);
     let pickI = sg[1];
     if (pickI == null) { const pool = []; for (let k = 1; k < names.length; k++) if (!owns(p, cat, k)) pool.push(k); pickI = pool.length ? pool[Math.floor(Math.random() * pool.length)] : 1 + Math.floor(Math.random() * (names.length - 1)); }
-    if (owns(p, cat, pickI)) { p.coins += 25; msg = CAT_LABEL[cat] + '「' + names[pickI] + '」已經有了，換成金幣 +25'; }
-    else { if (cat === 'hat') p.hats.push(pickI); else p.own[cat].push(pickI); msg = '獲得' + CAT_LABEL[cat] + '「' + names[pickI] + '」！到「出戰角色」換上'; }
+    shown = [cat, pickI];
+    if (owns(p, cat, pickI)) { p.coins += 25; msg = '「' + names[pickI] + '」已經有了'; sub = '換成金幣 +25。'; }
+    else { if (cat === 'hat') p.hats.push(pickI); else p.own[cat].push(pickI); fresh = true; msg = '抽到' + CAT_LABEL[cat] + '「' + names[pickI] + '」'; sub = cat === 'pet' ? '寵物加成：' + PET_NOTE[pickI] + '。' : '到「出戰角色」就能換上。'; }
   }
   progSave(p);
-  wheelBusy = true; $('wheelMsg').textContent = ''; $('coinTag3').textContent = p.coins;
-  wheelTurn += 360 * 5 + ((360 - (idx * 45 + 22.5)) - (wheelTurn % 360) + 360) % 360;
-  $('wheel').style.transform = 'rotate(' + wheelTurn + 'deg)';
-  Sfx.tone(520, 0.08, 'triangle', 0.08, 700);
-  setTimeout(function () { wheelBusy = false; $('wheelMsg').textContent = msg; Sfx.tone(660, 0.25, 'triangle', 0.14, 990); wheelDraw(); renderProg(); if (window.RR_refreshWardrobe) window.RR_refreshWardrobe(); }, 3300);
+  wheelBusy = true; $('wheelSpin').disabled = true; $('wheelResult').classList.add('hide'); $('coinTag3').textContent = p.coins;
+  // 輸送帶：放 40 張吊牌，中獎的那張在倒數第 4 張，滑到指針下停住
+  const N = 40; wheelFill(N, shown);
+  const r = $('reel'), win = $('reelWin'), first = r.children[0];
+  const step = first.offsetWidth + 8, target = (N - 4) * step + first.offsetWidth / 2 - win.clientWidth / 2 + (Math.random() - 0.5) * first.offsetWidth * 0.6;
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches, dur = reduce ? 300 : 4200;
+  void r.offsetWidth;
+  r.style.transition = 'transform ' + dur + 'ms cubic-bezier(.08,.6,.12,1)'; r.style.transform = 'translateX(' + (-target) + 'px)';
+  // 每張吊牌經過指針時「喀」一聲
+  let last = -1; const t0 = performance.now();
+  (function tick() {
+    if (!wheelBusy) return;
+    const m = getComputedStyle(r).transform, x = m && m !== 'none' ? -parseFloat(m.split(',')[4]) : 0;
+    const i = Math.floor((x + win.clientWidth / 2) / step);
+    if (i !== last) { last = i; Sfx.tone(1400, 0.018, 'square', 0.03); }
+    if (performance.now() - t0 < dur) requestAnimationFrame(tick);
+  })();
+  setTimeout(function () {
+    wheelBusy = false; $('wheelSpin').disabled = false;
+    const won = r.children[N - 4]; if (won) won.classList.add('won');
+    const rt = $('resTag'); rt.textContent = ''; rt.appendChild(tagEl(shown, true));
+    if (fresh) { const st = document.createElement('i'); st.className = 'stamp'; st.textContent = '新到手'; rt.appendChild(st); }
+    $('wheelMsg').textContent = msg; $('wheelSub').textContent = sub;
+    $('wheelWear').classList.toggle('hide', !fresh || shown[0] === 'coin');
+    $('wheelResult').classList.remove('hide');
+    if (fresh) { Sfx.tone(660, 0.12, 'triangle', 0.14, 880); setTimeout(function () { Sfx.tone(990, 0.22, 'triangle', 0.14, 1320); }, 120); }
+    else Sfx.tone(520, 0.15, 'triangle', 0.1, 600);
+    $('coinTag3').textContent = prog().coins;
+    wheelDrawKeep(); renderProg(); if (window.RR_refreshWardrobe) window.RR_refreshWardrobe();
+  }, dur + 80);
 }
+// 開獎後更新按鈕與獎池，但不要把輸送帶重洗（保留停住的畫面）
+function wheelDrawKeep() { const b = wheelBusy; wheelBusy = true; wheelDraw(); wheelBusy = b; }
 /* ---------- 成長系統（存在這台裝置上）：金幣、經驗、每日任務、頭飾 ---------- */
 const HAT_COST = [0, 60, 100, 150, 250, 400];
 const MISSIONS = [['完成 1 天', 1, 30], ['團隊累計賺到 $800', 800, 40], ['拿到一次 3 顆星', 1, 50]];
@@ -220,7 +284,16 @@ function progOnResult(e, stars) {
 function myMap() { const m = parseInt(ls('rr_map') || '0', 10) || 0; return m >= 0 && m < W.MAPS.length ? m : 0; }
 function rosterEntry(id) { for (let i = 0; i < S.roster.length; i++) if (S.roster[i].id === id) return S.roster[i]; return null; }
 
-RR.UI = { say: say };
+// 單機小遊戲的金幣：每天最多 60
+function miniReward(n, why, el, add) {
+  const p = prog(), d = today();
+  if (p.miniDay !== d) { p.miniDay = d; p.miniGot = 0; }
+  const give = Math.max(0, Math.min(n, 60 - (p.miniGot | 0)));
+  const txt = give > 0 ? '金幣 +' + give : '今天小遊戲金幣已經拿滿（每天 60）';
+  if (give > 0) { p.miniGot = (p.miniGot | 0) + give; p.coins += give; progSave(p); renderProg(); }
+  if (el) el.textContent = add && el.textContent ? el.textContent + '，' + txt : txt;
+}
+RR.UI = { say: say, miniReward: miniReward };
 
 /* ---------- 聊天 ---------- */
 function chatAdd(name, text, slot) {
@@ -849,15 +922,15 @@ function bind() {
   showLook();
   window.RR_refreshWardrobe = showLook;
   WHEELS.forEach(function (wh, k) {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'card';
-    const t = document.createElement('b'); t.textContent = wh.n; const u = document.createElement('span'); u.textContent = wh.cost + ' 金幣';
-    b.appendChild(t); b.appendChild(u); b.addEventListener('click', function () { if (wheelBusy) return; wheelI = k; $('wheelMsg').textContent = ''; wheelDraw(); });
+    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'tab'); b.textContent = wh.n;
+    b.addEventListener('click', function () { if (wheelBusy) return; wheelI = k; $('wheelResult').classList.add('hide'); wheelDraw(); });
     $('wheelSel').appendChild(b);
   });
+  $('wheelWear').addEventListener('click', function () { show('scrPick'); });
   const openGear = function () { renderGear(); $('scrGear').classList.remove('hide'); $('scrGear').scrollTop = 0; try { if (document.exitPointerLock) document.exitPointerLock(); } catch (e) {} };
   $('gearOpen').addEventListener('click', openGear); $('hudGear').addEventListener('click', openGear);
   $('gearDone').addEventListener('click', function () { $('scrGear').classList.add('hide'); });
-  const openWheel = function () { wheelDraw(); show('scrWheel'); };
+  const openWheel = function () { $('wheelResult').classList.add('hide'); show('scrWheel'); wheelDraw(); };
   $('wheelOpen').addEventListener('click', openWheel); $('wheelOpen2').addEventListener('click', openWheel);
   $('wheelDone').addEventListener('click', function () { if (!wheelBusy) showMenu(); });
   $('wheelSpin').addEventListener('click', wheelSpin);
@@ -882,6 +955,7 @@ function bind() {
   $('tutSkip').addEventListener('click', tutDone);
   $('tutAgain').addEventListener('click', function () { tutShow(0); });
   $('miniInfoBtn').addEventListener('click', function () { Game.openMini(); });
+  RR.Mini.init();
   // 設定
   const sens = parseFloat(ls('rr_sens') || '1'), sfx = parseFloat(ls('rr_sfx') || '0.8'), vv = parseFloat(ls('rr_voice') || '1');
   $('setQ').value = ls('rr_q') || (('ontouchstart' in window) ? 'mid' : 'high'); Game.setQuality($('setQ').value);
