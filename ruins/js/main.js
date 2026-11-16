@@ -146,9 +146,13 @@ function prog() {
   if (!Array.isArray(p.gems) || p.gems.length !== 3) p.gems = [0, 0, 0];
   if (p.day !== today() || !Array.isArray(p.m)) { p.day = today(); p.m = [0, 0, 0]; p.done = [false, false, false]; }
   if (!Array.isArray(p.done)) p.done = [false, false, false];
+  if (!p.st || typeof p.st !== 'object') p.st = {};
+  ['games', 'wins', 'mk', 'brWins', 'coop', 'hunt', 'td'].forEach(function (k) { p.st[k] = Math.max(0, Math.floor(+p.st[k] || 0)); });
+  if (!Array.isArray(p.ach)) p.ach = [];
+  p.region = Math.max(0, Math.min(7, p.region | 0));
   return p;
 }
-function progSave(p) { lsSet('rr_prog', JSON.stringify(p)); }
+function progSave(p) { lsSet('rr_prog', JSON.stringify(p)); if (RR.Cloud) RR.Cloud.saveSoon(); }
 function levelOf(xp) { return 1 + Math.floor(Math.sqrt(xp / 60)); }
 function renderProg() {
   const p = prog(), lv = levelOf(p.xp), lo = 60 * (lv - 1) * (lv - 1), hi = 60 * lv * lv;
@@ -393,7 +397,7 @@ function enterRoom() {
 function leave() {
   S.timers.forEach(clearInterval); S.timers = [];
   if (S.mode === 'client') Net.send({ t: 'bye' });   // 主動告訴房主我走了，不用等逾時
-  Voice.closeAll(); Net.leave();
+  Voice.closeAll(); Net.leave(); RR.Cloud.setRoom(null);
   S.mode = null; S.sim = null; S.myId = null; S.roster = []; S.seen = {}; S.chatRate = {}; S.flags = {};
   Game.setActive(false); Game.setRoster([]);
   document.body.classList.remove('solo');
@@ -427,6 +431,7 @@ function showLobby(code) {
   $('shareLink').classList.add('hide');
   $('micNote').textContent = Voice.hasMic() ? '語音已連線：進遊戲後離得越遠聲音越小。' : '沒有麥克風權限，只能聽。';
   renderLobby(); tickLobby();
+  if (S.mode !== 'solo') RR.Cloud.setRoom(code || Net.code());
   show('scrLobby');
 }
 function renderLobby(code) {
@@ -471,6 +476,155 @@ function tutShow(i) {
   $('tutNext').textContent = i === TUT.length - 1 ? '開始' : '下一步'; $('tut').classList.remove('hide');
 }
 function tutDone() { $('tut').classList.add('hide'); lsSet('rr_tut', '1'); }
+/* ---------- 成就、每日登入、雲端成績 ---------- */
+const ACH = [
+  ['first', '初次出勤', '完成第一局', function (t) { return t.games >= 1; }, 20],
+  ['win1', '第一桶金', '第一次過關', function (t) { return t.wins >= 1; }, 30],
+  ['day5', '老練回收員', '回收模式通過第 5 天', function (t) { return t.coop >= 5; }, 100],
+  ['day10', '廢墟傳說', '回收模式通過第 10 天', function (t) { return t.coop >= 10; }, 300],
+  ['hunt3', '獵人', '獵殺模式通過第 3 關', function (t) { return t.hunt >= 3; }, 100],
+  ['td3', '守門員', '塔防模式通過第 3 關', function (t) { return t.td >= 3; }, 100],
+  ['br1', '最後生還者', '大逃殺拿到第 1 名', function (t) { return t.brWins >= 1; }, 150],
+  ['mk50', '清道夫', '累計擊倒 50 隻怪物', function (t) { return t.mk >= 50; }, 150],
+  ['g20', '常客', '玩滿 20 局', function (t) { return t.games >= 20; }, 200],
+  ['rich', '小富翁', '同時持有 1000 金幣', function (t, p) { return p.coins >= 1000; }, 100]
+];
+function dayStr(off) { const d = new Date(Date.now() + (off || 0) * 864e5); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+/** 一局結束：更新統計、解鎖成就、回報排行榜與戰隊。回傳要加在結算畫面的文字。 */
+function afterMatch(mode, win, day, myStat, coins) {
+  const p = prog(), t = p.st;
+  t.games++; if (win) t.wins++;
+  t.mk += (myStat && myStat.mk) | 0;
+  if (mode === 'br') { if (win) t.brWins++; }
+  else if (win && day > t[mode]) t[mode] = day;
+  const got = [];
+  ACH.forEach(function (a) { if (p.ach.indexOf(a[0]) < 0 && a[3](t, p)) { p.ach.push(a[0]); p.coins += a[4]; got.push(a[1] + ' +' + a[4]); } });
+  progSave(p);
+  if (RR.Cloud.ready()) {
+    if (mode === 'br') { if (win) RR.Cloud.submit('br', 1); }
+    else if (t[mode] > 0) RR.Cloud.submit(mode, t[mode]);
+    RR.Cloud.clanAdd(coins);
+  }
+  return got.length ? ' · 成就：' + got.join('、') : '';
+}
+function dailyLogin() {
+  const p = prog(), td = dayStr(0);
+  if (p.login && p.login.d === td) return;
+  const streak = p.login && p.login.d === dayStr(-1) ? (p.login.s | 0) + 1 : 1, gift = 20 + 10 * Math.min(streak - 1, 6);
+  p.login = { d: td, s: streak }; p.coins += gift; progSave(p); renderProg();
+  say('每日登入獎勵：金幣 +' + gift + '（連續第 ' + streak + ' 天' + (streak < 7 ? '，明天再來會更多' : '') + '）');
+}
+/* ---------- 社群畫面 ---------- */
+const MODE_NAME = { coop: '回收', hunt: '獵殺', td: '塔防', br: '大逃殺' };
+let socTab = 'rank', socMode = 'coop', socScope = 'week';
+function mk(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function socNote(text) { const b = $('socBody'); b.appendChild(mk('p', 'note', text)); }
+function socSelect(opts, val, onChange) {
+  const sel = mk('select'); opts.forEach(function (o) { const x = mk('option', null, o[1]); x.value = o[0]; sel.appendChild(x); }); sel.value = val;
+  sel.addEventListener('change', function () { onChange(sel.value); }); return sel;
+}
+function socRows(rows, unit, emptyText) {
+  const b = $('socBody'), my = RR.Cloud.uid();
+  if (!rows.length) { socNote(emptyText || '還沒有人上榜，快去拿第一名。'); return; }
+  rows.forEach(function (r, i) {
+    const row = mk('div', 'srow' + (r.uid === my ? ' me' : ''));
+    row.appendChild(mk('span', 'rk', String(i + 1)));
+    const nm = mk('span', 'nm', r.name || '玩家'); if (r.clan) nm.appendChild(mk('small', null, ' [' + r.clan + ']')); row.appendChild(nm);
+    row.appendChild(mk('span', 'sc', unit(r.score | 0))); b.appendChild(row);
+  });
+}
+function scoreUnit(mode) { return function (v) { return mode === 'br' ? v + ' 勝' : mode === 'coop' ? '第 ' + v + ' 天' : '第 ' + v + ' 關'; }; }
+function renderSocial() {
+  const b = $('socBody'), C = RR.Cloud; b.textContent = '';
+  Array.prototype.forEach.call(document.querySelectorAll('#socTabs button'), function (x) { x.classList.toggle('on', x.dataset.tab === socTab); });
+  if (socTab === 'ach') {
+    const p = prog();
+    socNote('已完成 ' + p.ach.length + ' / ' + ACH.length);
+    ACH.forEach(function (a) {
+      const ok = p.ach.indexOf(a[0]) >= 0, row = mk('div', 'srow' + (ok ? ' done' : ''));
+      row.appendChild(mk('span', 'rk', ok ? '✓' : '·'));
+      const nm = mk('span', 'nm', a[1]); nm.appendChild(mk('small', null, '　' + a[2])); row.appendChild(nm);
+      row.appendChild(mk('span', 'sc', '+' + a[4])); b.appendChild(row);
+    });
+    return;
+  }
+  if (!C.ready()) { socNote('雲端還沒連上。請用 Google 或訪客登入並確認網路；如果剛登入，等幾秒再打開一次。'); return; }
+  const token = {}; renderSocial.token = token;
+  const guard = function (fn) { return function (err, data) { if (renderSocial.token !== token) return; const w = b.querySelector('.wait'); if (w) w.remove(); if (err) { socNote(C.message(err)); return; } fn(data); }; };
+  const modeSel = socSelect(C.MODES.map(function (m) { return [m, MODE_NAME[m] + '模式']; }), socMode, function (v) { socMode = v; renderSocial(); });
+  if (socTab === 'rank') {
+    const row = mk('div', 'soc-row'); row.appendChild(modeSel);
+    row.appendChild(socSelect([['week', '本週'], ['all', '總榜']], socScope, function (v) { socScope = v; renderSocial(); })); b.appendChild(row);
+    b.appendChild(mk('p', 'note wait', '讀取中…'));
+    C.top(socMode, socScope === 'all' ? 'all' : 'w' + C.weekId(), guard(function (rows) { socRows(rows, scoreUnit(socMode)); }));
+  } else if (socTab === 'season') {
+    const p = prog(), rk = ['tw', 'hk', 'jp', 'kr', 'sea', 'na', 'eu', 'xx'][p.region];
+    const row = mk('div', 'soc-row');
+    row.appendChild(socSelect(C.REGIONS.map(function (n, i) { return [String(i), n + '區']; }), String(p.region), function (v) { const q = prog(); q.region = +v; progSave(q); renderSocial(); }));
+    row.appendChild(modeSel); b.appendChild(row);
+    socNote('每週一換季。這裡是你所在地區本週的排名；上週前 10 名可以領金幣（第 1 名 300、第 2～3 名 200、第 4～10 名 100）。');
+    const claim = mk('div'); b.appendChild(claim);
+    b.appendChild(mk('p', 'note wait', '讀取中…'));
+    C.top(socMode, rk + '_w' + C.weekId(), guard(function (rows) { socRows(rows, scoreUnit(socMode), '本週這個地區還沒有人上榜。'); }));
+    const lastKey = socMode + ':' + rk + ':' + C.weekId(-1);
+    if ((p.claimed || []).indexOf(lastKey) < 0) C.top(socMode, rk + '_w' + C.weekId(-1), function (err, rows) {
+      if (err || renderSocial.token !== token) return;
+      const at = rows.findIndex(function (r) { return r.uid === C.uid(); });
+      if (at < 0 || at > 9) return;
+      const gift = at === 0 ? 300 : at < 3 ? 200 : 100, btn = mk('button', 'btn primary', '領取上週第 ' + (at + 1) + ' 名獎勵：金幣 +' + gift); btn.type = 'button';
+      btn.addEventListener('click', function () { const q = prog(); q.claimed = (q.claimed || []).slice(-30); if (q.claimed.indexOf(lastKey) >= 0) return; q.claimed.push(lastKey); q.coins += gift; progSave(q); renderProg(); btn.remove(); say('已領取金幣 +' + gift); });
+      claim.appendChild(btn);
+    });
+  } else if (socTab === 'friends') {
+    b.appendChild(mk('p', 'note', '你的好友代碼（給朋友輸入）'));
+    b.appendChild(mk('div', 'bigcode', (C.me() && C.me().code) || '------'));
+    const row = mk('div', 'soc-row'), inp = mk('input'); inp.type = 'text'; inp.maxLength = 6; inp.placeholder = '輸入朋友的代碼'; inp.autocapitalize = 'characters'; inp.autocomplete = 'off';
+    const add = mk('button', 'btn primary', '加好友'); add.type = 'button';
+    add.addEventListener('click', function () { add.disabled = true; C.addFriend(inp.value, function (err, name) { add.disabled = false; if (err) { say(C.message(err)); return; } say('已和 ' + name + ' 成為好友。'); renderSocial(); }); });
+    row.appendChild(inp); row.appendChild(add); b.appendChild(row);
+    b.appendChild(mk('p', 'note wait', '讀取中…'));
+    C.friends(guard(function (rows) {
+      if (!rows.length) { socNote('還沒有好友。把上面的代碼傳給朋友，或輸入他的代碼。'); return; }
+      rows.forEach(function (f) {
+        const r = mk('div', 'srow'); r.appendChild(mk('span', f.online ? 'dotOn' : 'dotOff'));
+        const nm = mk('span', 'nm', f.name); nm.appendChild(mk('small', null, '　Lv.' + f.lv + (f.clan ? ' [' + f.clan + ']' : '') + (f.online ? (f.room ? ' · 在房間 ' + f.room : ' · 線上') : ' · 離線'))); r.appendChild(nm);
+        if (f.online && f.room) { const j = mk('button', 'btn primary', '加入'); j.type = 'button'; j.addEventListener('click', function () { $('scrSocial').classList.add('hide'); $('codeInput').value = f.room; joinRoom(); }); r.appendChild(j); }
+        const del = mk('button', 'btn', '刪除'); del.type = 'button'; del.addEventListener('click', function () { C.removeFriend(f.uid, function () { renderSocial(); }); }); r.appendChild(del);
+        b.appendChild(r);
+      });
+    }));
+  } else if (socTab === 'clan') {
+    b.appendChild(mk('p', 'note wait', '讀取中…'));
+    C.clan(guard(function (info) {
+      if (!info) {
+        socNote('加入戰隊後，每局得到的金幣數會同時累積成戰隊積分。');
+        const r1 = mk('div', 'soc-row'), tag = mk('input'); tag.type = 'text'; tag.maxLength = 4; tag.placeholder = '戰隊代碼（4 碼）'; tag.autocapitalize = 'characters';
+        const jb = mk('button', 'btn primary', '加入'); jb.type = 'button';
+        jb.addEventListener('click', function () { jb.disabled = true; C.joinClan(tag.value, function (err, c) { jb.disabled = false; if (err) { say(C.message(err)); return; } say('已加入戰隊「' + c.name + '」。'); renderSocial(); }); });
+        r1.appendChild(tag); r1.appendChild(jb); b.appendChild(r1);
+        const r2 = mk('div', 'soc-row'), nm = mk('input'); nm.type = 'text'; nm.maxLength = 12; nm.placeholder = '新戰隊名稱';
+        const cb = mk('button', 'btn', '建立（200 金幣）'); cb.type = 'button';
+        cb.addEventListener('click', function () {
+          const q = prog(); if (q.coins < 200) { say('金幣不夠：建立戰隊要 200 金幣，你有 ' + q.coins + '。'); return; }
+          cb.disabled = true;
+          C.createClan(nm.value, function (err, c) { cb.disabled = false; if (err) { say(C.message(err)); return; } const q2 = prog(); q2.coins -= 200; progSave(q2); renderProg(); say('戰隊「' + c.name + '」建立完成。把代碼 ' + c.tag + ' 傳給朋友就能加入。'); renderSocial(); });
+        });
+        r2.appendChild(nm); r2.appendChild(cb); b.appendChild(r2);
+      } else {
+        b.appendChild(mk('p', 'note', '戰隊「' + info.clan.name + '」· 積分 ' + (info.clan.score | 0) + ' · ' + info.members.length + ' / 30 人 · 代碼'));
+        b.appendChild(mk('div', 'bigcode', info.clan.tag));
+        socRows(info.members, function (v) { return v + ' 分'; });
+        const lv = mk('button', 'btn', '退出戰隊'); lv.type = 'button'; lv.addEventListener('click', function () { C.leaveClan(function (err) { if (err) say(C.message(err)); renderSocial(); }); }); b.appendChild(lv);
+      }
+      b.appendChild(mk('div', 'sec', '戰隊排行榜'));
+      C.topClans(function (err, rows) {
+        if (err || renderSocial.token !== token) return;
+        if (!rows.length) { socNote('還沒有任何戰隊。'); return; }
+        rows.forEach(function (c, i) { const r = mk('div', 'srow' + (C.me() && C.me().clan === c.id ? ' me' : '')); r.appendChild(mk('span', 'rk', String(i + 1))); const nm = mk('span', 'nm', c.name); nm.appendChild(mk('small', null, '　' + (c.count | 0) + ' 人')); r.appendChild(nm); r.appendChild(mk('span', 'sc', (c.score | 0) + ' 分')); b.appendChild(r); });
+      });
+    }));
+  }
+}
 function showResultBR(e) {
   const host = S.mode === 'host', solo = S.mode === 'solo';
   const mine = (e.stats || []).filter(function (p) { return p.id === S.myId; })[0] || { rank: e.stats ? e.stats.length : 1, kills: 0 };
@@ -480,7 +634,7 @@ function showResultBR(e) {
   for (let k = 0; k < 3; k++) { const x = document.createElement(k < stars ? 'span' : 'i'); x.textContent = '★'; sb.appendChild(x); }
   $('resText').textContent = '共 ' + n + ' 人，你淘汰了 ' + (mine.kills || 0) + ' 人。';
   const p = prog(), coins = 15 + (mine.kills || 0) * 15 + (win ? 60 : mine.rank <= 3 ? 20 : 0); p.coins += coins; p.xp += coins + 10; if (win) p.m[0] += 1; progSave(p);
-  $('resGain').textContent = '金幣 +' + coins + ' · 經驗 +' + (coins + 10);
+  $('resGain').textContent = '金幣 +' + coins + ' · 經驗 +' + (coins + 10) + afterMatch('br', win, 1, null, coins);
   const st = $('resStats'); st.textContent = '';
   (e.stats || []).slice().sort(function (a, b) { return a.rank - b.rank; }).forEach(function (q) {
     const row = document.createElement('div'); row.className = 'prow' + (q.rank === 1 ? '' : ' dead');
@@ -503,7 +657,8 @@ function showResult(e) {
   const stars = e.win ? 1 + (e.money >= e.quota * 1.3 ? 1 : 0) + (e.time >= 60 ? 1 : 0) : 0;
   const sb = $('resStars'); sb.textContent = '';
   for (let k = 0; k < 3; k++) { const x = document.createElement(k < stars ? 'span' : 'i'); x.textContent = '★'; sb.appendChild(x); }
-  $('resGain').textContent = progOnResult(e, stars);
+  { const c0 = prog().coins, txt = progOnResult(e, stars), mine = (e.stats || []).filter(function (q) { return q.id === S.myId; })[0];
+    $('resGain').textContent = txt + afterMatch(S.gmode === 'hunt' || S.gmode === 'td' ? S.gmode : 'coop', !!e.win, e.day, mine, prog().coins - c0); }
   let top = null; if (e.stats) e.stats.forEach(function (p) { if (p.earned > 0 && (!top || p.earned > top.earned)) top = p; });
   const hunt = S.gmode === 'hunt', td = S.gmode === 'td';
   if (hunt) $('resTitle').textContent = e.win ? '獵殺第 ' + e.day + ' 關完成！' : '獵殺失敗';
@@ -550,7 +705,7 @@ function bind() {
   if (!Auth.configured()) $('loginNote').textContent = '社群登入尚未設定金鑰（見 README），目前可用訪客登入。';
   $('guestBtn').addEventListener('click', function () { Sfx.unlock(); Auth.guest(); });
   $('logoutBtn').addEventListener('click', function () { Auth.signOut(); });
-  $('nick').addEventListener('change', function () { Auth.setNick($('nick').value); });
+  $('nick').addEventListener('change', function () { Auth.setNick($('nick').value); RR.Cloud.saveSoon(); });
   $('soloBtn').addEventListener('click', function () { startSolo('coop'); });
   $('createBtn').addEventListener('click', createRoom);
   $('joinBtn').addEventListener('click', joinRoom);
@@ -728,9 +883,16 @@ function boot() {
     const m = /[?&]room=([A-Za-z0-9]{5})/.exec(location.search);
     if (m) $('codeInput').value = m[1].toUpperCase();
   } catch (e) {}
+  RR.Cloud.hooks({ prog: prog, name: myName, level: function () { return levelOf(prog().xp); },
+    adopt: function (p) { lsSet('rr_prog', JSON.stringify(p)); renderProg(); if (!S.mode && Auth.user()) { refreshPickSummary(); say('已從雲端取回你的進度。'); } } });
+  $('socialOpen').addEventListener('click', function () { $('scrSocial').classList.remove('hide'); $('scrSocial').scrollTop = 0; renderSocial(); });
+  $('socDone').addEventListener('click', function () { $('scrSocial').classList.add('hide'); renderSocial.token = null; });
+  Array.prototype.forEach.call(document.querySelectorAll('#socTabs button'), function (x) { x.addEventListener('click', function () { socTab = x.dataset.tab; renderSocial(); }); });
+  let lastUid = null;
   Auth.init(function (user) {
-    if (!user) { if (S.mode) leave(); else show('scrLogin'); return; }
+    if (!user) { lastUid = null; RR.Cloud.onUser(null); if (S.mode) leave(); else show('scrLogin'); return; }
     if (!S.mode) showMenu();
+    if (user.uid !== lastUid) { lastUid = user.uid; RR.Cloud.onUser(user, function () { renderProg(); if (!S.mode) dailyLogin(); }); }
   });
 }
 boot();
