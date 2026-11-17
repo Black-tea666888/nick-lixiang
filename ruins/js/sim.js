@@ -234,7 +234,16 @@ const GUNS = [
   { name: '迷你衝鋒', dmg: 9, pvp: 7, cd: 0.05, clip: [30, 50], range: 22, w: 0.8, n: 1, spread: 0.1, stun: 0.8, reload: 1.4, auto: true, cost: 0 },
   { name: '重機槍', dmg: 28, pvp: 20, cd: 0.16, clip: [30, 60], range: 60, w: 0.7, n: 1, spread: 0.06, stun: 1.8, reload: 4.0, auto: true, cost: 0 },
   { name: '雷射槍', dmg: 40, pvp: 30, cd: 0.35, clip: [8, 14], range: 70, w: 0.5, n: 1, spread: 0.01, stun: 3, reload: 2.0, auto: false, cost: 0 },
-  { name: '燃燒槍', dmg: 24, pvp: 18, cd: 0.25, clip: [10, 16], range: 34, w: 0.8, n: 2, spread: 0.08, stun: 2.6, reload: 2.0, auto: false, cost: 0 }
+  { name: '燃燒槍', dmg: 24, pvp: 18, cd: 0.25, clip: [10, 16], range: 34, w: 0.8, n: 2, spread: 0.08, stun: 2.6, reload: 2.0, auto: false, cost: 0 },
+  { name: '魔法杖', dmg: 45, pvp: 34, cd: 0.3, clip: [10, 16], range: 50, w: 0.7, n: 1, spread: 0.02, stun: 2.8, reload: 1.5, auto: false, cost: 0 },
+  { name: '阿姆斯特旋風炮', dmg: 90, pvp: 70, cd: 1.4, clip: [3, 4], range: 55, w: 1.2, n: 1, spread: 0.02, stun: 4.5, reload: 2.8, auto: false, cost: 0 },
+  { name: '火麒麟', dmg: 20, pvp: 15, cd: 0.12, clip: [18, 30], range: 36, w: 0.7, n: 2, spread: 0.09, stun: 1.5, reload: 2.2, auto: true, cost: 0 },
+  { name: 'M4A1', dmg: 21, pvp: 16, cd: 0.1, clip: [20, 30], range: 48, w: 0.7, n: 1, spread: 0.03, stun: 1.4, reload: 1.7, auto: true, cost: 0 },
+  { name: '冰紅茶', dmg: 14, pvp: 10, cd: 0.5, clip: [6, 10], range: 26, w: 1.0, n: 4, spread: 0.2, stun: 3.2, reload: 1.2, auto: false, cost: 0 },
+  { name: '水槍', dmg: 5, pvp: 4, cd: 0.04, clip: [40, 60], range: 14, w: 1.2, n: 1, spread: 0.12, stun: 0.6, reload: 1.0, auto: true, cost: 0 },
+  { name: '魚槍', dmg: 70, pvp: 50, cd: 1.0, clip: [3, 5], range: 30, w: 0.6, n: 1, spread: 0.03, stun: 3.8, reload: 2.0, auto: false, cost: 0 },
+  { name: '貓咪槍', dmg: 16, pvp: 12, cd: 0.3, clip: [8, 12], range: 38, w: 0.8, n: 2, spread: 0.06, stun: 2.0, reload: 1.3, auto: false, cost: 0 },
+  { name: '狗狗槍', dmg: 26, pvp: 19, cd: 0.6, clip: [5, 8], range: 30, w: 0.9, n: 1, spread: 0.04, stun: 2.4, reload: 1.6, auto: false, cost: 0 }
 ];
 const HATS = ['無', '安全帽', '頭燈', '天線', '光環', '皇冠'];   // 頭飾（純外觀）
 const pick = (v, n) => { v = Math.floor(+v); return v >= 0 && v < n ? v : 0; };
