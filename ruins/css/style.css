@@ -786,3 +786,6 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
 #joinModal .note { font-size: 17px; }
 #codeInput { font-size: 26px; padding: 12px 8px; }
 #joinBtn { font-size: 20px; padding: 12px 16px; }
+
+/* 主選單「用房間代碼加入」連結放大 */
+.lbLinks .link#joinOpen { font-size: 18px; padding: 10px 12px; }
