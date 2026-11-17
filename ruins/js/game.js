@@ -1240,12 +1240,23 @@ const GUN_SKIN = [null,
   { dark: 0x111214, poly: 0x18191c, steel: 0xc9a24a, green: 0x111214, wood: 0x1e1a16, shine: 1 },
   { dark: 0xe0559f, poly: 0x2a1630, steel: 0x7ad8ff, green: 0xe0559f, wood: 0x6a2a5a, glow: 0x3a0a28 },
   { dark: 0xc4e6f4, poly: 0x7fb6d6, steel: 0xffffff, green: 0x9fd0e8, wood: 0x9fd0e8, shine: 1 }];
+// 槍身立體感：不用貼圖，改依法線調整頂點色——頂面較亮、底面較暗、側面有反光，避免像貼紙一樣平
+function bevelGun(geo) {
+  const nor = geo.attributes.normal.array, col = geo.attributes.color.array;
+  for (let k = 0; k < nor.length / 3; k++) {
+    const nx = nor[k * 3], ny = nor[k * 3 + 1];
+    const f = 0.7 + 0.3 * Math.max(0, ny) + (ny > 0.9 ? 0.08 : 0) - (ny < -0.5 ? 0.15 : 0) + 0.08 * Math.abs(nx);
+    col[k * 3] *= f; col[k * 3 + 1] *= f; col[k * 3 + 2] *= f;
+  }
+  geo.attributes.color.needsUpdate = true;
+}
 function buildGunView(i) {
   if (gunMesh) { camera.remove(gunMesh); gunMesh.traverse(function (o) { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
   const gp = gunParts(i | 0), sk = GUN_SKIN[settings.gunSkin | 0];
   if (sk) gp[0].forEach(function (e) { for (const k in GM) if (e[2] === GM[k] && sk[k] != null) { e[2] = sk[k]; break; } });
   gunMesh = new THREE.Group();
-  const body = new THREE.Mesh(mergeGeos(gp[0]), litMat({ vertexColors: true, shininess: sk && sk.shine ? 120 : 70, specular: sk && sk.shine ? 0xbbbbbb : 0x666666, emissive: sk && sk.glow ? sk.glow : 0x000000 }));
+  const bodyGeo = mergeGeos(gp[0]); bevelGun(bodyGeo);
+  const body = new THREE.Mesh(bodyGeo, litMat({ vertexColors: true, shininess: sk && sk.shine ? 120 : 70, specular: sk && sk.shine ? 0xbbbbbb : 0x666666, emissive: sk && sk.glow ? sk.glow : 0x000000 }));
   gunMesh.add(body);
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.22), new THREE.MeshBasicMaterial({ map: getFlashTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
   const fl2 = fl.clone(); fl2.rotation.y = Math.PI / 2; fl.add(fl2);
