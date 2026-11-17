@@ -339,7 +339,7 @@ Sim.prototype.startDay = function (day) {
     p.clip = Math.round(GUNS[p.gun | 0].clip[hunt || br ? 1 : 0] * (hasAcc(p, 3) ? 1.5 : 1)); p.ammo = p.clip; p.gunCd = 0; p.reload = 0;   // 回收模式每天 6 發（擊中讓怪物暈 2.5 秒）；獵殺模式彈匣 12 發、自動裝填
     if (day === 1) { p.earned = 0; p.kills = 0; p.mk = 0; }
   });
-  this.zone = null;
+  this.zone = null; this.pz = null;
   // 塔防：怪物一波一波走向回收車（核心），玩家開槍、花錢蓋砲塔守住它
   this.td = null; this.towers = [];
   if (td) {
@@ -543,6 +543,19 @@ Sim.prototype._stepBR = function (dt, alive) {
     this._end(true, left.length <= 1 ? 'last' : 'time');
   }
 };
+// 回收模式的毒圈：30 秒後從地圖外圈開始，慢慢往基地漫；毒區內會扣血（最低留 1），基地光圈裡不會
+Sim.prototype._stepPoison = function (dt, alive) {
+  const elapsed = DAY_TIME - this.time;
+  if (elapsed < 30) { this.pz = null; return; }
+  const R0 = Math.hypot(MAP[0].length * CS, ROWS * CS), prog = Math.min(1, (elapsed - 30) / (DAY_TIME - 60));
+  this.pz = R0 - (R0 - 1) * prog;
+  const dps = 1 + elapsed / 100, self = this;
+  alive.forEach(function (p) {
+    if (inBase(self, p) || Math.hypot(p.x - VAN[0], p.z - VAN[1]) <= self.pz) return;
+    p.hp = Math.max(1, p.hp - dps * dt); p.hurtT = 0;
+  });
+};
+
 // 機器人：往圈內走、看到人就開槍（有瞄準誤差）、血少會找急救箱
 Sim.prototype._bot = function (p, dt, alive) {
   const z = this.zone;
@@ -871,6 +884,7 @@ Sim.prototype.step = function (dt) {
   }
   if (this.mode === 'br') { this._stepBR(dt, alive); return; }
   if (this.mode === 'td') { this._stepTD(dt); return; }
+  if (this.mode === 'coop') this._stepPoison(dt, alive);
   // 天然災害
   if (this.disT > 0 && this.time <= this.disT) {
     this.disT = -1;
@@ -992,7 +1006,7 @@ Sim.prototype.step = function (dt) {
 Sim.prototype.snapshot = function () {
   let it = '';
   for (let i = 0; i < this.items.length; i++) it += this.items[i].taken ? '1' : '0';
-  return { t: 's', zr: this.zone ? r2(this.zone.r) : undefined, ph: this.phase, day: this.day, money: this.money, quota: this.quota, time: Math.round(this.time * 10) / 10,
+  return { t: 's', zr: this.zone ? r2(this.zone.r) : undefined, pz: this.pz != null ? r2(this.pz) : undefined, ph: this.phase, day: this.day, money: this.money, quota: this.quota, time: Math.round(this.time * 10) / 10,
     p: this.players.map(function (p) {
       return [p.id, r2(p.x), r2(p.z), r2(p.yaw), p.alive ? 1 : 0, p.bag.length, (p.run ? 1 : 0) | (p.spk ? 2 : 0) | (p.loud ? 4 : 0) | (p.air ? 8 : 0), Math.round(p.hp), p.ammo || 0, p.reload > 0 ? 1 : 0, p.bombs || 0];
     }),

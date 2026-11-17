@@ -659,6 +659,20 @@ function buildLevel() {
   buildMini();
 }
 
+// 毒圈：地圖外的黃色區域，內圈半徑由伺服器的 pz 決定（變化超過 0.25 公尺才重建）
+let poisonMesh = null, poisonR = -1;
+function setPoison(R) {
+  if (R == null) { if (poisonMesh) { scene.remove(poisonMesh); poisonMesh.geometry.dispose(); poisonMesh = null; } poisonR = -1; return; }
+  if (poisonMesh && Math.abs(R - poisonR) < 0.25) return;
+  poisonR = R; if (poisonMesh) { scene.remove(poisonMesh); poisonMesh.geometry.dispose(); }
+  const big = 400, sh = new THREE.Shape();
+  sh.moveTo(-big, -big); sh.lineTo(big, -big); sh.lineTo(big, big); sh.lineTo(-big, big); sh.closePath();
+  const hole = new THREE.Path();
+  for (let i = 0; i <= 96; i++) { const a = i / 96 * Math.PI * 2, x = Math.cos(a) * R, y = Math.sin(a) * R; if (i) hole.lineTo(x, y); else hole.moveTo(x, y); }
+  sh.holes.push(hole);
+  poisonMesh = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshBasicMaterial({ color: 0xd8e83a, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false, fog: false }));
+  poisonMesh.rotation.x = -Math.PI / 2; poisonMesh.position.set(W.VAN[0], 0.04, W.VAN[1]); scene.add(poisonMesh);
+}
 const MON_COL = { fire: [0xff6a1a, 0xff4a10], ice: [0x6ad8ff, 0x3ac8ff], poison: [0x7dff5a, 0x5aff3a], shadow: [0xb070ff, 0x9040ff] };
 function buildMonster(kind) {
   const col = MON_COL[kind] || MON_COL.fire;
@@ -914,7 +928,7 @@ function shoot() {
   gunT = (W.GUNS[settings.gun | 0] || W.GUNS[0]).cd;
   if (RR.Game.onShoot) RR.Game.onShoot(Math.round(me.yaw * 100) / 100);
 }
-let zoneMesh = null, outT = 0;
+let zoneMesh = null, outT = 0, poisonT = 0;
 /* ---------- 天氣、災害、載具 ---------- */
 let baseLight = null, rain = null, quakeT = 0, vhQ = false, cartMesh = null, cartView = null;
 const rings = [];   // 落石警示圈
@@ -1430,6 +1444,11 @@ function updateMe(dt) {
     inBaseNow = inB;
     const t = performance.now() / 1000; vanRing.material.color.setHex(inB ? 0x5fd37a : 0xffc24a); vanRing.scale.setScalar(inB ? 1 + Math.sin(t * 4) * 0.03 : 1);
   }
+  if (view.pz != null && view.mode === 'coop' && me.alive && view.phase === 'play') {
+    const dv = Math.hypot(me.x - W.VAN[0], me.z - W.VAN[1]);
+    if (dv > view.pz && dv > (W.BASE_R || 1.85)) { poisonT -= dt; if (poisonT <= 0) { poisonT = 3; toast('你在毒圈裡！往基地光圈跑'); } hurtFlash = Math.max(hurtFlash, 0.2); }
+    else poisonT = 0;
+  }
   fpsWatch(dt); tickWeather(dt);
   if (view.zone && me.alive && Math.hypot(me.x - view.zone[0], me.z - view.zone[1]) > view.zr) { outT -= dt; if (outT <= 0) { outT = 2.5; toast('你在安全區外，正在扣血！往白圈裡跑'); Sfx.tone(300, 0.15, 'square', 0.08); } hurtFlash = Math.max(hurtFlash, 0.35); }
   if (gunMesh) { const kk = gunMesh.userData.kick || 0, tt = performance.now() / 1000, mv = (keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD || Math.abs(touch.jx) + Math.abs(touch.jy) > 0.1) ? 1 : 0.25;
@@ -1766,6 +1785,7 @@ RR.Game = {
     if (info.weather) setTimeout(function () { toast('今天的天氣：' + W.WEATHERS[info.weather] + ['', '（雨聲蓋過腳步，怪物比較聽不到你）', '（你和怪物都看不遠）', '（很暗，靠手電筒；怪物也看不遠）', '（能見度低，小地圖看不到怪物）'][info.weather]); }, 2600);
     view.zone = info.zone || null; view.zr = info.zone ? info.zone[2] : 0; outT = 0;
     if (zoneMesh) { scene.remove(zoneMesh); zoneMesh = null; }
+    setPoison(null);
     if (view.zone) {
       zoneMesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 30, 64, 1, true), new THREE.MeshBasicMaterial({ color: 0x8fd0ff, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false, fog: false }));
       zoneMesh.position.set(view.zone[0], 15, view.zone[1]); zoneMesh.scale.set(view.zr, 1, view.zr); scene.add(zoneMesh);
@@ -1823,6 +1843,7 @@ RR.Game = {
       padMesh = new THREE.Mesh(new THREE.RingGeometry(0.6, 1.0, 40), new THREE.MeshBasicMaterial({ color: 0x66e0ff, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
       padMesh.rotation.x = -Math.PI / 2; padMesh.position.y = 0.05; scene.add(padMesh);
     }
+    view.pz = s.pz != null ? s.pz : null; setPoison(view.pz);
     if (s.pad && padMesh) padMesh.position.set(s.pad[0], 0.05, s.pad[1]);
     if (!s.pad && padMesh) { scene.remove(padMesh); padMesh = null; }
     view.phase = s.ph; view.day = s.day; view.money = s.money; view.quota = s.quota; view.time = s.time;
