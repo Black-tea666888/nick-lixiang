@@ -791,3 +791,6 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
 .joinBtn { display: flex; flex-direction: column; gap: 2px; width: 100%; margin-top: 8px; padding: 8px 12px; text-align: left; cursor: pointer; font: inherit; color: var(--chalk); background: var(--steel); border: 2px solid var(--ink); border-radius: 3px; box-shadow: 3px 3px 0 rgba(17,20,23,.5); }
 .joinBtn span { font-size: 11px; color: var(--chalk-2); }
 .joinBtn b { font-size: 16px; font-weight: 900; }
+
+/* 返回鍵「‹」：整個頁面的返回按鈕放大，手機上好按 */
+.topbar > .icon, .panel > .icon, .icon[aria-label="返回"] { min-width: 64px; height: 56px; font-size: 30px; line-height: 1; padding: 0 14px; }
