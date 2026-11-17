@@ -769,6 +769,31 @@ function buildMonster(kind) {
 }
 
 // 描邊（反面放大的外殼）讓造型輪廓清楚；腳下加一塊圓形陰影
+// 角色表面：布料織紋（貼圖，依 UV 鋪在身上）＋亮色部件（盔甲、機器人、太空衣）的金屬光澤；深色不加，保留原本的黑色細節
+let clothTex = null;
+function getClothTex() {
+  if (clothTex) return clothTex;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 128; const c = cv.getContext('2d');
+  c.fillStyle = '#ffffff'; c.fillRect(0, 0, 128, 128);
+  for (let y = 0; y < 128; y += 4) for (let x = 0; x < 128; x += 4) {
+    if (((x + y) / 4) % 2) { c.fillStyle = 'rgba(0,0,0,0.07)'; c.fillRect(x, y, 4, 4); }   // 斜紋交錯
+  }
+  for (let i = 0; i < 400; i++) { c.fillStyle = 'rgba(0,0,0,' + (Math.random() * 0.12).toFixed(3) + ')'; c.fillRect(Math.random() * 128, Math.random() * 128, 1, 1); }
+  clothTex = new THREE.CanvasTexture(cv); clothTex.wrapS = clothTex.wrapT = THREE.RepeatWrapping; clothTex.repeat.set(2, 2);
+  return clothTex;
+}
+function addSurface(group) {
+  const seen = new Set();
+  group.traverse(function (o) {
+    if (!o.isMesh) return; const m = o.material;
+    if (!m || seen.has(m) || m.transparent || !(m.isMeshPhongMaterial || m.isMeshLambertMaterial)) return; seen.add(m);
+    const lum = (m.color.r + m.color.g + m.color.b) / 3;
+    if (lum < 0.12) return;
+    if (!m.map) m.map = getClothTex();
+    if (lum > 0.5 && m.isMeshPhongMaterial) { m.shininess = 80; m.specular.setHex(0x9a9a9a); }
+    m.needsUpdate = true;
+  });
+}
 function addOutline(group, color, k) {
   const om = new THREE.MeshBasicMaterial({ color: color, side: THREE.BackSide }), list = [];
   group.traverse(function (o) { if (o.isMesh && !o.material.transparent && o.material.side !== THREE.DoubleSide) list.push(o); });
@@ -862,6 +887,7 @@ function buildChar(c, slot, h, o, pet) {
     g.add(belt, buckle, collar, part(new THREE.SphereGeometry(0.1, 20, 16), limb, -sx, 1.24, 0), part(new THREE.SphereGeometry(0.1, 20, 16), limb, sx, 1.24, 0));
   }
   const hat = buildHat(h || 0); if (hat) { hat.position.y = [1.84, 1.78, 1.95, 1.87, 1.89, 1.9, 1.84, 2.08][c] || 1.84; if (c === 1) hat.position.x = 0.14; g.add(hat); }
+  addSurface(g);
   addOutline(g, 0x05080a, 1.07); addShadow(g, 0.42);
   const pm = buildPet(pet || 0); if (pm) { pm.position.set(-0.75, 0, -0.25); g.add(pm); g.userData.pet = pm; }
   return g;
