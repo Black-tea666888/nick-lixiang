@@ -824,11 +824,11 @@ function buildChar(c, slot, h, o, pet) {
       part(eye, glow, -0.11, 1.6, 0.21), part(eye, glow, 0.11, 1.6, 0.21),
       part(new THREE.CylinderGeometry(0.015, 0.015, 0.25, 16), grey, 0, 1.9, 0),
       part(new THREE.SphereGeometry(0.05, 20, 16), new THREE.MeshBasicMaterial({ color: 0xff4a3d }), 0, 2.03, 0),
-      part(new THREE.BoxGeometry(0.3, 0.18, 0.02), dark, 0, 0.95, 0.21));
+      part(new THREE.BoxGeometry(0.3, 0.18, 0.02), dark, 0, 0.95, 0.21), part(new THREE.SphereGeometry(0.03, 14, 12), new THREE.MeshBasicMaterial({ color: 0x5dff8a }), 0.18, 1.0, 0.21));
   } else if (c === 2) {     // 太空人
     const white = pmat(0xe8eef2, 0.14);
     g.add(body(), part(new THREE.SphereGeometry(0.33, 32, 28), white, 0, 1.62, 0), part(new THREE.SphereGeometry(0.25, 28, 24), dark, 0, 1.62, 0.13),
-      part(new THREE.BoxGeometry(0.4, 0.6, 0.2), white, 0, 0.95, -0.33), part(new THREE.SphereGeometry(0.05, 20, 16), glow, 0.2, 1.25, 0.26));
+      part(new THREE.BoxGeometry(0.4, 0.6, 0.2), white, 0, 0.95, -0.33), part(new THREE.SphereGeometry(0.05, 20, 16), glow, 0.2, 1.25, 0.26), part(new THREE.BoxGeometry(0.1, 0.02, 0.02), glow, 0.17, 1.72, 0.27), part(new THREE.BoxGeometry(0.04, 0.1, 0.02), glow, 0.12, 1.66, 0.27));
   } else if (c === 3) {     // 貓貓
     const ear = new THREE.ConeGeometry(0.09, 0.2, 4), eye = new THREE.SphereGeometry(0.04, 20, 16);
     const tail = part(new THREE.CylinderGeometry(0.035, 0.05, 0.7, 16), M, 0, 0.75, -0.42); tail.rotation.x = -0.7;
@@ -871,7 +871,8 @@ function buildChar(c, slot, h, o, pet) {
       part(new THREE.SphereGeometry(0.25, 28, 24, 0, Math.PI * 2, 0, Math.PI / 2.4), pmat(0xffc928, 0.3), 0, 1.66, 0),
       part(new THREE.SphereGeometry(0.05, 20, 16), glow, 0.2, 1.25, 0.26),
       part(new THREE.BoxGeometry(0.2, 0.16, 0.04), pmat(0x1c2220, 0.05), -0.12, 1.02, 0.26),
-      part(new THREE.SphereGeometry(0.012, 10, 8), glow, -0.08, 1.64, 0.27), part(new THREE.SphereGeometry(0.012, 10, 8), glow, 0.12, 1.64, 0.27));
+      part(new THREE.SphereGeometry(0.012, 10, 8), glow, -0.08, 1.64, 0.27), part(new THREE.SphereGeometry(0.012, 10, 8), glow, 0.12, 1.64, 0.27),
+      part(new THREE.BoxGeometry(0.07, 0.13, 0.03), dark, -0.095, 1.5, 0.27), part(new THREE.BoxGeometry(0.1, 0.02, 0.02), dark, -0.095, 1.52, 0.27));
   }
   // 手腳（以肩膀／腳踝為軸，走路時擺動）
   const sx = c === 1 ? 0.34 : 0.33, limb = c === 1 ? pmat(0x9aa3a8, 0.12) : o ? M : pmat(c === 6 ? 0x4fae5a : c === 7 ? 0x9be8c8 : COLORS[slot % 4], 0.12), shoe = pmat(0x1c2220, 0.05);
