@@ -19,7 +19,8 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.owner == request.auth.uid;
       allow update: if signedIn() && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['score', 'count'])
-        || (request.auth.uid == resource.data.owner && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deputies'])));
+        || (request.auth.uid == resource.data.owner && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deputies', 'owner'])
+            && (request.resource.data.owner == resource.data.owner || exists(/databases/$(database)/documents/clans/$(cid)/members/$(request.resource.data.owner)))));
       match /members/{uid} {
         function canKick() {
           let c = get(/databases/$(database)/documents/clans/$(cid)).data;

@@ -823,8 +823,25 @@ const ACH = [
   ['td10', '塔防大師', '塔防模式通過第 10 關', function (t) { return t.td >= 10; }, 300],
   ['br3', '大逃殺常客', '大逃殺拿到第 1 名 3 次', function (t) { return t.brWins >= 3; }, 300],
   ['rich300', '小有積蓄', '同時持有 300 金幣', function (t, p) { return p.coins >= 300; }, 40],
-  ['rich5000', '大富豪', '同時持有 5000 金幣', function (t, p) { return p.coins >= 5000; }, 300]
+  ['rich5000', '大富豪', '同時持有 5000 金幣', function (t, p) { return p.coins >= 5000; }, 300],
+  ['wins3', '穩定輸出', '累計過關 3 次', function (t) { return t.wins >= 3; }, 60],
+  ['mk500', '殺戮機器', '累計擊倒 500 隻怪物', function (t) { return t.mk >= 500; }, 600],
+  ['mk1000', '屠怪王', '累計擊倒 1000 隻怪物', function (t) { return t.mk >= 1000; }, 800],
+  ['wins100', '百戰百勝', '累計過關 100 次', function (t) { return t.wins >= 100; }, 800],
+  ['g200', '資深員工', '玩滿 200 局', function (t) { return t.games >= 200; }, 1000],
+  ['coop30', '廢墟長老', '回收模式通過第 30 天', function (t) { return t.coop >= 30; }, 800],
+  ['hunt20', '獵殺老手', '獵殺模式通過第 20 關', function (t) { return t.hunt >= 20; }, 500],
+  ['td20', '城牆守護者', '塔防模式通過第 20 關', function (t) { return t.td >= 20; }, 500],
+  ['br10', '逃殺之王', '大逃殺拿到第 1 名 10 次', function (t) { return t.brWins >= 10; }, 800],
+  ['rich10000', '億萬富翁', '同時持有 10000 金幣', function (t, p) { return p.coins >= 10000; }, 800]
 ];
+// 任務進度：每個成就的（統計欄位, 目標數）；金幣看目前持有量。列表上會顯示「目前 / 目標」
+const ACH_GOAL = { first: ['games', 1], win1: ['wins', 1], day5: ['coop', 5], day10: ['coop', 10], hunt3: ['hunt', 3], td3: ['td', 3], br1: ['brWins', 1], mk50: ['mk', 50], g20: ['games', 20], rich: ['coins', 1000], mk10: ['mk', 10], mk200: ['mk', 200], wins10: ['wins', 10], wins50: ['wins', 50], g50: ['games', 50], g100: ['games', 100], coop20: ['coop', 20], hunt10: ['hunt', 10], td10: ['td', 10], br3: ['brWins', 3], rich300: ['coins', 300], rich5000: ['coins', 5000], wins3: ['wins', 3], mk500: ['mk', 500], mk1000: ['mk', 1000], wins100: ['wins', 100], g200: ['games', 200], coop30: ['coop', 30], hunt20: ['hunt', 20], td20: ['td', 20], br10: ['brWins', 10], rich10000: ['coins', 10000] };
+function achProgress(a, p) {
+  const g = ACH_GOAL[a[0]]; if (!g) return null;
+  const cur = g[0] === 'coins' ? (p.coins | 0) : ((p.st && p.st[g[0]]) | 0);
+  return [Math.min(cur, g[1]), g[1]];
+}
 function dayStr(off) { const d = new Date(Date.now() + (off || 0) * 864e5); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 /** 一局結束：更新統計、解鎖成就、回報排行榜與戰隊。回傳要加在結算畫面的文字。 */
 function afterMatch(mode, win, day, myStat, coins) {
@@ -879,7 +896,8 @@ function renderSocial() {
     ACH.forEach(function (a) {
       const ok = p.ach.indexOf(a[0]) >= 0, row = mk('div', 'srow' + (ok ? ' done' : ''));
       row.appendChild(mk('span', 'rk', ok ? '✓' : ''));
-      const nm = mk('span', 'nm', a[1]); nm.appendChild(mk('small', null, '　' + a[2])); row.appendChild(nm);
+      const pr = ok ? null : achProgress(a, p);
+      const nm = mk('span', 'nm', a[1]); nm.appendChild(mk('small', null, '　' + a[2] + (pr ? '（' + pr[0] + ' / ' + pr[1] + '）' : ''))); row.appendChild(nm);
       row.appendChild(mk('span', 'sc', '+' + a[4])); b.appendChild(row);
     });
     return;
@@ -953,6 +971,7 @@ function renderSocial() {
         const isLeader = info.clan.owner === RR.Cloud.uid(), deps = info.clan.deputies || [];
         const roleOf = function (m) { return m.uid === info.clan.owner ? '隊長' : deps.indexOf(m.uid) >= 0 ? '副隊長' : '隊員'; };
         socRows(info.members.map(function (m) { return Object.assign({}, m, { name: (m.name || '玩家') + ' 〔' + roleOf(m) + '〕' }); }), function (v) { return v + ' 分'; });
+        const my = RR.Cloud.uid();
         const amDep = deps.indexOf(my) >= 0;
         if (isLeader || amDep) info.members.forEach(function (m) {
           if (m.uid === info.clan.owner || m.uid === my) return;
@@ -962,6 +981,9 @@ function renderSocial() {
             const bt = mk('button', 'btn', isDep ? '取消副隊長' : '設為副隊長'); bt.type = 'button';
             bt.addEventListener('click', function () { C.setDeputy(m.uid, !isDep, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
             r.appendChild(bt);
+            const tb = mk('button', 'btn', '轉移隊長'); tb.type = 'button';
+            tb.addEventListener('click', function () { if (!window.confirm('確定把隊長轉給「' + (m.name || '玩家') + '」？你會變成隊員。')) return; C.transferLeader(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
+            r.appendChild(tb);
           }
           if (isLeader || !isDep) {
             const kb = mk('button', 'btn', '踢出'); kb.type = 'button';

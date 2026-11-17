@@ -171,6 +171,12 @@ const Cloud = {
     const FV = window.firebase.firestore.FieldValue;
     db.collection('clans').doc(me.clan).update({ deputies: on ? FV.arrayUnion(target) : FV.arrayRemove(target) }).then(function () { if (cb) cb(null); }).catch(fail(cb));
   },
+  /** 隊長把位子轉給成員：owner 改成對方，並把對方從副隊長名單移除 */
+  transferLeader: function (target, cb) {
+    if (!Cloud.ready() || !me || !me.clan) { if (cb) cb({ code: 'no-clan' }); return; }
+    const FV = window.firebase.firestore.FieldValue;
+    db.collection('clans').doc(me.clan).update({ owner: target, deputies: FV.arrayRemove(target) }).then(function () { if (cb) cb(null); }).catch(fail(cb));
+  },
   /** 隊長／副隊長踢人：刪掉成員文件並把人數減 1 */
   kickMember: function (target, cb) {
     if (!Cloud.ready() || !me || !me.clan) { if (cb) cb({ code: 'no-clan' }); return; }
