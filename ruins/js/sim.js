@@ -673,6 +673,30 @@ Sim.prototype._respawn = function (m) {
 };
 
 /** 近戰攻擊：前方 2.4 公尺、約 110 度扇形內最近的玩家。兩下致死。 */
+// 近戰打怪物（獵殺／塔防／回收）：前方扇形內最近的怪物，傷害先扣護盾；回收模式打中會暈
+Sim.prototype._meleeMon = function (a, wf) {
+  const fx = -Math.sin(a.yaw), fz = -Math.cos(a.yaw), dmg = wf ? wf.dmg : 50;
+  let best = null, bd = wf ? wf.rng : 2.4;
+  for (let i = 0; i < this.monsters.length; i++) {
+    const m = this.monsters[i];
+    if (m.idle || m.dead > 0) continue;
+    const dx = m.x - a.x, dz = m.z - a.z, d = Math.hypot(dx, dz);
+    if (d > bd) continue;
+    if (d > 0.3 && (dx * fx + dz * fz) / d < 0.57) continue;
+    if (!los(a.x, a.z, m.x, m.z)) continue;
+    best = m; bd = d;
+  }
+  if (!best) return;
+  const m = best, td = this.mode === 'td', hunt = this.mode === 'hunt' || td;
+  monHit(m, dmg);
+  if (hunt) {
+    if (m.hp <= 0) { m.dead = td ? 1e9 : 3; m.idle = td; m.state = 'wander'; m.path = null; this.money += 50; a.earned += 50; a.mk = (a.mk || 0) + 1; }
+    else { m.cool = Math.max(m.cool || 0, 0.25); m.state = 'chase'; m.target = a.id; m.goal = cellOf(a.x, a.z); m.lost = 0; m.repath = 0; }
+  } else {
+    m.cool = Math.max(m.cool || 0, 1.5);
+    if (m.hp <= 0) { m.dead = 12; m.state = 'wander'; m.path = null; }
+  }
+};
 Sim.prototype.attack = function (id, yaw) {
   const a = this.player(id);
   if (!a || this.phase !== 'play' || !a.alive || a.atkCd > 0) return;
@@ -680,7 +704,7 @@ Sim.prototype.attack = function (id, yaw) {
   const wf = a.lw != null ? LWFX[a.lw] : null;
   a.atkCd = wf ? wf.cd : a.c === 4 ? 0.49 : 0.65;   // 南瓜頭攻擊冷卻 -25%
   this.events.push({ t: 'swing', id: id });
-  if (!this.pvp && this.mode !== 'br') return;
+  if (!this.pvp && this.mode !== 'br') { this._meleeMon(a, wf); return; }   // 非對戰模式：近戰打怪物
   const fx = -Math.sin(a.yaw), fz = -Math.cos(a.yaw);
   let best = null, bd = wf ? wf.rng : 2.4;
   for (let i = 0; i < this.players.length; i++) {
