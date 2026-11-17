@@ -384,7 +384,7 @@ function showBreak(c, r, quiet) {
 }
 let solids = [];   // 擺設的碰撞圓（櫃子、木箱、鐵桶）：[x, z, 半徑, 高度]
 // 腳的高度 y 已經高過擺設頂端就不擋（跳上木箱、鐵桶）
-function hitSolid(x, z, y) { for (let i = 0; i < solids.length; i++) { const q = solids[i]; if ((y || 0) < (q[3] || 9) - 0.08 && Math.hypot(q[0] - x, q[1] - z) < q[2] + 0.34) return true; } return false; }
+function hitSolid(x, z, y) { for (let i = 0; i < solids.length; i++) { const q = solids[i]; if ((y || 0) < (q[3] || 9) - 0.3 && Math.hypot(q[0] - x, q[1] - z) < q[2] + 0.34) return true; } return false; }
 // 這個位置腳下的高度：站在擺設上就是它的頂端
 function groundAt(x, z) { let g = 0; for (let i = 0; i < solids.length; i++) { const q = solids[i]; if (q[3] && q[3] < 1.5 && Math.hypot(q[0] - x, q[1] - z) < q[2] + 0.12) g = Math.max(g, q[3]); } return g; }
 let vanRing = null, inBaseNow = false;
@@ -1389,7 +1389,7 @@ function updateMe(dt) {
   const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   // 跳：耗 18% 體力，在空中時怪物抓不到；衝刺：往移動方向（沒動就往前）瞬間衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒
   if (me.riding) { jumpQ = false; dashQ = false; }   // 推車上不能跳、衝
-  if (jumpQ) { jumpQ = false; if (me.vy === 0 && me.y <= groundAt(me.x, me.z) + 0.01 && !me.tired && me.stam >= 0.18) { me.vy = 5.6; me.y += 0.001; me.stam -= 0.18; Sfx.tone(300, 0.12, 'triangle', 0.08, 520); } }
+  if (jumpQ) { jumpQ = false; if (me.vy === 0 && me.y <= groundAt(me.x, me.z) + 0.01 && !me.tired && me.stam >= 0.18) { me.vy = 6.2; me.y += 0.001; me.stam -= 0.18; Sfx.tone(300, 0.12, 'triangle', 0.08, 520); } }
   if (dashCd > 0) dashCd -= dt;
   if (dashQ) { dashQ = false; if (dashCd <= 0 && !me.tired && me.stam >= 0.25) {
     const df = moving ? f / mag : 1, ds = moving ? s / mag : 0;
@@ -1549,7 +1549,7 @@ function updateHud() {
   else { $('money').textContent = '$' + view.money; $('quota').textContent = '$' + view.quota; }
   $('bag').textContent = me.bagN;
   const bm = $('bombs'), bt = '∞'; if (bm.textContent !== bt) bm.textContent = bt;
-  const am = $('ammo'), at = me.reloading ? '裝填中' : String(me.ammo || 0); if (am.textContent !== at) am.textContent = at;
+  const am = $('ammo'), at = '∞'; if (am.textContent !== at) am.textContent = at;
   const gb = $('gun'), gt = me.reloading ? '…' : '槍'; if (gb.textContent !== gt) gb.textContent = gt; gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
   const qf = $('qfill'), pct = view.mode === 'td' && view.td ? view.td[0] : view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
   qf.style.width = pct + '%'; qf.classList.toggle('done', pct >= 100);
