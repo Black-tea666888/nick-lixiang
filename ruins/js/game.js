@@ -542,20 +542,31 @@ function buildLevel() {
       if (Math.hypot(cx - VAN[0], cz - VAN[1]) < CS * 1.2) return;
       [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) { if (W.isWall(c + d[0], r + d[1]) && rr() < 0.55) spots.push([cx + d[0] * (CS / 2 - 0.35) + (d[0] ? 0 : (rr() - 0.5) * 3), cz + d[1] * (CS / 2 - 0.35) + (d[1] ? 0 : (rr() - 0.5) * 3)]); });
     });
-    const kinds = { beach: [new THREE.DodecahedronGeometry(0.22, 0), [0xb8a684, 0x8f8770, 0xe8dcc0], 0.08], forest: [new THREE.ConeGeometry(0.14, 0.55, 5), [0x3f7a35, 0x5a9a42, 0x2f6a2c], 0.27], snow: [new THREE.SphereGeometry(0.35, 8, 6), [0xf4f8fb, 0xe6eef5], 0.05],
-      park: [new THREE.BoxGeometry(0.25, 0.03, 0.18), [0xd94a3a, 0xf2b84b, 0x4a8fd9, 0xffffff], 0.02], site: [new THREE.ConeGeometry(0.2, 0.55, 10), [0xf26a1b], 0.27], city: [new THREE.BoxGeometry(0.3, 0.03, 0.2), [0xd8d2c4, 0x9aa0a8], 0.02], space: null };
-    const k = kinds[style]; if (!k) return;
-    const m = new THREE.InstancedMesh(k[0], litMat({ color: 0xffffff }), spots.length), col = new THREE.Color();
-    spots.forEach(function (q, i) { const s = 0.7 + rr() * 0.7; m.setMatrixAt(i, M4(q[0], k[2] * s, q[1], style === 'park' || style === 'city' ? 0 : (rr() - 0.5) * 0.3, rr() * 6.3, 0, s, style === 'snow' ? s * 0.45 : s, s)); m.setColorAt(i, col.setHex(k[1][Math.floor(rr() * k[1].length)])); });
-    m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; level.add(m);
+    const kinds = { beach: [[new THREE.DodecahedronGeometry(0.22, 0), [0xb8a684, 0x8f8770, 0xe8dcc0], 0.08], [new THREE.BoxGeometry(0.26, 0.12, 0.2), [0xd8c9a6, 0x9c8f74], 0.05], [new THREE.ConeGeometry(0.16, 0.3, 6), [0xe8dcc0, 0xc9b48a], 0.12]],
+      forest: [[new THREE.ConeGeometry(0.14, 0.55, 5), [0x3f7a35, 0x5a9a42, 0x2f6a2c], 0.27], [new THREE.DodecahedronGeometry(0.2, 0), [0x6b5a3a, 0x4d4030], 0.1], [new THREE.CylinderGeometry(0.1, 0.12, 0.4, 6), [0x7a5a32, 0x5a4224], 0.2]],
+      snow: [[new THREE.SphereGeometry(0.35, 8, 6), [0xf4f8fb, 0xe6eef5], 0.05], [new THREE.DodecahedronGeometry(0.25, 0), [0xdfe9f2, 0xc5d3e0], 0.08], [new THREE.ConeGeometry(0.15, 0.4, 7), [0x9fd0e6, 0xf4f8fb], 0.2]],
+      park: [[new THREE.BoxGeometry(0.25, 0.03, 0.18), [0xd94a3a, 0xf2b84b, 0x4a8fd9, 0xffffff], 0.02], [new THREE.CylinderGeometry(0.1, 0.1, 0.05, 12), [0xf2b84b, 0x4a8fd9, 0xd94a3a], 0.03], [new THREE.OctahedronGeometry(0.16), [0xff7ad1, 0x6ad8ff], 0.17]],
+      site: [[new THREE.ConeGeometry(0.2, 0.55, 10), [0xf26a1b], 0.27], [new THREE.BoxGeometry(0.4, 0.1, 0.25), [0xf26a1b, 0x333333], 0.06], [new THREE.DodecahedronGeometry(0.2, 0), [0xf2b84b, 0xd94a3a], 0.13]],
+      city: [[new THREE.BoxGeometry(0.3, 0.03, 0.2), [0xd8d2c4, 0x9aa0a8], 0.02], [new THREE.CylinderGeometry(0.12, 0.12, 0.2, 8), [0x9aa0a8, 0x6f7680], 0.1], [new THREE.OctahedronGeometry(0.18), [0xd8d2c4, 0xb07a4a], 0.18]], space: null };
+    const vs = kinds[style]; if (!vs) return;
+    const groups = vs.map(function () { return []; });
+    spots.forEach(function (q) { groups[Math.floor(rr() * vs.length)].push(q); });   // 每個位置隨機挑一種外形
+    const col = new THREE.Color(); let m = null;
+    vs.forEach(function (k, vi) {
+      const g = groups[vi]; if (!g.length) return;
+      const im = new THREE.InstancedMesh(k[0], litMat({ color: 0xffffff }), g.length);
+      g.forEach(function (q, i) { const s = 0.7 + rr() * 0.7; im.setMatrixAt(i, M4(q[0], k[2] * s, q[1], style === 'park' || style === 'city' ? 0 : (rr() - 0.5) * 0.3, rr() * 6.3, 0, s, style === 'snow' ? s * 0.45 : s, s)); im.setColorAt(i, col.setHex(k[1][Math.floor(rr() * k[1].length)])); });
+      im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; level.add(im);
+      if (vi === 0) m = im;
+    });
     if (style === 'forest' || style === 'beach') {   // 再加一些石頭
       const rk = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.3, 0), litMat({ color: 0x8a8a80 }), 30);
       for (let i = 0; i < 30; i++) { const q = spots[Math.floor(rr() * spots.length)] || [0, 0], s = 0.6 + rr(); rk.setMatrixAt(i, M4(q[0] + (rr() - 0.5), 0.1 * s, q[1] + (rr() - 0.5), rr(), rr() * 6, 0, s, s * 0.6, s)); }
       rk.instanceMatrix.needsUpdate = true; level.add(rk);
     }
-    if (style === 'site') {   // 三角錐上的白色反光條
-      const band = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.11, 0.14, 0.08, 10), new THREE.MeshBasicMaterial({ color: 0xffffff }), spots.length);
-      for (let i = 0; i < spots.length; i++) { const mm = new THREE.Matrix4(); m.getMatrixAt(i, mm); const p = new THREE.Vector3(), q4 = new THREE.Quaternion(), sc = new THREE.Vector3(); mm.decompose(p, q4, sc); band.setMatrixAt(i, M4(p.x, p.y + 0.05 * sc.y, p.z, 0, 0, 0, sc.x, sc.y, sc.z)); }
+    if (style === 'site' && m) {   // 三角錐上的白色反光條
+      const band = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.11, 0.14, 0.08, 10), new THREE.MeshBasicMaterial({ color: 0xffffff }), m.count);
+      for (let i = 0; i < m.count; i++) { const mm = new THREE.Matrix4(); m.getMatrixAt(i, mm); const p = new THREE.Vector3(), q4 = new THREE.Quaternion(), sc = new THREE.Vector3(); mm.decompose(p, q4, sc); band.setMatrixAt(i, M4(p.x, p.y + 0.05 * sc.y, p.z, 0, 0, 0, sc.x, sc.y, sc.z)); }
       band.instanceMatrix.needsUpdate = true; level.add(band);
     }
   };
