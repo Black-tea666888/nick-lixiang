@@ -833,7 +833,8 @@ function buildChar(c, slot, h, o, pet) {
     const ear = new THREE.ConeGeometry(0.09, 0.2, 4), eye = new THREE.SphereGeometry(0.04, 20, 16);
     const tail = part(new THREE.CylinderGeometry(0.035, 0.05, 0.7, 16), M, 0, 0.75, -0.42); tail.rotation.x = -0.7;
     g.add(body(), part(new THREE.SphereGeometry(0.27, 28, 24), M, 0, 1.6, 0), part(ear, M, -0.15, 1.9, 0), part(ear, M, 0.15, 1.9, 0),
-      part(eye, glow, -0.1, 1.63, 0.24), part(eye, glow, 0.1, 1.63, 0.24), part(new THREE.SphereGeometry(0.03, 20, 16), dark, 0, 1.55, 0.27), tail);
+      part(eye, glow, -0.1, 1.63, 0.24), part(eye, glow, 0.1, 1.63, 0.24), part(new THREE.SphereGeometry(0.03, 20, 16), dark, 0, 1.55, 0.27), tail,
+      part(new THREE.SphereGeometry(0.012, 10, 8), dark, -0.09, 1.65, 0.28), part(new THREE.SphereGeometry(0.012, 10, 8), dark, 0.11, 1.65, 0.28));
   } else if (c === 4) {     // 南瓜頭
     const head = part(new THREE.SphereGeometry(0.36, 32, 24), pmat(0xff8a1f, 0.4), 0, 1.6, 0); head.scale.y = 0.8;
     const eye = new THREE.ConeGeometry(0.06, 0.1, 3);
@@ -863,18 +864,20 @@ function buildChar(c, slot, h, o, pet) {
   } else if (c === 5) {     // 紙箱人
     const eye = new THREE.BoxGeometry(0.09, 0.09, 0.03);
     g.add(body(), part(new THREE.BoxGeometry(0.52, 0.5, 0.5), pmat(0xb98a55, 0.18), 0, 1.62, 0), part(eye, dark, -0.12, 1.66, 0.26), part(eye, dark, 0.12, 1.66, 0.26),
-      part(new THREE.BoxGeometry(0.52, 0.03, 0.08), pmat(0x8a6238, 0.15), 0, 1.88, 0));
+      part(new THREE.BoxGeometry(0.52, 0.03, 0.08), pmat(0x8a6238, 0.15), 0, 1.88, 0), part(new THREE.BoxGeometry(0.12, 0.5, 0.02), pmat(0xd9c3a0, 0.2), 0, 1.62, 0.26));
   } else {                  // 回收員
     g.add(body(), part(new THREE.SphereGeometry(0.24, 28, 24), M, 0, 1.6, 0), part(new THREE.BoxGeometry(0.34, 0.12, 0.1), dark, 0, 1.63, 0.2),
       part(new THREE.SphereGeometry(0.035, 20, 16), glow, -0.08, 1.63, 0.25), part(new THREE.SphereGeometry(0.035, 20, 16), glow, 0.08, 1.63, 0.25),
       part(new THREE.SphereGeometry(0.25, 28, 24, 0, Math.PI * 2, 0, Math.PI / 2.4), pmat(0xffc928, 0.3), 0, 1.66, 0),
-      part(new THREE.SphereGeometry(0.05, 20, 16), glow, 0.2, 1.25, 0.26));
+      part(new THREE.SphereGeometry(0.05, 20, 16), glow, 0.2, 1.25, 0.26),
+      part(new THREE.BoxGeometry(0.2, 0.16, 0.04), pmat(0x1c2220, 0.05), -0.12, 1.02, 0.26),
+      part(new THREE.SphereGeometry(0.012, 10, 8), glow, -0.08, 1.64, 0.27), part(new THREE.SphereGeometry(0.012, 10, 8), glow, 0.12, 1.64, 0.27));
   }
   // 手腳（以肩膀／腳踝為軸，走路時擺動）
   const sx = c === 1 ? 0.34 : 0.33, limb = c === 1 ? pmat(0x9aa3a8, 0.12) : o ? M : pmat(c === 6 ? 0x4fae5a : c === 7 ? 0x9be8c8 : COLORS[slot % 4], 0.12), shoe = pmat(0x1c2220, 0.05);
   const mkArm = function (x) { const pv = new THREE.Group(); pv.position.set(x, 1.22, 0); pv.add(part(new THREE.CylinderGeometry(0.07, 0.06, 0.62, 16), limb, 0, -0.3, 0), part(new THREE.SphereGeometry(0.08, 20, 16), pmat(0xf1e6d6, 0.2), 0, -0.63, 0)); return pv; };
   const pants = pmat(c === 1 ? 0x7d868c : 0x27313c, 0.1);
-  const mkFoot = function (x) { const pv = new THREE.Group(); pv.position.set(x, 0.64, 0); pv.add(part(new THREE.CylinderGeometry(0.105, 0.09, 0.56, 16), pants, 0, -0.28, 0), part(new THREE.BoxGeometry(0.18, 0.12, 0.32), shoe, 0, -0.58, 0.06)); return pv; };
+  const mkFoot = function (x) { const pv = new THREE.Group(); pv.position.set(x, 0.64, 0); pv.add(part(new THREE.CylinderGeometry(0.105, 0.09, 0.56, 16), pants, 0, -0.28, 0), part(new THREE.BoxGeometry(0.18, 0.12, 0.32), shoe, 0, -0.58, 0.06), part(new THREE.BoxGeometry(0.2, 0.04, 0.34), dark, 0, -0.65, 0.06), part(new THREE.BoxGeometry(0.1, 0.02, 0.1), glow, 0, -0.52, 0.16)); return pv; };
   const aL = mkArm(-sx), aR = mkArm(sx), fL = mkFoot(-0.13), fR = mkFoot(0.13);
   aR.rotation.x = -0.45;   // 右手往前握著攻擊物
   g.add(aL, aR, fL, fR);
