@@ -138,6 +138,7 @@ function showSmoke() {
 // 字幕改用提示訊息條（紅色）
 function showSub(text) { toast(text, 'warn'); }
 const keys = {};
+let scopeOn = false;   // 狙擊槍開鏡（Z 或「鏡」鍵）
 let smQ = false, skQ = false, smokeT = null, padMesh = null, ttQ = null, trophyMesh = null, boardMesh = null;   // Q 丟煙霧彈（按一下送一次）
 const touch = { joyId: null, lookId: null, ox: 0, oy: 0, jx: 0, jy: 0, lx: 0, ly: 0, run: false };
 const settings = { sens: 1 };
@@ -1171,9 +1172,9 @@ function fpsWatch(dt) {
   }
 }
 /* ---------- 手機按鈕：位置與大小可自訂（直式、橫式各存一份） ---------- */
-const BTN = { bomb: [154, 314, 58], tower: [244, 296, 58], veh: [244, 218, 58], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
+const BTN = { scope: [58, 348, 58], bomb: [154, 314, 58], tower: [244, 296, 58], veh: [244, 218, 58], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
 // 橫式：畫面矮，改成 4 欄 × 3 列，避免按鍵疊到上方的資訊和按鈕
-const BTN_L = { run: [62, 68, 76], atk: [150, 60, 64], gun: [150, 136, 58], rescue: [150, 212, 58], jump: [58, 154, 58], dash: [58, 226, 58],
+const BTN_L = { scope: [150, 290, 58], run: [62, 68, 76], atk: [150, 60, 64], gun: [150, 136, 58], rescue: [150, 212, 58], jump: [58, 154, 58], dash: [58, 226, 58],
   skill: [232, 56, 58], smoke: [232, 134, 58], bomb: [232, 212, 58], tower: [314, 56, 58], veh: [314, 134, 58] };
 function btnMap() { return window.innerWidth > window.innerHeight ? BTN_L : BTN; }
 // 按鍵區太高、畫面放不下時自動縮小（上方留 84px 給資訊列）
@@ -1272,6 +1273,7 @@ function bindInput() {
     if (e.code === 'KeyC' && !e.repeat && canControl()) dashQ = true;
     if (e.code === 'KeyX' && canControl()) { gunHeld = true; if (!e.repeat) shoot(); }
     if (e.code === 'KeyB' && !e.repeat && canControl() && RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100);
+    if (e.code === 'KeyZ' && !e.repeat && canControl()) scopeOn = !scopeOn;
     if (e.code === 'KeyT' && !e.repeat && canControl() && view.mode === 'td' && RR.Game.onTower) RR.Game.onTower();
     if (e.code === 'KeyV' && !e.repeat && canControl()) vhQ = true;
   });
@@ -1353,6 +1355,7 @@ function bindInput() {
   rescueBtn.addEventListener('touchstart', function (e) { e.preventDefault(); keys.KeyE = true; rescueBtn.classList.add('on'); }, { passive: false });
   rescueBtn.addEventListener('touchend', rescueOff, { passive: false }); rescueBtn.addEventListener('touchcancel', rescueOff, { passive: false });
   rescueBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  $('scope').addEventListener('click', function () { scopeOn = !scopeOn; });
   const smokeBtn = $('smoke');
   smokeBtn.addEventListener('touchstart', function (e) { e.preventDefault(); trySmoke(); }, { passive: false });
   smokeBtn.addEventListener('click', trySmoke);
@@ -1411,7 +1414,9 @@ function updateMe(dt) {
   }
   me.running = wantRun;
   // 跑步時視野變寬，讓速度感更明顯
-  const fovT = dashT > 0 ? 96 : wantRun ? 88 : 75;
+  const sniping = scopeOn && (settings.gun | 0) === 4;
+  const fovT = sniping ? 24 : dashT > 0 ? 96 : wantRun ? 88 : 75;
+  { const sb = $('scope'); if (sb) { sb.classList.toggle('hide', (settings.gun | 0) !== 4); sb.classList.toggle('on', sniping); } const sf = $('scopeFx'); if (sf) sf.classList.toggle('on', sniping); }
   if (Math.abs(camera.fov - fovT) > 0.1) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   if (gunT > 0) gunT -= dt;
   // 回收車光圈＝安全區：走進去提示一次，光圈變綠、會呼吸發亮
@@ -1944,7 +1949,7 @@ RR.Game = {
     } else if (e.t === 'break') {
       showBreak(e.c, e.r); if (e.id === myId) { toast('炸開了！'); }
     } else if (e.t === 'nobomb') {
-      if (e.id === myId) toast(e.why === 'cd' ? '炸藥冷卻中，等 2 秒' : e.why === 'edge' ? '最外圈的牆炸不開' : '面前沒有牆，再靠近一點');
+      if (e.id === myId) toast('炸藥沒有炸開東西');
     } else if (e.t === 'tshot') {
       showTowerShot(e); if (e.kill) floatText('+$50');
     } else if (e.t === 'leak') {
@@ -1957,6 +1962,9 @@ RR.Game = {
       showShot(e);
       if (e.kill) { Sfx.tone(180, 0.35, 'sawtooth', 0.14, 60); floatText('+$50'); toast((e.id === myId ? '你' : nameOf(e.id)) + '擊倒了怪物！'); }
       else if (e.mi >= 0 && e.id === myId && view.mode !== 'hunt') toast('命中！怪物暈 2.5 秒');
+    } else if (e.t === 'boom') {
+      Sfx.noise(0.35, 0.35); shakeT = Math.max(shakeT, 0.3);
+      if (e.id === myId) toast('轟！附近的怪物暈了'); else if (me.alive && Math.hypot(e.x - me.x, e.z - me.z) < 10) toast(nameOf(e.id) + ' 丟了炸藥');
     } else if (e.t === 'noammo') {
       if (e.id === myId) { toast('沒子彈了'); Sfx.tone(900, 0.04, 'square', 0.06); }
     } else if (e.t === 'smoke') {
