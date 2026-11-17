@@ -425,7 +425,7 @@ Sim.prototype.shoot = function (id, yaw) {
   const G = GUNS[p.gun | 0], td = this.mode === 'td', hunt = this.mode === 'hunt' || td, br = this.mode === 'br';
   const gem = 1 + 0.08 * (p.gems ? p.gems[0] : 0);
   p.gunCd = G.cd; p.ammo--;
-  if ((hunt || br) && p.ammo <= 0) p.reload = G.reload;
+  if (p.ammo <= 0) p.ammo = p.clip || 12;   // 子彈不限量：打完自動補滿，不用裝填
   for (let k = 0; k < G.n; k++) {
     const a = p.yaw + (G.spread ? (this.rng() - 0.5) * 2 * G.spread : 0), fx = -Math.sin(a), fz = -Math.cos(a);
     let hit = -1, hd = G.range;
