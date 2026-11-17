@@ -443,6 +443,33 @@ function drawMini(L) {
   g.lineTo(x - fx * s * 0.6 + fz * s * 0.6, y - fz * s * 0.6 - fx * s * 0.6);
   g.closePath(); g.fill(); g.stroke();
 }
+// 基地（回收車）造型：顏色與形狀依房主選的 W.BASE_STYLES 而定；換造型時會重建關卡
+let builtBase = -1, baseCol = 0xffc24a;
+function buildBase() {
+  const st = W.BASE_STYLES[view.base | 0] || W.BASE_STYLES[0], col = st.c, sh = st.sh, VAN = W.VAN;
+  baseCol = col; builtBase = view.base | 0;
+  const ring = new THREE.Mesh(new THREE.RingGeometry(sh === 3 ? 1.2 : 1.5, sh === 3 ? 1.5 : 1.85, 40), new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide }));
+  ring.rotation.x = -Math.PI / 2; ring.position.set(VAN[0], 0.03, VAN[1]); level.add(ring); vanRing = ring;
+  const bH = sh === 1 ? WH * 1.8 : WH;
+  // 光柱：只畫外側（站在裡面抬頭不會看到一個圓），由下往上淡出
+  const bcv = document.createElement('canvas'); bcv.width = 4; bcv.height = 64; { const bg = bcv.getContext('2d'), gr = bg.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, '#000'); gr.addColorStop(1, '#fff'); bg.fillStyle = gr; bg.fillRect(0, 0, 4, 64); }
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 1.65, bH, 28, 1, true),
+    new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.16, alphaMap: new THREE.CanvasTexture(bcv), side: THREE.FrontSide, depthWrite: false }));
+  beam.position.set(VAN[0], bH / 2, VAN[1]); level.add(beam);
+  const glow = new THREE.MeshBasicMaterial({ color: col });
+  if (sh === 1) {   // 信號塔：細桿＋頂端燈球
+    level.add(part(new THREE.CylinderGeometry(0.12, 0.18, bH, 10), new THREE.MeshLambertMaterial({ color: 0x2a3a48 }), VAN[0], bH / 2, VAN[1]));
+    level.add(part(new THREE.SphereGeometry(0.28, 14, 10), glow, VAN[0], bH + 0.1, VAN[1]));
+  } else if (sh === 2) {   // 圓頂營地：半透明圓頂
+    level.add(part(new THREE.ConeGeometry(1.6, 1.1, 28, 1, true), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false }), VAN[0], 2.9, VAN[1]));
+  } else if (sh === 3) {   // 四柱燈：四角小柱頂著燈
+    [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(function (q) {
+      level.add(part(new THREE.CylinderGeometry(0.06, 0.06, 2.4, 8), new THREE.MeshLambertMaterial({ color: 0x2a3a48 }), VAN[0] + q[0] * 1.35, 1.2, VAN[1] + q[1] * 1.35));
+      level.add(part(new THREE.SphereGeometry(0.16, 10, 8), glow, VAN[0] + q[0] * 1.35, 2.5, VAN[1] + q[1] * 1.35));
+    });
+  }
+  const vl = new THREE.PointLight(col, 0.9, 12, 1.6); vl.position.set(VAN[0], 2.4, VAN[1]); level.add(vl);
+}
 function buildLevel() {
   if (level) {
     scene.remove(level);
@@ -601,15 +628,7 @@ function buildLevel() {
     [[-60, -80, 0.3], [80, 60, -0.8], [-20, 110, 1.2]].forEach(function (q) { const m = new THREE.Mesh(bld, cm); m.position.set(Wd / 2 + q[0], 0, D / 2 + q[1]); m.rotation.y = q[2]; level.add(m); });
   }
   if (open) scatterGround(style, hr);
-  // 回收車
-  const ring = new THREE.Mesh(new THREE.RingGeometry(1.5, 1.85, 40), new THREE.MeshBasicMaterial({ color: 0xffc24a, side: THREE.DoubleSide }));
-  ring.rotation.x = -Math.PI / 2; ring.position.set(VAN[0], 0.03, VAN[1]); level.add(ring); vanRing = ring;
-  // 光柱：只畫外側（站在裡面抬頭不會看到一個圓），由下往上淡出
-  const bcv = document.createElement('canvas'); bcv.width = 4; bcv.height = 64; { const bg = bcv.getContext('2d'), gr = bg.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, '#000'); gr.addColorStop(1, '#fff'); bg.fillStyle = gr; bg.fillRect(0, 0, 4, 64); }
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 1.65, WH, 28, 1, true),
-    new THREE.MeshBasicMaterial({ color: 0xffc24a, transparent: true, opacity: 0.16, alphaMap: new THREE.CanvasTexture(bcv), side: THREE.FrontSide, depthWrite: false }));
-  beam.position.set(VAN[0], WH / 2, VAN[1]); level.add(beam);
-  const vl = new THREE.PointLight(0xffc24a, 0.9, 12, 1.6); vl.position.set(VAN[0], 2.4, VAN[1]); level.add(vl);
+  buildBase();
   // 櫃子（躲藏點）
   const lockM = new THREE.MeshLambertMaterial({ color: 0x2a4a60, emissive: 0x0b1c28 }), lineM = new THREE.MeshBasicMaterial({ color: 0x0a141a }), tagM = new THREE.MeshBasicMaterial({ color: 0x7dffb0 });
   (W.lockers || []).forEach(function (k) {
@@ -1442,7 +1461,7 @@ function updateMe(dt) {
     const inB = view.mode !== 'br' && me.alive && Math.hypot(me.x - W.VAN[0], me.z - W.VAN[1]) < (W.BASE_R || 1.85);
     if (inB && !inBaseNow) toast('回到光圈：怪物打不到你，會慢慢回血', 'good');
     inBaseNow = inB;
-    const t = performance.now() / 1000; vanRing.material.color.setHex(inB ? 0x5fd37a : 0xffc24a); vanRing.scale.setScalar(inB ? 1 + Math.sin(t * 4) * 0.03 : 1);
+    const t = performance.now() / 1000; vanRing.material.color.setHex(inB ? 0x5fd37a : baseCol); vanRing.scale.setScalar(inB ? 1 + Math.sin(t * 4) * 0.03 : 1);
   }
   if (view.pz != null && view.mode === 'coop' && me.alive && view.phase === 'play') {
     const dv = Math.hypot(me.x - W.VAN[0], me.z - W.VAN[1]);
@@ -1765,7 +1784,8 @@ RR.Game = {
   onDay: function (info) {
     skEnd = 0; smEnd = 0; me.bombs = 2;
     W.setMap(info.map || 0); W.restoreMap();
-    if (builtMap !== W.mapIndex || Object.keys(brokenVis).length) buildLevel();   // 前一天炸開的牆恢復原狀
+    view.base = info.base | 0;
+    if (builtMap !== W.mapIndex || builtBase !== view.base || Object.keys(brokenVis).length) buildLevel();   // 前一天炸開的牆恢復原狀
     view.items.forEach(function (it) { scene.remove(it.mesh); });
     view.items = info.items.map(function (a) {
       const isk = RR.Game.settings.itemSkin | 0;   // 回收品造型：0 預設、1 糖果（圓球粉彩）、2 寶石（八面體亮色）
