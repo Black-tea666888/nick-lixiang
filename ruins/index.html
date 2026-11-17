@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
-<link rel="stylesheet" href="css/style.css?v=75">
+<link rel="stylesheet" href="css/style.css?v=76">
 </head>
 <body>
 <div id="boot"><div class="bootIn"><b>廢墟回收隊</b><i class="spin"></i><small id="bootTxt">載入中…</small></div></div>
@@ -324,7 +324,7 @@
         <button class="hrow" type="button" data-topic="mon"><span class="htxt"><b>怪物</b><small>四種怪物與牠怎麼發現你</small></span><span class="go">›</span></button>
         <button class="hrow" type="button" data-topic="safe"><span class="htxt"><b>保命方法</b><small>技能、煙霧彈、櫃子、跳與衝、救隊友</small></span><span class="go">›</span></button>
         <button class="hrow" type="button" data-topic="char"><span class="htxt"><b>角色技能</b><small>六個角色的技能與特色</small></span><span class="go">›</span></button>
-        <button class="hrow" type="button" data-topic="map"><span class="htxt"><b>地圖與小地圖</b><small>9 張地圖、小地圖上的標記</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="map"><span class="htxt"><b>地圖與小地圖</b><small>11 張地圖、小地圖上的標記</small></span><span class="go">›</span></button>
         <button class="hrow" type="button" data-topic="bonus"><span class="htxt"><b>加分與小遊戲</b><small>分類回收、圈圈叉叉、獎盃、傳送陣、抽獎機</small></span><span class="go">›</span></button>
         <button class="hrow" type="button" data-topic="grow"><span class="htxt"><b>星等與成長</b><small>星星、金幣、每日任務、頭飾</small></span><span class="go">›</span></button>
         <button class="hrow" type="button" data-topic="team"><span class="htxt"><b>語音與隊友</b><small>麥克風、聊天、互相傷害、沒聲音時</small></span><span class="go">›</span></button>
@@ -363,7 +363,7 @@
 <li>怪物靠近到 14 公尺內，小地圖才會出現牠的三角形。</li></ul>
       </section>
       <section class="htopic hide" data-topic="safe"><h2>保命方法</h2>
-<ul><li><b>槍</b>：在「出戰角色」的「武器」選槍（全部免費；槍枝造型到抽獎機抽）：手槍穩定、霰彈槍一次 6 顆近距離強、步槍和衝鋒槍按住連發、狙擊槍一發高傷害射最遠。回收模式每天子彈有限，打中怪物讓牠暈（打不死）；對準怪物、中間不能有牆。</li>
+<ul><li><b>槍</b>：在「出戰角色」的「武器」選槍（全部免費；槍枝造型到抽獎機抽）：手槍穩定、霰彈槍一次 6 顆近距離強、步槍和衝鋒槍按住連發、狙擊槍一發高傷害射最遠、巴雷特更重更慢、機關槍按住狂射、弓弩慢但狠、三連發一次三顆。回收模式每天子彈有限，打中怪物讓牠暈（打不死）；對準怪物、中間不能有牆。</li>
 <li><b>配件與寶石</b>：主選單「裝備與寶石」購買。配件最多同時裝 2 個，對局中按右上角「背包」可以換；寶石升級後永久有效。</li>
 <li><b>炸藥</b>：不限數量。站在牆前按「炸」／B，面前 3.5 公尺內的那格牆會被炸開，變成新的路（最外圈炸不開）；面前沒有能炸的牆，就在面前爆炸。附近的怪物會暈 2 秒，但牠之後也能走這條新路。隔天牆會恢復。</li>
 <li><b>煙霧彈</b>：怪物走到煙附近會停下來。</li>
@@ -388,8 +388,8 @@
 <ul><li>在主選單點「出戰角色」更換角色、攻擊物、頭飾、服裝和寵物。</li></ul>
       </section>
       <section class="htopic hide" data-topic="map"><h2>地圖與小地圖</h2>
-<ul><li><b>室內</b>：廢棄設施（最暗、最恐怖）、辦公室。</li>
-<li><b>開放場景</b>：海邊、城市、太空站、森林營地、雪地小鎮、廢棄遊樂園、建築工地，有天空、陽光和遠景。</li>
+<ul><li><b>室內</b>：廢棄設施（最暗、最恐怖）、辦公室、地下停車場。</li>
+<li><b>開放場景</b>：海邊、城市、夜市、太空站、森林營地、雪地小鎮、廢棄遊樂園、建築工地，有天空、陽光和遠景。</li>
 <li>在「出戰角色」選地圖；房主也能在大廳切換。</li></ul>
 <h3>小地圖（點一下放大）</h3>
 <table><tr><td>白色箭頭</td><td>你的位置與方向</td></tr><tr><td>彩色圓點</td><td>隊友</td></tr>
@@ -569,14 +569,14 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=75"></script>
-<script src="js/sim.js?v=75"></script>
-<script src="js/audio.js?v=75"></script>
-<script src="js/auth.js?v=75"></script>
-<script src="js/cloud.js?v=75"></script>
-<script src="js/net.js?v=75"></script>
-<script src="js/game.js?v=75"></script>
-<script src="js/minigames.js?v=75"></script>
-<script src="js/main.js?v=75"></script>
+<script src="js/config.js?v=76"></script>
+<script src="js/sim.js?v=76"></script>
+<script src="js/audio.js?v=76"></script>
+<script src="js/auth.js?v=76"></script>
+<script src="js/cloud.js?v=76"></script>
+<script src="js/net.js?v=76"></script>
+<script src="js/game.js?v=76"></script>
+<script src="js/minigames.js?v=76"></script>
+<script src="js/main.js?v=76"></script>
 </body>
 </html>
