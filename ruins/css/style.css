@@ -772,3 +772,5 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
   .spCard { min-height: 112px; }
   .cc { max-width: 760px; }
 }
+
+.gisBox { display: flex; justify-content: center; min-height: 44px; }

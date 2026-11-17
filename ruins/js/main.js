@@ -1019,8 +1019,13 @@ function bind() {
     const name = b.dataset.provider;
     if (RR.CONFIG.providers && RR.CONFIG.providers[name] === false) { b.classList.add('hide'); return; }
     if (!Auth.configured()) b.classList.add('off');
+    if (name === 'google' && Auth.gisReady()) {   // 加到主畫面：用 Google 官方按鈕取代
+      const box = document.createElement('div'); box.className = 'gisBox'; b.parentNode.replaceChild(box, b);
+      Auth.gisButton(box, function (e) { say(Auth.message(e)); }); return;
+    }
     b.addEventListener('click', function () {
       Sfx.unlock();
+      if (name !== 'guest' && Auth.standalone() && !RR.CONFIG.googleClientId) { say('加到主畫面的版本無法用社群登入（iPhone 限制）。請用 Safari 開啟，或先用訪客登入。'); return; }
       Auth.signIn(name).catch(function (e) { if (!e || e.code !== 'auth/popup-closed-by-user') say(Auth.message(e)); });
     });
   });

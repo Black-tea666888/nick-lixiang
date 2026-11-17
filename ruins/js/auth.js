@@ -79,6 +79,23 @@ RR.Auth = {
       throw e;
     });
   },
+  /** 加到主畫面（獨立視窗）時，Firebase 的彈窗與跳轉登入在 iPhone 上都會失敗；改用 Google 官方按鈕拿 ID token 再交給 Firebase */
+  standalone: function () { try { return !!(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)); } catch (e) { return false; } },
+  gisReady: function () { return !!(auth && RR.CONFIG.googleClientId && RR.Auth.standalone()); },
+  /** 把官方按鈕畫進 el；onError(e) 在失敗時呼叫 */
+  gisButton: function (el, onError) {
+    const go = function () {
+      try {
+        window.google.accounts.id.initialize({ client_id: RR.CONFIG.googleClientId, use_fedcm_for_prompt: false, callback: function (r) {
+          try { auth.signInWithCredential(window.firebase.auth.GoogleAuthProvider.credential(r.credential)).catch(onError); } catch (e) { onError(e); }
+        } });
+        el.textContent = ''; window.google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', text: 'signin_with', shape: 'rectangular', width: Math.min(300, Math.max(200, el.clientWidth || 280)) });
+      } catch (e) { onError(e); }
+    };
+    if (window.google && window.google.accounts && window.google.accounts.id) { go(); return; }
+    const sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.onload = go; sc.onerror = function () { onError({ code: 'network-request-failed' }); };
+    document.head.appendChild(sc);
+  },
   guest: function () {
     const local = function () { if (!ls(LS_GUEST)) { memGuest = 'guest-' + rid(10); lsSet(LS_GUEST, memGuest); } build(); };
     if (auth) {
