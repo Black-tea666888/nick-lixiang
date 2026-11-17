@@ -496,13 +496,18 @@ Sim.prototype.shoot = function (id, yaw) {
 };
 /* ---------- 大逃殺 ---------- */
 const BR_TOTAL = 6;   // 真人 + 機器人的總人數
-const BOT_NAMES = ['阿鐵', '小綠', '老皮', '閃電', '麻糬', '黑糖', '豆花'];
+const BOT_NAMES = ['阿鐵', '小綠', '老皮', '閃電', '麻糬', '黑糖', '豆花', '小黃', '阿布', '大熊', '胖虎', '小貓', '阿泰', '鯊魚', '檸檬', '阿福', '小風', '阿龍', '奶茶', '小火', '阿志', '栗子'];
+// 隨機抽一個沒被用過的機器人名字；名字用完才會重複
+function pickBotName(sim, i) {
+  const pool = BOT_NAMES.filter(function (n) { return !sim.players.some(function (q) { return q.name === n; }); });
+  return pool.length ? pool[Math.floor(sim.rng() * pool.length)] : BOT_NAMES[i % BOT_NAMES.length];
+}
 Sim.prototype._startBR = function () {
   const self = this;
   // 機器人補滿人數
   for (let i = 0; this.players.length < BR_TOTAL; i++) {
     let slot = 0; while (this.players.some(function (q) { return q.slot === slot; })) slot++;
-    this.players.push({ id: 'bot' + i, name: BOT_NAMES[i % BOT_NAMES.length], slot: slot, c: Math.floor(this.rng() * CHARS.length), w: Math.floor(this.rng() * WEAPONS.length), h: Math.floor(this.rng() * HATS.length), o: 0, pet: 0, gun: Math.floor(this.rng() * 4), eq: [], gems: [0, 0, 0],
+    this.players.push({ id: 'bot' + i, name: pickBotName(this, i), slot: slot, c: Math.floor(this.rng() * CHARS.length), w: Math.floor(this.rng() * WEAPONS.length), h: Math.floor(this.rng() * HATS.length), o: 0, pet: 0, gun: Math.floor(this.rng() * 4), eq: [], gems: [0, 0, 0],
       ai: true, x: 0, z: 0, yaw: 0, run: false, loud: false, spk: false, alive: true, bag: [], hp: 100, atkCd: 0, hurtT: 99, earned: 0, kills: 0, mk: 0, gunCd: 0, reload: 0, clip: 12, ammo: 12 });
     { const b = this.players[this.players.length - 1]; b.clip = b.ammo = GUNS[b.gun].clip[1]; }
   }
