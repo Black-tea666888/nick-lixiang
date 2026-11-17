@@ -156,6 +156,35 @@ const MAPS = [
     '#...#..........#....#',
     '#M..#....##....#...M#',
     '#####################'
+  ] },
+  { name: '地下停車場', theme: { wall: '#4a4f57', floor: '#2e3236', ceil: '#1c1e20', fog: 0.09, amb: 0x3a4558, torch: 0.6 }, rows: [
+    '#####################',
+    '#S....#.........#...#',
+    '#.###.#.#######.#.#.#',
+    '#.#...#.#.....#.#.#.#',
+    '#.#.###.#.###.#.###.#',
+    '#.#.....#.#...#.....#',
+    '#.#######.#.#######.#',
+    '#.....M...#.........#',
+    '#.#####.###.#######.#',
+    '#.#...#.....#.....#.#',
+    '#.#.#.#####.#.###.#.#',
+    '#M#.#.....M.#.#...#M#',
+    '#####################'
+  ] },
+  { name: '夜市', theme: { wall: '#7a3b2e', floor: '#4a4038', ceil: '#000000', fog: 0.02, amb: 0xffd6a0, open: true, sky: 0x1b1f3b, style: 'city', wallH: 3.0, sun: 0.2, torch: 0.9 }, rows: [
+    '#####################',
+    '#S.......#.......#..#',
+    '#.#####..#..###..#..#',
+    '#.#...#..#..#.#..#..#',
+    '#...#.#.....#.#.....#',
+    '###.#.#####.#.#####.#',
+    '#.........#...#.....#',
+    '#.###.###.#.###.###.#',
+    '#M#...#...........#.#',
+    '#.#.#.#####.#####.#.#',
+    '#...#.....M.......#M#',
+    '#####################'
   ] }
 ];
 const CS = 4, WH = 3.6;
@@ -195,7 +224,10 @@ const GUNS = [
   { name: '步槍', dmg: 22, pvp: 17, cd: 0.13, clip: [12, 24], range: 52, w: 0.7, n: 1, spread: 0.025, stun: 1.6, reload: 1.8, auto: true, cost: 0 },
   { name: '衝鋒槍', dmg: 15, pvp: 11, cd: 0.08, clip: [16, 32], range: 28, w: 0.8, n: 1, spread: 0.07, stun: 1.1, reload: 1.6, auto: true, cost: 0 },
   { name: '狙擊槍', dmg: 95, pvp: 75, cd: 1.1, clip: [3, 5], range: 80, w: 0.45, n: 1, spread: 0, stun: 4.2, reload: 2.3, auto: false, cost: 0 },
-  { name: '巴雷特', dmg: 150, pvp: 120, cd: 1.8, clip: [2, 3], range: 100, w: 0.4, n: 1, spread: 0, stun: 6, reload: 3.2, auto: false, cost: 0 }
+  { name: '巴雷特', dmg: 150, pvp: 120, cd: 1.8, clip: [2, 3], range: 100, w: 0.4, n: 1, spread: 0, stun: 6, reload: 3.2, auto: false, cost: 0 },
+  { name: '機關槍', dmg: 18, pvp: 13, cd: 0.1, clip: [20, 40], range: 40, w: 0.8, n: 1, spread: 0.05, stun: 1.3, reload: 2.6, auto: true, cost: 0 },
+  { name: '弓弩', dmg: 60, pvp: 45, cd: 0.9, clip: [4, 6], range: 60, w: 0.5, n: 1, spread: 0, stun: 3.5, reload: 1.6, auto: false, cost: 0 },
+  { name: '三連發', dmg: 26, pvp: 19, cd: 0.45, clip: [9, 12], range: 40, w: 0.7, n: 3, spread: 0.05, stun: 2, reload: 1.8, auto: false, cost: 0 }
 ];
 const HATS = ['無', '安全帽', '頭燈', '天線', '光環', '皇冠'];   // 頭飾（純外觀）
 const pick = (v, n) => { v = Math.floor(+v); return v >= 0 && v < n ? v : 0; };
@@ -1052,7 +1084,7 @@ Sim.prototype.snapshot = function () {
     it: it };
 };
 
-const BASE_STYLES = [{ n: '回收車（預設）', c: 0xffc24a, sh: 0 }, { n: '信號塔', c: 0x6ad8ff, sh: 1 }, { n: '圓頂營地', c: 0x9dff7a, sh: 2 }, { n: '四柱燈', c: 0xff7ad1, sh: 3 }];
+const BASE_STYLES = [{ n: '回收車（預設）', c: 0xffc24a, sh: 0 }, { n: '信號塔', c: 0x6ad8ff, sh: 1 }, { n: '圓頂營地', c: 0x9dff7a, sh: 2 }, { n: '四柱燈', c: 0xff7ad1, sh: 3 }, { n: '藍色回收車', c: 0x4a9cff, sh: 0 }, { n: '紅色信號塔', c: 0xff5a4a, sh: 1 }, { n: '金色圓頂', c: 0xffe066, sh: 2 }, { n: '紫色四柱燈', c: 0xb07aff, sh: 3 }];
 const api = { BASE_STYLES: BASE_STYLES, MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
   KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, GUNS: GUNS, BASE_R: BASE_R, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, breakWall: breakWall, restoreMap: restoreMap, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
   quotaFor: quotaFor, Sim: Sim, setMap: setMap };
