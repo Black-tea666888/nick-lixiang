@@ -953,13 +953,22 @@ function renderSocial() {
         const isLeader = info.clan.owner === RR.Cloud.uid(), deps = info.clan.deputies || [];
         const roleOf = function (m) { return m.uid === info.clan.owner ? '隊長' : deps.indexOf(m.uid) >= 0 ? '副隊長' : '隊員'; };
         socRows(info.members.map(function (m) { return Object.assign({}, m, { name: (m.name || '玩家') + ' 〔' + roleOf(m) + '〕' }); }), function (v) { return v + ' 分'; });
-        if (isLeader) info.members.forEach(function (m) {
-          if (m.uid === info.clan.owner) return;
+        const amDep = deps.indexOf(my) >= 0;
+        if (isLeader || amDep) info.members.forEach(function (m) {
+          if (m.uid === info.clan.owner || m.uid === my) return;
           const isDep = deps.indexOf(m.uid) >= 0, r = mk('div', 'srow');
           r.appendChild(mk('span', 'nm', (m.name || '玩家') + ' · ' + roleOf(m)));
-          const bt = mk('button', 'btn', isDep ? '取消副隊長' : '設為副隊長'); bt.type = 'button';
-          bt.addEventListener('click', function () { C.setDeputy(m.uid, !isDep, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
-          r.appendChild(bt); b.appendChild(r);
+          if (isLeader) {
+            const bt = mk('button', 'btn', isDep ? '取消副隊長' : '設為副隊長'); bt.type = 'button';
+            bt.addEventListener('click', function () { C.setDeputy(m.uid, !isDep, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
+            r.appendChild(bt);
+          }
+          if (isLeader || !isDep) {
+            const kb = mk('button', 'btn', '踢出'); kb.type = 'button';
+            kb.addEventListener('click', function () { if (!window.confirm('確定要把「' + (m.name || '玩家') + '」踢出戰隊？')) return; C.kickMember(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
+            r.appendChild(kb);
+          }
+          b.appendChild(r);
         });
         const lv = mk('button', 'btn', '退出戰隊'); lv.type = 'button'; lv.addEventListener('click', function () { C.leaveClan(function (err) { if (err) say(C.message(err)); renderSocial(); }); }); b.appendChild(lv);
       }

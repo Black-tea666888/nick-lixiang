@@ -21,8 +21,14 @@ service cloud.firestore {
       allow update: if signedIn() && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['score', 'count'])
         || (request.auth.uid == resource.data.owner && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deputies'])));
       match /members/{uid} {
+        function canKick() {
+          let c = get(/databases/$(database)/documents/clans/$(cid)).data;
+          let dep = ('deputies' in c && c.deputies is list) ? c.deputies : [];
+          return uid != c.owner && (request.auth.uid == c.owner || (request.auth.uid in dep && !(uid in dep)));
+        }
         allow read: if signedIn();
-        allow write: if signedIn() && request.auth.uid == uid;
+        allow create, update: if signedIn() && request.auth.uid == uid;
+        allow delete: if signedIn() && (request.auth.uid == uid || canKick());
       }
       // 戰隊聊天：只有隊員能讀寫。文字與請求只能用自己的名義發；
       // 別人只能「捐」（got 每次 +10、不超過 need），本人只能「領」（claimed 不超過 got）
