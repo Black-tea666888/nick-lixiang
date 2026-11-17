@@ -165,6 +165,12 @@ const Cloud = {
       }).then(function () { cb(null, { id: c.id, tag: cd.tag, name: cd.name }); });
     }).catch(fail(cb));
   },
+  /** 隊長設定或取消副隊長（寫在戰隊文件的 deputies 陣列裡） */
+  setDeputy: function (target, on, cb) {
+    if (!Cloud.ready() || !me || !me.clan) { if (cb) cb({ code: 'no-clan' }); return; }
+    const FV = window.firebase.firestore.FieldValue;
+    db.collection('clans').doc(me.clan).update({ deputies: on ? FV.arrayUnion(target) : FV.arrayRemove(target) }).then(function () { if (cb) cb(null); }).catch(fail(cb));
+  },
   leaveClan: function (cb) {
     if (!Cloud.ready() || !me || !me.clan) { if (cb) cb({ code: 'no-clan' }); return; }
     const ref = db.collection('clans').doc(me.clan);

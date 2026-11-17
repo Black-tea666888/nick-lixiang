@@ -950,7 +950,17 @@ function renderSocial() {
         b.appendChild(mk('p', 'note', '戰隊「' + info.clan.name + '」，積分 ' + (info.clan.score | 0) + '，' + info.members.length + ' / 30 人，代碼'));
         b.appendChild(mk('div', 'bigcode', info.clan.tag));
         { const cc = mk('button', 'btn primary', '打開戰隊聊天'); cc.type = 'button'; cc.style.width = '100%'; cc.style.margin = '6px 0 10px'; cc.addEventListener('click', function () { $('scrSocial').classList.add('hide'); renderSocial.token = null; clanOpen(); }); b.appendChild(cc); }
-        socRows(info.members, function (v) { return v + ' 分'; });
+        const isLeader = info.clan.owner === RR.Cloud.uid(), deps = info.clan.deputies || [];
+        const roleOf = function (m) { return m.uid === info.clan.owner ? '隊長' : deps.indexOf(m.uid) >= 0 ? '副隊長' : '隊員'; };
+        socRows(info.members.map(function (m) { return Object.assign({}, m, { name: (m.name || '玩家') + ' 〔' + roleOf(m) + '〕' }); }), function (v) { return v + ' 分'; });
+        if (isLeader) info.members.forEach(function (m) {
+          if (m.uid === info.clan.owner) return;
+          const isDep = deps.indexOf(m.uid) >= 0, r = mk('div', 'srow');
+          r.appendChild(mk('span', 'nm', (m.name || '玩家') + ' · ' + roleOf(m)));
+          const bt = mk('button', 'btn', isDep ? '取消副隊長' : '設為副隊長'); bt.type = 'button';
+          bt.addEventListener('click', function () { C.setDeputy(m.uid, !isDep, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
+          r.appendChild(bt); b.appendChild(r);
+        });
         const lv = mk('button', 'btn', '退出戰隊'); lv.type = 'button'; lv.addEventListener('click', function () { C.leaveClan(function (err) { if (err) say(C.message(err)); renderSocial(); }); }); b.appendChild(lv);
       }
       b.appendChild(mk('div', 'sec', '戰隊排行榜'));
