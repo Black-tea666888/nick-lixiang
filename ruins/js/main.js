@@ -971,6 +971,7 @@ function renderSocial() {
         const isLeader = info.clan.owner === RR.Cloud.uid(), deps = info.clan.deputies || [];
         const roleOf = function (m) { return m.uid === info.clan.owner ? '隊長' : deps.indexOf(m.uid) >= 0 ? '副隊長' : '隊員'; };
         socRows(info.members.map(function (m) { return Object.assign({}, m, { name: (m.name || '玩家') + ' 〔' + roleOf(m) + '〕' }); }), function (v) { return v + ' 分'; });
+        const my = RR.Cloud.uid();
         const amDep = deps.indexOf(my) >= 0;
         if (isLeader || amDep) info.members.forEach(function (m) {
           if (m.uid === info.clan.owner || m.uid === my) return;
@@ -980,6 +981,9 @@ function renderSocial() {
             const bt = mk('button', 'btn', isDep ? '取消副隊長' : '設為副隊長'); bt.type = 'button';
             bt.addEventListener('click', function () { C.setDeputy(m.uid, !isDep, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
             r.appendChild(bt);
+            const tb = mk('button', 'btn', '轉移隊長'); tb.type = 'button';
+            tb.addEventListener('click', function () { if (!window.confirm('確定把隊長轉給「' + (m.name || '玩家') + '」？你會變成隊員。')) return; C.transferLeader(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
+            r.appendChild(tb);
           }
           if (isLeader || !isDep) {
             const kb = mk('button', 'btn', '踢出'); kb.type = 'button';
