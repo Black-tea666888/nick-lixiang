@@ -1010,7 +1010,7 @@ function bind() {
   showLook();
   window.RR_refreshWardrobe = showLook;
   WHEELS.forEach(function (wh, k) {
-    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'tab'); b.textContent = wh.n;
+    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'tab'); b.textContent = ['綜合', '服裝', '寵物', '特效', '槍械'][k] || wh.n;
     b.addEventListener('click', function () { if (wheelBusy) return; wheelI = k; dwWin = -1; dwSel = 0; $('wheelWear').classList.add('hide'); wheelDraw(); });
     $('wheelSel').appendChild(b);
   });
