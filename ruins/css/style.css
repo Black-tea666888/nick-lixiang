@@ -780,3 +780,9 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
   background: radial-gradient(circle at 50% 50%, transparent 0 min(34vw, 34vh), rgba(0,0,0,.92) min(35vw, 35vh)); }
 #scopeFx.on { display: block; }
 #scope.on { background: #d8b24a; color: #1c1c1c; }
+
+/* 加入房間視窗：代碼輸入框與說明字放大，手機上好讀 */
+#joinModal .mTitle { font-size: 24px; }
+#joinModal .note { font-size: 17px; }
+#codeInput { font-size: 26px; padding: 12px 8px; }
+#joinBtn { font-size: 20px; padding: 12px 16px; }
