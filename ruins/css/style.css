@@ -774,3 +774,8 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
 }
 
 .gisBox { display: flex; justify-content: center; min-height: 44px; }
+
+#scopeFx { position: fixed; inset: 0; pointer-events: none; z-index: 5; display: none;
+  background: radial-gradient(circle at 50% 50%, transparent 0 min(34vw, 34vh), rgba(0,0,0,.92) min(35vw, 35vh)); }
+#scopeFx.on { display: block; }
+#scope.on { background: #d8b24a; color: #1c1c1c; }

@@ -275,7 +275,8 @@ Sim.prototype.addPlayer = function (id, name, look) {
   while (this.players.some(function (p) { return p.slot === slot; })) slot++;
   look = look || {};
   const p = { id: id, name: String(name || '玩家').slice(0, 12), slot: slot, c: pick(look.c, CHARS.length), w: pick(look.w, WEAPONS.length), h: pick(look.h, HATS.length), o: pick(look.o, COSTUMES.length), pet: pick(look.pet, PETS.length), gun: pick(look.gun, GUNS.length), eq: cleanEq(look.eq), gems: cleanGems(look.gems), x: VAN[0], z: VAN[1], yaw: 0,
-    run: false, loud: false, spk: false, alive: true, bag: [], hp: 100, atkCd: 0, hurtT: 99, earned: 0, kills: 0 };
+    run: false, loud: false, spk: false, alive: true, bag: [], hp: 100, atkCd: 0, hurtT: 99, earned: 0, kills: 0,
+    clip: GUNS[pick(look.gun, GUNS.length)].clip[0], ammo: GUNS[pick(look.gun, GUNS.length)].clip[0], gunCd: 0, reload: 0, bombs: 99, smCd: 0 };   // 中途加入也要有子彈、炸藥
   this.players.push(p);
   return p;
 };
@@ -333,7 +334,7 @@ Sim.prototype.startDay = function (day) {
   this.players.forEach(function (p) {
     const o = SPAWN_OFF[p.slot % 4];
     p.alive = true; p.bag = []; p.x = VAN[0] + o[0]; p.z = VAN[1] + o[1]; p.yaw = -Math.PI * 0.75;
-    p.bombs = 99; p.bombCd = 0;   // 炸藥不限量，只有 2 秒冷卻（顯示成 ∞）
+    p.bombs = 99;   // 炸藥不限量（顯示成 ∞）
     p.run = p.loud = false; p.hp = maxHp(p); p.atkCd = 0; p.hurtT = 99; p.esc = false;
     p.clip = Math.round(GUNS[p.gun | 0].clip[hunt || br ? 1 : 0] * (hasAcc(p, 3) ? 1.5 : 1)); p.ammo = p.clip; p.gunCd = 0; p.reload = 0;   // 回收模式每天 6 發（擊中讓怪物暈 2.5 秒）；獵殺模式彈匣 12 發、自動裝填
     if (day === 1) { p.earned = 0; p.kills = 0; p.mk = 0; }
@@ -691,7 +692,6 @@ Sim.prototype._pickWander = function (m) {
 Sim.prototype.bomb = function (id, yaw) {
   const p = this.player(id);
   if (!p || this.phase !== 'play' || !p.alive) return;
-  if (p.bombCd > 0) { this.events.push({ t: 'nobomb', id: id, why: 'cd' }); return; }
   if (isFinite(+yaw)) p.yaw = +yaw;
   const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
   let hit = null;
@@ -699,12 +699,13 @@ Sim.prototype.bomb = function (id, yaw) {
     const c = Math.floor((p.x + fx * d) / CS), r = Math.floor((p.z + fz * d) / CS);
     if (isWall(c, r)) hit = [c, r];
   }
-  if (!hit) { this.events.push({ t: 'nobomb', id: id, why: 'far' }); return; }
-  if (!breakWall(hit[0], hit[1])) { this.events.push({ t: 'nobomb', id: id, why: 'edge' }); return; }
-  p.bombCd = 2;
-  const cp = center(hit[0], hit[1]);
+  // 面前沒有能炸的牆（沒牆、或最外圈）：就在面前 2.5 公尺爆炸，照樣嚇暈附近的怪物
+  let cp, broke = false;
+  if (hit && breakWall(hit[0], hit[1])) { cp = center(hit[0], hit[1]); broke = true; }
+  else { cp = [p.x + fx * 2.5, p.z + fz * 2.5]; }
   this.monsters.forEach(function (m) { if (!(m.dead > 0) && Math.hypot(m.x - cp[0], m.z - cp[1]) < 8) { m.cool = Math.max(m.cool, 2); m.path = null; } });
-  this.events.push({ t: 'break', id: id, c: hit[0], r: hit[1], n: p.bombs });
+  if (broke) this.events.push({ t: 'break', id: id, c: hit[0], r: hit[1], n: p.bombs });
+  else this.events.push({ t: 'boom', id: id, x: r2(cp[0]), z: r2(cp[1]) });
 };
 /** 塔防：花 $100 在腳邊蓋一座砲塔（最多 6 座、彼此至少隔 3 公尺） */
 Sim.prototype.buildTower = function (id) {
@@ -739,6 +740,7 @@ Sim.prototype._stepTD = function (dt) {
     const m = this.monsters[i];
     if (m.idle) continue;
     if (m.cool > 0) { m.cool -= dt; continue; }
+    if ((this.smokes || []).some(function (k) { return Math.hypot(k.x - m.x, k.z - m.z) < 4; })) { m.path = null; continue; }   // 看到煙就停下
     const mc = cellOf(m.x, m.z);
     m.repath -= dt;
     if (m.repath <= 0 || !m.path) { m.path = bfs(mc[0], mc[1], startCell[0], startCell[1]); m.repath = 1; }
@@ -854,7 +856,6 @@ Sim.prototype.step = function (dt) {
   for (let k = 0; k < alive.length; k++) {
     const p = alive[k];
     if (p.atkCd > 0) p.atkCd -= dt;
-    if (p.bombCd > 0) p.bombCd -= dt;
     if ((p.smCd || 0) > 0) p.smCd -= dt;
     if (p.gunCd > 0) p.gunCd -= dt;
     if (p.reload > 0) { p.reload -= dt; if (p.reload <= 0) { p.reload = 0; p.ammo = p.clip || 12; } }
