@@ -171,6 +171,14 @@ const Cloud = {
     const FV = window.firebase.firestore.FieldValue;
     db.collection('clans').doc(me.clan).update({ deputies: on ? FV.arrayUnion(target) : FV.arrayRemove(target) }).then(function () { if (cb) cb(null); }).catch(fail(cb));
   },
+  /** 隊長／副隊長踢人：刪掉成員文件並把人數減 1 */
+  kickMember: function (target, cb) {
+    if (!Cloud.ready() || !me || !me.clan) { if (cb) cb({ code: 'no-clan' }); return; }
+    const ref = db.collection('clans').doc(me.clan);
+    ref.collection('members').doc(target).delete().then(function () {
+      return ref.update({ count: window.firebase.firestore.FieldValue.increment(-1) });
+    }).then(function () { if (cb) cb(null); }).catch(fail(cb));
+  },
   leaveClan: function (cb) {
     if (!Cloud.ready() || !me || !me.clan) { if (cb) cb({ code: 'no-clan' }); return; }
     const ref = db.collection('clans').doc(me.clan);
@@ -197,6 +205,10 @@ const Cloud = {
       if (!r[0].exists) { cb(null, null); return; }
       const members = []; r[1].forEach(function (d) { const x = d.data(); x.uid = d.id; members.push(x); });
       members.sort(function (a, b) { return (b.score | 0) - (a.score | 0); });
+      if (!members.some(function (x) { return x.uid === uid; })) {   // 已被踢出：清掉本機的戰隊資料
+        me.clan = ''; me.clanTag = ''; me.clanName = ''; userRef().set({ clan: '', clanTag: '', clanName: '' }, { merge: true }).catch(fail());
+        cb(null, null); return;
+      }
       const c = r[0].data(); c.id = r[0].id;
       cb(null, { clan: c, members: members });
     }).catch(fail(cb));
