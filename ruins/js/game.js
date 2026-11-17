@@ -1598,7 +1598,7 @@ function frame(nowMs) {
   voiceSpatial(playing, lastL);
   hudT -= dt; if (hudT <= 0) { hudT = 0.15; tickHud(); }
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('show'); }
-  pvs.forEach(function (pv) { if (pv.model && pv.canvas.offsetParent) { pv.model.rotation.y = pv.sway ? -0.35 + Math.sin(now * 0.6) * 0.3 : now * 0.9; pv.r.render(pv.sc, pv.cam); } });
+  pvs.forEach(function (pv) { if (pv.model && pv.canvas.offsetParent) { pv.model.rotation.y = pv.gun ? Math.PI / 2 + Math.sin(now * 0.7) * 0.6 : pv.sway ? -0.35 + Math.sin(now * 0.6) * 0.3 : now * 0.9; pv.model.rotation.x = pv.gun ? 0.15 : 0; pv.r.render(pv.sc, pv.cam); } });
   renderer.render(scene, camera);
 }
 
@@ -1665,9 +1665,23 @@ RR.Game = {
       } catch (e) { return; }
     }
     if (pv.model) pv.sc.remove(pv.model);
+    pv.gun = false; pv.cam.position.set(0, 1.3, 4.7); pv.cam.lookAt(0, 1.08, 0);
     const g = buildChar(c, 0, h || 0, o || 0, pet || 0), wg = buildWeapon(w);
     wg.position.set(0.37, 0.67, 0.3); wg.rotation.x = 0.5; g.add(wg);
     pv.model = g; pv.sc.add(g);
+  },
+  // 槍的 3D 預覽（抽獎機看槍枝造型用）：同一張畫布可以在角色和槍之間切換
+  gunPreview: function (canvas, gi, skin) {
+    if (!ready) return;
+    RR.Game.preview(canvas, 0, 0, 0, 0, 0, true);
+    const pv = pvs.filter(function (q) { return q.canvas === canvas; })[0]; if (!pv) return;
+    pv.sc.remove(pv.model);
+    const gp = gunParts(gi | 0), sk = GUN_SKIN[skin | 0];
+    if (sk) gp[0].forEach(function (e) { for (const k in GM) if (e[2] === GM[k] && sk[k] != null) { e[2] = sk[k]; break; } });
+    const m = new THREE.Mesh(mergeGeos(gp[0]), litMat({ vertexColors: true, shininess: sk && sk.shine ? 120 : 70, specular: sk && sk.shine ? 0xbbbbbb : 0x666666, emissive: sk && sk.glow ? sk.glow : 0x000000 }));
+    const box = new THREE.Box3().setFromObject(m), size = box.getSize(new THREE.Vector3()), ctr = box.getCenter(new THREE.Vector3());
+    m.position.sub(ctr); const g = new THREE.Group(); g.add(m); g.scale.setScalar(2.6 / Math.max(size.z, 0.3)); g.position.set(0, 1.1, 0);
+    pv.model = g; pv.gun = true; pv.sc.add(g);
   },
   setMe: function (id) { myId = id; },
   state: function () { const others = {}; view.players.forEach(function (p) { if (p.id !== myId) others[p.id] = [p.x, p.z, p.alive, !!(p.avatar && p.avatar.visible)]; }); return { phase: view.phase, alive: me.alive, x: me.x, z: me.z, others: others, spec: specId, players: view.players.size, items: view.items.length, monsters: view.monsters.filter(function (m) { return m.group.visible; }).length }; },
