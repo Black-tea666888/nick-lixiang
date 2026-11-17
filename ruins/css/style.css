@@ -794,3 +794,6 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
 
 /* 返回鍵「‹」：整個頁面的返回按鈕放大，手機上好按 */
 .topbar > .icon, .panel > .icon, .icon[aria-label="返回"] { min-width: 64px; height: 56px; font-size: 30px; line-height: 1; padding: 0 14px; }
+
+/* 戰隊排行榜每列右邊的「+」：直接加入 */
+.srow > .btn { min-width: 44px; padding: 6px 10px; margin-left: 8px; }

@@ -943,7 +943,9 @@ function renderSocial() {
       C.topClans(function (err, rows) {
         if (err || renderSocial.token !== token) return;
         if (!rows.length) { socNote('還沒有任何戰隊。'); return; }
-        rows.forEach(function (c, i) { const r = mk('div', 'srow' + (C.me() && C.me().clan === c.id ? ' me' : '')); r.appendChild(mk('span', 'rk', String(i + 1))); const nm = mk('span', 'nm', c.name); nm.appendChild(mk('small', null, '　' + (c.count | 0) + ' 人')); r.appendChild(nm); r.appendChild(mk('span', 'sc', (c.score | 0) + ' 分')); b.appendChild(r); });
+        rows.forEach(function (c, i) { const r = mk('div', 'srow' + (C.me() && C.me().clan === c.id ? ' me' : '')); r.appendChild(mk('span', 'rk', String(i + 1))); const nm = mk('span', 'nm', c.name); nm.appendChild(mk('small', null, '　' + (c.count | 0) + ' 人')); r.appendChild(nm); r.appendChild(mk('span', 'sc', (c.score | 0) + ' 分'));
+          if (!(C.me() && C.me().clan) && (c.count | 0) < 30 && c.tag) { const j = mk('button', 'btn primary', '+'); j.type = 'button'; j.title = '加入戰隊'; j.addEventListener('click', function () { j.disabled = true; C.joinClan(c.tag, function (err, cl) { j.disabled = false; if (err) { say(C.message(err)); return; } say('已加入戰隊「' + cl.name + '」。'); renderSocial(); }); }); r.appendChild(j); }
+          b.appendChild(r); });
       });
     }));
   }
