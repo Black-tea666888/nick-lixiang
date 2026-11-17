@@ -496,7 +496,7 @@ Sim.prototype.shoot = function (id, yaw) {
 };
 /* ---------- 大逃殺 ---------- */
 const BR_TOTAL = 6;   // 真人 + 機器人的總人數
-const BOT_NAMES = ['阿鐵', '小綠', '老皮', '閃電', '麻糬', '黑糖', '豆花', '小黃', '阿布', '大熊', '胖虎', '小貓', '阿泰', '鯊魚', '檸檬', '阿福', '小風', '阿龍', '奶茶', '小火', '阿志', '栗子'];
+const BOT_NAMES = ['阿鐵', '小綠', '老皮', '閃電', '麻糬', '黑糖', '豆花', '小黃', '阿布', '大熊', '胖虎', '小貓', '阿泰', '鯊魚', '檸檬', '阿福', '小風', '阿龍', '奶茶', '小火', '阿志', '栗子', 'Ace', 'Blaze', 'Cobra', 'Dash', 'Echo', 'Fox', 'Ghost', 'Hawk', 'Ivy', 'Jet', 'Kite', 'Luna', 'Mako', 'Nova', 'Onyx', 'Pixel', 'Quill', 'Rex', 'Sage', 'Tank', 'Ugo', 'Vex', 'Wolf', 'Xena', 'Yeti', 'Zed', 'Bolt', 'Cinder', 'Drift', 'Ember', 'Frost', 'Gale', 'Haze', 'Ion', 'Jinx', 'Koda', 'Lark', 'Mars', 'Neon', 'Orca', 'Pilot', 'Raven', 'Shade', 'Titan', 'Umbra', 'Viper', 'Wren', 'Yuki', 'Zen', 'Bruno', 'Chico', 'Dante', 'Elio', 'Felix', 'Gino', 'Hugo', 'Ivan', 'Jules', 'Kenji', 'Leo', 'Milo', 'Nico', 'Oscar', 'Pablo', 'Quinn', 'Rafa', 'Sami', 'Tomas', 'Uri', 'Vito', 'Waldo', 'Yuto', '小風鈴', '阿哲', '小明', '阿杰', '大頭', '小胖', '阿呆', '小七', '阿光', '小蝦', '阿毛', '小雲', '阿海', '大白', '小丸', '阿怪', '小喵', '阿貝', '大寶', '小果', '阿鷹', '小墨', '阿恩', '大海'];
 // 隨機抽一個沒被用過的機器人名字；名字用完才會重複
 function pickBotName(sim, i) {
   const pool = BOT_NAMES.filter(function (n) { return !sim.players.some(function (q) { return q.name === n; }); });
