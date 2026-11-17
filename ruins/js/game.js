@@ -948,6 +948,22 @@ function shoot() {
   if (RR.Game.onShoot) RR.Game.onShoot(Math.round(me.yaw * 100) / 100);
 }
 let zoneMesh = null, outT = 0, poisonT = 0;
+let lkSend = undefined, lkPos = null;   // 櫃子：要送給房主的請求（-1＝出來）、躲在櫃子裡時的位置
+function takeLk() { const v = lkSend; lkSend = undefined; return v; }
+// 按「櫃」：靠近櫃子就進去（先在本機鎖定位置，房主回應若拒絕，下一次快照會讓你出來）；躲著再按一次就出來
+function lockerPress() {
+  if (!canControl() || !me.alive) return;
+  if (me.inLk) { lkSend = -1; return; }
+  let best = -1, bd = 1.8;
+  (W.lockers || []).forEach(function (k, i) { const d = Math.hypot(k[0] - me.x, k[1] - me.z); if (d < bd) { bd = d; best = i; } });
+  if (best < 0) { toast('靠近櫃子再按'); return; }
+  lkSend = best; lkPos = [W.lockers[best][0], W.lockers[best][1]]; me.inLk = true;
+}
+// 出來：在櫃子旁找一個沒被擋住的位置
+function lkExitSpot() {
+  const base = lkPos || [me.x, me.z], d = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  for (let i = 0; i < d.length; i++) { const x = base[0] + d[i][0] * 1.1, z = base[1] + d[i][1] * 1.1; if (!W.blocked(x, z, 0.3) && !hitSolid(x, z, 0)) { me.x = x; me.z = z; return; } }
+}
 /* ---------- 天氣、災害、載具 ---------- */
 let baseLight = null, rain = null, quakeT = 0, vhQ = false, cartMesh = null, cartView = null;
 const rings = [];   // 落石警示圈
@@ -1300,6 +1316,7 @@ function bindInput() {
     if (active && e.code === 'KeyM') RR.Game.toggleMic();
     if (e.code === 'KeyQ' && !e.repeat) trySmoke();
     if (e.code === 'KeyR' && !e.repeat) trySkill();
+    if (e.code === 'KeyY' && !e.repeat && canControl()) { e.preventDefault(); lockerPress(); }
     if (e.code === 'KeyG' && !e.repeat && canControl() && !(e.target && /INPUT|TEXTAREA/.test(e.target.tagName))) { if ($('scrMini').classList.contains('hide')) openMini(); else closeMini(); }
     if (e.code === 'KeyF') { if (canControl()) { e.preventDefault(); attack(); } }
     if (e.code === 'Space') { if (canControl()) { e.preventDefault(); if (!e.repeat) jumpQ = true; } }
@@ -1383,6 +1400,8 @@ function bindInput() {
   atkBtn.addEventListener('touchstart', function (e) { e.preventDefault(); attack(); }, { passive: false });
   atkBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   // 手機：救援（按住）與煙霧彈（按一下）
+  const lockerBtn = $('locker');
+  lockerBtn.addEventListener('touchstart', function (e) { e.preventDefault(); lockerPress(); }, { passive: false });
   const rescueBtn = $('rescue');
   const rescueOff = function (e) { e.preventDefault(); keys.KeyE = false; rescueBtn.classList.remove('on'); };
   rescueBtn.addEventListener('touchstart', function (e) { e.preventDefault(); keys.KeyE = true; rescueBtn.classList.add('on'); }, { passive: false });
@@ -1404,6 +1423,7 @@ function bindInput() {
 function updateMe(dt) {
   if (keys.ArrowLeft) me.yaw += 2.2 * dt;
   if (keys.ArrowRight) me.yaw -= 2.2 * dt;
+  if (me.inLk) { if (lkPos) { me.x = lkPos[0]; me.z = lkPos[1]; } return; }   // 躲在櫃子裡不能移動
   let f = 0, s = 0;
   if (keys.KeyW || keys.ArrowUp) f += 1;
   if (keys.KeyS || keys.ArrowDown) f -= 1;
@@ -1872,6 +1892,9 @@ RR.Game = {
       if (!p) continue;
       p.alive = !!a[4]; p.bagN = a[5]; p.flags = a[6];
       if (a[0] === myId) {
+        const inLk = !!(a[6] & 16);
+        if (inLk !== !!me.inLk) { if (!inLk) lkExitSpot(); }
+        me.inLk = inLk; if (!inLk) lkPos = null;
         me.bagN = a[5]; if (s.ph === 'play' && !a[4]) me.alive = false;
         if (s.zr != null) { view.zr = s.zr; if (zoneMesh) zoneMesh.scale.set(s.zr, 1, s.zr); }
         if (a[8] != null) { me.ammo = a[8]; me.reloading = !!a[9]; }
@@ -1921,7 +1944,7 @@ RR.Game = {
     } else if (e.t === 'pad') {
       toast('出現傳送陣！快去踩上去回基地');
       Sfx.tone(660, 0.4, 'sine', 0.12, 990);
-    } else if (e.t === 'warp') {
+    } else if (e.t === 'lkw') { if (e.id === myId) toast('櫃子裡有「' + e.w + '」，已經拿到了！'); } else if (e.t === 'warp') {
       if (e.id === myId) { me.x = e.x; me.z = e.z; toast('已傳回基地'); }
       else { const p = view.players.get(e.id); if (p) { p.x = p.tx = e.x; p.z = p.tz = e.z; } }
     } else if (e.t === 'trophy') {
@@ -2048,7 +2071,7 @@ RR.Game = {
     const vh = vhQ; vhQ = false;
     const sm = smQ; smQ = false; const sk = skQ; skQ = false; const tt = ttQ; ttQ = null;
     return { t: 'i', x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100,
-      vh: vh || undefined, run: me.running && me.alive, air: me.y - (me.gnd || 0) > 0.25 && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!keys.KeyE && me.alive, sm: sm, sk: sk, tt: tt === null ? undefined : tt };
+      vh: vh || undefined, run: me.running && me.alive, air: me.y - (me.gnd || 0) > 0.25 && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!keys.KeyE && me.alive, lk: takeLk(), sm: sm, sk: sk, tt: tt === null ? undefined : tt };
   },
   setMonSkin: function (v) {
     RR.Game.settings.monSkin = v | 0;
