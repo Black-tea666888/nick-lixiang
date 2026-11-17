@@ -47,9 +47,9 @@ function showCloud(x, z) {
   can.position.set(0, 0.11, 0); can.rotation.z = Math.PI / 2; g.add(can);
   const N = 26;
   for (let i = 0; i < N; i++) {
-    const shade = 0.72 + Math.random() * 0.22, sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: new THREE.Color(shade, shade, shade * 0.97), transparent: true, opacity: 0, depthWrite: false }));
-    const a = Math.random() * 6.283, r = Math.random() * 1.9;
-    sp.userData = { born: i * 0.07 + Math.random() * 0.1, x: Math.cos(a) * r, z: Math.sin(a) * r, y: 0.3 + Math.random() * 1.6, s: 1.4 + Math.random() * 1.4, rise: 0.08 + Math.random() * 0.12, spin: (Math.random() - 0.5) * 0.6, peak: 0.55 + Math.random() * 0.3 };
+    const shade = 0.56 + Math.random() * 0.14, sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: new THREE.Color(shade, shade, shade), transparent: true, opacity: 0, depthWrite: false, fog: false }));
+    const a = Math.random() * 6.283, r = 0.4 + Math.random() * 1.6;
+    sp.userData = { born: i * 0.06 + Math.random() * 0.1, x: Math.cos(a) * r, z: Math.sin(a) * r, dx: Math.cos(a), dz: Math.sin(a), y: 0.3 + Math.random() * 1.5, s: 1.6 + Math.random() * 1.4, rise: 0.06 + Math.random() * 0.1, spin: (Math.random() - 0.5) * 0.5, peak: 0.6 + Math.random() * 0.25 };
     sp.position.set(0, 0.2, 0); sp.scale.setScalar(0.1); g.add(sp); puffs.push(sp);
   }
   g.position.set(x, 0, z); scene.add(g);
@@ -59,12 +59,13 @@ function showCloud(x, z) {
     puffs.forEach(function (sp) {
       const u = sp.userData, a = t - u.born; if (a < 0) return;
       const grow = Math.min(1, a / 1.2), ease = 1 - Math.pow(1 - grow, 3);
-      sp.position.set(u.x * ease, 0.2 + (u.y - 0.2) * ease + a * u.rise, u.z * ease);
-      sp.scale.setScalar(0.3 + u.s * ease + a * 0.08);
+      const drift = a * 0.22;   // 慢慢往外散開
+      sp.position.set(u.x * ease + u.dx * drift, 0.2 + (u.y - 0.2) * ease + a * u.rise, u.z * ease + u.dz * drift);
+      sp.scale.setScalar(0.3 + u.s * ease + a * 0.22);
       sp.material.rotation += u.spin * dt;
-      sp.material.opacity = (a < 0.4 ? a / 0.4 : t > 5.5 ? Math.max(0, (7 - t) / 1.5) : 1) * u.peak;
+      sp.material.opacity = (a < 0.4 ? a / 0.4 : t > 6 ? Math.max(0, (8.5 - t) / 2.5) : 1) * u.peak;
     });
-    if (t >= 7) { clearInterval(id); scene.remove(g); can.geometry.dispose(); can.material.dispose(); puffs.forEach(function (sp) { sp.material.dispose(); }); }
+    if (t >= 8.5) { clearInterval(id); scene.remove(g); can.geometry.dispose(); can.material.dispose(); puffs.forEach(function (sp) { sp.material.dispose(); }); }
   }, 30);
   Sfx.noise(0.5, 0.14); setTimeout(function () { Sfx.noise(1.6, 0.05); }, 200);   // 噗一聲＋嘶嘶聲
 }
@@ -127,7 +128,7 @@ function showSmoke() {
   let el = document.getElementById('smokeFx');
   if (!el) {
     el = document.createElement('div'); el.id = 'smokeFx';
-    el.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:15;opacity:0;transition:opacity .6s;background:radial-gradient(60% 50% at 20% 30%,rgba(205,205,198,.85),rgba(205,205,198,0) 70%),radial-gradient(55% 45% at 80% 25%,rgba(190,192,186,.8),rgba(190,192,186,0) 70%),radial-gradient(70% 60% at 50% 80%,rgba(200,200,194,.9),rgba(200,200,194,0) 75%),rgba(160,162,156,.45)';
+    el.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:15;opacity:0;transition:opacity .6s;background:radial-gradient(60% 50% at 20% 30%,rgba(150,152,150,.88),rgba(150,152,150,0) 70%),radial-gradient(55% 45% at 80% 25%,rgba(138,140,138,.85),rgba(138,140,138,0) 70%),radial-gradient(70% 60% at 50% 80%,rgba(146,148,146,.9),rgba(146,148,146,0) 75%),rgba(120,122,120,.5)';
     document.body.appendChild(el);
   }
   el.style.opacity = '1'; clearTimeout(smokeT); smokeT = setTimeout(function () { el.style.opacity = '0'; }, 5000);
@@ -380,8 +381,11 @@ function showBreak(c, r, quiet) {
   Sfx.noise(0.7, Math.max(0.06, 0.45 - d * 0.012)); Sfx.tone(90, 0.5, 'sawtooth', Math.max(0.04, 0.3 - d * 0.008), 30);
   if (d < 14) shakeT = Math.max(shakeT, 0.5 - d * 0.03);
 }
-let solids = [];   // 擺設的碰撞圓（櫃子、木箱、鐵桶）：[x, z, 半徑]
-function hitSolid(x, z) { for (let i = 0; i < solids.length; i++) { const q = solids[i]; if (Math.hypot(q[0] - x, q[1] - z) < q[2] + 0.34) return true; } return false; }
+let solids = [];   // 擺設的碰撞圓（櫃子、木箱、鐵桶）：[x, z, 半徑, 高度]
+// 腳的高度 y 已經高過擺設頂端就不擋（跳上木箱、鐵桶）
+function hitSolid(x, z, y) { for (let i = 0; i < solids.length; i++) { const q = solids[i]; if ((y || 0) < (q[3] || 9) - 0.08 && Math.hypot(q[0] - x, q[1] - z) < q[2] + 0.34) return true; } return false; }
+// 這個位置腳下的高度：站在擺設上就是它的頂端
+function groundAt(x, z) { let g = 0; for (let i = 0; i < solids.length; i++) { const q = solids[i]; if (q[3] && q[3] < 1.5 && Math.hypot(q[0] - x, q[1] - z) < q[2] + 0.12) g = Math.max(g, q[3]); } return g; }
 let vanRing = null, inBaseNow = false;
 let level = null, builtMap = -1, ambient = null, hemi = null, sun = null, torchBase = 2.2;
 
@@ -613,7 +617,7 @@ function buildLevel() {
       part(new THREE.BoxGeometry(0.3, 0.03, 0.02), lineM, -0.25, 1.75, 0.31), part(new THREE.BoxGeometry(0.3, 0.03, 0.02), lineM, 0.25, 1.75, 0.31),
       part(new THREE.BoxGeometry(0.04, 0.14, 0.04), lineM, -0.08, 1.05, 0.32), part(new THREE.BoxGeometry(0.04, 0.14, 0.04), lineM, 0.08, 1.05, 0.32),
       part(new THREE.BoxGeometry(0.22, 0.08, 0.02), tagM, 0, 2.22, 0.2));
-    lg.position.set(k[0], 0, k[1]); lg.rotation.y = k[2]; level.add(lg); solids.push([k[0], k[1], 0.5]);
+    lg.position.set(k[0], 0, k[1]); lg.rotation.y = k[2]; level.add(lg); solids.push([k[0], k[1], 0.5, 2.1]);
   });
   // 擺設：木箱、鐵桶貼牆放；天花板燈條（固定種子，每張地圖每次都一樣）
   let seed = 1234 + W.mapIndex * 77; const rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -630,10 +634,10 @@ function buildLevel() {
       const d = walls4[Math.floor(rnd() * walls4.length)], off = CS / 2 - 0.42, side = (rnd() - 0.5) * 1.6;
       const px = cx + d[0] * off + (d[0] ? 0 : side), pz = cz + d[1] * off + (d[1] ? 0 : side);
       if (roll < 0.12) {
-        const sz = 0.55 + rnd() * 0.25, cr = part(new THREE.BoxGeometry(sz, sz, sz), crateM, px, sz / 2, pz); solids.push([px, pz, sz * 0.55]); cr.rotation.y = rnd() * 0.5; level.add(cr);
-        if (rnd() < 0.4) { const s2 = sz * 0.7, c2 = part(new THREE.BoxGeometry(s2, s2, s2), crateM, px, sz + s2 / 2, pz); c2.rotation.y = rnd(); level.add(c2); }
+        const sz = 0.55 + rnd() * 0.25, cr = part(new THREE.BoxGeometry(sz, sz, sz), crateM, px, sz / 2, pz), sol = [px, pz, sz * 0.55, sz]; solids.push(sol); cr.rotation.y = rnd() * 0.5; level.add(cr);
+        if (rnd() < 0.4) { const s2 = sz * 0.7, c2 = part(new THREE.BoxGeometry(s2, s2, s2), crateM, px, sz + s2 / 2, pz); c2.rotation.y = rnd(); level.add(c2); sol[3] = sz + s2; }
       } else {
-        solids.push([px, pz, 0.32]);
+        solids.push([px, pz, 0.32, 0.92]);
         level.add(part(new THREE.CylinderGeometry(0.3, 0.3, 0.9, 12), barrelM, px, 0.45, pz), part(new THREE.CylinderGeometry(0.31, 0.31, 0.06, 12), bandM, px, 0.62, pz));
       }
     }
@@ -1051,13 +1055,20 @@ function getFlashTex() {
 }
 function getPuffTex() {
   if (puffTex) return puffTex;
-  // 煙：不規則的柔邊雲團（幾個小圓疊起來），不是一顆硬邊球
-  const cv = document.createElement('canvas'); cv.width = cv.height = 128; const g = cv.getContext('2d');
-  for (let k = 0; k < 14; k++) { const x = 64 + (Math.random() - 0.5) * 50, y = 64 + (Math.random() - 0.5) * 50, r = 22 + Math.random() * 22, gr = g.createRadialGradient(x, y, 0, x, y, r);
-    gr.addColorStop(0, 'rgba(255,255,255,.55)'); gr.addColorStop(0.6, 'rgba(255,255,255,.2)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); }
-  const fade = g.createRadialGradient(64, 64, 30, 64, 64, 64); fade.addColorStop(0, 'rgba(0,0,0,0)'); fade.addColorStop(1, 'rgba(0,0,0,1)');
-  g.globalCompositeOperation = 'destination-out'; g.fillStyle = fade; g.fillRect(0, 0, 128, 128);
-  puffTex = new THREE.CanvasTexture(cv); return puffTex;
+  // 煙：柔邊灰色雲團。直接寫像素（RGB 固定白、只算透明度），不用 canvas 半透明繪圖：
+  // iPhone 上 canvas 的低透明度像素會被預乘成彩色雜點
+  const N = 64, data = new Uint8Array(N * N * 4), blobs = [];
+  let sd = 7; const rr = function () { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+  for (let k = 0; k < 9; k++) blobs.push([0.5 + (rr() - 0.5) * 0.4, 0.5 + (rr() - 0.5) * 0.4, 0.16 + rr() * 0.14]);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const u = (x + 0.5) / N, v = (y + 0.5) / N; let a = 0;
+    blobs.forEach(function (b) { const d = Math.hypot(u - b[0], v - b[1]) / b[2]; if (d < 1) a += (1 - d * d) * 0.5; });
+    const edge = Math.max(0, 1 - Math.hypot(u - 0.5, v - 0.5) / 0.5);
+    a = Math.min(1, a) * Math.min(1, edge * 2.2);
+    const o = (y * N + x) * 4; data[o] = data[o + 1] = data[o + 2] = 255; data[o + 3] = Math.round(a * 255);
+  }
+  puffTex = new THREE.DataTexture(data, N, N, THREE.RGBAFormat); puffTex.magFilter = puffTex.minFilter = THREE.LinearFilter; puffTex.needsUpdate = true;
+  return puffTex;
 }
 // 槍枝造型：替換配色（原廠、沙漠迷彩、叢林迷彩、黃金、黑金、霓虹粉、寒冰）
 const GUN_SKIN = [null,
@@ -1375,8 +1386,7 @@ function updateMe(dt) {
   const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   // 跳：耗 18% 體力，在空中時怪物抓不到；衝刺：往移動方向（沒動就往前）瞬間衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒
   if (me.riding) { jumpQ = false; dashQ = false; }   // 推車上不能跳、衝
-  if (jumpQ) { jumpQ = false; if (me.y <= 0 && !me.tired && me.stam >= 0.18) { me.vy = 5.6; me.y = 0.001; me.stam -= 0.18; Sfx.tone(300, 0.12, 'triangle', 0.08, 520); } }
-  if (me.y > 0) { me.vy -= 15 * dt; me.y += me.vy * dt; if (me.y <= 0) { me.y = 0; me.vy = 0; Sfx.noise(0.05, 0.06); } }
+  if (jumpQ) { jumpQ = false; if (me.vy === 0 && me.y <= groundAt(me.x, me.z) + 0.01 && !me.tired && me.stam >= 0.18) { me.vy = 5.6; me.y += 0.001; me.stam -= 0.18; Sfx.tone(300, 0.12, 'triangle', 0.08, 520); } }
   if (dashCd > 0) dashCd -= dt;
   if (dashQ) { dashQ = false; if (dashCd <= 0 && !me.tired && me.stam >= 0.25) {
     const df = moving ? f / mag : 1, ds = moving ? s / mag : 0;
@@ -1386,9 +1396,14 @@ function updateMe(dt) {
   if (dashT > 0) { dashT -= dt; dx += dashDir[0] * 22 * dt; dz += dashDir[1] * 22 * dt; }
   const R = 0.42;
   if (editing) { dx = 0; dz = 0; }   // 調整按鈕位置時不移動
-  const inS = hitSolid(me.x, me.z);   // 萬一已經卡在擺設裡就放行，讓玩家走得出來
-  if (!W.blocked(me.x + dx, me.z, R) && (inS || !hitSolid(me.x + dx, me.z))) me.x += dx;
-  if (!W.blocked(me.x, me.z + dz, R) && (inS || !hitSolid(me.x, me.z + dz))) me.z += dz;
+  const inS = hitSolid(me.x, me.z, me.y);   // 萬一已經卡在擺設裡就放行，讓玩家走得出來
+  if (!W.blocked(me.x + dx, me.z, R) && (inS || !hitSolid(me.x + dx, me.z, me.y))) me.x += dx;
+  if (!W.blocked(me.x, me.z + dz, R) && (inS || !hitSolid(me.x, me.z + dz, me.y))) me.z += dz;
+  // 重力：腳下是地板或擺設頂端；走出箱子邊緣會掉下來
+  { const gnd = groundAt(me.x, me.z);
+    if (me.y > gnd || me.vy > 0) { me.vy -= 15 * dt; me.y += me.vy * dt; if (me.y <= gnd) { if (me.vy < -2) Sfx.noise(0.05, 0.06); me.y = gnd; me.vy = 0; } }
+    else { me.y = gnd; me.vy = 0; }
+    me.gnd = gnd; }
   if (moving) {
     const before = Math.floor(me.walkT / Math.PI);
     me.walkT += dt * (wantRun ? 13 : 8.5) * mag;
@@ -1413,7 +1428,7 @@ function updateMe(dt) {
   if (gunHeld && gunT <= 0 && (W.GUNS[settings.gun | 0] || {}).auto) shoot();
   if (shakeT > 0) shakeT = Math.max(0, shakeT - dt);
   const sk2 = shakeT * 0.22;
-  camera.position.set(me.x + (Math.random() - 0.5) * sk2, 1.65 + me.y + (moving && me.y <= 0 ? Math.sin(me.walkT * 2) * 0.045 : 0) + (Math.random() - 0.5) * sk2, me.z + (Math.random() - 0.5) * sk2);
+  camera.position.set(me.x + (Math.random() - 0.5) * sk2, 1.65 + me.y + (moving && me.vy === 0 ? Math.sin(me.walkT * 2) * 0.045 : 0) + (Math.random() - 0.5) * sk2, me.z + (Math.random() - 0.5) * sk2);
   camera.rotation.set(me.pitch, me.yaw, 0);
   $('stamBar').style.width = (me.stam * 100).toFixed(0) + '%';
   $('stam').className = me.tired ? 'tired' : '';
@@ -1604,7 +1619,7 @@ function frame(nowMs) {
 
 /* ---------- 對外介面 ---------- */
 RR.Game = {
-  dbg: function () { return { scene: scene, renderer: renderer, camera: camera, cloud: showCloud, me: me }; },
+  dbg: function () { return { scene: scene, renderer: renderer, camera: camera, cloud: showCloud, me: me, solids: solids, groundAt: groundAt }; },
   stats: function () { const i = renderer.info; let n = 0, lights = 0, outl = 0; scene.traverse(function (o) { if (o.isMesh && o.visible) n++; if (o.isLight) lights++; if (o.userData && o.userData.outline) outl++; }); return { calls: i.render.calls, tris: i.render.triangles, geo: i.memory.geometries, tex: i.memory.textures, progs: i.programs ? i.programs.length : 0, meshes: n, lights: lights, outl: outl, pr: renderer.getPixelRatio() }; },
   openMini: openMini,
   init: function () {
@@ -1981,7 +1996,7 @@ RR.Game = {
     const vh = vhQ; vhQ = false;
     const sm = smQ; smQ = false; const sk = skQ; skQ = false; const tt = ttQ; ttQ = null;
     return { t: 'i', x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100,
-      vh: vh || undefined, run: me.running && me.alive, air: me.y > 0.25 && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!keys.KeyE && me.alive, sm: sm, sk: sk, tt: tt === null ? undefined : tt };
+      vh: vh || undefined, run: me.running && me.alive, air: me.y - (me.gnd || 0) > 0.25 && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!keys.KeyE && me.alive, sm: sm, sk: sk, tt: tt === null ? undefined : tt };
   },
   setMonSkin: function (v) {
     RR.Game.settings.monSkin = v | 0;
