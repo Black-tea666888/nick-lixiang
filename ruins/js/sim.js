@@ -188,6 +188,8 @@ const MAPS = [
   ] }
 ];
 const CS = 4, WH = 3.6;
+const MON_SH = 40;   // 怪物護盾：傷害先扣護盾再扣血；5 秒沒被打就每秒回 10 點
+function monHit(m, dmg) { m.shT = 0; const a = Math.min(m.sh || 0, dmg); m.sh = (m.sh || 0) - a; m.hp -= dmg - a; }
 let MAP = MAPS[0].rows, ROWS = MAP.length, COLS = MAP[0].length, mapIndex = -1;
 let BROKEN = [];   // 這一天被炸開的牆 [c, r]
 let startCell = [1, 1], floorCells = [], VAN = [6, 6], MONSTER_CELLS = [];
@@ -362,7 +364,7 @@ Sim.prototype.startDay = function (day) {
   for (let i = 0; i < mc; i++) {
     const mcell = MONSTER_CELLS[i] || floorCells[Math.floor(this.rng() * floorCells.length)];   // 地圖的怪物點不夠時，隨機放在地板上
     const p = center(mcell[0], mcell[1]);
-    this.monsters.push({ x: p[0], z: p[1], rot: 0, state: 'wander', path: null, goal: null, lost: 0, repath: 0, cool: 0, target: null, hp: 100, dead: 0 });
+    this.monsters.push({ x: p[0], z: p[1], rot: 0, state: 'wander', path: null, goal: null, lost: 0, repath: 0, cool: 0, target: null, hp: 100, maxHp: 100, sh: MON_SH, shMax: MON_SH, shT: 0, dead: 0 });
   }
   if (hunt || br) this.trophy = null;
   this.chaseSpeed = Math.min(3.9 + 0.1 * (day - 1), 4.9);   // 跑步（9）一定甩得掉；走路（4.2）在後期甩不掉
@@ -383,7 +385,7 @@ Sim.prototype.startDay = function (day) {
     const total = 10 + 4 * (day - 1) + 3 * (n - 1);
     this.td = { core: 100, total: total, left: total, spawnT: 3, gap: Math.max(1.3, 3.2 - 0.2 * day), hp: 55 + 15 * day, speed: Math.min(2.4 + 0.15 * day, 4) };
     this.money = 100; this.quota = 0;   // 開局 $100，剛好蓋一座砲塔；每擊倒一隻 +$50
-    for (let i = 0; i < 6; i++) this.monsters.push({ x: VAN[0], z: VAN[1], rot: 0, state: 'wander', path: null, goal: null, lost: 0, repath: 0, cool: 0, target: null, hp: 0, dead: 1e9, idle: true });
+    for (let i = 0; i < 6; i++) this.monsters.push({ x: VAN[0], z: VAN[1], rot: 0, state: 'wander', path: null, goal: null, lost: 0, repath: 0, cool: 0, target: null, hp: 0, maxHp: 100, sh: MON_SH, shMax: MON_SH, shT: 0, dead: 1e9, idle: true });
   }
   // 天氣與天然災害（第 1 天固定晴朗、沒有災害；大逃殺不啟用）
   const openMap = !!MAPS[this.map].theme.open;
@@ -511,13 +513,13 @@ Sim.prototype.shoot = function (id, yaw) {
     } else if (hit >= 0) {
       const m = this.monsters[hit]; hx = m.x; hz = m.z;
       if (hunt) {
-        m.hp -= G.dmg * gem; m.cool = 0.25;
+        monHit(m, G.dmg * gem); m.cool = 0.25;
         if (m.hp <= 0) { kill = true; m.dead = td ? 1e9 : 3; m.idle = td; m.state = 'wander'; m.path = null; this.money += 50; p.earned += 50; p.mk = (p.mk || 0) + 1; }
         else if (!td) { m.state = 'chase'; m.target = p.id; m.goal = cellOf(p.x, p.z); m.lost = 0; m.repath = 0; }
       } else {
         m.cool = Math.max(m.cool || 0, G.stun + 0.2 * (p.gems ? p.gems[0] : 0));
         // 回收模式：打到血量歸零會暫時倒下，過 12 秒在別處刷新（不給金幣）
-        if (!br) { m.hp -= G.dmg * gem; if (m.hp <= 0) { kill = true; m.dead = 12; m.state = 'wander'; m.path = null; } }
+        if (!br) { monHit(m, G.dmg * gem); if (m.hp <= 0) { kill = true; m.dead = 12; m.state = 'wander'; m.path = null; } }
       }
     } else {
       let d = 0; hx = p.x; hz = p.z;
@@ -653,7 +655,7 @@ Sim.prototype._respawn = function (m) {
     this.players.forEach(function (p) { if (p.alive) near = Math.min(near, Math.hypot(p.x - c[0], p.z - c[1])); });
     if (near > bd) { bd = near; best = c; }
   }
-  m.x = best[0]; m.z = best[1]; m.hp = 100; m.dead = 0; m.state = 'wander'; m.path = null; m.goal = null; m.cool = 0.5;
+  m.x = best[0]; m.z = best[1]; m.hp = 100; m.sh = m.shMax; m.shT = 0; m.dead = 0; m.state = 'wander'; m.path = null; m.goal = null; m.cool = 0.5;
 };
 
 /** 近戰攻擊：前方 2.4 公尺、約 110 度扇形內最近的玩家。兩下致死。 */
@@ -808,13 +810,14 @@ Sim.prototype._stepTD = function (dt) {
         const fc = floorCells[Math.floor(this.rng() * floorCells.length)], c = center(fc[0], fc[1]), d = Math.hypot(c[0] - VAN[0], c[1] - VAN[1]) + this.rng() * 6;
         if (d > bd) { bd = d; best = c; }
       }
-      slot.x = best[0]; slot.z = best[1]; slot.hp = T.hp; slot.dead = 0; slot.idle = false; slot.path = null; slot.repath = 0; slot.cool = 0; slot.state = 'chase';
+      slot.x = best[0]; slot.z = best[1]; slot.hp = T.hp; slot.maxHp = T.hp; slot.sh = slot.shMax; slot.shT = 0; slot.dead = 0; slot.idle = false; slot.path = null; slot.repath = 0; slot.cool = 0; slot.state = 'chase';
       T.left--; T.spawnT = T.gap;
     } else T.spawnT = 0.3;
   }
   // 怪物沿最短路走向回收車；走到就扣核心
   for (let i = 0; i < this.monsters.length; i++) {
     const m = this.monsters[i];
+    if (!(m.dead > 0) && m.sh < m.shMax) { m.shT = (m.shT || 0) + dt; if (m.shT > 5) m.sh = Math.min(m.shMax, m.sh + 10 * dt); }
     if (m.idle) continue;
     if (m.cool > 0) { m.cool -= dt; continue; }
     if ((this.smokes || []).some(function (k) { return Math.hypot(k.x - m.x, k.z - m.z) < 4; })) { m.path = null; continue; }   // 看到煙就停下
@@ -843,7 +846,7 @@ Sim.prototype._stepTD = function (dt) {
       if (d < bd && los(t.x, t.z, m.x, m.z)) { bd = d; best = i; }
     }
     if (best < 0) { t.cd = 0.2; return; }
-    const m = self.monsters[best]; t.cd = 0.55; m.hp -= 25;
+    const m = self.monsters[best]; t.cd = 0.55; monHit(m, 25);
     let kill = false;
     if (m.hp <= 0) { kill = true; m.idle = true; m.dead = 1e9; self.money += 50; }
     self.events.push({ t: 'tshot', x: t.x, z: t.z, hx: r2(m.x), hz: r2(m.z), mi: best, kill: kill });
@@ -1080,7 +1083,7 @@ Sim.prototype.snapshot = function () {
     tr: this.trophy ? [r2(this.trophy[0]), r2(this.trophy[1])] : null,
     bp: this.boardPos ? [r2(this.boardPos[0]), r2(this.boardPos[1])] : null,
     tt: this.tt ? [this.tt.cells.map(function (c) { return c || '.'; }).join(''), this.tt.turn, this.tt.x, this.tt.o, this.tt.over, this.tt.winner] : null,
-    m: this.monsters.map(function (m) { return [r2(m.x), r2(m.z), r2(m.rot), m.state === 'chase' ? 1 : 0, m.dead > 0 ? 0 : Math.max(1, Math.round(m.hp))]; }),
+    m: this.monsters.map(function (m) { return [r2(m.x), r2(m.z), r2(m.rot), m.state === 'chase' ? 1 : 0, m.dead > 0 ? 0 : Math.max(1, Math.round(m.hp)), Math.round(m.sh || 0), m.maxHp || 100, m.shMax || MON_SH]; }),
     it: it };
 };
 

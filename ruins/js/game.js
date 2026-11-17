@@ -704,6 +704,21 @@ function setPoison(R) {
   poisonMesh.rotation.x = -Math.PI / 2; poisonMesh.position.set(W.VAN[0], 0.04, W.VAN[1]); scene.add(poisonMesh);
 }
 const MON_COL = { fire: [0xff6a1a, 0xff4a10], ice: [0x6ad8ff, 0x3ac8ff], poison: [0x7dff5a, 0x5aff3a], shadow: [0xb070ff, 0x9040ff] };
+// 怪物頭上的血量條（紅）與護盾條（藍）；只有受過傷才顯示
+function drawMonBar(m) {
+  const hp = Math.max(0, m.hpV || 0), mx = m.maxV || 100, sh = Math.max(0, m.shV || 0), shMx = m.shMaxV || 40;
+  m.bar.visible = hp < mx || sh < shMx;
+  if (!m.bar.visible) return;
+  const key = hp + '|' + sh + '|' + mx + '|' + shMx;
+  if (key === m.barKey) return; m.barKey = key;
+  const c = m.barCv.getContext('2d');
+  c.clearRect(0, 0, 128, 24);
+  c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(0, 0, 128, 24);
+  c.fillStyle = '#6ad8ff'; c.fillRect(3, 3, 122 * Math.min(1, sh / shMx), 6);
+  c.fillStyle = '#e04848'; c.fillRect(3, 13, 122 * Math.min(1, hp / mx), 8);
+  m.barTex.needsUpdate = true;
+}
+
 function buildMonster(kind) {
   const col = MON_COL[kind] || MON_COL.fire;
   const g = new THREE.Group();
@@ -745,7 +760,12 @@ function buildMonster(kind) {
   addOutline(g, col[1], 1.06); addShadow(g, 0.6);
   g.scale.set(1, tall, 1);
   g.visible = false; scene.add(g);
-  return { group: g, arms: [a1, a2], x: 0, z: 0, rot: 0, tx: 0, tz: 0, trot: 0, chase: false, fresh: true };
+  // 血量條＋護盾條：畫在同一張小畫布上，數值變了才重畫
+  const barCv = document.createElement('canvas'); barCv.width = 128; barCv.height = 24;
+  const barTex = new THREE.CanvasTexture(barCv);
+  const bar = new THREE.Sprite(new THREE.SpriteMaterial({ map: barTex, transparent: true, depthTest: false, fog: false }));
+  bar.scale.set(1.3, 0.24, 1); bar.position.set(0, 3.05, 0); bar.visible = false; bar.renderOrder = 10; g.add(bar);
+  return { group: g, arms: [a1, a2], x: 0, z: 0, rot: 0, tx: 0, tz: 0, trot: 0, chase: false, fresh: true, bar: bar, barCv: barCv, barTex: barTex, barKey: '' };
 }
 
 // 描邊（反面放大的外殼）讓造型輪廓清楚；腳下加一塊圓形陰影
@@ -1557,7 +1577,8 @@ function interpolate(dt, now) {
   });
   for (let i = 0; i < view.monsters.length; i++) {
     const m = view.monsters[i];
-    if (!m.group.visible) continue;
+    if (!m.group.visible) { m.bar.visible = false; continue; }
+    drawMonBar(m);
     m.x += (m.tx - m.x) * k; m.z += (m.tz - m.z) * k; m.rot = lerpAngle(m.rot, m.trot, Math.min(1, dt * 8));
     m.group.position.set(m.x, Math.sin(now * (m.chase ? 14 : 5) + i) * 0.05, m.z);
     m.group.rotation.y = m.rot;
@@ -1918,7 +1939,7 @@ RR.Game = {
     for (let i = 0; i < view.monsters.length; i++) {
       const m = view.monsters[i], a = s.m[i];
       if (!a || s.ph === 'lobby') { m.group.visible = false; continue; }
-      m.tx = a[0]; m.tz = a[1]; m.trot = a[2]; m.chase = !!a[3];
+      m.tx = a[0]; m.tz = a[1]; m.trot = a[2]; m.chase = !!a[3]; m.hpV = a[4]; m.shV = a[5] || 0; m.maxV = a[6] || 100; m.shMaxV = a[7] || 40;
       if (m.fresh) { m.x = m.tx; m.z = m.tz; m.rot = m.trot; m.fresh = false; }
       m.group.visible = a[4] !== 0;   // 獵殺模式：被擊倒的怪物先消失，重生後再出現
       if (!m.group.visible) m.fresh = true;
