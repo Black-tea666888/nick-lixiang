@@ -406,10 +406,6 @@ function ccAsk() {
 const HAT_COST = [0, 60, 100, 150, 250, 400];
 const MISSIONS = [['完成 1 天', 1, 30], ['團隊累計賺到 $800', 800, 40], ['拿到一次 3 顆星', 1, 50]];
 function today() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
-function detectRegion() {
-  let tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
-  return tz === 'Asia/Hong_Kong' || tz === 'Asia/Macau' ? 1 : 0;
-}
 function prog() {
   let p = null; try { p = JSON.parse(ls('rr_prog') || 'null'); } catch (e) {}
   if (!p || typeof p !== 'object') p = {};
@@ -424,7 +420,7 @@ function prog() {
   if (!p.st || typeof p.st !== 'object') p.st = {};
   ['games', 'wins', 'mk', 'brWins', 'coop', 'hunt', 'td'].forEach(function (k) { p.st[k] = Math.max(0, Math.floor(+p.st[k] || 0)); });
   if (!Array.isArray(p.ach)) p.ach = [];
-  if (typeof p.region !== 'number') p.region = detectRegion();   // 第一次：依時區預設（香港時區預設香港，其他預設台灣）
+  if (typeof p.region !== 'number') p.region = 0;   // 預設台灣，玩家可自行選擇
   p.region = Math.max(0, Math.min(1, p.region | 0));
   return p;
 }
@@ -716,6 +712,7 @@ function refreshPickSummary() {
 function showMenu() {
   const u = Auth.user();
   if (!u) { show('scrLogin'); return; }
+  if (!ls('rr_region')) $('regionAsk').classList.remove('hide');   // 第一次進選地區
   $('whoProv').textContent = u.providerLabel + ' 登入';
   if (document.activeElement !== $('nick')) $('nick').value = u.name;
   $('nickPen').classList.toggle('pulse', !ls('rr_named') && /^訪客/.test(u.name || ''));
@@ -1229,6 +1226,7 @@ function bind() {
     });
   });
   $('tutNext').addEventListener('click', function () { if (tutI < TUT.length - 1) tutShow(tutI + 1); else tutDone(); });
+  Array.prototype.forEach.call(document.querySelectorAll('#regionAsk [data-r]'), function (b) { b.addEventListener('click', function () { const q = prog(); q.region = +b.dataset.r; progSave(q); lsSet('rr_region', '1'); $('regionAsk').classList.add('hide'); }); });
   $('tutSkip').addEventListener('click', tutDone);
   $('tutAgain').addEventListener('click', function () { tutShow(0); });
   $('miniInfoBtn').addEventListener('click', function () { Game.openMini(); });
