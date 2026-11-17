@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
-<link rel="stylesheet" href="css/style.css?v=57">
+<link rel="stylesheet" href="css/style.css?v=58">
 </head>
 <body>
 <div id="boot"><div class="bootIn"><b>廢墟回收隊</b><i class="spin"></i><small id="bootTxt">載入中…</small></div></div>
@@ -56,6 +56,7 @@
   <button id="jump" type="button">跳</button>
   <button id="dash" type="button">衝</button>
   <button id="rescue" type="button">救</button>
+  <button id="locker" type="button">櫃</button>
   <button id="smoke" type="button">煙</button>
   <button id="scope" type="button" class="hide">鏡</button>
   <button id="skill" type="button">技</button>
@@ -347,7 +348,7 @@
 <tr><td><kbd>技</kbd> <kbd>煙</kbd></td><td>角色技能、煙霧彈</td></tr><tr><td><kbd>槍</kbd></td><td>開槍</td></tr><tr><td><kbd>炸</kbd></td><td>炸開面前的牆</td></tr><tr><td><kbd>打</kbd> <kbd>救</kbd></td><td>揮武器、按住救隊友</td></tr></table>
 <h3>電腦</h3>
 <table><tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>移動（滑鼠轉視角）</td></tr><tr><td><kbd>Shift</kbd></td><td>奔跑</td></tr>
-<tr><td><kbd>空白鍵</kbd> <kbd>C</kbd></td><td>跳躍、衝刺</td></tr><tr><td><kbd>R</kbd> <kbd>Q</kbd></td><td>角色技能、煙霧彈</td></tr>
+<tr><td><kbd>空白鍵</kbd> <kbd>C</kbd></td><td>跳躍、衝刺</td></tr><tr><td><kbd>Y</kbd></td><td>靠近櫃子按一下躲進去（最多 8 秒），再按一下出來；裡面會拿到一把攻擊物</td></tr><tr><td><kbd>R</kbd> <kbd>Q</kbd></td><td>角色技能、煙霧彈</td></tr>
 <tr><td><kbd>左鍵</kbd> / <kbd>F</kbd></td><td>揮武器</td></tr><tr><td><kbd>右鍵</kbd> / <kbd>X</kbd></td><td>開槍</td></tr><tr><td><kbd>T</kbd></td><td>塔防：蓋砲塔</td></tr><tr><td><kbd>B</kbd></td><td>炸藥：炸開面前的牆</td></tr><tr><td><kbd>E</kbd></td><td>按住救隊友、搶獎盃</td></tr>
 <tr><td><kbd>V</kbd></td><td>上／下推車</td></tr><tr><td><kbd>G</kbd></td><td>小遊戲</td></tr><tr><td><kbd>M</kbd> <kbd>Enter</kbd></td><td>麥克風、聊天</td></tr><tr><td><kbd>Esc</kbd></td><td>釋放滑鼠</td></tr></table>
       </section>
@@ -370,7 +371,7 @@
 <li><b>櫃子</b>（小地圖藍點）：站在旁邊不要跑，怪物看不到你；貼太近還是會被抓。</li>
 <li><b>煙霧彈</b>：冒出一團煙約 6 秒，站在煙裡怪物看不到你。冷卻 20 秒。</li>
 <li><b>跑</b>：跑步一定比怪物快，體力約可跑 6～7 秒；跑到牠看不到你，約 3.5 秒後牠會放棄。</li>
-<li><b>跳</b>：人在空中時抓不到你，耗 18% 體力。</li><li><b>爬牆</b>：朝牆按兩次跳可以爬上牆頭，站上去後能走動。</li><li><b>基地造型</b>：房主在大廳按「基地」可切換回收車、信號塔、圓頂營地、四柱燈四種造型與光圈顏色。</li><li><b>毒圈</b>：開局 30 秒後，地圖外的黃色毒會慢慢往基地漫；毒區裡會持續扣血（最低留 1 血），基地光圈裡安全。</li><li><b>怪物倒下</b>：回收模式打到血量歸零會倒下，約 12 秒後在別處刷新（不給金幣）。</li>
+<li><b>跳</b>：人在空中時抓不到你，耗 18% 體力。</li><li><b>爬牆</b>：朝牆按兩次跳可以爬上牆頭，站上去後能走動。</li><li><b>基地造型</b>：房主在大廳按「基地」可切換回收車、信號塔、圓頂營地、四柱燈四種造型與光圈顏色。</li><li><b>櫃子</b>：靠近櫃子按「櫃」（電腦按 Y）躲進去最多 8 秒，怪物看不到你，但不能移動；出來後 10 秒內不能再躲。櫃子裡有一把攻擊物，拿到後當天的近戰數值會換成它（只對玩家生效）。</li><li><b>毒圈</b>：開局 30 秒後，地圖外的黃色毒會慢慢往基地漫；毒區裡會持續扣血（最低留 1 血），基地光圈裡安全。</li><li><b>怪物倒下</b>：回收模式打到血量歸零會倒下，約 12 秒後在別處刷新（不給金幣）。</li>
 <li><b>衝</b>：瞬間往前衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒。</li>
 <li><b>技能</b>：每個角色不同，見「角色技能」。按鈕上的數字是冷卻秒數。</li>
 <li><b>救隊友</b>：隊友倒地時靠近按住「救」2 秒。</li></ul>
@@ -566,14 +567,14 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=57"></script>
-<script src="js/sim.js?v=57"></script>
-<script src="js/audio.js?v=57"></script>
-<script src="js/auth.js?v=57"></script>
-<script src="js/cloud.js?v=57"></script>
-<script src="js/net.js?v=57"></script>
-<script src="js/game.js?v=57"></script>
-<script src="js/minigames.js?v=57"></script>
-<script src="js/main.js?v=57"></script>
+<script src="js/config.js?v=58"></script>
+<script src="js/sim.js?v=58"></script>
+<script src="js/audio.js?v=58"></script>
+<script src="js/auth.js?v=58"></script>
+<script src="js/cloud.js?v=58"></script>
+<script src="js/net.js?v=58"></script>
+<script src="js/game.js?v=58"></script>
+<script src="js/minigames.js?v=58"></script>
+<script src="js/main.js?v=58"></script>
 </body>
 </html>

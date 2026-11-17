@@ -244,7 +244,9 @@ function bfs(sc, sr, gc, gr) {
   return path.reverse();
 }
 
-let LOCKERS = [];
+let LOCKERS = [], LOCKER_W = [];
+// 櫃子裡的近戰攻擊物：拿到後當天換成這把的數值（只對玩家生效，傷害／攻擊冷卻／攻擊距離）
+const LWFX = [{ dmg: 65, cd: 0.65, rng: 2.4 }, { dmg: 55, cd: 0.4, rng: 2.0 }, { dmg: 75, cd: 0.85, rng: 2.9 }, { dmg: 45, cd: 0.5, rng: 2.2 }, { dmg: 40, cd: 0.55, rng: 3.3 }, { dmg: 30, cd: 0.45, rng: 2.4 }];
 const SPAWN_OFF = [[-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8], [0.8, 0.8]];
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -334,6 +336,7 @@ Sim.prototype.startDay = function (day) {
   this.wanderSpeed = Math.min(2.1 + 0.05 * (day - 1), 2.8);
   this.players.forEach(function (p) {
     const o = SPAWN_OFF[p.slot % 4];
+    p.lk = null; p.lkCd = 0; p.lw = null;
     p.alive = true; p.bag = []; p.x = VAN[0] + o[0]; p.z = VAN[1] + o[1]; p.yaw = -Math.PI * 0.75;
     p.bombs = 99;   // 炸藥不限量（顯示成 ∞）
     p.run = p.loud = false; p.hp = maxHp(p); p.atkCd = 0; p.hurtT = 99; p.esc = false;
@@ -379,6 +382,8 @@ Sim.prototype.setInput = function (id, m) {
   p.spk = !!m.spk;
   p.rs = !!m.rs;   // 按住 E 救援
   if (this.phase !== 'play' || !p.alive) return;
+  if (m.lk !== undefined) this._lockerToggle(p, m.lk);
+  if (p.lk) { p.run = p.loud = false; return; }   // 躲在櫃子裡：不能移動
   if (m.sm && (p.smCd || 0) <= 0) { p.smCd = 20; this.smokes.push({ x: p.x, z: p.z, t: 6 }); this.events.push({ t: 'smoke', id: p.id, x: p.x, z: p.z }); }   // 煙霧彈：冷卻 20 秒，不影響金額
   // 太空人技能「月光波」：7 公尺內怪物暫停 3 秒，冷卻 25 秒
   if (m.sk && (p.skCd || 0) <= 0) this._skill(p);
@@ -389,6 +394,21 @@ Sim.prototype.setInput = function (id, m) {
   p.run = !!m.run; p.loud = !!m.loud; p.air = !!m.air; if (m.vh) p.vq = true;
 };
 
+// 櫃子：靠近按「櫃」進去躲（最多 8 秒、再按一次出來），進去時順便拿到櫃內的攻擊物；出來後冷卻 10 秒
+Sim.prototype._lockerToggle = function (p, idx) {
+  if (p.lk) { if (idx === -1) this._lockerExit(p); return; }
+  if (idx < 0 || (p.lkCd || 0) > 0 || !LOCKERS[idx]) return;
+  const k = LOCKERS[idx];
+  if (Math.hypot(k[0] - p.x, k[1] - p.z) > 1.8) return;
+  p.lk = { i: idx, t: 8 }; p.x = k[0]; p.z = k[1];
+  p.lw = LOCKER_W[idx];
+  this.events.push({ t: 'lkw', id: p.id, w: WEAPONS[p.lw] });
+};
+Sim.prototype._lockerExit = function (p) {
+  p.lk = null; p.lkCd = 10;
+  const d = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  for (let i = 0; i < d.length; i++) { const x = p.x + d[i][0] * 1.1, z = p.z + d[i][1] * 1.1; if (!blocked(x, z, 0.3)) { p.x = x; p.z = z; return; } }
+};
 Sim.prototype._dropBag = function (p) {
   if (!p.bag.length) return;
   const list = [];
@@ -603,11 +623,12 @@ Sim.prototype.attack = function (id, yaw) {
   const a = this.player(id);
   if (!a || this.phase !== 'play' || !a.alive || a.atkCd > 0) return;
   if (isFinite(+yaw)) a.yaw = +yaw;
-  a.atkCd = a.c === 4 ? 0.49 : 0.65;   // 南瓜頭攻擊冷卻 -25%
+  const wf = a.lw != null ? LWFX[a.lw] : null;
+  a.atkCd = wf ? wf.cd : a.c === 4 ? 0.49 : 0.65;   // 南瓜頭攻擊冷卻 -25%
   this.events.push({ t: 'swing', id: id });
   if (!this.pvp && this.mode !== 'br') return;
   const fx = -Math.sin(a.yaw), fz = -Math.cos(a.yaw);
-  let best = null, bd = 2.4;
+  let best = null, bd = wf ? wf.rng : 2.4;
   for (let i = 0; i < this.players.length; i++) {
     const p = this.players[i];
     if (p === a || !p.alive) continue;
@@ -618,7 +639,7 @@ Sim.prototype.attack = function (id, yaw) {
     best = p; bd = d;
   }
   if (!best) return;
-  best.hp -= a.c === 1 ? 65 : 50; best.hurtT = 0;   // 機器人攻擊力 +30%
+  best.hp -= wf ? wf.dmg : a.c === 1 ? 65 : 50; best.hurtT = 0;   // 機器人攻擊力 +30%
   this.events.push({ t: 'hit', id: best.id, by: id, hp: Math.max(0, best.hp) });
   if (best.hp <= 0 && this.mode === 'br') { this._brKill(best, a); return; }
   if (best.hp <= 0) {
@@ -801,7 +822,7 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
     const wx = this.weather || 0, hf = WX_HEAR[wx];
     const p = alive[i], d = Math.hypot(p.x - m.x, p.z - m.z) * (p.c === 5 ? 1.33 : 1) * (p.stealthT > 0 ? 2 : 1) * WX_SIGHT[wx];   // 紙箱人較難被發現；壞天氣怪物看不遠
     // 躲在櫃子旁（1.4 公尺內、沒有在跑）：怪物看不到，除非牠已經貼到 2.5 公尺內
-    const hid = !p.run && d > 2.5 && LOCKERS.some(function (k) { return Math.hypot(k[0] - p.x, k[1] - p.z) < 1.4; });
+    const hid = p.lk ? d > 1.0 : !p.run && d > 2.5 && LOCKERS.some(function (k) { return Math.hypot(k[0] - p.x, k[1] - p.z) < 1.4; });
     const inSmoke = (this.smokes || []).some(function (k) { return Math.hypot(k.x - p.x, k.z - p.z) < 3; });   // 站在煙裡怪物看不到
     const sees = !(p.hideT > 0) && !inSmoke && !hid && d < 30 && los(m.x, m.z, p.x, p.z);
     const dh = d / WX_SIGHT[wx];
@@ -878,6 +899,8 @@ Sim.prototype.step = function (dt) {
     if (p.gunCd > 0) p.gunCd -= dt;
     if (p.reload > 0) { p.reload -= dt; if (p.reload <= 0) { p.reload = 0; p.ammo = p.clip || 12; } }
     if ((p.skCd || 0) > 0) p.skCd -= dt;
+    if ((p.lkCd || 0) > 0) p.lkCd -= dt;
+    if (p.lk) { p.lk.t -= dt; if (p.lk.t <= 0) this._lockerExit(p); }
     for (const k of ['shieldT', 'hideT', 'stealthT', 'rallyT']) if ((p[k] || 0) > 0) p[k] -= dt;
     p.hurtT += dt;
     if (inBase(this, p)) { if (p.hp < maxHp(p)) p.hp = Math.min(maxHp(p), p.hp + 15 * dt); }   // 光圈裡每秒回 15 血
@@ -1009,7 +1032,7 @@ Sim.prototype.snapshot = function () {
   for (let i = 0; i < this.items.length; i++) it += this.items[i].taken ? '1' : '0';
   return { t: 's', zr: this.zone ? r2(this.zone.r) : undefined, pz: this.pz != null ? r2(this.pz) : undefined, ph: this.phase, day: this.day, money: this.money, quota: this.quota, time: Math.round(this.time * 10) / 10,
     p: this.players.map(function (p) {
-      return [p.id, r2(p.x), r2(p.z), r2(p.yaw), p.alive ? 1 : 0, p.bag.length, (p.run ? 1 : 0) | (p.spk ? 2 : 0) | (p.loud ? 4 : 0) | (p.air ? 8 : 0), Math.round(p.hp), p.ammo || 0, p.reload > 0 ? 1 : 0, p.bombs || 0];
+      return [p.id, r2(p.x), r2(p.z), r2(p.yaw), p.alive ? 1 : 0, p.bag.length, (p.run ? 1 : 0) | (p.spk ? 2 : 0) | (p.loud ? 4 : 0) | (p.air ? 8 : 0) | (p.lk ? 16 : 0), Math.round(p.hp), p.ammo || 0, p.reload > 0 ? 1 : 0, p.bombs || 0];
     }),
     bk: BROKEN.length ? BROKEN : undefined,
     td: this.td ? [this.td.core, this.td.left + this.monsters.filter(function (m) { return !m.idle; }).length, this.td.total] : undefined,
@@ -1076,6 +1099,7 @@ function setMap(i) {
   floorCells.forEach(function (fc) { tryLocker(fc, 1); });
   floorCells.forEach(function (fc) { tryLocker(fc, 2); });
   floorCells.forEach(function (fc) { tryLocker(fc, 3); });   // 開放地圖轉角少：貼著單面牆也可以放
+  LOCKER_W = LOCKERS.map(function () { return Math.floor(Math.random() * WEAPONS.length); });
   api.lockers = LOCKERS;
   api.MAP = MAP; api.ROWS = ROWS; api.COLS = COLS; api.VAN = VAN; api.floorCells = floorCells; api.mapIndex = i;
   api.theme = MAPS[i].theme; api.mapName = MAPS[i].name; api.monsterCells = MONSTER_CELLS;
