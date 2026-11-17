@@ -25,6 +25,11 @@ RR.CONFIG = {
   // 2) 要顯示哪些登入按鈕（沒在 Firebase 啟用的請設成 false）
   providers: { google: true, apple: false, line: false, facebook: false },   // 目前只在 Firebase 啟用了 Google 與匿名
 
+  // 2b) Google 官方登入按鈕用的「Web 用戶端 ID」（Firebase 後台 → Authentication → Google → Web SDK 設定）。
+  //     加到主畫面（iPhone 獨立視窗）時，彈窗和跳轉登入會被 Apple 擋住，這時改用官方按鈕。留空就不啟用。
+  //     另外要到 Google Cloud 主控台 → API 與服務 → 憑證 → 這個用戶端 → 已授權的 JavaScript 來源，加入 https://black-tea666888.github.io
+  googleClientId: '',
+
   // 3) LINE 在 Firebase（Identity Platform）裡的 OIDC 供應商 ID
   lineProviderId: 'oidc.line',
 
