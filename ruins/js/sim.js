@@ -243,7 +243,8 @@ const GUNS = [
   { name: '水槍', dmg: 5, pvp: 4, cd: 0.04, clip: [40, 60], range: 14, w: 1.2, n: 1, spread: 0.12, stun: 0.6, reload: 1.0, auto: true, cost: 0 },
   { name: '魚槍', dmg: 70, pvp: 50, cd: 1.0, clip: [3, 5], range: 30, w: 0.6, n: 1, spread: 0.03, stun: 3.8, reload: 2.0, auto: false, cost: 0 },
   { name: '貓咪槍', dmg: 16, pvp: 12, cd: 0.3, clip: [8, 12], range: 38, w: 0.8, n: 2, spread: 0.06, stun: 2.0, reload: 1.3, auto: false, cost: 0 },
-  { name: '狗狗槍', dmg: 26, pvp: 19, cd: 0.6, clip: [5, 8], range: 30, w: 0.9, n: 1, spread: 0.04, stun: 2.4, reload: 1.6, auto: false, cost: 0 }
+  { name: '狗狗槍', dmg: 26, pvp: 19, cd: 0.6, clip: [5, 8], range: 30, w: 0.9, n: 1, spread: 0.04, stun: 2.4, reload: 1.6, auto: false, cost: 0 },
+  { name: '大蔥槍', dmg: 55, pvp: 40, cd: 0.7, clip: [4, 6], range: 45, w: 0.7, n: 1, spread: 0.02, stun: 3, reload: 2, auto: false, cost: 0 }
 ];
 const HATS = ['無', '安全帽', '頭燈', '天線', '光環', '皇冠'];   // 頭飾（純外觀）
 const pick = (v, n) => { v = Math.floor(+v); return v >= 0 && v < n ? v : 0; };
