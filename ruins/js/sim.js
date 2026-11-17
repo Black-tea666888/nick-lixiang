@@ -229,7 +229,12 @@ const GUNS = [
   { name: '巴雷特', dmg: 150, pvp: 120, cd: 1.8, clip: [2, 3], range: 100, w: 0.4, n: 1, spread: 0, stun: 6, reload: 3.2, auto: false, cost: 0 },
   { name: '機關槍', dmg: 18, pvp: 13, cd: 0.1, clip: [20, 40], range: 40, w: 0.8, n: 1, spread: 0.05, stun: 1.3, reload: 2.6, auto: true, cost: 0 },
   { name: '弓弩', dmg: 60, pvp: 45, cd: 0.9, clip: [4, 6], range: 60, w: 0.5, n: 1, spread: 0, stun: 3.5, reload: 1.6, auto: false, cost: 0 },
-  { name: '三連發', dmg: 26, pvp: 19, cd: 0.45, clip: [9, 12], range: 40, w: 0.7, n: 3, spread: 0.05, stun: 2, reload: 1.8, auto: false, cost: 0 }
+  { name: '三連發', dmg: 26, pvp: 19, cd: 0.45, clip: [9, 12], range: 40, w: 0.7, n: 3, spread: 0.05, stun: 2, reload: 1.8, auto: false, cost: 0 },
+  { name: '雙管霰彈', dmg: 12, pvp: 9, cd: 0.9, clip: [2, 4], range: 12, w: 1.0, n: 10, spread: 0.22, stun: 2.4, reload: 2.2, auto: false, cost: 0 },
+  { name: '迷你衝鋒', dmg: 9, pvp: 7, cd: 0.05, clip: [30, 50], range: 22, w: 0.8, n: 1, spread: 0.1, stun: 0.8, reload: 1.4, auto: true, cost: 0 },
+  { name: '重機槍', dmg: 28, pvp: 20, cd: 0.16, clip: [30, 60], range: 60, w: 0.7, n: 1, spread: 0.06, stun: 1.8, reload: 4.0, auto: true, cost: 0 },
+  { name: '雷射槍', dmg: 40, pvp: 30, cd: 0.35, clip: [8, 14], range: 70, w: 0.5, n: 1, spread: 0.01, stun: 3, reload: 2.0, auto: false, cost: 0 },
+  { name: '燃燒槍', dmg: 24, pvp: 18, cd: 0.25, clip: [10, 16], range: 34, w: 0.8, n: 2, spread: 0.08, stun: 2.6, reload: 2.0, auto: false, cost: 0 }
 ];
 const HATS = ['無', '安全帽', '頭燈', '天線', '光環', '皇冠'];   // 頭飾（純外觀）
 const pick = (v, n) => { v = Math.floor(+v); return v >= 0 && v < n ? v : 0; };
