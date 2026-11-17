@@ -998,6 +998,14 @@ function setViewWeapon(w) {
 }
 // 開槍（電腦 X 或滑鼠右鍵、手機「槍」）：實際命中由房主判定
 let gunT = 0, gunMesh = null, gunHeld = false;
+// 槍鍵：單擊射擊（近戰模式則揮砍）；快速點兩下切換槍與近戰（副武器）
+let wpnMode = 'gun', lastGunTap = 0;
+function gunPress() {
+  const now = Date.now();
+  if (now - lastGunTap < 320) { lastGunTap = 0; wpnMode = wpnMode === 'gun' ? 'melee' : 'gun'; toast(wpnMode === 'gun' ? '切回槍' : '切換到近戰'); return; }
+  lastGunTap = now;
+  if (wpnMode === 'melee') attack(); else shoot();
+}
 function shoot() {
   if (!canControl() || gunT > 0) return;
   if (me.riding) { toast('在推車上不能開槍'); return; }
@@ -1190,7 +1198,7 @@ function gunParts(i) {
     return [p, [0, 0, -0.51]];
   }
   if (i === 16) {   // 火麒麟：紅色機身、橘色雙角、長槍管
-    p.push(B(0.06, 0.08, 0.22, 0, 0, 0, 0x7a1d12), C(0.018, 0.12, -0.035, 0.06, 0.02, 0xffb040, 0), C(0.018, 0.12, 0.035, 0.06, 0.02, 0xffb040, 0), C(0.014, 0.22, 0, 0, -0.2, GM.steel),
+    p.push(B(0.06, 0.08, 0.22, 0, 0, 0, 0x7a1d12), B(0.045, 0.045, 0.12, 0, 0, -0.16, 0x9a2a18), C(0.012, 0.01, -0.03, 0.02, -0.22, 0xffe066), C(0.012, 0.01, 0.03, 0.02, -0.22, 0xffe066), C(0.018, 0.12, -0.035, 0.06, 0.02, 0xffb040, 0), C(0.018, 0.12, 0.035, 0.06, 0.02, 0xffb040, 0), C(0.014, 0.22, 0, 0, -0.2, GM.steel),
       B(0.035, 0.09, 0.05, 0, -0.07, 0.1, 0x7a1d12, 0.2));
     return [p, [0, 0, -0.33]];
   }
@@ -1213,6 +1221,10 @@ function gunParts(i) {
   if (i === 21) {   // 貓咪槍：橘色貓頭、貓耳、綠色眼睛
     p.push(B(0.06, 0.06, 0.2, 0, 0, 0, 0xffb347), B(0.02, 0.04, 0.02, -0.03, 0.05, -0.08, 0xffb347, 0, 0, 0.2), B(0.02, 0.04, 0.02, 0.03, 0.05, -0.08, 0xffb347, 0, 0, -0.2), C(0.012, 0.2, 0, 0, -0.25, GM.dark), C(0.008, 0.01, -0.02, 0.01, -0.1, GM.green), C(0.008, 0.01, 0.02, 0.01, -0.1, GM.green));
     return [p, [0, 0, -0.36]];
+  }
+  if (i === 23) {   // 大蔥槍：白色蔥白、綠色蔥葉，像一根大蔥
+    p.push(C(0.03, 0.22, 0, 0, -0.02, 0xf4f8ef), C(0.024, 0.32, 0, 0, -0.3, 0x3c9a3a), C(0.02, 0.1, 0, 0, -0.52, 0x2f7d2b, 0.005), B(0.035, 0.09, 0.05, 0, -0.07, 0.1, GM.poly, 0.2));
+    return [p, [0, 0, -0.6]];
   }
   if (i === 22) {   // 狗狗槍：棕色狗頭、垂耳、黑色鼻頭
     p.push(B(0.06, 0.06, 0.2, 0, 0, 0, 0xc98a4b), B(0.03, 0.06, 0.02, -0.04, -0.02, -0.04, 0x6b3f1f), B(0.03, 0.06, 0.02, 0.04, -0.02, -0.04, 0x6b3f1f), C(0.012, 0.2, 0, 0, -0.25, GM.dark));
@@ -1539,9 +1551,9 @@ function bindInput() {
   runBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   $('micBtn').addEventListener('click', function () { RR.Game.toggleMic(); });
   $('mini').addEventListener('click', function () { $('mini').classList.toggle('big'); });
-  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', shoot], ['bomb', function () { if (RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100); }], ['veh', function () { vhQ = true; }], ['tower', function () { if (view.mode === 'td' && RR.Game.onTower) RR.Game.onTower(); }]].forEach(function (q) {
+  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', gunPress], ['bomb', function () { if (RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100); }], ['veh', function () { vhQ = true; }], ['tower', function () { if (view.mode === 'td' && RR.Game.onTower) RR.Game.onTower(); }]].forEach(function (q) {
     const b = $(q[0]);
-    b.addEventListener('touchstart', function (e) { e.preventDefault(); if (q[0] === 'gun') gunHeld = true; if (canControl()) q[1](); }, { passive: false });
+    b.addEventListener('touchstart', function (e) { e.preventDefault(); if (q[0] === 'gun') gunHeld = wpnMode === 'gun'; if (canControl()) q[1](); }, { passive: false });
     if (q[0] === 'gun') { const up = function (e) { e.preventDefault(); gunHeld = false; }; b.addEventListener('touchend', up, { passive: false }); b.addEventListener('touchcancel', up, { passive: false }); }
     b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   });
@@ -1762,7 +1774,7 @@ function updateHud() {
   $('bag').textContent = me.bagN;
   const bm = $('bombs'), bt = '∞'; if (bm.textContent !== bt) bm.textContent = bt;
   const am = $('ammo'), at = '∞'; if (am.textContent !== at) am.textContent = at;
-  const gb = $('gun'), gt = me.reloading ? '…' : '槍'; if (gb.textContent !== gt) gb.textContent = gt; gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
+  const gb = $('gun'), gt = wpnMode === 'melee' ? '近' : me.reloading ? '…' : '槍'; if (gb.textContent !== gt) gb.textContent = gt; gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
   const qf = $('qfill'), pct = view.mode === 'td' && view.td ? view.td[0] : view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
   qf.style.width = pct + '%'; qf.classList.toggle('done', pct >= 100);
   const cap = (myEq(2) ? 4 : 3) + (me.riding ? 2 : 0), pp = $('pips'); while (pp.children.length < 6) pp.appendChild(document.createElement('i')); if ($('bagCap').textContent !== String(cap)) $('bagCap').textContent = cap;
