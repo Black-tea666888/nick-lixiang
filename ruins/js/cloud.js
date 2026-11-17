@@ -201,10 +201,58 @@ const Cloud = {
       const rows = []; q.forEach(function (d) { const x = d.data(); x.id = d.id; rows.push(x); }); cb(null, rows);
     }).catch(fail(cb));
   },
+  /* ---------- 戰隊聊天：文字、請求金幣、捐贈 ---------- */
+  ASK_NEED: 100, GIVE: 10, GIVE_MAX: 30,
+  msgs: function () { return db.collection('clans').doc(me.clan).collection('msgs'); },
+  /** 即時訂閱最新 40 則；回傳取消函式。onRows(err, rows)（新到舊） */
+  clanChat: function (onRows) {
+    if (!Cloud.ready() || !me || !me.clan) { onRows({ code: me && !me.clan ? 'no-clan' : 'offline' }); return function () {}; }
+    return Cloud.msgs().orderBy('t', 'desc').limit(40).onSnapshot(function (q) {
+      const rows = []; q.forEach(function (d) { const x = d.data(); x.id = d.id; rows.push(x); }); onRows(null, rows);
+    }, fail(onRows));
+  },
+  clanSay: function (text, cb) {
+    if (!Cloud.ready() || !me || !me.clan) { cb({ code: 'no-clan' }); return; }
+    text = clean(text, 80); if (!text) { cb(null); return; }
+    Cloud.msgs().add({ uid: uid, name: profile().name, k: 'say', text: text, t: Date.now() }).then(function () { cb(null); }).catch(fail(cb));
+  },
+  clanAsk: function (cb) {
+    if (!Cloud.ready() || !me || !me.clan) { cb({ code: 'no-clan' }); return; }
+    Cloud.msgs().add({ uid: uid, name: profile().name, k: 'req', need: Cloud.ASK_NEED, got: 0, claimed: 0, donors: {}, t: Date.now() }).then(function () { cb(null); }).catch(fail(cb));
+  },
+  /** 捐 10 金幣給一則請求；cb(err) 成功才扣捐贈者的金幣 */
+  clanGive: function (mid, cb) {
+    if (!Cloud.ready() || !me || !me.clan) { cb({ code: 'no-clan' }); return; }
+    const ref = Cloud.msgs().doc(mid);
+    db.runTransaction(function (tx) {
+      return tx.get(ref).then(function (s) {
+        if (!s.exists) throw { code: 'gone' };
+        const d = s.data(), mine = (d.donors && d.donors[uid]) | 0;
+        if (d.uid === uid) throw { code: 'own-req' };
+        if ((d.got | 0) >= (d.need | 0)) throw { code: 'req-full' };
+        if (mine >= Cloud.GIVE_MAX) throw { code: 'give-max' };
+        const donors = Object.assign({}, d.donors || {}); donors[uid] = mine + Cloud.GIVE;
+        tx.update(ref, { got: (d.got | 0) + Cloud.GIVE, donors: donors });
+      });
+    }).then(function () { cb(null); }).catch(fail(cb));
+  },
+  /** 自己的請求：把已收到、還沒領的金幣領走；cb(err, 領到的數量) */
+  clanClaim: function (mid, cb) {
+    if (!Cloud.ready() || !me || !me.clan) { cb({ code: 'no-clan' }); return; }
+    const ref = Cloud.msgs().doc(mid); let n = 0;
+    db.runTransaction(function (tx) {
+      return tx.get(ref).then(function (s) {
+        if (!s.exists) throw { code: 'gone' };
+        const d = s.data(); n = (d.got | 0) - (d.claimed | 0);
+        if (d.uid !== uid || n <= 0) { n = 0; return; }
+        tx.update(ref, { claimed: d.got | 0 });
+      });
+    }).then(function () { cb(null, n); }).catch(fail(cb));
+  },
   message: function (e) {
     const c = e && e.code;
     return { offline: '雲端功能要先登入（Google 或訪客）並連上網路。', 'bad-code': '代碼格式不對。', self: '這是你自己的代碼。', 'not-found': '找不到這個代碼。',
-      'bad-name': '名稱至少 2 個字。', 'in-clan': '你已經在一個戰隊裡，請先退出。', full: '這個戰隊已滿（30 人）。', 'no-clan': '你不在任何戰隊。',
+      'bad-name': '名稱至少 2 個字。', 'in-clan': '你已經在一個戰隊裡，請先退出。', full: '這個戰隊已滿（30 人）。', 'no-clan': '你不在任何戰隊。', gone: '這則請求已經不見了。', 'own-req': '不能捐給自己。', 'req-full': '這則請求已經收滿了。', 'give-max': '每則請求你最多捐 30 金幣。',
       'permission-denied': '雲端拒絕了這個操作：請確認 Firestore 的安全規則已經發布。', unavailable: '連不到雲端，請檢查網路。' }[c] || ('雲端錯誤：' + (c || (e && e.message) || '未知'));
   }
 };

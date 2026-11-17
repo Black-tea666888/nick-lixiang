@@ -4,7 +4,7 @@
 const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx, Auth = RR.Auth, Game = RR.Game;
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap'];
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -252,6 +252,156 @@ function wheelSpin() {
 }
 function toastMsg(m, good) { const el = $('dwDesc'); el.textContent = m + '。'; el.classList.toggle('good', !!good); setTimeout(function () { el.classList.remove('good'); }, 2500); }
 function wheelDrawKeep() { const b = wheelBusy; wheelBusy = true; wheelDraw(); wheelBusy = b; }
+function mtoast(msg, kind) { const el = $('mtoast'); el.textContent = msg; el.className = 'k-' + (kind || 'info'); void el.offsetWidth; el.classList.add('show'); clearTimeout(mtoast.t); mtoast.t = setTimeout(function () { el.classList.remove('show'); }, Math.min(4200, 1800 + msg.length * 70)); }
+/* ---------- 市集：免費補給、每日精選直購 ---------- */
+const SHOP_PRICE = { o: 300, pet: 350, gs: 250, fx: 180, is: 150, ms: 150 };
+const SUPPLY_MS = 4 * 3600e3;
+const FREE = [
+  { id: 'gift', n: '每日禮物', give: ['coin', 30], note: '每天一次' },
+  { id: 'box', n: '補給箱', give: ['coin', 15], note: '每 4 小時' },
+  { id: 'xp', n: '訓練手冊', give: ['xp', 40], note: '每天一次' }
+];
+function seedRand(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return function () { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+/** 今天的 6 件精選：第一次打開時決定並存起來（優先挑還沒有的），當天不再變 */
+function shopToday(p) {
+  if (p.shop && p.shop.d === today() && Array.isArray(p.shop.it)) return p.shop;
+  const rnd = seedRand(today() + (RR.Cloud && RR.Cloud.uid() || '')), pool = [];
+  Object.keys(SHOP_PRICE).forEach(function (cat) { const names = catNames(cat); for (let i = 1; i < names.length; i++) pool.push([cat, i]); });
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)), t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+  const fresh = pool.filter(function (x) { return !owns(p, x[0], x[1]); }), had = pool.filter(function (x) { return owns(p, x[0], x[1]); });
+  p.shop = { d: today(), it: fresh.concat(had).slice(0, 6), b: [] };
+  return p.shop;
+}
+function freeLeft(p, f) {
+  const fr = p.free || {};
+  if (f.id === 'box') return Math.max(0, (fr.box || 0) + SUPPLY_MS - Date.now());
+  return fr[f.id] === today() ? msToMidnight() : 0;
+}
+function msToMidnight() { const d = new Date(); d.setHours(24, 0, 0, 0); return d - Date.now(); }
+function hm(ms) { const m = Math.ceil(ms / 60000), h = Math.floor(m / 60); return h ? h + ' 小時 ' + (m % 60) + ' 分' : m + ' 分'; }
+function shopCard(cls, icon, title, kind, foot, onClick) {
+  const c = mk('button', 'spCard ' + cls); c.type = 'button';
+  c.innerHTML = iconSvg(icon); c.appendChild(mk('b', null, title)); c.appendChild(mk('span', 'spKindT', kind)); c.appendChild(mk('span', 'spFoot', foot));
+  c.addEventListener('click', onClick); return c;
+}
+function shopDraw() {
+  const p = prog(), sh = shopToday(p); progSave(p);
+  $('coinTag4').textContent = p.coins;
+  $('spTimer').textContent = '刷新倒數 ' + hm(msToMidnight());
+  const fg = $('spFree'); fg.textContent = '';
+  FREE.forEach(function (f) {
+    const left = freeLeft(p, f), lbl = f.give[0] === 'coin' ? '金幣 +' + f.give[1] : '經驗 +' + f.give[1];
+    fg.appendChild(shopCard(left ? 'done' : 'free', f.give[0] === 'coin' ? 'coin' : 'is', f.n, lbl, left ? '再 ' + hm(left) : '免費領取', function () {
+      const q = prog(); if (freeLeft(q, f)) { mtoast('還要等 ' + hm(freeLeft(q, f))); return; }
+      q.free = q.free || {}; q.free[f.id] = f.id === 'box' ? Date.now() : today();
+      if (f.give[0] === 'coin') q.coins += f.give[1]; else q.xp += f.give[1];
+      progSave(q); renderProg(); shopDraw(); mtoast('已領取 ' + lbl, 'good'); Sfx.tone(880, 0.1, 'triangle', 0.12, 1180);
+    }));
+  });
+  const dg = $('spDaily'); dg.textContent = '';
+  sh.it.forEach(function (x, k) {
+    const own = owns(p, x[0], x[1]), bought = sh.b.indexOf(k) >= 0, price = SHOP_PRICE[x[0]];
+    dg.appendChild(shopCard('t-' + (x[0] === 'gs' ? 'gun' : 'item') + (own ? ' done' : ''), x[0], catNames(x[0])[x[1]], CAT_LABEL[x[0]], bought ? '已購買' : own ? '已擁有' : price + ' 金幣', function () { shopAsk(k); }));
+  });
+  $('shopSub').textContent = FREE.some(function (f) { return !freeLeft(p, f); }) ? '有免費補給可領' : '每日精選、免費補給';
+}
+let spK = -1;
+function shopAsk(k) {
+  const p = prog(), x = shopToday(p).it[k], own = owns(p, x[0], x[1]), price = SHOP_PRICE[x[0]], look = myLook();
+  spK = k;
+  $('spKind').textContent = CAT_LABEL[x[0]]; $('spName').textContent = catNames(x[0])[x[1]];
+  $('spDesc').textContent = own ? '你已經有了。' : segDesc([x[0], x[1]], p).replace('你還沒有。', '') + '價格 ' + price + ' 金幣，你有 ' + p.coins + '。';
+  $('spOk').classList.toggle('hide', own); $('spOk').textContent = '用 ' + price + ' 金幣買';
+  const cv = $('spCanvas'), ic = $('spIcon'); let three = false;
+  if (x[0] === 'gs') { Game.gunPreview(cv, look.gun, x[1]); three = true; }
+  else if (x[0] === 'o' || x[0] === 'pet') { Game.preview(cv, look.c, look.w, look.h, x[0] === 'o' ? x[1] : look.o, x[0] === 'pet' ? x[1] : look.pet, true); three = true; }
+  cv.classList.toggle('hide', !three); ic.classList.toggle('hide', three); ic.innerHTML = three ? '' : iconSvg(x[0]);
+  $('spModal').classList.remove('hide');
+}
+function shopBuy() {
+  const p = prog(), sh = shopToday(p), x = sh.it[spK]; if (!x) return;
+  const price = SHOP_PRICE[x[0]], name = catNames(x[0])[x[1]];
+  if (owns(p, x[0], x[1])) { $('spModal').classList.add('hide'); return; }
+  if (p.coins < price) { mtoast('金幣不夠：要 ' + price + '，你有 ' + p.coins, 'warn'); return; }
+  p.coins -= price; p.own[x[0]].push(x[1]); sh.b.push(spK); progSave(p);
+  $('spModal').classList.add('hide'); renderProg(); shopDraw(); if (window.RR_refreshWardrobe) window.RR_refreshWardrobe();
+  mtoast('買到' + CAT_LABEL[x[0]] + '「' + name + '」，到出戰角色換上', 'good'); Sfx.tone(660, 0.12, 'triangle', 0.14, 990);
+}
+/* ---------- 戰隊聊天 ---------- */
+const ASK_CD = 7 * 3600e3;
+let ccOff = null, ccRows = [], ccLast = 0, ccTimer = null;
+function ccNote(text, btn) {
+  const log = $('ccLog'); log.textContent = ''; log.appendChild(mk('p', 'ccEmpty', text));
+  if (btn) { const b = mk('button', 'btn primary', btn); b.type = 'button'; b.addEventListener('click', function () { clanClose(); socTab = 'clan'; $('scrSocial').classList.remove('hide'); renderSocial(); }); log.appendChild(b); }
+}
+function clanOpen() {
+  show('scrClan'); $('coinTag5').textContent = prog().coins; ccAskDraw();
+  const C = RR.Cloud, me = C.me();
+  $('ccName').textContent = me && me.clanName ? me.clanName : '戰隊聊天';
+  if (!C.ready()) { ccNote('戰隊聊天要先用 Google 或訪客登入並連上網路。'); return; }
+  if (!me || !me.clan) { ccNote('你還沒加入戰隊。', '去加入或建立戰隊'); return; }
+  ccNote('讀取中…');
+  if (ccOff) ccOff();
+  ccOff = C.clanChat(function (err, rows) { if (err) { ccNote(C.message(err)); return; } ccRows = rows; ccDraw(); });
+  clearInterval(ccTimer); ccTimer = setInterval(ccAskDraw, 30000);
+}
+function clanClose() { if (ccOff) ccOff(); ccOff = null; clearInterval(ccTimer); showMenu(); }
+function ccAskDraw() {
+  const left = (prog().askAt || 0) + ASK_CD - Date.now();
+  $('ccAsk').disabled = left > 0; $('ccAskT').textContent = left > 0 ? hm(left) : '隊友捐給你';
+}
+function ccDraw() {
+  const C = RR.Cloud, my = C.uid(), log = $('ccLog'), atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+  log.textContent = '';
+  if (!ccRows.length) { log.appendChild(mk('p', 'ccEmpty', '還沒有人說話。打個招呼，或請求金幣。')); return; }
+  ccRows.slice().reverse().forEach(function (m) {
+    const mine = m.uid === my;
+    if (m.k === 'say') { const r = mk('div', 'ccMsg' + (mine ? ' me' : '')); r.appendChild(mk('b', null, mine ? '你' : m.name)); r.appendChild(mk('span', null, m.text)); log.appendChild(r); return; }
+    if (m.k !== 'req') return;
+    const got = m.got | 0, need = m.need | 0, gave = (m.donors && m.donors[my]) | 0;
+    const card = mk('div', 'ccReq' + (mine ? ' me' : ''));
+    card.appendChild(mk('div', 'ccWho', (mine ? '你' : m.name) + ' 正在請求金幣'));
+    const body = mk('div', 'ccBody'), bar = mk('div', 'ccMeter'), fill = mk('i');
+    fill.style.width = Math.min(100, got / need * 100) + '%'; bar.appendChild(fill); bar.appendChild(mk('span', null, got + ' / ' + need)); body.appendChild(bar);
+    let btn;
+    if (mine) {
+      const n = got - (m.claimed | 0);
+      btn = mk('button', 'btn' + (n > 0 ? ' primary' : ''), n > 0 ? '領取 +' + n : got >= need ? '已領完' : '等隊友捐');
+      btn.disabled = n <= 0;
+      btn.addEventListener('click', function () { btn.disabled = true; C.clanClaim(m.id, function (err, k) { if (err) { mtoast(C.message(err), 'warn'); btn.disabled = false; return; } if (k > 0) { const q = prog(); q.coins += k; progSave(q); renderProg(); $('coinTag5').textContent = q.coins; mtoast('領到金幣 +' + k, 'good'); } }); });
+    } else {
+      const full = got >= need, max = gave >= C.GIVE_MAX;
+      btn = mk('button', 'btn' + (full || max ? '' : ' primary'), full ? '已收滿' : max ? '已捐 ' + gave : '捐 ' + C.GIVE);
+      btn.disabled = full || max;
+      btn.addEventListener('click', function () {
+        const q = prog(); if (q.coins < C.GIVE) { mtoast('金幣不夠捐', 'warn'); return; }
+        btn.disabled = true;
+        C.clanGive(m.id, function (err) {
+          if (err) { mtoast(C.message(err), 'warn'); btn.disabled = false; return; }
+          const q2 = prog(); q2.coins -= C.GIVE; q2.xp += 10; progSave(q2); renderProg(); $('coinTag5').textContent = q2.coins;
+          mtoast('捐了 ' + C.GIVE + ' 金幣，經驗 +10', 'good');
+        });
+      });
+    }
+    body.appendChild(btn); card.appendChild(body); log.appendChild(card);
+  });
+  if (atEnd || !ccDraw.did) log.scrollTop = log.scrollHeight;
+  ccDraw.did = true;
+}
+function ccSend() {
+  const el = $('ccInput'), text = el.value.trim(); if (!text) return;
+  if (Date.now() - ccLast < 1500) { mtoast('說慢一點'); return; }
+  ccLast = Date.now(); el.value = '';
+  RR.Cloud.clanSay(text, function (err) { if (err) mtoast(RR.Cloud.message(err), 'warn'); });
+}
+function ccAsk() {
+  const p = prog(); if ((p.askAt || 0) + ASK_CD > Date.now()) return;
+  $('ccAsk').disabled = true;
+  RR.Cloud.clanAsk(function (err) {
+    if (err) { mtoast(RR.Cloud.message(err), 'warn'); ccAskDraw(); return; }
+    const q = prog(); q.askAt = Date.now(); progSave(q); ccAskDraw(); mtoast('已請求，隊友捐了就能領', 'good');
+  });
+}
 /* ---------- 成長系統（存在這台裝置上）：金幣、經驗、每日任務、頭飾 ---------- */
 const HAT_COST = [0, 60, 100, 150, 250, 400];
 const MISSIONS = [['完成 1 天', 1, 30], ['團隊累計賺到 $800', 800, 40], ['拿到一次 3 顆星', 1, 50]];
@@ -784,6 +934,7 @@ function renderSocial() {
       } else {
         b.appendChild(mk('p', 'note', '戰隊「' + info.clan.name + '」，積分 ' + (info.clan.score | 0) + '，' + info.members.length + ' / 30 人，代碼'));
         b.appendChild(mk('div', 'bigcode', info.clan.tag));
+        { const cc = mk('button', 'btn primary', '打開戰隊聊天'); cc.type = 'button'; cc.style.width = '100%'; cc.style.margin = '6px 0 10px'; cc.addEventListener('click', function () { $('scrSocial').classList.add('hide'); renderSocial.token = null; clanOpen(); }); b.appendChild(cc); }
         socRows(info.members, function (v) { return v + ' 分'; });
         const lv = mk('button', 'btn', '退出戰隊'); lv.type = 'button'; lv.addEventListener('click', function () { C.leaveClan(function (err) { if (err) say(C.message(err)); renderSocial(); }); }); b.appendChild(lv);
       }
@@ -1023,6 +1174,17 @@ function bind() {
   $('wheelOpen').addEventListener('click', openWheel); $('wheelOpen2').addEventListener('click', openWheel);
   $('wheelDone').addEventListener('click', function () { if (!wheelBusy) showMenu(); });
   $('wheelSpin').addEventListener('click', wheelSpin);
+  $('shopOpen').addEventListener('click', function () { show('scrShop'); shopDraw(); });
+  $('shopDone').addEventListener('click', function () { showMenu(); });
+  $('spCancel').addEventListener('click', function () { $('spModal').classList.add('hide'); });
+  $('spOk').addEventListener('click', shopBuy);
+  setInterval(function () { if (!$('scrShop').classList.contains('hide')) shopDraw(); }, 30000);
+  $('clanChatOpen').addEventListener('click', clanOpen);
+  $('clanDone').addEventListener('click', clanClose);
+  $('ccAsk').addEventListener('click', ccAsk);
+  $('ccForm').addEventListener('submit', function (e) { e.preventDefault(); ccSend(); });
+  $('ccInput').addEventListener('keydown', function (e) { e.stopPropagation(); });
+  $('ccInput').addEventListener('keyup', function (e) { e.stopPropagation(); });
   $('pickBtn').addEventListener('click', function () { show('scrPick'); });
   $('pickDone').addEventListener('click', function () { showMenu(); });
   $('pickOk').addEventListener('click', function () { showMenu(); });

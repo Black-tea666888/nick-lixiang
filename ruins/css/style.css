@@ -704,3 +704,71 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
   .dwTabs { grid-template-columns: 1fr; grid-auto-rows: 1fr; }
   .dwTabs button { min-height: 0; }
 }
+
+/* 選單用訊息條（同遊戲中的樣式，蓋在畫面最上層） */
+#mtoast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 72px); left: 50%; width: max-content; max-width: calc(100% - 48px); z-index: 60;
+  padding: 9px 12px 9px 18px; font-size: 15px; font-weight: 700; line-height: 1.45; color: var(--chalk); text-align: left;
+  background: #1c2024; border: 2px solid #111417; border-radius: 3px; opacity: 0; transform: translate(-50%, -6px); transition: opacity .18s, transform .18s; pointer-events: none; }
+#mtoast.show { opacity: 1; transform: translate(-50%, 0); }
+#mtoast::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--haz); }
+#mtoast.k-warn::before { background: var(--rust); }
+#mtoast.k-good::before { background: #3f9a52; }
+#mtoast:empty { display: none; }
+
+/* 市集 */
+.sp { width: 100%; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; align-self: start; }
+.spSec { padding: 10px; background: var(--steel); border: 2px solid var(--ink); border-radius: 4px; box-shadow: inset 0 -5px 0 rgba(0,0,0,.3), 4px 4px 0 rgba(17,20,23,.5); }
+.spHead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 2px 8px; }
+.spHead b { font-size: 18px; font-weight: 900; color: var(--chalk); }
+.spHead span { font-size: 13px; font-weight: 700; color: var(--haz); }
+.spGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.spCard { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 132px; padding: 10px 4px 0; overflow: hidden; cursor: pointer; font: inherit; color: var(--ink); text-align: center;
+  background: var(--kraft-l); border: 2px solid var(--ink); border-radius: 3px; box-shadow: 0 3px 0 var(--ink); }
+.spCard:active { transform: translateY(3px); box-shadow: 0 0 0 var(--ink); }
+.spCard svg { width: 40px; height: 40px; fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+.spCard b { font-size: 14px; font-weight: 900; line-height: 1.2; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.spKindT { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.spFoot { margin-top: auto; align-self: stretch; padding: 6px 2px; font-size: 14px; font-weight: 900; background: var(--kraft); border-top: 2px solid var(--ink); }
+.spCard.free .spFoot { background: var(--haz); }
+.spCard.t-item { border-color: var(--rust); }
+.spCard.t-gun { background: #f6e3a6; }
+.spCard.done { opacity: .62; }
+.spCard.done .spFoot { background: var(--kraft-d); }
+.spBuy canvas, .spBuy .dwIcon { display: block; width: 100%; max-width: 280px; height: auto; margin: 0 auto 10px; border: 2px solid var(--ink); background: var(--kraft-l); }
+.spBuy .dwIcon { width: 100%; max-width: 220px; aspect-ratio: 280 / 160; }
+.spBuy .dwKind { display: inline-block; margin-bottom: 4px; }
+.spBuy p { font-size: 14px; color: var(--ink); margin: 4px 0 12px; }
+
+/* 戰隊聊天 */
+#scrClan { align-items: stretch; }
+.cc { width: 100%; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; min-height: 0; height: 100%; }
+.ccLog { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: var(--steel); border: 2px solid var(--ink); border-radius: 4px; -webkit-overflow-scrolling: touch; }
+.ccLog > * { flex: none; }
+.ccEmpty { margin: auto 0; text-align: center; font-size: 15px; color: var(--chalk); }
+.ccLog > .btn { align-self: center; }
+.ccMsg { align-self: flex-start; max-width: 82%; padding: 7px 10px; font-size: 15px; line-height: 1.4; color: var(--ink); background: var(--kraft-l); border: 2px solid var(--ink); border-radius: 3px; word-break: break-word; }
+.ccMsg b { display: block; font-size: 13px; color: var(--bin); }
+.ccMsg.me { align-self: flex-end; background: var(--haz); }
+.ccMsg.me b { color: var(--ink); }
+.ccReq { color: var(--ink); background: var(--kraft); border: 2px solid var(--ink); border-radius: 3px; overflow: hidden; }
+.ccWho { padding: 6px 10px; font-size: 15px; font-weight: 900; color: var(--chalk); background: var(--bin); border-bottom: 2px solid var(--ink); }
+.ccReq.me .ccWho { background: var(--ink); color: var(--haz); }
+.ccBody { display: flex; align-items: center; gap: 10px; padding: 10px; }
+.ccMeter { position: relative; flex: 1; height: 26px; background: #2a2f34; border: 2px solid var(--ink); border-radius: 2px; overflow: hidden; }
+.ccMeter i { position: absolute; left: 0; top: 0; bottom: 0; background: #3f9a52; }
+.ccMeter span { position: relative; display: block; text-align: center; font-size: 14px; font-weight: 900; line-height: 22px; color: var(--chalk); }
+.ccBody .btn { flex: none; min-height: 40px; padding: 6px 14px; font-size: 15px; }
+.btn:disabled { opacity: .55; cursor: default; }
+.ccBar { display: flex; gap: 8px; align-items: stretch; }
+.ccBar input { flex: 1; min-width: 0; }
+.ccBar .btn { flex: none; padding: 6px 14px; }
+.ccAsk { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; }
+.ccAsk b { font-size: 15px; }
+.ccAsk small { font-size: 12px; font-weight: 700; }
+@media (orientation: landscape) and (max-height: 520px) {
+  .sp { max-width: 900px; flex-direction: row; align-items: flex-start; flex-wrap: wrap; }
+  .sp > .dwTop { flex: 0 0 100%; }
+  .spSec { flex: 1 1 0; min-width: 0; }
+  .spCard { min-height: 112px; }
+  .cc { max-width: 760px; }
+}

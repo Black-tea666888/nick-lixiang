@@ -23,6 +23,25 @@ service cloud.firestore {
         allow read: if signedIn();
         allow write: if signedIn() && request.auth.uid == uid;
       }
+      // 戰隊聊天：只有隊員能讀寫。文字與請求只能用自己的名義發；
+      // 別人只能「捐」（got 每次 +10、不超過 need），本人只能「領」（claimed 不超過 got）
+      match /msgs/{mid} {
+        function member() { return exists(/databases/$(database)/documents/clans/$(cid)/members/$(request.auth.uid)); }
+        allow read: if signedIn() && member();
+        allow create: if signedIn() && member() && request.resource.data.uid == request.auth.uid
+          && request.resource.data.k in ['say', 'req']
+          && (request.resource.data.k == 'say'
+              ? request.resource.data.text is string && request.resource.data.text.size() <= 80
+              : request.resource.data.need == 100 && request.resource.data.got == 0 && request.resource.data.claimed == 0);
+        allow update: if signedIn() && member() && resource.data.k == 'req' && (
+          (resource.data.uid != request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['got', 'donors'])
+            && request.resource.data.got == resource.data.got + 10
+            && request.resource.data.got <= resource.data.need)
+          || (resource.data.uid == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimed'])
+            && request.resource.data.claimed <= resource.data.got));
+      }
     }
 
     // 排行榜（集合名稱以 lb_ 開頭）：只能寫自己的那一筆，分數要是合理的數字
