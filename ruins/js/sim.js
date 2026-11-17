@@ -460,7 +460,11 @@ Sim.prototype.shoot = function (id, yaw) {
         m.hp -= G.dmg * gem; m.cool = 0.25;
         if (m.hp <= 0) { kill = true; m.dead = td ? 1e9 : 3; m.idle = td; m.state = 'wander'; m.path = null; this.money += 50; p.earned += 50; p.mk = (p.mk || 0) + 1; }
         else if (!td) { m.state = 'chase'; m.target = p.id; m.goal = cellOf(p.x, p.z); m.lost = 0; m.repath = 0; }
-      } else m.cool = Math.max(m.cool || 0, G.stun + 0.2 * (p.gems ? p.gems[0] : 0));
+      } else {
+        m.cool = Math.max(m.cool || 0, G.stun + 0.2 * (p.gems ? p.gems[0] : 0));
+        // 回收模式：打到血量歸零會暫時倒下，過 12 秒在別處刷新（不給金幣）
+        if (!br) { m.hp -= G.dmg * gem; if (m.hp <= 0) { kill = true; m.dead = 12; m.state = 'wander'; m.path = null; } }
+      }
     } else {
       let d = 0; hx = p.x; hz = p.z;
       while (d < G.range && !isWall(Math.floor((p.x + fx * (d + 0.5)) / CS), Math.floor((p.z + fz * (d + 0.5)) / CS))) { d += 0.5; hx = p.x + fx * d; hz = p.z + fz * d; }

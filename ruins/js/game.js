@@ -386,7 +386,7 @@ let solids = [];   // 擺設的碰撞圓（櫃子、木箱、鐵桶）：[x, z, 
 // 腳的高度 y 已經高過擺設頂端就不擋（跳上木箱、鐵桶）
 function hitSolid(x, z, y) { for (let i = 0; i < solids.length; i++) { const q = solids[i]; if ((y || 0) < (q[3] || 9) - 0.3 && Math.hypot(q[0] - x, q[1] - z) < q[2] + 0.34) return true; } return false; }
 // 這個位置腳下的高度：站在擺設上就是它的頂端
-function groundAt(x, z) { let g = 0; for (let i = 0; i < solids.length; i++) { const q = solids[i]; if (q[3] && q[3] < 1.5 && Math.hypot(q[0] - x, q[1] - z) < q[2] + 0.12) g = Math.max(g, q[3]); } return g; }
+function groundAt(x, z) { let g = W.isWall(Math.floor(x / CS), Math.floor(z / CS)) ? WH : 0; /* 站在牆頂 */ for (let i = 0; i < solids.length; i++) { const q = solids[i]; if (q[3] && q[3] < 1.5 && Math.hypot(q[0] - x, q[1] - z) < q[2] + 0.12) g = Math.max(g, q[3]); } return g; }
 let vanRing = null, inBaseNow = false;
 let level = null, builtMap = -1, ambient = null, hemi = null, sun = null, torchBase = 2.2;
 
@@ -1389,7 +1389,10 @@ function updateMe(dt) {
   const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   // 跳：耗 18% 體力，在空中時怪物抓不到；衝刺：往移動方向（沒動就往前）瞬間衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒
   if (me.riding) { jumpQ = false; dashQ = false; }   // 推車上不能跳、衝
-  if (jumpQ) { jumpQ = false; if (me.vy === 0 && me.y <= groundAt(me.x, me.z) + 0.01 && !me.tired && me.stam >= 0.18) { me.vy = 6.2; me.y += 0.001; me.stam -= 0.18; Sfx.tone(300, 0.12, 'triangle', 0.08, 520); } }
+  if (jumpQ) { jumpQ = false; const g0 = groundAt(me.x, me.z), fx0 = -Math.sin(me.yaw), fz0 = -Math.cos(me.yaw);
+    if (me.vy === 0 && me.y <= g0 + 0.01 && !me.tired && me.stam >= 0.18) { me.vy = 6.2; me.y += 0.001; me.stam -= 0.18; me.air2 = false; Sfx.tone(300, 0.12, 'triangle', 0.08, 520); }
+    // 空中再按一次：靠著牆按就會往上爬到牆頂（3.6 公尺）；一般的二段跳高 1.3 公尺左右
+    else if (me.y > g0 + 0.05 && !me.air2 && !me.tired && me.stam >= 0.18) { me.air2 = true; const wall = W.blocked(me.x + fx0 * 0.9, me.z + fz0 * 0.9, 0.2); me.vy = wall ? Math.sqrt(30 * Math.max(0.6, WH + 0.3 - me.y)) : 6.2; me.stam -= 0.18; Sfx.tone(420, 0.1, 'triangle', 0.08, 640); } }
   if (dashCd > 0) dashCd -= dt;
   if (dashQ) { dashQ = false; if (dashCd <= 0 && !me.tired && me.stam >= 0.25) {
     const df = moving ? f / mag : 1, ds = moving ? s / mag : 0;
@@ -1400,12 +1403,13 @@ function updateMe(dt) {
   const R = 0.42;
   if (editing) { dx = 0; dz = 0; }   // 調整按鈕位置時不移動
   const inS = hitSolid(me.x, me.z, me.y);   // 萬一已經卡在擺設裡就放行，讓玩家走得出來
-  if (!W.blocked(me.x + dx, me.z, R) && (inS || !hitSolid(me.x + dx, me.z, me.y))) me.x += dx;
-  if (!W.blocked(me.x, me.z + dz, R) && (inS || !hitSolid(me.x, me.z + dz, me.y))) me.z += dz;
+  const onTop = me.y >= WH - 0.25;   // 已經在牆頂就可以走過牆
+  if ((onTop || !W.blocked(me.x + dx, me.z, R)) && (inS || !hitSolid(me.x + dx, me.z, me.y))) me.x += dx;
+  if ((onTop || !W.blocked(me.x, me.z + dz, R)) && (inS || !hitSolid(me.x, me.z + dz, me.y))) me.z += dz;
   // 重力：腳下是地板或擺設頂端；走出箱子邊緣會掉下來
   { const gnd = groundAt(me.x, me.z);
-    if (me.y > gnd || me.vy > 0) { me.vy -= 15 * dt; me.y += me.vy * dt; if (me.y <= gnd) { if (me.vy < -2) Sfx.noise(0.05, 0.06); me.y = gnd; me.vy = 0; } }
-    else { me.y = gnd; me.vy = 0; }
+    if (me.y > gnd || me.vy > 0) { me.vy -= 15 * dt; me.y += me.vy * dt; if (me.y <= gnd) { if (me.vy < -2) Sfx.noise(0.05, 0.06); me.y = gnd; me.vy = 0; me.air2 = false; } }
+    else { me.y = gnd; me.vy = 0; me.air2 = false; }
     me.gnd = gnd; }
   if (moving) {
     const before = Math.floor(me.walkT / Math.PI);
