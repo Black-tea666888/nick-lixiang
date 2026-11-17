@@ -5,8 +5,8 @@
 'use strict';
 const RR = window.RR = window.RR || {};
 
-const REGIONS = ['台灣', '港澳', '日本', '韓國', '東南亞', '北美', '歐洲', '其他'];
-const REGION_KEY = ['tw', 'hk', 'jp', 'kr', 'sea', 'na', 'eu', 'xx'];
+const REGIONS = ['台灣', '香港'];
+const REGION_KEY = ['tw', 'hk'];
 const MODES = ['coop', 'hunt', 'td', 'br'];
 const CODE_CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function rcode(n) { let s = ''; for (let i = 0; i < n; i++) s += CODE_CH[Math.floor(Math.random() * CODE_CH.length)]; return s; }
