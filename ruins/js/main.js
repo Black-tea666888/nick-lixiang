@@ -420,7 +420,7 @@ function prog() {
   if (!p.st || typeof p.st !== 'object') p.st = {};
   ['games', 'wins', 'mk', 'brWins', 'coop', 'hunt', 'td'].forEach(function (k) { p.st[k] = Math.max(0, Math.floor(+p.st[k] || 0)); });
   if (!Array.isArray(p.ach)) p.ach = [];
-  p.region = Math.max(0, Math.min(7, p.region | 0));
+  p.region = Math.max(0, Math.min(1, p.region | 0));
   return p;
 }
 function progSave(p) { lsSet('rr_prog', JSON.stringify(p)); if (RR.Cloud) RR.Cloud.saveSoon(); }
@@ -892,7 +892,7 @@ function renderSocial() {
     b.appendChild(mk('p', 'note wait', '讀取中…'));
     C.top(socMode, socScope === 'all' ? 'all' : 'w' + C.weekId(), guard(function (rows) { socRows(rows, scoreUnit(socMode)); }));
   } else if (socTab === 'season') {
-    const p = prog(), rk = ['tw', 'hk', 'jp', 'kr', 'sea', 'na', 'eu', 'xx'][p.region];
+    const p = prog(), rk = ['tw', 'hk'][p.region];
     const row = mk('div', 'soc-row');
     row.appendChild(socSelect(C.REGIONS.map(function (n, i) { return [String(i), n + '區']; }), String(p.region), function (v) { const q = prog(); q.region = +v; progSave(q); renderSocial(); }));
     row.appendChild(modeSel); b.appendChild(row);
