@@ -619,3 +619,78 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
   .tile.big .tag { font-size: 10px; padding: 1px 5px; }
   .lb { gap: 6px; }
 }
+
+/* ================= 回收抽獎機（獎品一覽） =================
+   直式：上方標題與金幣 → 機器分頁 → 九宮格獎品 → 預覽 → 抽獎鍵
+   橫式：左側機器直排、中間九宮格、右側預覽，抽獎鍵在右下 */
+#scrWheel { align-items: stretch; background: rgba(24,52,100,.86); }
+.dw { width: 100%; max-width: 520px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "tabs" "board" "view" "foot" "note"; gap: 10px; align-content: start; }
+.dw > * { min-width: 0; }
+.dwTop { grid-area: top; display: flex; align-items: center; gap: 10px; }
+.dwTitle { flex: 1; min-width: 0; font-size: 22px; font-weight: 900; color: var(--chalk); text-shadow: 0 2px 0 rgba(0,0,0,.4); }
+.dwCoin { cursor: default; }
+.dwTabs { grid-area: tabs; margin: 0; background: var(--kraft-l); }
+.dwTabs button { min-width: 58px; font-size: 13px; }
+.dwBoard { grid-area: board; padding: 8px; background: var(--steel); border: 2px solid var(--ink); border-radius: 4px; box-shadow: inset 0 -5px 0 rgba(0,0,0,.3), 4px 4px 0 rgba(17,20,23,.5); }
+.dwGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.dwCell { position: relative; aspect-ratio: 1 / 0.92; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 6px 4px; cursor: pointer; font: inherit; color: var(--ink); text-align: center;
+  background: var(--kraft-l); border: 3px solid var(--ink); border-radius: 3px; transition: transform .08s; }
+.dwCell svg { width: 38%; height: auto; max-width: 46px; fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+.dwCell b { font-size: 13px; font-weight: 900; line-height: 1.2; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dwCell small { font-size: 10px; color: var(--ink-2); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 邊框顏色＝類別（不是稀有度）：金幣、隨機、指定造型、槍枝造型 */
+.dwCell.t-coin { background: #f3e2b8; }
+.dwCell.t-rand { border-color: var(--bin); box-shadow: inset 0 0 0 2px rgba(43,90,166,.25); }
+.dwCell.t-item { border-color: var(--rust); }
+.dwCell.t-gun { border-color: #c99f00; background: #f6e3a6; }
+.dwCell.own::after { content: "✓"; position: absolute; top: 3px; right: 5px; font-size: 13px; font-weight: 900; color: #2f7a3e; }
+.dwCell.sel { outline: 3px dashed var(--chalk); outline-offset: 2px; }
+.dwCell.hl { background: var(--haz); transform: scale(1.06); outline: 3px solid var(--chalk); outline-offset: 1px; z-index: 1; }
+.dwCell.won { background: var(--haz); outline: 3px solid var(--chalk); outline-offset: 2px; animation: wonPulse .9s ease-in-out 3; }
+@keyframes wonPulse { 50% { transform: scale(1.06); } }
+.dwCell .stamp { right: -6px; bottom: -6px; font-size: 12px; padding: 1px 6px; }
+.dwMid { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px; text-align: center; color: var(--chalk); background: #2a2f35; border: 3px solid #111417; border-radius: 3px; }
+.dwMid b { font-size: 15px; font-weight: 900; color: var(--haz); }
+.dwMid span { font-size: 10px; color: var(--chalk-2); line-height: 1.4; }
+.dwView { grid-area: view; display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--kraft); border: 2px solid var(--ink); border-radius: 3px; box-shadow: 4px 4px 0 rgba(17,20,23,.5); }
+#dwCanvas { flex: none; width: 150px; height: auto; aspect-ratio: 320 / 220; background: #2a2f35; border: 2px solid var(--ink); }
+.dwIcon { flex: none; width: 150px; aspect-ratio: 320 / 220; display: flex; align-items: center; justify-content: center; background: var(--kraft-l); border: 2px solid var(--ink); }
+.dwIcon svg { width: 64px; height: 64px; fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.dwInfo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; text-align: left; color: var(--ink); }
+.dwKind { align-self: flex-start; font-size: 11px; font-weight: 800; padding: 1px 6px; color: var(--chalk); background: var(--ink); border-radius: 2px; }
+.dwInfo b { font-size: 18px; font-weight: 900; }
+.dwInfo p { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink-2); }
+.dwInfo p.good { color: var(--ink); font-weight: 900; background: var(--haz); padding: 2px 6px; }
+.dwFoot { grid-area: foot; display: flex; align-items: stretch; gap: 8px; }
+.dwSkip { flex: none; display: flex; align-items: center; gap: 6px; padding: 0 10px; font-size: 13px; font-weight: 800; color: var(--chalk); background: rgba(28,32,36,.85); border: 2px solid var(--ink); border-radius: 3px; cursor: pointer; }
+.dwSkip input { width: 18px; height: 18px; accent-color: var(--haz); }
+.dwGo { flex: 1; min-height: 64px; }
+.dwGo:disabled { opacity: .7; }
+.dwFoot #wheelWear { flex: none; }
+.dwNote { grid-area: note; margin: 0; font-size: 11px; line-height: 1.5; color: var(--chalk-2); text-align: center; }
+@media (orientation: landscape) and (max-height: 520px) {
+  .dw { max-width: none; grid-template-columns: 130px minmax(0, 1fr) 250px; grid-template-rows: auto 1fr auto; grid-template-areas: "top top top" "tabs board view" "tabs foot foot"; gap: 8px; }
+  .dwTabs { flex-direction: column; overflow: visible; }
+  .dwTabs button { border-right: 0; border-bottom: 2px solid var(--ink); flex: 1; }
+  .dwTabs button:last-child { border-bottom: 0; }
+  .dwTitle { font-size: 18px; }
+  .dwBoard { padding: 6px; align-self: start; }
+  .dwGrid { gap: 5px; }
+  .dwCell { aspect-ratio: 1.6 / 1; padding: 3px; }
+  .dwCell svg { width: 26%; }
+  .dwView { flex-direction: column; align-items: stretch; align-self: start; }
+  #dwCanvas, .dwIcon { width: 100%; }
+  .dwNote { display: none; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .dwCell { aspect-ratio: 2.1 / 1; gap: 1px; }
+  .dwCell small { display: none; }
+  .dwGo { min-height: 52px; }
+  .dwGo b { font-size: 24px; }
+  .dwTop .icon { height: 34px; }
+  #dwCanvas, .dwIcon { aspect-ratio: 320 / 180; }
+}
+.dwGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (orientation: landscape) and (max-height: 520px) {
+  .dwCell { aspect-ratio: auto; height: min(74px, calc((100vh - 170px) / 3)); }
+}

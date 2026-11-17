@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
-<link rel="stylesheet" href="css/style.css?v=45">
+<link rel="stylesheet" href="css/style.css?v=47">
 </head>
 <body>
 <div id="boot"><div class="bootIn"><b>廢墟回收隊</b><i class="spin"></i><small id="bootTxt">載入中…</small></div></div>
@@ -205,27 +205,27 @@
 
 <!-- 造型抽獎機 -->
 <div class="screen hide" id="scrWheel">
-  <div class="panel lobby">
-    <div class="topbar">
+  <div class="dw">
+    <header class="dwTop">
       <button class="icon" id="wheelDone" type="button" aria-label="返回">‹</button>
-      <div class="who"><b class="ttl">回收抽獎機</b><div class="stats"><span>金幣<b id="coinTag3">0</b></span></div></div>
+      <b class="dwTitle" id="mName">綜合機</b>
+      <div class="lbCoin dwCoin"><span>金幣</span><b id="coinTag3">0</b></div>
+    </header>
+    <div class="tabs dwTabs" id="wheelSel" role="tablist"></div>
+    <div class="dwBoard">
+      <div class="dwGrid" id="dwGrid"></div>
     </div>
-    <div class="tabs" id="wheelSel" role="tablist"></div>
-    <div class="machine">
-      <div class="mHead"><b id="mName">綜合機</b><span id="mCost">一次 50 金幣</span></div>
-      <div class="reelWin" id="reelWin"><div class="reel" id="reel"></div><i class="reelMark" aria-hidden="true"></i></div>
-      <div class="mFoot"><i></i><i></i><i></i></div>
-    </div>
-    <div id="wheelResult" class="hide" aria-live="polite">
-      <div class="bigTag" id="resTag"></div>
-      <div class="resTxt"><b id="wheelMsg"></b><span id="wheelSub"></span>
-        <div class="row"><button class="btn" id="wheelWear" type="button">去換上</button></div>
-      </div>
-    </div>
-    <div class="col"><button class="btn primary" id="wheelSpin" type="button">抽一次</button></div>
-    <div class="sec">這台機器的獎品</div>
-    <div id="wheelPool"></div>
-    <p class="note" style="text-align:center">每格機率相同。抽到已經有的會換成 25 金幣。金幣靠過關和每日任務取得，不需要也無法儲值。</p>
+    <aside class="dwView" aria-live="polite">
+      <canvas id="dwCanvas" width="320" height="220" aria-hidden="true"></canvas>
+      <div class="dwIcon" id="dwIcon"></div>
+      <div class="dwInfo"><span class="dwKind" id="dwKind"></span><b id="dwName"></b><p id="dwDesc"></p></div>
+    </aside>
+    <footer class="dwFoot">
+      <label class="dwSkip"><input type="checkbox" id="dwSkip"><span>跳過動畫</span></label>
+      <button class="startBtn dwGo" id="wheelSpin" type="button"><small id="mCost">一次 50 金幣</small><b>抽一次</b></button>
+      <button class="btn hide" id="wheelWear" type="button">去換上</button>
+    </footer>
+    <p class="dwNote">每格機率相同（12.5%）。抽到已經有的會換成 25 金幣。金幣靠過關、每日任務和小遊戲取得，不需要也無法儲值。</p>
   </div>
 </div>
 
@@ -354,7 +354,7 @@
 <li><b>分類回收</b>：主選單「小遊戲」就能玩，不用進房間。30 秒內把廢棄物點進正確的桶子（紙類、塑膠、金屬、有害），分錯扣 2 秒，連續答對 5 個以上每個 2 分。每 3 分換 1 金幣，一局最多 10。</li>
 <li><b>圈圈叉叉（單機）</b>：主選單「小遊戲」可以和電腦下（簡單贏 +5、困難贏 +12 金幣），或兩人用同一支手機輪流。單機小遊戲每天最多拿 60 金幣。</li>
 <li><b>隊伍圈圈叉叉</b>：遊戲中按「小遊戲」。前兩位落子的人是 X 與 O，連成一線團隊 +150。</li>
-<li><b>回收抽獎機</b>：用金幣抽服裝、寵物、頭飾、造型、特效和槍枝造型（綜合、服裝、寵物、特效、槍械五台）。每台機器的獎品和機率都列在下方，每格機率相同；綜合機每天免費一次，抽到已有的換成 25 金幣。</li>
+<li><b>回收抽獎機</b>：用金幣抽服裝、寵物、頭飾、造型、特效和槍枝造型（綜合、服裝、寵物、特效、槍械五台）。所有獎品都排在格子裡，點一格可以先預覽（服裝和寵物穿在角色身上、槍枝造型看 3D 槍），不想看動畫可以勾「跳過動畫」。每台機器的獎品和機率都列在下方，每格機率相同；綜合機每天免費一次，抽到已有的換成 25 金幣。</li>
 <li><b>傳送陣</b>：背包滿 3 件後附近會出現，踩上去直接傳回回收車。</li></ul>
       </section>
       <section class="htopic hide" data-topic="grow"><h2>星等與成長</h2>
@@ -511,14 +511,14 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=45"></script>
-<script src="js/sim.js?v=45"></script>
-<script src="js/audio.js?v=45"></script>
-<script src="js/auth.js?v=45"></script>
-<script src="js/cloud.js?v=45"></script>
-<script src="js/net.js?v=45"></script>
-<script src="js/game.js?v=45"></script>
-<script src="js/minigames.js?v=45"></script>
-<script src="js/main.js?v=45"></script>
+<script src="js/config.js?v=47"></script>
+<script src="js/sim.js?v=47"></script>
+<script src="js/audio.js?v=47"></script>
+<script src="js/auth.js?v=47"></script>
+<script src="js/cloud.js?v=47"></script>
+<script src="js/net.js?v=47"></script>
+<script src="js/game.js?v=47"></script>
+<script src="js/minigames.js?v=47"></script>
+<script src="js/main.js?v=47"></script>
 </body>
 </html>
