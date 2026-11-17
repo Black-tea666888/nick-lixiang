@@ -1543,7 +1543,7 @@ function updateHud() {
   else if (view.mode === 'td' && view.td) { $('money').textContent = '$' + view.money; $('quota').textContent = '核心 ' + view.td[0] + '｜剩 ' + view.td[1] + ' 隻'; }
   else { $('money').textContent = '$' + view.money; $('quota').textContent = '$' + view.quota; }
   $('bag').textContent = me.bagN;
-  const bm = $('bombs'), bt = String(me.bombs == null ? 2 : me.bombs); if (bm.textContent !== bt) bm.textContent = bt;
+  const bm = $('bombs'), bt = '∞'; if (bm.textContent !== bt) bm.textContent = bt;
   const am = $('ammo'), at = me.reloading ? '裝填中' : String(me.ammo || 0); if (am.textContent !== at) am.textContent = at;
   const gb = $('gun'), gt = me.reloading ? '…' : '槍'; if (gb.textContent !== gt) gb.textContent = gt; gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
   const qf = $('qfill'), pct = view.mode === 'td' && view.td ? view.td[0] : view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
@@ -1825,7 +1825,6 @@ RR.Game = {
         me.bagN = a[5]; if (s.ph === 'play' && !a[4]) me.alive = false;
         if (s.zr != null) { view.zr = s.zr; if (zoneMesh) zoneMesh.scale.set(s.zr, 1, s.zr); }
         if (a[8] != null) { me.ammo = a[8]; me.reloading = !!a[9]; }
-        if (a[10] != null) me.bombs = a[10];
         if (a[7] != null && a[7] !== me.hp) { me.hp = a[7]; $('hpBar').style.width = hpPct(); }
         continue;
       }
@@ -1943,9 +1942,9 @@ RR.Game = {
       }
       Sfx.tone(900, 0.25, 'sine', 0.12, 1800);
     } else if (e.t === 'break') {
-      showBreak(e.c, e.r); if (e.id === myId) { me.bombs = e.n; toast('炸開了！還剩 ' + e.n + ' 顆炸藥'); }
+      showBreak(e.c, e.r); if (e.id === myId) { toast('炸開了！'); }
     } else if (e.t === 'nobomb') {
-      if (e.id === myId) toast(e.why === 'none' ? '炸藥用完了（每天 2 顆）' : e.why === 'edge' ? '最外圈的牆炸不開' : '面前沒有牆，再靠近一點');
+      if (e.id === myId) toast(e.why === 'cd' ? '炸藥冷卻中，等 2 秒' : e.why === 'edge' ? '最外圈的牆炸不開' : '面前沒有牆，再靠近一點');
     } else if (e.t === 'tshot') {
       showTowerShot(e); if (e.kill) floatText('+$50');
     } else if (e.t === 'leak') {

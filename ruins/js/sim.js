@@ -333,7 +333,7 @@ Sim.prototype.startDay = function (day) {
   this.players.forEach(function (p) {
     const o = SPAWN_OFF[p.slot % 4];
     p.alive = true; p.bag = []; p.x = VAN[0] + o[0]; p.z = VAN[1] + o[1]; p.yaw = -Math.PI * 0.75;
-    p.bombs = 2;   // 每天 2 顆炸藥
+    p.bombs = 99; p.bombCd = 0;   // 炸藥不限量，只有 2 秒冷卻（顯示成 ∞）
     p.run = p.loud = false; p.hp = maxHp(p); p.atkCd = 0; p.hurtT = 99; p.esc = false;
     p.clip = Math.round(GUNS[p.gun | 0].clip[hunt || br ? 1 : 0] * (hasAcc(p, 3) ? 1.5 : 1)); p.ammo = p.clip; p.gunCd = 0; p.reload = 0;   // 回收模式每天 6 發（擊中讓怪物暈 2.5 秒）；獵殺模式彈匣 12 發、自動裝填
     if (day === 1) { p.earned = 0; p.kills = 0; p.mk = 0; }
@@ -691,7 +691,7 @@ Sim.prototype._pickWander = function (m) {
 Sim.prototype.bomb = function (id, yaw) {
   const p = this.player(id);
   if (!p || this.phase !== 'play' || !p.alive) return;
-  if (!(p.bombs > 0)) { this.events.push({ t: 'nobomb', id: id, why: 'none' }); return; }
+  if (p.bombCd > 0) { this.events.push({ t: 'nobomb', id: id, why: 'cd' }); return; }
   if (isFinite(+yaw)) p.yaw = +yaw;
   const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
   let hit = null;
@@ -701,7 +701,7 @@ Sim.prototype.bomb = function (id, yaw) {
   }
   if (!hit) { this.events.push({ t: 'nobomb', id: id, why: 'far' }); return; }
   if (!breakWall(hit[0], hit[1])) { this.events.push({ t: 'nobomb', id: id, why: 'edge' }); return; }
-  p.bombs--;
+  p.bombCd = 2;
   const cp = center(hit[0], hit[1]);
   this.monsters.forEach(function (m) { if (!(m.dead > 0) && Math.hypot(m.x - cp[0], m.z - cp[1]) < 8) { m.cool = Math.max(m.cool, 2); m.path = null; } });
   this.events.push({ t: 'break', id: id, c: hit[0], r: hit[1], n: p.bombs });
@@ -854,6 +854,7 @@ Sim.prototype.step = function (dt) {
   for (let k = 0; k < alive.length; k++) {
     const p = alive[k];
     if (p.atkCd > 0) p.atkCd -= dt;
+    if (p.bombCd > 0) p.bombCd -= dt;
     if ((p.smCd || 0) > 0) p.smCd -= dt;
     if (p.gunCd > 0) p.gunCd -= dt;
     if (p.reload > 0) { p.reload -= dt; if (p.reload <= 0) { p.reload = 0; p.ammo = p.clip || 12; } }
