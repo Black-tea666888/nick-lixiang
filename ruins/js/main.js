@@ -522,7 +522,7 @@ function dispatch(msg) {
   if (!msg || typeof msg !== 'object') return;
   switch (msg.t) {
     case 'roster':
-      S.roster = msg.players || []; S.hostId = msg.hostId; S.pvp = msg.pvp !== false; S.map = msg.map || 0; S.gmode = msg.mode || 'coop';
+      S.roster = msg.players || []; S.hostId = msg.hostId; S.pvp = msg.pvp !== false; S.map = msg.map || 0; S.gmode = msg.mode || 'coop'; S.base = msg.base | 0;
       if (!document.body.classList.contains('playing')) Game.showMap(S.map);
       Game.setRoster(S.roster); renderLobby(msg.code); voiceSync();
       break;
@@ -562,7 +562,7 @@ function voiceSync() {
 }
 
 /* ---------- 房主端 ---------- */
-function rosterMsg() { return { t: 'roster', code: Net.code(), hostId: S.myId, pvp: S.sim.pvp, map: S.sim.map, mode: S.sim.mode, players: S.sim.roster() }; }
+function rosterMsg() { return { t: 'roster', code: Net.code(), hostId: S.myId, pvp: S.sim.pvp, map: S.sim.map, mode: S.sim.mode, base: S.base | 0, players: S.sim.roster() }; }
 function flushEvents() { const evs = S.sim.events.splice(0); for (let i = 0; i < evs.length; i++) hostBroadcast({ t: 'ev', e: evs[i] }); }
 function hostRemove(id) {
   const p = S.sim && S.sim.player(id);
@@ -589,18 +589,18 @@ function startHostLoop() {
   S.lastTick = Date.now(); S.tickN = 0;
   S.timers.push(setInterval(hostTick, 33));
 }
-function rosterAny() { return S.mode === 'solo' ? { t: 'roster', code: null, hostId: 'me', mode: S.sim.mode, players: S.sim.roster() } : rosterMsg(); }
+function rosterAny() { return S.mode === 'solo' ? { t: 'roster', code: null, hostId: 'me', mode: S.sim.mode, base: S.base | 0, players: S.sim.roster() } : rosterMsg(); }
 function hostStart(day) { const info = S.sim.startDay(day || 1); hostBroadcast(rosterAny()); hostBroadcast(info); }   // 先送名單（大逃殺會加入電腦玩家），再送開局資料
 
 /* ---------- 進入各種模式 ---------- */
 function startSolo(gmode) {
   Sfx.unlock();
-  S.mode = 'solo'; S.myId = 'me'; S.sim = new W.Sim(); S.sim.mode = gmode === 'hunt' || gmode === 'br' || gmode === 'td' ? gmode : 'coop'; S.gmode = S.sim.mode;
+  S.mode = 'solo'; S.myId = 'me'; S.sim = new W.Sim(); S.sim.mode = gmode === 'hunt' || gmode === 'br' || gmode === 'td' ? gmode : 'coop'; S.gmode = S.sim.mode; S.base = 0;
   document.body.classList.add('solo');
   S.sim.map = myMap();
   S.sim.addPlayer('me', myName(), myLook());
   Game.setMe('me');
-  dispatch({ t: 'roster', code: null, hostId: 'me', mode: S.sim.mode, players: S.sim.roster() });
+  dispatch({ t: 'roster', code: null, hostId: 'me', mode: S.sim.mode, base: S.base | 0, players: S.sim.roster() });
   startHostLoop();
   hostStart(1);
 }
@@ -781,6 +781,7 @@ function tickLobby() {
   const pv = $('pvpBtn');
   pv.textContent = '互相傷害：' + (S.pvp ? '開' : '關') + (S.mode === 'host' ? '' : '（房主設定）');
   pv.classList.toggle('off', !S.pvp);
+  $('baseBtn').textContent = '基地：' + W.BASE_STYLES[S.base | 0].n + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
   $('modeBtn').textContent = '模式：' + (S.gmode === 'td' ? '塔防（守住回收車）' : S.gmode === 'hunt' ? '獵殺（用槍打怪物）' : S.gmode === 'br' ? '大逃殺（互相對戰，活到最後）' : '回收（撿廢料賣錢）') + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
   $('mapBtn').textContent = '地圖：' + W.MAPS[S.map || 0].name + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
 }
@@ -1063,6 +1064,7 @@ function bind() {
     S.sim.map = (S.sim.map + 1) % W.MAPS.length; lsSet('rr_map', String(S.sim.map));
     hostBroadcast(rosterMsg()); tickLobby(); showMapName();
   });
+  $('baseBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.base = ((S.base | 0) + 1) % W.BASE_STYLES.length; S.sim.baseStyle = S.base; hostBroadcast(rosterMsg()); tickLobby(); });
   $('modeBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.mode = S.sim.mode === 'coop' ? 'hunt' : S.sim.mode === 'hunt' ? 'br' : S.sim.mode === 'br' ? 'td' : 'coop'; hostBroadcast(rosterMsg()); tickLobby(); });
   $('brBtn').addEventListener('click', function () { startSolo('br'); });
   $('tdBtn').addEventListener('click', function () { startSolo('td'); });

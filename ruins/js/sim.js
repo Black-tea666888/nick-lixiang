@@ -262,6 +262,7 @@ function Sim(rng) {
   this.items = []; this.monsters = []; this.events = [];
   this.pvp = true;   // 互相傷害（房主可在大廳開關）
   this.map = 0;      // 地圖編號（房主可在大廳選）
+  this.baseStyle = 0;   // 基地造型（房主在大廳選，見 BASE_STYLES）
   this.mode = 'coop'; // coop 回收模式／hunt 獵殺模式（用槍擊倒怪物）
 }
 Sim.prototype.player = function (id) {
@@ -367,7 +368,7 @@ Sim.prototype.startDay = function (day) {
 Sim.prototype.dayInfo = function () {
   const spawns = {};
   this.players.forEach(function (p) { spawns[p.id] = [p.x, p.z]; });
-  return { t: 'day', map: this.map, mode: this.mode, day: this.day, quota: this.quota, time: this.time, monsters: this.monsters.length,
+  return { t: 'day', map: this.map, mode: this.mode, base: this.baseStyle, day: this.day, quota: this.quota, time: this.time, monsters: this.monsters.length,
     items: this.items.map(function (i) { return [i.x, i.z, i.kind, i.value]; }), spawns: spawns, weather: this.weather || 0, zone: this.zone ? [this.zone.x, this.zone.z, this.zone.r0] : null };
 };
 Sim.prototype.toLobby = function () { this.phase = 'lobby'; this.day = 1; this.events = []; this.zone = null; this.players = this.players.filter(function (p) { return !p.ai; }); };
@@ -1022,7 +1023,8 @@ Sim.prototype.snapshot = function () {
     it: it };
 };
 
-const api = { MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
+const BASE_STYLES = [{ n: '回收車（預設）', c: 0xffc24a, sh: 0 }, { n: '信號塔', c: 0x6ad8ff, sh: 1 }, { n: '圓頂營地', c: 0x9dff7a, sh: 2 }, { n: '四柱燈', c: 0xff7ad1, sh: 3 }];
+const api = { BASE_STYLES: BASE_STYLES, MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
   KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, GUNS: GUNS, BASE_R: BASE_R, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, breakWall: breakWall, restoreMap: restoreMap, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
   quotaFor: quotaFor, Sim: Sim, setMap: setMap };
 
