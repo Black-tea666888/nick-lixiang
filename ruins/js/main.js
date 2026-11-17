@@ -809,7 +809,19 @@ const ACH = [
   ['br1', '最後生還者', '大逃殺拿到第 1 名', function (t) { return t.brWins >= 1; }, 150],
   ['mk50', '清道夫', '累計擊倒 50 隻怪物', function (t) { return t.mk >= 50; }, 150],
   ['g20', '常客', '玩滿 20 局', function (t) { return t.games >= 20; }, 200],
-  ['rich', '小富翁', '同時持有 1000 金幣', function (t, p) { return p.coins >= 1000; }, 100]
+  ['rich', '小富翁', '同時持有 1000 金幣', function (t, p) { return p.coins >= 1000; }, 100],
+  ['mk10', '新手獵手', '累計擊倒 10 隻怪物', function (t) { return t.mk >= 10; }, 50],
+  ['mk200', '獵怪大師', '累計擊倒 200 隻怪物', function (t) { return t.mk >= 200; }, 400],
+  ['wins10', '常勝軍', '累計過關 10 次', function (t) { return t.wins >= 10; }, 150],
+  ['wins50', '過關達人', '累計過關 50 次', function (t) { return t.wins >= 50; }, 300],
+  ['g50', '老鳥', '玩滿 50 局', function (t) { return t.games >= 50; }, 300],
+  ['g100', '鐵人', '玩滿 100 局', function (t) { return t.games >= 100; }, 500],
+  ['coop20', '回收大師', '回收模式通過第 20 天', function (t) { return t.coop >= 20; }, 500],
+  ['hunt10', '獵殺專家', '獵殺模式通過第 10 關', function (t) { return t.hunt >= 10; }, 300],
+  ['td10', '塔防大師', '塔防模式通過第 10 關', function (t) { return t.td >= 10; }, 300],
+  ['br3', '大逃殺常客', '大逃殺拿到第 1 名 3 次', function (t) { return t.brWins >= 3; }, 300],
+  ['rich300', '小有積蓄', '同時持有 300 金幣', function (t, p) { return p.coins >= 300; }, 40],
+  ['rich5000', '大富豪', '同時持有 5000 金幣', function (t, p) { return p.coins >= 5000; }, 300]
 ];
 function dayStr(off) { const d = new Date(Date.now() + (off || 0) * 864e5); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 /** 一局結束：更新統計、解鎖成就、回報排行榜與戰隊。回傳要加在結算畫面的文字。 */
