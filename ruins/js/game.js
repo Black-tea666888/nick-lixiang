@@ -545,10 +545,11 @@ function buildLevel() {
   // 光線：室內也調亮；開放場景（海邊、城市、太空站）沒有天花板，有天空與陽光
   const open = !!T.open, br = T.bright || 1.5, sk = SKY[T.style], skyC = open ? (sk ? sk[1] : T.sky) : 0x0a0f0d;
   scene.fog.density = open ? T.fog : T.fog * 0.3; scene.fog.color.setHex(skyC); scene.background.setHex(skyC);
-  if (ambient) { ambient.color.setHex(T.amb); ambient.intensity = open ? 0.42 : 0.95 * br; }
+  const ex = T.exp || 1;   // 每張地圖的曝光倍率（太亮的開放場景調低）
+  if (ambient) { ambient.color.setHex(T.amb); ambient.intensity = (open ? 0.42 : 0.95 * br) * ex; }
   // 半球光：天空色從上照、地面色從下反射，開放地圖的明暗比較自然
-  if (hemi) { hemi.intensity = open ? 0.55 : 0.45 * br; hemi.color.setHex(open && sk ? sk[0] : 0xcfd8e6).lerp(new THREE.Color(0xffffff), open ? 0.55 : 0); hemi.groundColor.set(open ? T.floor : '#3a3f3a').multiplyScalar(open ? 0.7 : 1); }
-  if (sun) { sun.intensity = open ? (T.sun || 0.5) + 0.12 : 0; sun.color.setHex(T.style === 'park' || T.style === 'city' ? 0xffd2a0 : 0xfff2d8); }
+  if (hemi) { hemi.intensity = (open ? 0.55 : 0.45 * br) * ex; hemi.color.setHex(open && sk ? sk[0] : 0xcfd8e6).lerp(new THREE.Color(0xffffff), open ? 0.55 : 0); hemi.groundColor.set(open ? T.floor : '#3a3f3a').multiplyScalar(open ? 0.7 : 1); }
+  if (sun) { sun.intensity = open ? ((T.sun || 0.5) + 0.12) * ex : 0; sun.color.setHex(T.style === 'park' || T.style === 'city' ? 0xffd2a0 : 0xfff2d8); }
   skyDome = null;
   if (camera) { camera.far = open ? 600 : 80; camera.updateProjectionMatrix(); }
   // 遠景用：不吃霧，但顏色先往地平線色混，看起來像隔著空氣
