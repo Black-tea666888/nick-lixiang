@@ -1397,6 +1397,8 @@ function fitScale(map) {
   return Math.max(0.6, Math.min(1, (window.innerHeight - 84) / (ext * btnScale)));
 }
 let btnScale = 1, dragBtn = null;
+// 左手模式：按鍵整組左右對調（記在 rr_lefty；自訂位置也一起對調）
+function isLefty() { try { return localStorage.getItem('rr_lefty') === '1'; } catch (e) { return false; } }
 function layoutKey() { return 'rr_layout_' + (window.innerWidth > window.innerHeight ? 'l' : 'p'); }
 function loadLayout() { try { return JSON.parse(localStorage.getItem(layoutKey()) || 'null') || {}; } catch (e) { return {}; } }
 function layoutButtons() {
@@ -1404,6 +1406,7 @@ function layoutButtons() {
   Object.keys(map).forEach(function (id) {
     const el = $(id), d = map[id], size = d[2] * k, sv = saved[id];
     let cx = sv ? sv[0] * Wv : Wv - d[0] * k, cy = sv ? sv[1] * Hv : Hv - d[1] * k;
+    if (isLefty()) cx = Wv - cx;
     cx = Math.max(size / 2, Math.min(Wv - size / 2, cx)); cy = Math.max(size / 2, Math.min(Hv - size / 2, cy));
     el.style.width = el.style.height = size + 'px'; el.style.fontSize = Math.round(size * 0.29) + 'px';
     el.style.left = (cx - size / 2) + 'px'; el.style.top = (cy - size / 2) + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto';
@@ -1431,7 +1434,8 @@ function initLayout() {
       if (!dragBtn || dragBtn.id !== id) return;
       dragBtn = null;
       const size = el.offsetWidth, saved = loadLayout();
-      saved[id] = [(parseFloat(el.style.left) + size / 2) / window.innerWidth, (parseFloat(el.style.top) + size / 2) / window.innerHeight];
+      const cxN = parseFloat(el.style.left) + size / 2, cxS = isLefty() ? window.innerWidth - cxN : cxN;
+      saved[id] = [cxS / window.innerWidth, (parseFloat(el.style.top) + size / 2) / window.innerHeight];
       try { localStorage.setItem(layoutKey(), JSON.stringify(saved)); } catch (err) {}
     };
     el.addEventListener('pointerup', drop); el.addEventListener('pointercancel', drop);
@@ -2247,6 +2251,7 @@ RR.Game = {
   },
   setQuality: function (q) { quality = q === 'low' || q === 'mid' ? q : 'high'; applyQuality(); },
   setBtnScale: function (v) { btnScale = Math.max(0.7, Math.min(1.5, +v || 1)); layoutButtons(); },
+  setLefty: function (on) { try { localStorage.setItem('rr_lefty', on ? '1' : '0'); } catch (e) {} layoutButtons(); },
   editButtons: function () { setEditing(true); },
   toggleMic: function () {
     if (!Voice.hasMic()) {

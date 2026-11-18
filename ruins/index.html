@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
-<link rel="stylesheet" href="css/style.css?v=88">
+<link rel="stylesheet" href="css/style.css?v=89">
 </head>
 <body>
 <div id="boot"><div class="bootIn"><b>廢墟回收隊</b><i class="spin"></i><small id="bootTxt">載入中…</small></div></div>
@@ -308,6 +308,7 @@
       <div class="col"><button class="btn hide" id="installBtn" type="button">安裝到主畫面（全螢幕、開得更快）</button></div>
       <label class="field">畫質<select id="setQ"><option value="high">高（1080p）</option><option value="mid">標準（720p，手機預設）</option><option value="low">省電（480p）</option></select></label>
       <label class="field">顯示 FPS（卡頓時回報用）<input id="setFps" type="checkbox"></label>
+      <label class="field">左手模式（手機按鍵左右對調）<input id="setLefty" type="checkbox"></label>
       <label class="field">手機按鈕大小<input id="setBtn" type="range" min="0.8" max="1.4" step="0.05"></label>
       <div class="col"><button class="btn" id="btnEditOpen" type="button">自訂手機按鈕位置</button></div>
       <div class="field btnVisField"><span>手機上顯示的按鈕（取消勾選就暫時隱藏，「跑」一定會顯示）</span></div>
@@ -343,7 +344,7 @@
 <h3>手機</h3>
 <table><tr><td>移動</td><td>左半邊拖曳</td></tr><tr><td>轉視角</td><td>右半邊拖曳</td></tr>
 <tr><td>橫式</td><td>把手機轉橫就能橫著玩</td></tr>
-<tr><td>按鈕</td><td>設定裡可調大小、拖曳自訂位置</td></tr>
+<tr><td>按鈕</td><td>設定裡可調大小、拖曳自訂位置、開啟「左手模式」整組左右對調</td></tr>
 <tr><td><kbd>跑</kbd></td><td>按住奔跑</td></tr><tr><td><kbd>跳</kbd> <kbd>衝</kbd></td><td>跳躍、衝刺</td></tr>
 <tr><td><kbd>技</kbd> <kbd>煙</kbd></td><td>角色技能、煙霧彈</td></tr><tr><td><kbd>槍</kbd></td><td>開槍</td></tr><tr><td><kbd>炸</kbd></td><td>炸開面前的牆</td></tr><tr><td><kbd>打</kbd> <kbd>救</kbd></td><td>揮武器、按住救隊友</td></tr></table>
 <h3>電腦</h3>
@@ -570,14 +571,14 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=88"></script>
-<script src="js/sim.js?v=88"></script>
-<script src="js/audio.js?v=88"></script>
-<script src="js/auth.js?v=88"></script>
-<script src="js/cloud.js?v=88"></script>
-<script src="js/net.js?v=88"></script>
-<script src="js/game.js?v=88"></script>
-<script src="js/minigames.js?v=88"></script>
-<script src="js/main.js?v=88"></script>
+<script src="js/config.js?v=89"></script>
+<script src="js/sim.js?v=89"></script>
+<script src="js/audio.js?v=89"></script>
+<script src="js/auth.js?v=89"></script>
+<script src="js/cloud.js?v=89"></script>
+<script src="js/net.js?v=89"></script>
+<script src="js/game.js?v=89"></script>
+<script src="js/minigames.js?v=89"></script>
+<script src="js/main.js?v=89"></script>
 </body>
 </html>
