@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v94', items: ['手機大廳角色縮小，不再蓋到上方的欄位', '出戰角色按鈕拿掉底線的「更換」字樣', '排行榜「全部模式」：四種模式依名次加總'] };
+const UPD = { v: 'v95', items: ['戰隊有新訊息時，「戰隊聊天」與「社群」按鈕會顯示未讀數字', '手機大廳角色縮小，不再蓋到上方欄位', '出戰角色按鈕拿掉底線的「更換」字樣'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -336,7 +336,25 @@ function ccNote(text, btn) {
   const log = $('ccLog'); log.textContent = ''; log.appendChild(mk('p', 'ccEmpty', text));
   if (btn) { const b = mk('button', 'btn primary', btn); b.type = 'button'; b.addEventListener('click', function () { clanClose(); socTab = 'clan'; $('scrSocial').classList.remove('hide'); renderSocial(); }); log.appendChild(b); }
 }
+// 戰隊未讀：背景監看戰隊訊息，未讀數顯示在「戰隊聊天」與「社群」按鈕上
+let ccWatch = null, ccWatchClan = '', ccUnread = 0;
+function ccSeen() { return +(ls('rr_cc_seen') || 0); }
+function ccBadgeDraw() {
+  [['ccBadge'], ['socBadge']].forEach(function (x) { const el = $(x[0]); el.textContent = ccUnread > 99 ? '99+' : String(ccUnread); el.classList.toggle('hide', ccUnread <= 0); });
+}
+function ccWatchStart() {
+  const C = RR.Cloud, me = C.me(), clan = me && me.clan ? me.clan : '';
+  if (clan === ccWatchClan) return;
+  if (ccWatch) ccWatch(); ccWatch = null; ccWatchClan = clan; ccUnread = 0; ccBadgeDraw();
+  if (!clan || !C.ready()) return;
+  ccWatch = C.clanChat(function (err, rows) {
+    if (err || !rows) return;
+    if (!$('scrClan').classList.contains('hide') && rows.length) { lsSet('rr_cc_seen', String(rows[0].t || Date.now())); }
+    ccUnread = rows.filter(function (r) { return (r.t || 0) > ccSeen() && r.uid !== C.uid(); }).length; ccBadgeDraw();
+  });
+}
 function clanOpen() {
+  lsSet('rr_cc_seen', String(Date.now())); ccUnread = 0; ccBadgeDraw();
   show('scrClan'); $('coinTag5').textContent = prog().coins; ccAskDraw();
   const C = RR.Cloud, me = C.me();
   $('ccName').textContent = me && me.clanName ? me.clanName : '戰隊聊天';
@@ -712,6 +730,7 @@ function refreshPickSummary() {
   $('avatar').textContent = c.charAt(0);
 }
 function showMenu() {
+  ccWatchStart();
   const u = Auth.user();
   if (!u) { show('scrLogin'); return; }
   if (!ls('rr_region')) $('regionAsk').classList.remove('hide');   // 第一次進選地區
