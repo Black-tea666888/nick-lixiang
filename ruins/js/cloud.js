@@ -22,16 +22,20 @@ function userRef(id) { return db.collection('users').doc(id || uid); }
 function fail(cb) { return function (e) { console.warn('cloud', e && (e.code || e.message)); if (cb) cb(e || { code: 'unknown' }); }; }
 function clean(s, n) { return String(s || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n); }
 
+function saveRef(id) { return userRef(id).collection('save').doc('main'); }
 function profile() {
   const p = H.prog();
   return { name: clean(H.name(), 12), lv: H.level(), coins: p.coins | 0, xp: p.xp | 0, region: REGION_KEY[p.region | 0] || 'tw',
-    prog: JSON.stringify(p), seen: Date.now(), room: room || '', v: 1 };
+    seen: Date.now(), room: room || '', v: 1 };
 }
+/** 公開資料寫在 users 文件；進度寫在只有本人能讀的 save/main（舊版進度欄位會順便清掉） */
 function push() {
   if (!db || !uid) return;
-  const d = profile();
+  const d = profile(), FV = window.firebase.firestore.FieldValue;
   if (me && me.code) d.code = me.code;
+  if (me && me.prog) d.prog = FV.delete();
   userRef().set(d, { merge: true }).catch(fail());
+  saveRef().set({ prog: JSON.stringify(H.prog()), seen: Date.now() }).catch(fail());
 }
 
 const Cloud = {
@@ -58,14 +62,13 @@ const Cloud = {
     }
     try { db = db || fb.firestore(); } catch (e) { db = null; if (cb) cb(false); return; }
     uid = user.uid;
-    userRef().get().then(function (snap) {
-      const local = H.prog();
+    Promise.all([userRef().get(), saveRef().get().catch(function () { return null; })]).then(function (r) {
+      const snap = r[0], sv = r[1], local = H.prog();
       me = snap.exists ? snap.data() : {};
-      if (snap.exists && me.prog) {
-        let remote = null; try { remote = JSON.parse(me.prog); } catch (e) {}
-        // 進度以經驗值高的為準（換手機、清資料後能拿回來）
-        if (remote && (remote.xp | 0) > (local.xp | 0)) H.adopt(remote);
-      }
+      let raw = (sv && sv.exists) ? sv.data().prog : me.prog;   // 舊版進度還在 users 文件裡時也讀得到
+      let remote = null; try { remote = raw ? JSON.parse(raw) : null; } catch (e) {}
+      // 進度以經驗值高的為準（換手機、清資料後能拿回來）
+      if (remote && (remote.xp | 0) > (local.xp | 0)) H.adopt(remote);
       if (!me.code) me.code = rcode(6);
       push();
       beatT = setInterval(function () { if (!document.hidden) userRef().set({ seen: Date.now(), room: room || '' }, { merge: true }).catch(fail()); }, 90000);
@@ -76,6 +79,42 @@ const Cloud = {
   saveSoon: function () { if (!Cloud.ready()) return; clearTimeout(saveT); saveT = setTimeout(push, 3000); },
   /** 目前所在的房間代碼（好友可以直接加入）；離開時傳 null */
   setRoom: function (code) { room = code || null; if (Cloud.ready()) userRef().set({ room: room || '', seen: Date.now() }, { merge: true }).catch(fail()); },
+
+  /** 刪除雲端上所有屬於自己的資料：進度、排行榜、好友、戰隊發言、戰隊身分。
+   * 隊長要先把位子轉給別人。Firebase 登入帳號另外由 RR.Auth.deleteAccount() 刪除。cb(err) */
+  deleteMyData: function (cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    const id = uid, U = userRef(id), clanId = me && me.clan;
+    const dropAll = function (q) { return Promise.all(q.docs.map(function (d) { return d.ref.delete(); })); };
+    let chain = Promise.resolve();
+    if (clanId) {
+      chain = db.collection('clans').doc(clanId).get().then(function (s) {
+        if (s.exists && s.data().owner === id) throw { code: 'owner' };
+        return db.collection('clans').doc(clanId).collection('msgs').where('uid', '==', id).get();
+      }).then(dropAll).then(function () {
+        return new Promise(function (res, rej) { Cloud.leaveClan(function (e) { if (e && e.code !== 'no-clan') rej(e); else res(); }); });
+      });
+    }
+    return chain.then(function () {
+      return U.get();
+    }).then(function (s) {
+      const boards = (s.exists && s.data().boards) || [];
+      return Promise.all(boards.map(function (p) { return db.doc(p).delete().catch(function () {}); }));
+    }).then(function () {
+      return U.collection('friends').get();
+    }).then(function (q) {
+      const ids = []; q.forEach(function (d) { ids.push(d.id); });
+      return Promise.all(ids.map(function (fid) { return userRef(fid).collection('friends').doc(id).delete().catch(function () {}); }))
+        .then(function () { return dropAll(q); });
+    }).then(function () {
+      return U.collection('save').doc('main').delete();
+    }).then(function () {
+      return U.delete();
+    }).then(function () {
+      clearInterval(beatT); beatT = null; uid = null; me = null;
+      cb(null);
+    }).catch(fail(cb));
+  },
 
   /* ---------- 排行榜 ---------- */
   board: function (mode, scope) { return 'lb_' + mode + '_' + scope; },
@@ -92,6 +131,9 @@ const Cloud = {
         return ref.set(Object.assign({}, row));
       }).catch(fail());
     });
+    // 記下寫過哪些排行榜文件，刪除資料時才找得到
+    const paths = ['all', 'w' + w, p.region + '_w' + w].map(function (s) { return Cloud.board(mode, s) + '/' + uid; });
+    userRef().set({ boards: window.firebase.firestore.FieldValue.arrayUnion.apply(null, paths) }, { merge: true }).catch(fail());
   },
   /** 讀前 20 名。cb(err, rows) */
   top: function (mode, scope, cb) {
@@ -188,8 +230,9 @@ const Cloud = {
   leaveClan: function (cb) {
     if (!Cloud.ready() || !me || !me.clan) { if (cb) cb({ code: 'no-clan' }); return; }
     const ref = db.collection('clans').doc(me.clan);
-    ref.collection('members').doc(uid).delete().then(function () {
-      return ref.update({ count: window.firebase.firestore.FieldValue.increment(-1) });
+    // 先改人數（此時自己還是隊員，規則允許），再刪自己的隊員文件
+    ref.update({ count: window.firebase.firestore.FieldValue.increment(-1) }).then(function () {
+      return ref.collection('members').doc(uid).delete();
     }).then(function () {
       me.clan = ''; me.clanTag = ''; me.clanName = '';
       return userRef().set({ clan: '', clanTag: '', clanName: '' }, { merge: true });

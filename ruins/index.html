@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=114" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=115" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -132,7 +132,7 @@
         <button class="mapChip" id="mapChip" type="button"><span>地圖</span><b id="mapName">廢棄設施</b></button>
         <button class="startBtn" id="goBtn" type="button"><small id="startMode">多人合作</small><b>開始</b></button>
       </div>
-      <div class="lbLinks"><button class="joinBtn" id="joinOpen" type="button"><span>朋友給你代碼？</span><b>用房間代碼加入</b></button><button class="joinBtn" id="logoutBtn" type="button"><span>目前登入：<span id="whoProv"></span></span><b>登出</b></button></div>
+      <div class="lbLinks"><button class="joinBtn" id="joinOpen" type="button"><span>朋友給你代碼？</span><b>用房間代碼加入</b></button><button class="joinBtn" id="delData" type="button"><span>資料</span><b>刪除我的資料</b></button><button class="joinBtn" id="logoutBtn" type="button"><span>目前登入：<span id="whoProv"></span></span><b>登出</b></button></div>
     </footer>
     <div class="hide" id="modeHidden"><button id="createBtn" type="button" tabindex="-1">多人合作</button><button id="soloBtn" type="button" tabindex="-1">單人遊玩</button><button id="huntBtn" type="button" tabindex="-1">獵殺模式</button><button id="tdBtn" type="button" tabindex="-1">塔防模式</button><button id="brBtn" type="button" tabindex="-1">大逃殺</button></div>
   </div>
@@ -379,7 +379,7 @@
 <li><b>櫃子</b>（小地圖藍點）：站在旁邊不要跑，怪物看不到你；貼太近還是會被抓。</li>
 <li><b>煙霧彈</b>：冒出一團煙約 6 秒，站在煙裡怪物看不到你。冷卻 20 秒。</li>
 <li><b>跑</b>：跑步一定比怪物快，體力約可跑 6～7 秒；跑到牠看不到你，約 3.5 秒後牠會放棄。</li>
-<li><b>跳</b>：人在空中時抓不到你，耗 18% 體力。</li><li><b>爬牆</b>：朝牆按兩次跳可以爬上牆頭，站上去後能走動。</li><li><b>基地造型</b>：房主在大廳按「基地」可切換回收車、信號塔、圓頂營地、四柱燈四種造型與光圈顏色。</li><li><b>櫃子</b>：靠近櫃子按「櫃」（電腦按 Y）躲進去最多 8 秒，怪物看不到你，但不能移動；出來後 10 秒內不能再躲。櫃子裡有一把攻擊物，拿到後當天的近戰數值會換成它（只對玩家生效）。</li><li><b>毒圈</b>：開局 30 秒後，地圖外的黃色毒會慢慢往基地漫；毒區裡會持續扣血（最低留 1 血），毒圈越縮小傷害越高，基地光圈裡安全。</li><li><b>怪物倒下</b>：回收模式打到血量歸零會倒下，約 12 秒後在別處刷新（不給金幣）。</li>
+<li><b>跳</b>：人在空中時抓不到你，耗 18% 體力。</li><li><b>爬牆</b>：朝牆按兩次跳可以爬上牆頭，站上去後能走動。</li><li><b>基地造型</b>：房主在大廳按「基地」可切換回收車、信號塔、圓頂營地、四柱燈四種造型與光圈顏色。</li><li><b>櫃子</b>：靠近櫃子按「櫃」（電腦按 Y）躲進去最多 8 秒，怪物看不到你，但不能移動；出來後 10 秒內不能再躲。櫃子裡有一把攻擊物，拿到後當天的近戰數值會換成它（只對玩家生效）。</li><li><b>刪除資料</b>：登入後按「刪除我的資料」，會刪掉雲端進度、排行榜、好友、戰隊發言與登入帳號（隊長要先轉讓隊長）。</li><li><b>毒圈</b>：開局 30 秒後，地圖外的黃色毒會慢慢往基地漫；毒區裡會持續扣血（最低留 1 血），毒圈越縮小傷害越高，基地光圈裡安全。</li><li><b>怪物倒下</b>：回收模式打到血量歸零會倒下，約 12 秒後在別處刷新（不給金幣）。</li>
 <li><b>衝</b>：瞬間往前衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒。</li>
 <li><b>技能</b>：每個角色不同，見「角色技能」。按鈕上的數字是冷卻秒數。</li>
 <li><b>救隊友</b>：隊友倒地時靠近按住「救」2 秒。</li></ul>
@@ -578,14 +578,14 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=114"></script>
-<script src="js/sim.js?v=114"></script>
-<script src="js/audio.js?v=114"></script>
-<script src="js/auth.js?v=114"></script>
-<script src="js/cloud.js?v=114"></script>
-<script src="js/net.js?v=114"></script>
-<script src="js/game.js?v=114"></script>
-<script src="js/minigames.js?v=114"></script>
-<script src="js/main.js?v=114"></script>
+<script src="js/config.js?v=115"></script>
+<script src="js/sim.js?v=115"></script>
+<script src="js/audio.js?v=115"></script>
+<script src="js/auth.js?v=115"></script>
+<script src="js/cloud.js?v=115"></script>
+<script src="js/net.js?v=115"></script>
+<script src="js/game.js?v=115"></script>
+<script src="js/minigames.js?v=115"></script>
+<script src="js/main.js?v=115"></script>
 </body>
 </html>
