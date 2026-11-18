@@ -311,6 +311,9 @@ function makeWallTex(style, base) {
     for (let x = 0; x < 128; x += 16) { if ((x / 16) % 2) { g.fillStyle = '#efe6d6'; g.fillRect(x, 0, 16, 128); } g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(x, 0, 1, 128); }
     for (let i = 0; i < 160; i++) { g.fillStyle = rgba(R() < 0.5 ? '90,60,40' : '255,255,255', (0.08 + R() * 0.15).toFixed(2)); g.fillRect(R() * 128, R() * 128, 1 + R() * 4, 0.6 + R() * 2); }
     g.fillStyle = '#3a3330'; g.fillRect(0, 0, 128, 5); g.fillRect(0, 123, 128, 5);
+  } else if (style === 'hospital') {   // 醫院牆：白綠瓷磚、縫線、腰線
+    for (let y = 0; y < 128; y += 16) for (let x = 0; x < 128; x += 16) { g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(x, y, 16, 1); g.fillRect(x, y, 1, 16); }
+    g.fillStyle = 'rgba(60,140,115,.55)'; g.fillRect(0, 84, 128, 6); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(0, 84, 128, 1);
   } else if (style === 'site') {   // 清水模：模板線、繫桿孔、底部警示條
     for (let x = 0; x <= 128; x += 64) { g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(x, 0, 1, 128); }
     g.fillRect(0, 42, 128, 1); g.fillRect(0, 85, 128, 1);
@@ -342,6 +345,9 @@ function makeFloorTex(style, base) {
     for (let y = 0; y < 128; y += 32) for (let x = 0; x < 128; x += 32) { g.fillStyle = 'rgba(' + (R() < 0.5 ? '0,0,0' : '255,255,255') + ',' + (0.03 + R() * 0.06).toFixed(2) + ')'; g.fillRect(x + 1, y + 1, 30, 30); }
     g.fillStyle = 'rgba(60,45,30,.35)'; for (let k = 0; k <= 128; k += 32) { g.fillRect(k, 0, 1, 128); g.fillRect(0, k, 128, 1); }
     g.strokeStyle = 'rgba(50,40,30,.3)'; g.lineWidth = 0.5; for (let i = 0; i < 6; i++) { let x = R() * 128, y = R() * 128; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 5; k++) { x += (R() - 0.5) * 10; y += (R() - 0.5) * 10; g.lineTo(x, y); } g.stroke(); }
+  } else if (style === 'hospital') {   // 醫院地磚：棋盤格、深色縫
+    for (let y = 0; y < 128; y += 32) for (let x = 0; x < 128; x += 32) { if (((x + y) / 32) % 2) { g.fillStyle = 'rgba(0,0,0,.1)'; g.fillRect(x, y, 32, 32); } }
+    g.fillStyle = 'rgba(70,80,75,.35)'; for (let k = 0; k <= 128; k += 32) { g.fillRect(k, 0, 1, 128); g.fillRect(0, k, 128, 1); }
   } else if (style === 'site') {
     for (let i = 0; i < 1400; i++) { g.fillStyle = R() < 0.5 ? 'rgba(60,45,30,.35)' : 'rgba(200,185,160,.3)'; g.fillRect(R() * 128, R() * 128, 0.6 + R(), 0.6 + R()); }
     g.fillStyle = 'rgba(50,38,25,.18)'; g.fillRect(40, 0, 9, 128); g.fillRect(78, 0, 9, 128);
@@ -492,7 +498,7 @@ function buildLevel() {
   torchBase = T.torch != null ? T.torch : 2.2;
   baseLight = { fog: scene.fog.density, fogC: skyC, amb: ambient ? ambient.intensity : 1, hemi: hemi ? hemi.intensity : 0.4, sun: sun ? sun.intensity : 0, torch: torchBase, open: open };
   const style = T.style || 'ruin', wallH = T.wallH || WH;
-  const floorTex = open && style !== 'city' && style !== 'space' ? makeFloorTex(style, T.floor) : makeTex(T.floor, '0,0,0', false); floorTex.repeat.set(COLS, ROWS);
+  const floorTex = (open || style === 'hospital') && style !== 'city' && style !== 'space' ? makeFloorTex(style, T.floor) : makeTex(T.floor, '0,0,0', false); floorTex.repeat.set(COLS, ROWS);
   const Wd = COLS * CS, D = ROWS * CS;
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(Wd, D, LITE ? COLS * 2 : 1, LITE ? ROWS * 2 : 1), litMat({ map: floorTex, shininess: style === 'space' ? 40 : 8 }));
   floor.rotation.x = -Math.PI / 2; floor.position.set(Wd / 2, 0, D / 2); level.add(floor);
@@ -501,7 +507,7 @@ function buildLevel() {
     const ceil = new THREE.Mesh(new THREE.PlaneGeometry(Wd, D, LITE ? COLS : 1, LITE ? ROWS : 1), litMat({ map: ceilTex, shininess: 2 }));
     ceil.rotation.x = Math.PI / 2; ceil.position.set(Wd / 2, WH, D / 2); level.add(ceil);
   }
-  const wallTex = style === 'city' ? makeWinTex(T.wall, true) : style === 'space' ? makeWinTex(T.wall, false) : /beach|forest|snow|park|site/.test(style) ? makeWallTex(style, T.wall) : makeTex(T.wall, '20,20,20', style !== 'office');
+  const wallTex = style === 'city' ? makeWinTex(T.wall, true) : style === 'space' ? makeWinTex(T.wall, false) : /beach|forest|snow|park|site|hospital/.test(style) ? makeWallTex(style, T.wall) : makeTex(T.wall, '20,20,20', style !== 'office');
   let n = 0;
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (MAP[r][c] === '#') n++;
   const walls = new THREE.InstancedMesh(new THREE.BoxGeometry(CS, 1, CS), litMat({ map: wallTex, shininess: style === 'space' ? 50 : 4 }), n);
@@ -672,7 +678,7 @@ function buildLevel() {
         level.add(part(new THREE.CylinderGeometry(0.3, 0.3, 0.9, 12), barrelM, px, 0.45, pz), part(new THREE.CylinderGeometry(0.31, 0.31, 0.06, 12), bandM, px, 0.62, pz));
       }
     }
-    if (!open && (c + r * 2) % (style === 'office' ? 3 : 5) === 0 && lamps < 70) {   // 燈條：發光但不投光（省效能）
+    if (!open && (c + r * 2) % (/office|hospital/.test(style) ? 3 : 5) === 0 && lamps < 70) {   // 燈條：發光但不投光（省效能）
       lamps++;
       const lp = part(new THREE.BoxGeometry(1.3, 0.05, 0.22), lampM, cx, WH - 0.04, cz); if (c % 2) lp.rotation.y = Math.PI / 2; level.add(lp);
     }
