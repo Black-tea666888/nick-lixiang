@@ -793,6 +793,13 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
 #scopeFx { position: fixed; inset: 0; pointer-events: none; z-index: 5; display: none;
   background: radial-gradient(circle at 50% 50%, transparent 0 min(34vw, 34vh), rgba(0,0,0,.92) min(35vw, 35vh)); }
 #scopeFx.on { display: block; }
+/* 準心：槍枝模式時畫面正中央（狙擊開鏡時不顯示） */
+#aim { position: fixed; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; pointer-events: none; z-index: 6; }
+#aim:not(.hide) { display: block; }
+#aim i, #aim b { position: absolute; background: rgba(255,255,255,.92); box-shadow: 0 0 0 1px rgba(0,0,0,.55); }
+#aim i { left: 10px; top: 0; width: 2px; height: 22px; }
+#aim b { left: 0; top: 10px; width: 22px; height: 2px; }
+#aim::after { content: ''; position: absolute; left: 8px; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: #ff4a3a; box-shadow: 0 0 0 1px rgba(0,0,0,.6); }
 #scope.on { background: #d8b24a; color: #1c1c1c; }
 
 /* 加入房間視窗：代碼輸入框與說明字放大，手機上好讀 */
