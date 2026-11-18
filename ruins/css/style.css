@@ -23,7 +23,10 @@
 html, body { margin: 0; height: 100%; background: #000; overflow: hidden; color: var(--chalk);
   font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", "Segoe UI", Roboto, sans-serif;
   font-variant-numeric: tabular-nums;
-  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+  /* 安卓 Chrome：關掉雙擊縮放（連點不會被當成放大）；字級不被系統自動放大（避免跑版） */
+  touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+button, a, input, select { touch-action: manipulation; }
 input { -webkit-user-select: text; user-select: text; }
 .hide { display: none !important; }
 #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
