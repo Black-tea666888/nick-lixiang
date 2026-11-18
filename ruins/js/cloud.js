@@ -238,7 +238,9 @@ const Cloud = {
   clanSay: function (text, cb) {
     if (!Cloud.ready() || !me || !me.clan) { cb({ code: 'no-clan' }); return; }
     text = clean(text, 80); if (!text) { cb(null); return; }
-    Cloud.msgs().add({ uid: uid, name: profile().name, k: 'say', text: text, t: Date.now() }).then(function () { cb(null); }).catch(fail(cb));
+    // 等級與頭像底色跟著訊息存（頭像照片只留在本機，不會上傳）
+    let av = ''; try { av = localStorage.getItem('rr_avatar') || ''; } catch (e) {}
+    Cloud.msgs().add({ uid: uid, name: profile().name, k: 'say', text: text, t: Date.now(), lv: profile().lv | 0, av: av }).then(function () { cb(null); }).catch(fail(cb));
   },
   clanAsk: function (cb) {
     if (!Cloud.ready() || !me || !me.clan) { cb({ code: 'no-clan' }); return; }

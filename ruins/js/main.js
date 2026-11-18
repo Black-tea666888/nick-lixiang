@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v97', items: ['頭像可以用自己的照片（只存在這台裝置，不會上傳）', '點頭像可選底色，或恢復預設', '戰隊未讀數字顯示在「戰隊聊天」與「社群」按鈕上'] };
+const UPD = { v: 'v98', items: ['戰隊聊天可以看到對方的等級與頭像底色', '成就說明文字不再被截斷，會換行', '頭像照片只留在本機，不會被其他人看到'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -376,7 +376,12 @@ function ccDraw() {
   if (!ccRows.length) { log.appendChild(mk('p', 'ccEmpty', '還沒有人說話。打個招呼，或請求金幣。')); return; }
   ccRows.slice().reverse().forEach(function (m) {
     const mine = m.uid === my;
-    if (m.k === 'say') { const r = mk('div', 'ccMsg' + (mine ? ' me' : '')); r.appendChild(mk('b', null, mine ? '你' : m.name)); r.appendChild(mk('span', null, m.text)); log.appendChild(r); return; }
+    if (m.k === 'say') {
+      const r = mk('div', 'ccMsg' + (mine ? ' me' : '')), head = mk('div', 'ccHead'), av = mk('span', 'ccAv', (m.name || '?').charAt(0));
+      av.style.background = m.av || '#f0c040';
+      head.appendChild(av); head.appendChild(mk('b', null, (mine ? '你' : m.name) + (m.lv ? '　Lv.' + m.lv : '')));
+      r.appendChild(head); r.appendChild(mk('span', null, m.text)); log.appendChild(r); return;
+    }
     if (m.k !== 'req') return;
     const got = m.got | 0, need = m.need | 0, gave = (m.donors && m.donors[my]) | 0;
     const card = mk('div', 'ccReq' + (mine ? ' me' : ''));
