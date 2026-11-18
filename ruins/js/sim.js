@@ -713,7 +713,9 @@ Sim.prototype._stepBR = function (dt, alive) {
   const self = this, z = this.zone, T = 210 - this.time;
   // 縮圈：20 秒後開始，170 秒時縮到最小
   z.r = T < 20 ? z.r0 : Math.max(5, z.r0 - (z.r0 - 5) * Math.min(1, (T - 20) / 150));
-  const zoneDps = 5 + T / 20;
+  // 毒圈傷害隨縮小進度提高：圈外每秒 5 點，縮到最小時 25 點
+  const prog = Math.max(0, Math.min(1, (z.r0 - z.r) / Math.max(1, z.r0 - 5)));
+  const zoneDps = 5 + 20 * prog;
   for (let k = 0; k < alive.length; k++) {
     const p = alive[k];
     if (!p.alive) continue;
