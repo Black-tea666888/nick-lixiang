@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=112" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=113" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -53,6 +53,8 @@
   <button id="atk" type="button">打</button>
   <button id="gun" type="button">槍</button>
   <button id="swap" type="button" aria-label="切換槍與近戰">↻</button>
+  <button id="uav" type="button" class="hide" aria-label="無人機偵察">偵</button>
+  <button id="air" type="button" class="hide" aria-label="空中掃射">空</button>
   <button id="tower" type="button">塔</button>
   <button id="bomb" type="button">炸</button>
   <button id="veh" type="button">車</button>
@@ -369,7 +371,7 @@
 <li>怪物靠近到 14 公尺內，小地圖才會出現牠的三角形。</li></ul>
       </section>
       <section class="htopic hide" data-topic="safe"><h2>保命方法</h2>
-<ul><li><b>槍</b>：在「出戰角色」的「武器」選槍（全部免費；槍枝造型到抽獎機抽）：手槍穩定、霰彈槍一次 6 顆近距離強、步槍和衝鋒槍按住連發、狙擊槍一發高傷害射最遠、巴雷特更重更慢、機關槍按住狂射、弓弩慢但狠、三連發一次三顆、雙管霰彈近距離十顆、迷你衝鋒超快速連發、重機槍大彈匣慢速、雷射槍中遠距離高傷、燃燒槍一次兩顆、魔法杖、阿姆斯特旋風炮（重砲，慢）、火麒麟與 M4A1（連發）、冰紅茶（一次四顆）、水槍（超快、傷害很低）、魚槍（重擊）、貓咪槍、狗狗槍、大蔥槍。快速點兩下「槍」按鈕可以切換成近戰（副武器），按鈕會顯示「近」，再點兩下切回槍。回收模式每天子彈有限，打中怪物讓牠暈（打不死）；對準怪物、中間不能有牆。</li><li><b>↻ 切槍</b>：「槍」鍵只負責開火；旁邊的圓形「↻」鍵切換槍與近戰（電腦按 E）。</li>
+<ul><li><b>槍</b>：在「出戰角色」的「武器」選槍（全部免費；槍枝造型到抽獎機抽）：手槍穩定、霰彈槍一次 6 顆近距離強、步槍和衝鋒槍按住連發、狙擊槍一發高傷害射最遠、巴雷特更重更慢、機關槍按住狂射、弓弩慢但狠、三連發一次三顆、雙管霰彈近距離十顆、迷你衝鋒超快速連發、重機槍大彈匣慢速、雷射槍中遠距離高傷、燃燒槍一次兩顆、魔法杖、阿姆斯特旋風炮（重砲，慢）、火麒麟與 M4A1（連發）、冰紅茶（一次四顆）、水槍（超快、傷害很低）、魚槍（重擊）、貓咪槍、狗狗槍、大蔥槍。快速點兩下「槍」按鈕可以切換成近戰（副武器），按鈕會顯示「近」，再點兩下切回槍。回收模式每天子彈有限，打中怪物讓牠暈（打不死）；對準怪物、中間不能有牆。</li><li><b>↻ 切槍</b>：「槍」鍵只負責開火；旁邊的圓形「↻」鍵切換槍與近戰（電腦按 E）。</li><li><b>連殺</b>：自己擊倒怪物或玩家會累積連殺（15 秒內沒擊倒或死亡就歸零）。連殺 3 次解鎖「偵」無人機（15 秒內看到全圖敵人，電腦按 U）；連殺 6 次解鎖「空」空中掃射（在面前 12 公尺處轟炸 7 公尺範圍，消耗 6 連殺，冷卻 25 秒，電腦按 J）。</li>
 <li><b>配件與寶石</b>：主選單「裝備與寶石」購買。配件最多同時裝 2 個，對局中按右上角「背包」可以換；寶石升級後永久有效。</li>
 <li><b>炸藥</b>：不限數量。站在牆前按「炸」／B，面前 3.5 公尺內的那格牆會被炸開，變成新的路（最外圈炸不開）；面前沒有能炸的牆，就在面前爆炸。附近的怪物會暈 2 秒，但牠之後也能走這條新路。隔天牆會恢復。</li>
 <li><b>煙霧彈</b>：怪物走到煙附近會停下來。</li>
@@ -576,14 +578,14 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=112"></script>
-<script src="js/sim.js?v=112"></script>
-<script src="js/audio.js?v=112"></script>
-<script src="js/auth.js?v=112"></script>
-<script src="js/cloud.js?v=112"></script>
-<script src="js/net.js?v=112"></script>
-<script src="js/game.js?v=112"></script>
-<script src="js/minigames.js?v=112"></script>
-<script src="js/main.js?v=112"></script>
+<script src="js/config.js?v=113"></script>
+<script src="js/sim.js?v=113"></script>
+<script src="js/audio.js?v=113"></script>
+<script src="js/auth.js?v=113"></script>
+<script src="js/cloud.js?v=113"></script>
+<script src="js/net.js?v=113"></script>
+<script src="js/game.js?v=113"></script>
+<script src="js/minigames.js?v=113"></script>
+<script src="js/main.js?v=113"></script>
 </body>
 </html>
