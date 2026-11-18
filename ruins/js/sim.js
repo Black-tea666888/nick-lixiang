@@ -157,7 +157,7 @@ const MAPS = [
     '#M..#....##....#...M#',
     '#####################'
   ] },
-  { name: '地下停車場', theme: { wall: '#4a4f57', floor: '#2e3236', ceil: '#1c1e20', fog: 0.09, amb: 0x3a4558, torch: 0.6 }, rows: [
+  { name: '地下停車場', theme: { wall: '#4a4f57', floor: '#2e3236', ceil: '#1c1e20', fog: 0.09, amb: 0x3a4558, style: 'garage', torch: 0.6 }, rows: [
     '#####################',
     '#S....#.........#...#',
     '#.###.#.#######.#.#.#',
@@ -172,7 +172,7 @@ const MAPS = [
     '#M#.#.....M.#.#...#M#',
     '#####################'
   ] },
-  { name: '夜市', theme: { wall: '#7a3b2e', floor: '#4a4038', ceil: '#000000', fog: 0.02, amb: 0xffd6a0, open: true, sky: 0x1b1f3b, style: 'city', wallH: 3.0, sun: 0.2, torch: 0.9 }, rows: [
+  { name: '夜市', theme: { wall: '#7a3b2e', floor: '#4a4038', ceil: '#000000', fog: 0.02, amb: 0xffd6a0, open: true, sky: 0x1b1f3b, style: 'market', wallH: 3.0, sun: 0.2, torch: 0.9 }, rows: [
     '#####################',
     '#S.......#.......#..#',
     '#.#####..#..###..#..#',
@@ -186,7 +186,7 @@ const MAPS = [
     '#...#.....M.......#M#',
     '#####################'
   ] },
-  { name: '地鐵隧道', theme: { wall: '#3d4a5c', floor: '#22262c', ceil: '#101214', fog: 0.11, amb: 0x5a6a8a, torch: 0.4 }, rows: [
+  { name: '地鐵隧道', theme: { wall: '#3d4a5c', floor: '#22262c', ceil: '#101214', fog: 0.11, amb: 0x5a6a8a, style: 'subway', torch: 0.4 }, rows: [
     '#####################',
     '#S...#.....#.....#..#',
     '#.###.###.#.###.###.#',
@@ -199,7 +199,7 @@ const MAPS = [
     '#M#.....M.....#....M#',
     '#####################'
   ] },
-  { name: '加油站', theme: { wall: '#c9c2b0', floor: '#4f5257', ceil: '#000000', fog: 0.01, amb: 0xfff1d0, open: true, sky: 0x8fc7e8, wallH: 2.6, sun: 0.9 }, rows: [
+  { name: '加油站', theme: { wall: '#c9c2b0', floor: '#4f5257', ceil: '#000000', fog: 0.01, amb: 0xfff1d0, open: true, sky: 0x8fc7e8, style: 'station', wallH: 2.6, sun: 0.9 }, rows: [
     '#####################',
     '#S.....#.....#.....M#',
     '#..##..#..##.#..##..#',
@@ -225,7 +225,7 @@ const MAPS = [
     '#M....#...........M.#',
     '#####################'
   ] },
-  { name: '碼頭倉庫', theme: { wall: '#5b4a3a', floor: '#2d2a26', ceil: '#161412', fog: 0.08, amb: 0x6b5a48, torch: 0.5 }, rows: [
+  { name: '碼頭倉庫', theme: { wall: '#5b4a3a', floor: '#2d2a26', ceil: '#161412', fog: 0.08, amb: 0x6b5a48, style: 'dock', torch: 0.5 }, rows: [
     '#####################',
     '#S......#.........#.#',
     '###.###.#.#####.#.#.#',
@@ -238,7 +238,7 @@ const MAPS = [
     '#......M......#.....#',
     '#####################'
   ] },
-  { name: '高速休息站', theme: { wall: '#8a8f96', floor: '#505459', ceil: '#000000', fog: 0.02, amb: 0xffc890, open: true, sky: 0xf0a060, wallH: 2.8, sun: 0.6 }, rows: [
+  { name: '高速休息站', theme: { wall: '#8a8f96', floor: '#505459', ceil: '#000000', fog: 0.02, amb: 0xffc890, open: true, sky: 0xf0a060, style: 'rest', wallH: 2.8, sun: 0.6 }, rows: [
     '#####################',
     '#S.......M#........M#',
     '#.#.#####.#.#.#.#.#.#',
@@ -251,7 +251,7 @@ const MAPS = [
     '#..................M#',
     '#####################'
   ] },
-  { name: '摩天輪樂園', theme: { wall: '#e0a0c0', floor: '#7a6a8a', ceil: '#000000', fog: 0.01, amb: 0xfff0f5, open: true, sky: 0x6fb8ff, wallH: 3.0, sun: 0.8 }, rows: [
+  { name: '摩天輪樂園', theme: { wall: '#e0a0c0', floor: '#7a6a8a', ceil: '#000000', fog: 0.01, amb: 0xfff0f5, open: true, sky: 0x6fb8ff, style: 'fair', wallH: 3.0, sun: 0.8 }, rows: [
     '#####################',
     '#S................#M#',
     '#.#.###.#.#.#.###.#.#',
@@ -264,7 +264,7 @@ const MAPS = [
     '#...................#',
     '#####################'
   ] },
-  { name: '圖書館', theme: { wall: '#6b4f2a', floor: '#8a6a40', ceil: '#2a1d10', fog: 0.06, amb: 0xffe0a0, torch: 0.7 }, rows: [
+  { name: '圖書館', theme: { wall: '#6b4f2a', floor: '#8a6a40', ceil: '#2a1d10', fog: 0.06, amb: 0xffe0a0, style: 'library', torch: 0.7 }, rows: [
     '#####################',
     '#S..#..........M#...#',
     '#.#.#.###M#####.#M#.#',
@@ -277,7 +277,7 @@ const MAPS = [
     '#........M#M....#...#',
     '#####################'
   ] },
-  { name: '地下墓穴', theme: { wall: '#55505a', floor: '#2a262c', ceil: '#0c0a0e', fog: 0.12, amb: 0x6a5a88, torch: 0.3 }, rows: [
+  { name: '地下墓穴', theme: { wall: '#55505a', floor: '#2a262c', ceil: '#0c0a0e', fog: 0.12, amb: 0x6a5a88, style: 'crypt', torch: 0.3 }, rows: [
     '#####################',
     '#S......#..M#.....M.#',
     '#.#.###.#M#.#####M#.#',
@@ -290,7 +290,7 @@ const MAPS = [
     '#.......#...........#',
     '#####################'
   ] },
-  { name: '校園操場', theme: { wall: '#d8c9a0', floor: '#7fb069', ceil: '#000000', fog: 0.01, amb: 0xffffff, open: true, sky: 0x9ad8ff, wallH: 2.4, sun: 0.9 }, rows: [
+  { name: '校園操場', theme: { wall: '#d8c9a0', floor: '#7fb069', ceil: '#000000', fog: 0.01, amb: 0xffffff, open: true, sky: 0x9ad8ff, style: 'field', wallH: 2.4, sun: 0.9 }, rows: [
     '#####################',
     '#S#.................#',
     '#.#.#.###.#.#.#####.#',
