@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v91', items: ['模式列與上方功能列可用滑鼠滾輪滑動；滾輪上下切換模式', '左手模式（設定裡開啟，按鍵左右對調）', '角色造型微調與主頁更新提醒'] };
+const UPD = { v: 'v92', items: ['大廳角色可用手指或滑鼠左右拖曳轉動', '模式列與上方功能列可用滑鼠滾輪滑動；滾輪上下切換模式', '左手模式（設定裡開啟，按鍵左右對調）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1120,6 +1120,8 @@ function bind() {
     if (next && next.dataset.mode !== selMode()) { lsSet('rr_mode', next.dataset.mode); Sfx.tone(520, 0.04, 'square', 0.04); refreshLobby(); }
     next && next.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, { passive: false });
+  // 大廳角色可用滑鼠或手指左右拖曳轉動
+  (function () { const cv = $('lobbyChar'); let lastX = null; cv.addEventListener('pointerdown', function (e) { lastX = e.clientX; cv.setPointerCapture(e.pointerId); }); cv.addEventListener('pointermove', function (e) { if (lastX == null) return; Game.previewSpin(cv, e.clientX - lastX); lastX = e.clientX; }); const up = function () { lastX = null; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); })();
   $('goBtn').addEventListener('click', function () { const b = $('modeStrip').querySelector('[data-mode="' + selMode() + '"]'); if (b) $(b.dataset.go).click(); });
   $('mapChip').addEventListener('click', function () { renderMapGrid(); show('scrMap'); });
   $('mapOk').addEventListener('click', function () { showMenu(); }); $('mapDone').addEventListener('click', function () { showMenu(); });

@@ -1850,7 +1850,7 @@ function frame(nowMs) {
   voiceSpatial(playing, lastL);
   hudT -= dt; if (hudT <= 0) { hudT = 0.15; tickHud(); }
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('show'); }
-  pvs.forEach(function (pv) { if (pv.model && pv.canvas.offsetParent) { pv.model.rotation.y = pv.gun ? Math.PI / 2 + Math.sin(now * 0.7) * 0.6 : pv.sway ? -0.35 + Math.sin(now * 0.6) * 0.3 : now * 0.9; pv.model.rotation.x = pv.gun ? 0.15 : 0; pv.r.render(pv.sc, pv.cam); } });
+  pvs.forEach(function (pv) { if (pv.model && pv.canvas.offsetParent) { pv.model.rotation.y = (pv.gun ? Math.PI / 2 + Math.sin(now * 0.7) * 0.6 : pv.sway ? -0.35 + Math.sin(now * 0.6) * 0.3 : now * 0.9) + (pv.spin || 0); pv.model.rotation.x = pv.gun ? 0.15 : 0; pv.r.render(pv.sc, pv.cam); } });
   renderer.render(scene, camera);
 }
 
@@ -1900,6 +1900,8 @@ RR.Game = {
   showMap: function (i) { if (!ready || active) return; W.setMap(i); if (builtMap !== W.mapIndex) buildLevel(); },
   /** 選單裡的造型預覽 */
   // 角色預覽：每張畫布各有一個（出戰角色、大廳），大小照畫布的 width／height；sway＝大廳用的輕微左右擺動
+  // 拖曳轉動預覽角色（滑鼠或手指左右拖）
+  previewSpin: function (canvas, dx) { const pv = pvs.filter(function (q) { return q.canvas === canvas; })[0]; if (pv) pv.spin = (pv.spin || 0) + dx * 0.012; },
   preview: function (canvas, c, w, h, o, pet, sway) {
     if (!ready) return;
     let pv = pvs.filter(function (q) { return q.canvas === canvas; })[0];
