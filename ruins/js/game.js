@@ -1176,13 +1176,13 @@ function setViewWeapon(w) {
 }
 // 開槍（電腦 X 或滑鼠右鍵、手機「槍」）：實際命中由房主判定
 let gunT = 0, gunMesh = null, gunHeld = false;
-// 槍鍵：單擊射擊（近戰模式則揮砍）；快速點兩下切換槍與近戰（副武器）
-let wpnMode = 'gun', lastGunTap = 0;
+// 開火鍵：單擊射擊（近戰模式則揮砍）；切槍／近戰由旁邊的「切槍」鍵負責
+let wpnMode = 'gun';
 function gunPress() {
-  const now = Date.now();
-  if (now - lastGunTap < 320) { lastGunTap = 0; wpnMode = wpnMode === 'gun' ? 'melee' : 'gun'; toast(wpnMode === 'gun' ? '切回槍' : '切換到近戰'); return; }
-  lastGunTap = now;
   if (wpnMode === 'melee') attack(); else shoot();
+}
+function swapPress() {
+  wpnMode = wpnMode === 'gun' ? 'melee' : 'gun'; toast(wpnMode === 'gun' ? '切回槍' : '切換到近戰');
 }
 function shoot() {
   if (!canControl() || gunT > 0) return;
@@ -1560,9 +1560,9 @@ function fpsWatch(dt) {
   }
 }
 /* ---------- 手機按鈕：位置與大小可自訂（直式、橫式各存一份） ---------- */
-const BTN = { scope: [58, 348, 58], bomb: [154, 314, 58], tower: [244, 296, 58], veh: [244, 218, 58], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
+const BTN = { swap: [244, 378, 52], scope: [58, 348, 58], bomb: [154, 314, 58], tower: [244, 296, 58], veh: [244, 218, 58], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
 // 橫式：畫面矮，改成 4 欄 × 3 列，避免按鍵疊到上方的資訊和按鈕
-const BTN_L = { scope: [150, 290, 58], run: [62, 68, 76], atk: [150, 60, 64], gun: [150, 136, 58], rescue: [150, 212, 58], jump: [58, 154, 58], dash: [58, 226, 58],
+const BTN_L = { swap: [314, 212, 52], scope: [150, 290, 58], run: [62, 68, 76], atk: [150, 60, 64], gun: [150, 136, 58], rescue: [150, 212, 58], jump: [58, 154, 58], dash: [58, 226, 58],
   skill: [232, 56, 58], smoke: [232, 134, 58], bomb: [232, 212, 58], tower: [314, 56, 58], veh: [314, 134, 58] };
 function btnMap() { return window.innerWidth > window.innerHeight ? BTN_L : BTN; }
 // 按鍵區太高、畫面放不下時自動縮小（上方留 84px 給資訊列）
@@ -1658,6 +1658,7 @@ function bindInput() {
     if (canControl() && e.code.indexOf('Arrow') === 0) e.preventDefault();
     if (active && e.code === 'KeyM') RR.Game.toggleMic();
     if (e.code === 'KeyQ' && !e.repeat) trySmoke();
+    if (e.code === 'KeyE' && !e.repeat && canControl()) swapPress();
     if (e.code === 'KeyR' && !e.repeat) trySkill();
     if (e.code === 'KeyY' && !e.repeat && canControl()) { e.preventDefault(); lockerPress(); }
     if (e.code === 'KeyG' && !e.repeat && canControl() && !(e.target && /INPUT|TEXTAREA/.test(e.target.tagName))) { if ($('scrMini').classList.contains('hide')) openMini(); else closeMini(); }
@@ -1733,7 +1734,7 @@ function bindInput() {
   runBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   $('micBtn').addEventListener('click', function () { RR.Game.toggleMic(); });
   $('mini').addEventListener('click', function () { $('mini').classList.toggle('big'); });
-  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', gunPress], ['bomb', function () { if (RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100); }], ['veh', function () { vhQ = true; }], ['tower', function () { if (view.mode === 'td' && RR.Game.onTower) RR.Game.onTower(); }]].forEach(function (q) {
+  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', gunPress], ['swap', swapPress], ['bomb', function () { if (RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100); }], ['veh', function () { vhQ = true; }], ['tower', function () { if (view.mode === 'td' && RR.Game.onTower) RR.Game.onTower(); }]].forEach(function (q) {
     const b = $(q[0]);
     b.addEventListener('touchstart', function (e) { e.preventDefault(); if (q[0] === 'gun') gunHeld = wpnMode === 'gun'; if (canControl()) q[1](); }, { passive: false });
     if (q[0] === 'gun') { const up = function (e) { e.preventDefault(); gunHeld = false; }; b.addEventListener('touchend', up, { passive: false }); b.addEventListener('touchcancel', up, { passive: false }); }
