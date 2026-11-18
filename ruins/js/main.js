@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v98', items: ['戰隊聊天可以看到對方的等級與頭像底色', '成就說明文字不再被截斷，會換行', '頭像照片只留在本機，不會被其他人看到'] };
+const UPD = { v: 'v99', items: ['排行榜名次被超越時，「社群」按鈕會出現紅點數字（打開社群就清除）', '戰隊聊天裡自己的訊息會顯示自己的照片頭像（只在本機）', '戰隊聊天與排行榜的未讀數字合併顯示在社群按鈕上'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -337,10 +337,29 @@ function ccNote(text, btn) {
   if (btn) { const b = mk('button', 'btn primary', btn); b.type = 'button'; b.addEventListener('click', function () { clanClose(); socTab = 'clan'; $('scrSocial').classList.remove('hide'); renderSocial(); }); log.appendChild(b); }
 }
 // 戰隊未讀：背景監看戰隊訊息，未讀數顯示在「戰隊聊天」與「社群」按鈕上
-let ccWatch = null, ccWatchClan = '', ccUnread = 0;
+let ccWatch = null, ccWatchClan = '', ccUnread = 0, rankUnread = 0, rankT = 0;
 function ccSeen() { return +(ls('rr_cc_seen') || 0); }
 function ccBadgeDraw() {
-  [['ccBadge'], ['socBadge']].forEach(function (x) { const el = $(x[0]); el.textContent = ccUnread > 99 ? '99+' : String(ccUnread); el.classList.toggle('hide', ccUnread <= 0); });
+  const ccN = ccUnread + rankUnread;
+  [['ccBadge', ccUnread], ['socBadge', ccN]].forEach(function (x) { const el = $(x[0]), n = x[1]; el.textContent = n > 99 ? '99+' : String(n); el.classList.toggle('hide', n <= 0); });
+}
+// 排行榜被超越提醒：各模式（總榜）記下上次看到的名次，名次變差就算未讀；打開社群時清除
+function rankWatch(view) {
+  const C = RR.Cloud, uid = C.ready() && C.me() ? C.uid() : '';
+  if (!uid) return;
+  if (!view && Date.now() - rankT < 600000) return;
+  rankT = Date.now();
+  let left = C.MODES.length, unread = 0;
+  C.MODES.forEach(function (m) {
+    C.top(m, 'all', function (err, rows) {
+      if (!err && rows) {
+        const i = rows.findIndex(function (r) { return r.uid === uid; }), now = i < 0 ? 99 : i + 1, key = 'rr_rank_seen_' + m, seen = +(ls(key) || 0);
+        if (view || !seen) { lsSet(key, String(now)); }
+        else if (now > seen) { unread++; }
+      }
+      if (--left === 0) { rankUnread = view ? 0 : unread; ccBadgeDraw(); }
+    });
+  });
 }
 function ccWatchStart() {
   const C = RR.Cloud, me = C.me(), clan = me && me.clan ? me.clan : '';
@@ -378,7 +397,8 @@ function ccDraw() {
     const mine = m.uid === my;
     if (m.k === 'say') {
       const r = mk('div', 'ccMsg' + (mine ? ' me' : '')), head = mk('div', 'ccHead'), av = mk('span', 'ccAv', (m.name || '?').charAt(0));
-      av.style.background = m.av || '#f0c040';
+      const myImg = mine ? ls('rr_avatar_img') : '';
+      if (myImg) { av.textContent = ''; av.style.background = 'center / cover no-repeat url(' + myImg + ')'; } else { av.style.background = m.av || '#f0c040'; }
       head.appendChild(av); head.appendChild(mk('b', null, (mine ? '你' : m.name) + (m.lv ? '　Lv.' + m.lv : '')));
       r.appendChild(head); r.appendChild(mk('span', null, m.text)); log.appendChild(r); return;
     }
@@ -748,7 +768,7 @@ function avaDraw() {
   });
 }
 function showMenu() {
-  ccWatchStart();
+  ccWatchStart(); rankWatch(false);
   const u = Auth.user();
   if (!u) { show('scrLogin'); return; }
   if (!ls('rr_region')) $('regionAsk').classList.remove('hide');   // 第一次進選地區
@@ -1423,7 +1443,7 @@ function boot() {
   } catch (e) {}
   RR.Cloud.hooks({ prog: prog, name: myName, level: function () { return levelOf(prog().xp); },
     adopt: function (p) { lsSet('rr_prog', JSON.stringify(p)); renderProg(); if (!S.mode && Auth.user()) { refreshPickSummary(); say('已從雲端取回你的進度。'); } } });
-  $('socialOpen').addEventListener('click', function () { $('scrSocial').classList.remove('hide'); $('scrSocial').scrollTop = 0; renderSocial(); });
+  $('socialOpen').addEventListener('click', function () { $('scrSocial').classList.remove('hide'); $('scrSocial').scrollTop = 0; renderSocial(); rankWatch(true); });
   $('socDone').addEventListener('click', function () { $('scrSocial').classList.add('hide'); renderSocial.token = null; });
   Array.prototype.forEach.call(document.querySelectorAll('#socTabs button'), function (x) { x.addEventListener('click', function () { socTab = x.dataset.tab; renderSocial(); }); });
   let lastUid = null;
