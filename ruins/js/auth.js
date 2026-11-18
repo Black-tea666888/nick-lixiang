@@ -40,6 +40,7 @@ function makeProvider(name) {
 }
 
 const ERR = {
+  'rr/popup-blocked': '瀏覽器擋住了登入視窗，請再按一次登入。',
   'rr/not-configured': '這個登入方式還沒設定金鑰（請看 README 的設定步驟）。現在可以先用訪客登入。',
   'auth/operation-not-allowed': '這個登入方式尚未在 Firebase 後台啟用。',
   'auth/unauthorized-domain': '這個網域還沒加入 Firebase 的「已授權網域」。',
@@ -70,12 +71,10 @@ RR.Auth = {
     if (!auth) return Promise.reject({ code: 'rr/not-configured' });
     let provider;
     try { provider = makeProvider(name); } catch (e) { return Promise.reject(e); }
+    // 不再改用整頁跳轉：iPhone Safari 會把跳轉前的 sessionStorage 隔離，回來時出現「missing initial state」錯誤頁
     return auth.signInWithPopup(provider).catch(function (e) {
       const c = e && e.code;
-      // 手機瀏覽器常擋彈出視窗 → 改用整頁跳轉
-      if (c === 'auth/popup-blocked' || c === 'auth/operation-not-supported-in-this-environment' || c === 'auth/cancelled-popup-request') {
-        return auth.signInWithRedirect(provider);
-      }
+      if (c === 'auth/popup-blocked' || c === 'auth/operation-not-supported-in-this-environment') throw { code: 'rr/popup-blocked' };
       throw e;
     });
   },
