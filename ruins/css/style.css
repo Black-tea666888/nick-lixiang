@@ -526,6 +526,8 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
 .lbCoin span { font-size: 11px; color: var(--chalk-2); }
 .lbCoin b { font-size: 18px; font-weight: 900; color: var(--haz); }
 .lbCoin i { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-style: normal; font-weight: 900; color: var(--ink); background: var(--haz); border: 2px solid var(--ink); border-radius: 2px; }
+.badge { position: absolute; top: -7px; right: -7px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; border: 2px solid #111417; background: #d8442f; color: #fff; font: 900 12px/18px -apple-system, "PingFang TC", sans-serif; text-align: center; font-style: normal; box-sizing: border-box; pointer-events: none; }
+#clanChatOpen, #socialOpen { position: relative; }
 .lbIcons { flex: none; display: flex; flex-direction: column; gap: 6px; }
 .lbIcons .icon { height: auto; flex: 1; min-height: 34px; box-shadow: 2px 2px 0 rgba(17,20,23,.5); }
 .lbSide { grid-area: side; display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
