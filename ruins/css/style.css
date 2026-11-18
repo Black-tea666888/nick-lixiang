@@ -542,7 +542,7 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
 .tile:active, .mcard:active, .lbCoin:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(17,20,23,.5); }
 #lobbyChar { touch-action: none; cursor: grab; }
 .lbStage { grid-area: stage; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-height: 200px; }
-#lobbyChar { height: min(40vh, 380px); width: auto; aspect-ratio: 300 / 380; }
+#lobbyChar { height: min(34vh, 320px); width: auto; aspect-ratio: 300 / 380; }
 .lbName { margin-top: -6px; padding: 4px 12px; font-size: 14px; font-weight: 800; color: var(--chalk); background: rgba(28,32,36,.9); border-radius: 2px; }
 .lbBottom { grid-area: bottom; display: flex; flex-direction: column; gap: 8px; }
 .modeStrip { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
@@ -585,7 +585,7 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
   .lbSide { flex-direction: column; overflow-x: visible; overflow-y: auto; }
   .tile, .tile.big { width: 100%; min-height: 0; padding: 6px 10px; }
   .lbStage { min-height: 0; }
-  #lobbyChar { height: min(46vh, 260px); }
+  #lobbyChar { height: min(38vh, 240px); }
   .lbBottom { flex-direction: row; align-items: flex-end; }
   .modeStrip { flex: 1; min-width: 0; }
   .mcard { height: 84px; width: 104px; }
