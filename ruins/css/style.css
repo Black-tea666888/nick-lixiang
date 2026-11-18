@@ -400,7 +400,7 @@ summary { color: var(--ink-2); font-size: 13px; cursor: pointer; text-align: cen
 .srow:first-of-type, .sec + .srow, .soc-row + .srow, .note + .srow, .bigcode + .srow { border-top-width: 2px; }
 .srow.me { background: var(--haz); }
 .srow .rk { flex: none; width: 26px; text-align: center; font-weight: 900; }
-.srow .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.srow .nm { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.35; }
 .srow small { color: var(--ink-2); }
 .srow .sc { flex: none; font-weight: 900; }
 .srow .btn { flex: none; width: auto; min-height: 34px; padding: 5px 12px; font-size: 13px; box-shadow: 0 2px 0 var(--ink); }
@@ -755,6 +755,8 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
 .ccLog > .btn { align-self: center; }
 .ccMsg { align-self: flex-start; max-width: 82%; padding: 7px 10px; font-size: 15px; line-height: 1.4; color: var(--ink); background: var(--kraft-l); border: 2px solid var(--ink); border-radius: 3px; word-break: break-word; }
 .ccMsg b { display: block; font-size: 13px; color: var(--bin); }
+.ccHead { display: flex; align-items: center; gap: 6px; }
+.ccAv { flex: none; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: var(--ink); border: 2px solid var(--ink); border-radius: 3px; }
 .ccMsg.me { align-self: flex-end; background: var(--haz); }
 .ccMsg.me b { color: var(--ink); }
 .ccReq { color: var(--ink); background: var(--kraft); border: 2px solid var(--ink); border-radius: 3px; overflow: hidden; }
