@@ -1279,6 +1279,8 @@ function bind() {
   const applyHide = function () { const h = (ls('rr_hidebtn') || '').split(',').filter(Boolean); Array.prototype.forEach.call($('btnChks').querySelectorAll('input'), function (c) { const id = c.dataset.btn, off = h.indexOf(id) >= 0; c.checked = !off; document.body.classList.toggle('hb-' + id, off); }); };
   Array.prototype.forEach.call($('btnChks').querySelectorAll('input'), function (c) { c.addEventListener('change', function () { const h = Array.prototype.filter.call($('btnChks').querySelectorAll('input'), function (x) { return !x.checked; }).map(function (x) { return x.dataset.btn; }); lsSet('rr_hidebtn', h.join(',')); applyHide(); }); });
   applyHide();
+  $('setLefty').checked = ls('rr_lefty') === '1'; Game.setLefty($('setLefty').checked);
+  $('setLefty').addEventListener('change', function () { lsSet('rr_lefty', $('setLefty').checked ? '1' : '0'); Game.setLefty($('setLefty').checked); });
   $('setFps').checked = ls('rr_fps') === '1'; Game.settings.showFps = $('setFps').checked;
   $('setFps').addEventListener('change', function () { lsSet('rr_fps', $('setFps').checked ? '1' : '0'); Game.settings.showFps = $('setFps').checked; });
   $('setQ').addEventListener('change', function () { lsSet('rr_q', $('setQ').value); Game.setQuality($('setQ').value); });
