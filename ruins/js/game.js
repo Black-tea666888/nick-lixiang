@@ -704,6 +704,7 @@ function buildLevel() {
     [[-60, -80, 0.3], [80, 60, -0.8], [-20, 110, 1.2]].forEach(function (q) { const m = new THREE.Mesh(bld, cm); m.position.set(Wd / 2 + q[0], 0, D / 2 + q[1]); m.rotation.y = q[2]; level.add(m); });
   }
   if (open) scatterGround(style, hr);
+  buildProps(style, hr);
   buildBase();
   // 櫃子（躲藏點）
   const lockM = new THREE.MeshLambertMaterial({ color: 0x2a4a60, emissive: 0x0b1c28 }), lineM = new THREE.MeshBasicMaterial({ color: 0x0a141a }), tagM = new THREE.MeshBasicMaterial({ color: 0x7dffb0 });
@@ -875,6 +876,60 @@ function addShadow(group, r) {
   m.rotation.x = -Math.PI / 2; m.position.y = 0.02; group.add(m);
 }
 function pmat(col, em) { return litMat({ color: col, emissive: new THREE.Color(col).multiplyScalar(em == null ? 0.22 : em), shininess: 20 }); }
+// 寫實道具：依場景放桌椅、床、書架、車、貨櫃等（貼牆或散落在地面，只是畫面，不擋路）
+const PROP_STYLES = ['hospital', 'library', 'garage', 'subway', 'dock', 'crypt', 'station', 'rest', 'field', 'market'];
+function buildProps(style, hr) {
+  if (PROP_STYLES.indexOf(style) < 0) return;
+  const P = [], VX = W.VAN[0], VZ = W.VAN[1];
+  const box = function (x, y, z, sx, sy, sz, col) { P.push([new THREE.BoxGeometry(sx, sy, sz), M4(x, y, z), col]); };
+  const pick = function (arr) { return arr[Math.floor(hr() * arr.length)]; };
+  const edges = [], free = [];
+  W.floorCells.forEach(function (fc) {
+    const c = fc[0], r = fc[1], cx = c * CS + CS / 2, cz = r * CS + CS / 2;
+    if (Math.hypot(cx - VX, cz - VZ) < CS * 1.5) return;
+    free.push([cx, cz]);
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) { if (W.isWall(c + d[0], r + d[1])) edges.push({ cx: cx, cz: cz, d: d }); });
+  });
+  // 貼牆位置：L 沿牆長度、D 離牆深度
+  const slot = function (e, L, D) { const hz = e.d[0] !== 0, o = CS / 2 - D / 2 - 0.03; return { x: e.cx + e.d[0] * o, z: e.cz + e.d[1] * o, sx: hz ? D : L, sz: hz ? L : D, d: e.d }; };
+  const spot = function () { const f = pick(free); return [f[0] + (hr() - 0.5) * 1.4, f[1] + (hr() - 0.5) * 1.4]; };
+  const each = function (p, fn) { edges.forEach(function (e) { if (hr() < p) fn(e); }); };
+  const freeEach = function (p, fn) { free.forEach(function (f) { if (hr() < p) fn(f[0] + (hr() - 0.5) * 1.4, f[1] + (hr() - 0.5) * 1.4); }); };
+  if (style === 'hospital') {   // 病床：白色床架、床墊、床頭點滴架
+    each(0.3, function (e) { const b = slot(e, 2.3, 1.1); box(b.x, 0.3, b.z, b.sx, 0.6, b.sz, 0xb8c4c8); box(b.x, 0.66, b.z, b.sx * 0.94, 0.14, b.sz * 0.94, 0xf5f7f6);
+      const ir = slot(e, 0.1, 0.1); const off = e.d[0] !== 0 ? [0, 0.9] : [0.9, 0]; box(ir.x + off[0], 1.1, ir.z + off[1], 0.06, 2.2, 0.06, 0xdfe4e6); });
+    freeEach(0.03, function (x, z) { box(x, 0.4, z, 1.2, 0.8, 0.6, 0xe8ecef); });   // 推車
+  } else if (style === 'library') {   // 書架：木層板、彩色書脊
+    const bookCols = [0x7a2e22, 0x2e4f72, 0x3c6e3a, 0x96762f, 0x5c3f74, 0x8a4a2a];
+    each(0.45, function (e) { const b = slot(e, 3.4, 0.9); box(b.x, 1.4, b.z, b.sx, 2.8, b.sz, 0x5b3a1e);
+      [0.45, 1.25, 2.05].forEach(function (y) { box(b.x - b.d[0] * 0.46, y, b.z - b.d[1] * 0.46, b.d[0] !== 0 ? 0.04 : b.sx * 0.9, 0.5, b.d[0] !== 0 ? b.sz * 0.9 : 0.04, pick(bookCols)); }); });
+    freeEach(0.04, function (x, z) { box(x, 0.38, z, 1.6, 0.06, 0.9, 0x8a6a40); box(x, 0.18, z, 1.4, 0.36, 0.7, 0x6e4e2e); });   // 閱覽桌
+  } else if (style === 'garage') {   // 停好的車
+    const carCols = [0x9aa4ae, 0x8b1e1e, 0x1f3f7a, 0xe8e8e4, 0x2e2e2e];
+    each(0.22, function (e) { const b = slot(e, 3.4, 1.8); box(b.x, 0.55, b.z, b.sx, 0.7, b.sz, pick(carCols)); box(b.x, 1.2, b.z, b.sx * 0.82, 0.55, b.sz * 0.6, 0x2a3440); });
+    freeEach(0.03, function (x, z) { box(x, 1.8, z, 0.6, 3.6, 0.6, 0x9a9a92); });   // 柱子
+  } else if (style === 'subway') {   // 候車長椅、車站指示牌
+    each(0.3, function (e) { const b = slot(e, 2.4, 0.6); box(b.x, 0.25, b.z, b.sx, 0.5, b.sz, 0x6f7d8c); box(b.x - b.d[0] * 0.25, 0.7, b.z - b.d[1] * 0.25, b.d[0] !== 0 ? 0.1 : b.sx, 0.5, b.d[0] !== 0 ? b.sz : 0.1, 0x566270); });
+    each(0.2, function (e) { const sg = slot(e, 1.8, 0.1); box(sg.x, 2.6, sg.z, sg.sx, 0.5, sg.sz, pick([0x1e4f9a, 0xc84a2a, 0x2e8b57])); });
+  } else if (style === 'dock') {   // 貨櫃
+    each(0.3, function (e) { const b = slot(e, 4.0, 2.2); box(b.x, 1.2, b.z, b.sx, 2.4, b.sz, pick([0xb83a2a, 0x2a5ea8, 0x3d8b4a, 0xd08a2a])); });
+    freeEach(0.02, function (x, z) { box(x, 0.35, z, 1.0, 0.7, 1.0, 0x6b5438); });   // 木箱
+  } else if (style === 'crypt') {   // 石棺
+    each(0.3, function (e) { const b = slot(e, 2.0, 0.8); box(b.x, 0.4, b.z, b.sx, 0.7, b.sz, 0x6e6a74); box(b.x, 0.8, b.z, b.sx * 1.05, 0.15, b.sz * 1.05, 0x5a5660); });
+  } else if (style === 'station') {   // 加油機
+    freeEach(0.05, function (x, z) { box(x, 0.8, z, 0.9, 1.6, 0.6, 0xd83a2a); box(x, 1.7, z, 0.9, 0.2, 0.6, 0xf2f2f2); box(x, 1.2, z + 0.31, 0.5, 0.3, 0.02, 0x1e2a33); });
+  } else if (style === 'rest') {   // 野餐桌、販賣機
+    freeEach(0.04, function (x, z) { box(x, 0.75, z, 2.0, 0.08, 0.9, 0xa37a4a); box(x, 0.42, z, 2.0, 0.06, 0.4, 0x7a5a32); box(x, 0.42, z + 1.3, 2.0, 0.06, 0.4, 0x7a5a32); });
+    each(0.12, function (e) { const b = slot(e, 0.9, 0.8); box(b.x, 1.0, b.z, b.sx, 2.0, b.sz, pick([0xd23a3a, 0x2a6fb8, 0x2e8b57])); });
+  } else if (style === 'field') {   // 看台
+    each(0.2, function (e) { const b = slot(e, 4.0, 1.0); box(b.x, 0.45, b.z, b.sx, 0.9, b.sz, 0xc8c8c8); box(b.x, 0.92, b.z, b.sx, 0.04, b.sz, 0x2a5aa0); });
+  } else if (style === 'market') {   // 攤位：布棚、桌子、柱子
+    freeEach(0.05, function (x, z) { const cc = pick([0xd9423a, 0xf2f2f2]); box(x, 2.4, z, 2.6, 0.12, 2.0, cc); box(x, 0.9, z, 2.2, 0.08, 1.0, 0x8a6a40);
+      [[-1.2, -0.9], [1.2, -0.9], [-1.2, 0.9], [1.2, 0.9]].forEach(function (q) { box(x + q[0], 1.2, z + q[1], 0.08, 2.4, 0.08, 0x3a3330); }); });
+  }
+  if (!P.length) return;
+  const m = new THREE.Mesh(mergeGeos(P), litMat({ vertexColors: true })); level.add(m);
+}
 function part(geo, m, x, y, z) { const o = new THREE.Mesh(geo, m); o.position.set(x || 0, y || 0, z || 0); return o; }
 
 /** 角色造型（純外觀）。身體用玩家顏色，正面朝 +z。 */
