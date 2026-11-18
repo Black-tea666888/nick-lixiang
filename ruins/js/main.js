@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v92', items: ['大廳角色可用手指或滑鼠左右拖曳轉動', '模式列與上方功能列可用滑鼠滾輪滑動；滾輪上下切換模式', '左手模式（設定裡開啟，按鍵左右對調）'] };
+const UPD = { v: 'v93', items: ['排行榜新增「全部模式」：四種模式依名次加總（第 1 名 20 分，第 20 名 1 分）', '大廳角色可用手指或滑鼠左右拖曳轉動', '模式列與上方功能列可用滑鼠滾輪滑動'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -915,11 +915,28 @@ function renderSocial() {
   const guard = function (fn) { return function (err, data) { if (renderSocial.token !== token) return; const w = b.querySelector('.wait'); if (w) w.remove(); if (err) { socNote(C.message(err)); return; } fn(data); }; };
   const modeSel = socSelect(C.MODES.map(function (m) { return [m, MODE_NAME[m] + '模式']; }), socMode, function (v) { socMode = v; renderSocial(); });
   if (socTab === 'rank') {
-    const row = mk('div', 'soc-row'); row.appendChild(modeSel);
+    const rankSel = socSelect(C.MODES.map(function (m) { return [m, MODE_NAME[m] + '模式']; }).concat([['mix', '全部模式']]), socMode, function (v) { socMode = v; renderSocial(); });
+    const row = mk('div', 'soc-row'); row.appendChild(rankSel);
     row.appendChild(socSelect([['week', '本週'], ['all', '總榜']], socScope, function (v) { socScope = v; renderSocial(); })); b.appendChild(row);
     b.appendChild(mk('p', 'note wait', '讀取中…'));
-    C.top(socMode, socScope === 'all' ? 'all' : 'w' + C.weekId(), guard(function (rows) { socRows(rows, scoreUnit(socMode)); }));
+    const scope = socScope === 'all' ? 'all' : 'w' + C.weekId();
+    if (socMode !== 'mix') { C.top(socMode, scope, guard(function (rows) { socRows(rows, scoreUnit(socMode)); })); }
+    else {
+      // 全部模式：每個模式依名次給分（第 1 名 20 分，第 20 名 1 分，榜外 0 分），四個模式加總
+      const pts = {}, who = {}; let left = C.MODES.length;
+      C.MODES.forEach(function (m) {
+        C.top(m, scope, function (err, rows) {
+          if (renderSocial.token !== token) return;
+          if (!err) rows.forEach(function (r, i) { if (!who[r.uid]) who[r.uid] = r; pts[r.uid] = (pts[r.uid] || 0) + (21 - (i + 1)); });
+          if (--left > 0) return;
+          const w = b.querySelector('.wait'); if (w) w.remove();
+          const list = Object.keys(pts).map(function (k) { return Object.assign({}, who[k], { uid: k, score: pts[k] }); }).sort(function (x, y) { return y.score - x.score; }).slice(0, 20);
+          socRows(list, function (v) { return v + ' 分'; }, '還沒有人上榜。');
+        });
+      });
+    }
   } else if (socTab === 'season') {
+    if (socMode === 'mix') socMode = 'coop';
     const p = prog(), rk = ['tw', 'hk'][p.region];
     const row = mk('div', 'soc-row');
     row.appendChild(socSelect(C.REGIONS.map(function (n, i) { return [String(i), n + '區']; }), String(p.region), function (v) { const q = prog(); q.region = +v; progSave(q); renderSocial(); }));
