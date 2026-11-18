@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v90', items: ['新增「左手模式」（設定裡開啟，按鍵左右對調）', '角色造型微調：鞋底、口袋、眼睛高光、臉部與胸口細節', '主頁更新提醒（就是現在這個）'] };
+const UPD = { v: 'v91', items: ['模式列與上方功能列可用滑鼠滾輪滑動；滾輪上下切換模式', '左手模式（設定裡開啟，按鍵左右對調）', '角色造型微調與主頁更新提醒'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1110,6 +1110,16 @@ function bind() {
 
   $('soloBtn').addEventListener('click', function () { startSolo('coop'); });
   Array.prototype.forEach.call($('modeStrip').children, function (b) { b.addEventListener('click', function () { lsSet('rr_mode', b.dataset.mode); Sfx.tone(520, 0.04, 'square', 0.04); refreshLobby(); }); });
+  // 滑鼠滾輪：模式列與上方功能列都能橫向滑；模式列上滾輪＝上下切換模式
+  const wheelX = function (el) { el.addEventListener('wheel', function (e) { if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return; e.preventDefault(); el.scrollLeft += e.deltaY; }, { passive: false }); };
+  wheelX(document.querySelector('.lbSide'));
+  $('modeStrip').addEventListener('wheel', function (e) {
+    e.preventDefault();
+    const kids = Array.prototype.slice.call($('modeStrip').children), cur = Math.max(0, kids.findIndex(function (b) { return b.dataset.mode === selMode(); }));
+    const next = kids[Math.max(0, Math.min(kids.length - 1, cur + (e.deltaY > 0 || e.deltaX > 0 ? 1 : -1)))];
+    if (next && next.dataset.mode !== selMode()) { lsSet('rr_mode', next.dataset.mode); Sfx.tone(520, 0.04, 'square', 0.04); refreshLobby(); }
+    next && next.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, { passive: false });
   $('goBtn').addEventListener('click', function () { const b = $('modeStrip').querySelector('[data-mode="' + selMode() + '"]'); if (b) $(b.dataset.go).click(); });
   $('mapChip').addEventListener('click', function () { renderMapGrid(); show('scrMap'); });
   $('mapOk').addEventListener('click', function () { showMenu(); }); $('mapDone').addEventListener('click', function () { showMenu(); });
