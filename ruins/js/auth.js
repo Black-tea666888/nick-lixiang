@@ -105,6 +105,11 @@ RR.Auth = {
     }
     local(); return Promise.resolve();
   },
+  /** 刪除 Firebase 登入帳號（先刪雲端資料再呼叫）。本機訪客沒有帳號，直接略過 */
+  deleteAccount: function () {
+    if (!auth || !auth.currentUser) return Promise.resolve();
+    return auth.currentUser.delete().then(function () { fbUser = null; build(); });
+  },
   signOut: function () {
     lsSet(LS_GUEST, null); memGuest = null;
     if (auth && fbUser) return auth.signOut().catch(function () {}).then(function () { fbUser = null; build(); });
