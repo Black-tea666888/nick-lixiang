@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v101', items: ['地圖增加到 20 張（新增碼頭倉庫、高速休息站、摩天輪樂園、圖書館、地下墓穴、校園操場）', '地圖縮圖直接畫出各圖的格子', '頭像、戰隊、排行榜的未讀提醒維持不變'] };
+const UPD = { v: 'v102', items: ['醫院病房改為白綠瓷磚牆、棋盤地磚、日光燈條，不再整片過曝'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
