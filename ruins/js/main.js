@@ -4,6 +4,8 @@
 const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx, Auth = RR.Auth, Game = RR.Game;
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
+// 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
+const UPD = { v: 'v90', items: ['新增「左手模式」（設定裡開啟，按鍵左右對調）', '角色造型微調：鞋底、口袋、眼睛高光、臉部與胸口細節', '主頁更新提醒（就是現在這個）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -719,6 +721,12 @@ function showMenu() {
   $('best').textContent = ls('rr_best') || '0';
   show('scrMenu');
   refreshPickSummary(); renderProg(); refreshLobby();
+  if (ls('rr_upd_seen') !== UPD.v) showUpdNote();
+}
+function showUpdNote() {
+  $('updVer').textContent = UPD.v;
+  $('updList').innerHTML = UPD.items.map(function (t) { return '<li>' + t + '</li>'; }).join('');
+  $('updNote').classList.remove('hide');
 }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
 const LOBBY_MODE = { coop: '多人合作', solo: '單人遊玩', hunt: '獵殺模式', td: '塔防模式', br: '大逃殺' };
@@ -1269,6 +1277,7 @@ function bind() {
   $('tutNext').addEventListener('click', function () { if (tutI < TUT.length - 1) tutShow(tutI + 1); else tutDone(); });
   Array.prototype.forEach.call(document.querySelectorAll('#regionAsk [data-r]'), function (b) { b.addEventListener('click', function () { const q = prog(); q.region = +b.dataset.r; progSave(q); lsSet('rr_region', '1'); $('regionAsk').classList.add('hide'); }); });
   $('tutSkip').addEventListener('click', tutDone);
+  $('updOk').addEventListener('click', function () { lsSet('rr_upd_seen', UPD.v); $('updNote').classList.add('hide'); });
   $('tutAgain').addEventListener('click', function () { tutShow(0); });
   $('miniInfoBtn').addEventListener('click', function () { Game.openMini(); });
   RR.Mini.init();
