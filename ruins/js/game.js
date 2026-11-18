@@ -219,7 +219,10 @@ function makeTex(base, speck, lines) {
 let maxAniso = 1;
 /* ---------- 場景細節：天空漸層、牆面／地面紋理、樹、遠景、地面小物 ---------- */
 // 各開放地圖的天空（上方、地平線）與壓頂／地面小物設定
-const SKY = { beach: [0x4aa8e8, 0xd6eef9], city: [0x5f4f92, 0xf5ae78], forest: [0x58a4da, 0xd7ecef], snow: [0x8eb2d4, 0xedf3f7], park: [0x76649f, 0xffbf8a], site: [0x4c93d6, 0xd9e9f4] };
+const SKY = { beach: [0x4aa8e8, 0xd6eef9], city: [0x5f4f92, 0xf5ae78], forest: [0x58a4da, 0xd7ecef], snow: [0x8eb2d4, 0xedf3f7], park: [0x76649f, 0xffbf8a], site: [0x4c93d6, 0xd9e9f4], station: [0x6aaee0, 0xcfe9f5], rest: [0xe0865a, 0xf7c99a], fair: [0x6fb8ff, 0xffe6f0], field: [0x9ad8ff, 0xf2fbff], market: [0x141733, 0x3b3366] };
+// 有貼圖的地圖樣式（牆、地）
+const WALL_STYLES = ['beach', 'forest', 'snow', 'park', 'site', 'hospital', 'garage', 'subway', 'dock', 'library', 'crypt', 'station', 'rest', 'fair', 'field', 'market'];
+const FLOOR_STYLES = ['hospital', 'garage', 'subway', 'dock', 'library', 'crypt'];
 const CAP = { beach: [0xd9c9a0, 0.12, 0.1], snow: [0xf6f9fc, 0.3, 0.16], park: [0xf1e7d8, 0.1, 0.08], site: [0xb8b6ad, 0.1, 0.08] };
 let skyDome = null;
 // 把多個幾何（各帶一個矩陣與顏色）合成一個，讓同一種東西只要一次繪製
@@ -321,6 +324,36 @@ function makeWallTex(style, base) {
     for (let i = 0; i < 40; i++) { const x = R() * 128, y = R() * 128, gr = g.createRadialGradient(x, y, 0, x, y, 8 + R() * 14); gr.addColorStop(0, rgba(R() < 0.5 ? '0,0,0' : '255,255,255', 0.06)); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); }
     for (let x = -12; x < 140; x += 12) { g.fillStyle = '#e8b400'; g.beginPath(); g.moveTo(x, 128); g.lineTo(x + 6, 128); g.lineTo(x + 14, 118); g.lineTo(x + 8, 118); g.fill(); g.fillStyle = '#1e1a16'; g.beginPath(); g.moveTo(x + 6, 128); g.lineTo(x + 12, 128); g.lineTo(x + 20, 118); g.lineTo(x + 14, 118); g.fill(); }
   }
+  if (style === 'garage') {   // 停車場：黃色柱邊、水泥接縫
+    for (let x = 0; x < 128; x += 64) { g.fillStyle = 'rgba(230,185,40,.6)'; g.fillRect(x, 0, 6, 128); }
+    g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(0, 60, 128, 1.2);
+  } else if (style === 'subway') {   // 地鐵：白色瓷磚、藍色腰線、塗鴉點
+    for (let y = 0; y < 128; y += 8) for (let x = 0; x < 128; x += 8) { g.fillStyle = 'rgba(0,0,0,.1)'; g.fillRect(x, y, 8, 0.8); g.fillRect(x, y, 0.8, 8); }
+    g.fillStyle = 'rgba(30,70,140,.7)'; g.fillRect(0, 100, 128, 6);
+    for (let i = 0; i < 14; i++) { g.fillStyle = rgba(R() < 0.5 ? '200,60,40' : '60,160,90', 0.5); g.beginPath(); g.arc(R() * 128, 20 + R() * 60, 1 + R() * 2, 0, 6.3); g.fill(); }
+  } else if (style === 'dock') {   // 碼頭：波浪鐵皮
+    for (let x = 0; x < 128; x += 16) { const gr = g.createLinearGradient(x, 0, x + 16, 0); gr.addColorStop(0, 'rgba(0,0,0,.25)'); gr.addColorStop(0.5, 'rgba(255,220,170,.12)'); gr.addColorStop(1, 'rgba(0,0,0,.25)'); g.fillStyle = gr; g.fillRect(x, 0, 16, 128); }
+    g.fillStyle = 'rgba(40,30,20,.5)'; g.fillRect(0, 118, 128, 4);
+  } else if (style === 'library') {   // 圖書館：書架層板、各色書脊
+    for (let y = 0; y < 128; y += 32) { g.fillStyle = 'rgba(40,25,10,.55)'; g.fillRect(0, y, 128, 3); for (let x = 2; x < 126; x += 4) { if (R() < 0.8) { g.fillStyle = rgba(['120,40,30', '40,70,110', '60,100,50', '150,120,50', '90,60,100'][Math.floor(R() * 5)], 0.75); g.fillRect(x, y + 6 + R() * 2, 2.5, 22 + R() * 3); } } }
+  } else if (style === 'crypt') {   // 墓穴：石磚、苔痕、裂縫
+    for (let y = 0; y < 128; y += 16) for (let x = ((y / 16) % 2 ? 0 : 16); x < 128; x += 32) { g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x, y, 1, 16); g.fillRect(x, y, 32, 1); }
+    for (let i = 0; i < 6; i++) { g.fillStyle = 'rgba(60,110,70,.3)'; g.beginPath(); g.ellipse(R() * 128, R() * 128, 4 + R() * 6, 2 + R() * 3, R() * 3, 0, 6.3); g.fill(); }
+  } else if (style === 'station') {   // 加油站：白色面板、紅色腰線、藍色上緣
+    for (let x = 0; x <= 128; x += 32) { g.fillStyle = 'rgba(0,0,0,.14)'; g.fillRect(x, 0, 1, 128); }
+    g.fillStyle = 'rgba(200,40,40,.75)'; g.fillRect(0, 108, 128, 8); g.fillStyle = 'rgba(40,120,220,.6)'; g.fillRect(0, 4, 128, 4);
+  } else if (style === 'rest') {   // 休息站：金屬壁板、橫向排水線
+    for (let y = 0; y < 128; y += 12) { g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, y, 128, 1.2); const gr = g.createLinearGradient(0, y, 0, y + 12); gr.addColorStop(0, 'rgba(255,255,255,.12)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, y, 128, 12); }
+  } else if (style === 'fair') {   // 遊樂園：粉白直條（嘉年華）
+    for (let x = 0; x < 128; x += 16) { if ((x / 16) % 2) { g.fillStyle = 'rgba(255,255,255,.75)'; g.fillRect(x, 0, 8, 128); } }
+    g.fillStyle = 'rgba(255,90,160,.5)'; g.fillRect(0, 0, 128, 4);
+  } else if (style === 'field') {   // 操場：紅磚、白色踢腳線
+    for (let y = 0; y < 128; y += 8) for (let x = ((y / 8) % 2 ? 0 : 8); x < 128; x += 16) { g.fillStyle = 'rgba(120,50,30,.22)'; g.fillRect(x, y, 15, 7); g.fillStyle = 'rgba(0,0,0,.14)'; g.fillRect(x, y + 7, 15, 0.6); }
+    g.fillStyle = 'rgba(255,255,255,.7)'; g.fillRect(0, 118, 128, 5);
+  } else if (style === 'market') {   // 夜市：磚牆＋色布招牌條
+    for (let y = 0; y < 128; y += 10) for (let x = ((y / 10) % 2 ? 0 : 8); x < 128; x += 16) { g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x, y, 0.8, 10); }
+    for (let x = 0; x < 128; x += 24) { g.fillStyle = (x / 24) % 2 ? 'rgba(240,200,80,.7)' : 'rgba(220,60,50,.7)'; g.fillRect(x, 0, 12, 10); }
+  }
   for (let i = 0; i < 2500; i++) { g.fillStyle = 'rgba(0,0,0,' + (R() * 0.06).toFixed(3) + ')'; g.fillRect(R() * 128, R() * 128, 0.35, 0.35); }
   const ao = g.createLinearGradient(0, 128, 0, 80); ao.addColorStop(0, 'rgba(0,0,0,.38)'); ao.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = ao; g.fillRect(0, 80, 128, 48);
   const hi = g.createLinearGradient(0, 0, 0, 10); hi.addColorStop(0, 'rgba(255,255,255,.16)'); hi.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = hi; g.fillRect(0, 0, 128, 10);
@@ -352,6 +385,32 @@ function makeFloorTex(style, base) {
     for (let i = 0; i < 1400; i++) { g.fillStyle = R() < 0.5 ? 'rgba(60,45,30,.35)' : 'rgba(200,185,160,.3)'; g.fillRect(R() * 128, R() * 128, 0.6 + R(), 0.6 + R()); }
     g.fillStyle = 'rgba(50,38,25,.18)'; g.fillRect(40, 0, 9, 128); g.fillRect(78, 0, 9, 128);
     for (let y = 0; y < 128; y += 4) { g.fillStyle = 'rgba(40,30,20,.12)'; g.fillRect(40, y, 9, 1.5); g.fillRect(78, y, 9, 1.5); }
+  }
+  if (style === 'garage') {   // 停車格線
+    g.fillStyle = 'rgba(255,255,255,.55)'; for (let y = 40; y < 128; y += 44) g.fillRect(0, y, 128, 2);
+    for (let x = 0; x < 128; x += 42) g.fillRect(x, 40, 2, 88);
+    g.fillStyle = 'rgba(0,0,0,.25)'; for (let i = 0; i < 5; i++) { g.beginPath(); g.ellipse(R() * 128, R() * 128, 6 + R() * 8, 3 + R() * 4, 0, 0, 6.3); g.fill(); }
+  } else if (style === 'subway') {   // 軌道與枕木
+    for (let y = 0; y < 128; y += 10) { g.fillStyle = 'rgba(60,40,25,.5)'; g.fillRect(0, y, 128, 3); }
+    g.fillStyle = 'rgba(160,168,180,.55)'; g.fillRect(36, 0, 3, 128); g.fillRect(89, 0, 3, 128);
+  } else if (style === 'dock') {   // 木板地
+    for (let y = 0; y < 128; y += 16) { g.fillStyle = 'rgba(30,18,8,.45)'; g.fillRect(0, y, 128, 1.5); for (let k = 0; k < 4; k++) { g.fillStyle = 'rgba(60,35,15,.18)'; g.fillRect(R() * 128, y + 3 + R() * 10, 20 + R() * 30, 0.7); } }
+  } else if (style === 'library') {   // 木地板斜紋
+    g.strokeStyle = 'rgba(60,35,15,.3)'; g.lineWidth = 1; for (let k = -128; k < 256; k += 16) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k + 128, 128); g.stroke(); }
+  } else if (style === 'crypt') {   // 石板地
+    g.fillStyle = 'rgba(0,0,0,.4)'; for (let y = 0; y < 128; y += 32) g.fillRect(0, y, 128, 1.5); for (let x = 0; x < 128; x += 42) g.fillRect(x, 0, 1.5, 128);
+    for (let i = 0; i < 10; i++) { g.fillStyle = 'rgba(120,30,30,.12)'; g.beginPath(); g.ellipse(R() * 128, R() * 128, 5 + R() * 6, 3 + R() * 4, 0, 0, 6.3); g.fill(); }
+  } else if (style === 'station') {   // 油漬水泥
+    for (let i = 0; i < 16; i++) { const x = R() * 128, y = R() * 128, r = 4 + R() * 9, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(20,20,25,.35)'); gr.addColorStop(1, 'rgba(20,20,25,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+  } else if (style === 'rest') {   // 停車場柏油與中央虛線
+    g.fillStyle = 'rgba(245,200,60,.7)'; for (let y = 0; y < 128; y += 24) g.fillRect(63, y, 2, 12);
+  } else if (style === 'fair') {   // 木棧道
+    for (let x = 0; x < 128; x += 20) { g.fillStyle = 'rgba(80,50,30,.25)'; g.fillRect(x, 0, 1.2, 128); }
+  } else if (style === 'field') {   // 草皮條紋與白線
+    for (let x = 0; x < 128; x += 32) { g.fillStyle = (x / 32) % 2 ? 'rgba(255,255,255,.08)' : 'rgba(0,60,0,.08)'; g.fillRect(x, 0, 32, 128); }
+    g.fillStyle = 'rgba(255,255,255,.6)'; g.fillRect(0, 63, 128, 1.5); g.beginPath(); g.arc(64, 64, 14, 0, 6.3); g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 1.5; g.stroke();
+  } else if (style === 'market') {   // 石板路
+    for (let y = 0; y < 128; y += 16) for (let x = ((y / 16) % 2 ? 0 : 16); x < 128; x += 32) { g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = 1; g.strokeRect(x + 1, y + 1, 30, 14); }
   }
   for (let i = 0; i < 3000; i++) { g.fillStyle = 'rgba(0,0,0,' + (R() * 0.05).toFixed(3) + ')'; g.fillRect(R() * 128, R() * 128, 0.3, 0.3); }
   const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = maxAniso; return t;
@@ -498,7 +557,7 @@ function buildLevel() {
   torchBase = T.torch != null ? T.torch : 2.2;
   baseLight = { fog: scene.fog.density, fogC: skyC, amb: ambient ? ambient.intensity : 1, hemi: hemi ? hemi.intensity : 0.4, sun: sun ? sun.intensity : 0, torch: torchBase, open: open };
   const style = T.style || 'ruin', wallH = T.wallH || WH;
-  const floorTex = (open || style === 'hospital') && style !== 'city' && style !== 'space' ? makeFloorTex(style, T.floor) : makeTex(T.floor, '0,0,0', false); floorTex.repeat.set(COLS, ROWS);
+  const floorTex = (open || FLOOR_STYLES.indexOf(style) >= 0) && style !== 'city' && style !== 'space' ? makeFloorTex(style, T.floor) : makeTex(T.floor, '0,0,0', false); floorTex.repeat.set(COLS, ROWS);
   const Wd = COLS * CS, D = ROWS * CS;
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(Wd, D, LITE ? COLS * 2 : 1, LITE ? ROWS * 2 : 1), litMat({ map: floorTex, shininess: style === 'space' ? 40 : 8 }));
   floor.rotation.x = -Math.PI / 2; floor.position.set(Wd / 2, 0, D / 2); level.add(floor);
@@ -507,7 +566,7 @@ function buildLevel() {
     const ceil = new THREE.Mesh(new THREE.PlaneGeometry(Wd, D, LITE ? COLS : 1, LITE ? ROWS : 1), litMat({ map: ceilTex, shininess: 2 }));
     ceil.rotation.x = Math.PI / 2; ceil.position.set(Wd / 2, WH, D / 2); level.add(ceil);
   }
-  const wallTex = style === 'city' ? makeWinTex(T.wall, true) : style === 'space' ? makeWinTex(T.wall, false) : /beach|forest|snow|park|site|hospital/.test(style) ? makeWallTex(style, T.wall) : makeTex(T.wall, '20,20,20', style !== 'office');
+  const wallTex = style === 'city' ? makeWinTex(T.wall, true) : style === 'space' ? makeWinTex(T.wall, false) : WALL_STYLES.indexOf(style) >= 0 ? makeWallTex(style, T.wall) : makeTex(T.wall, '20,20,20', style !== 'office');
   let n = 0;
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (MAP[r][c] === '#') n++;
   const walls = new THREE.InstancedMesh(new THREE.BoxGeometry(CS, 1, CS), litMat({ map: wallTex, shininess: style === 'space' ? 50 : 4 }), n);
@@ -553,7 +612,7 @@ function buildLevel() {
       snow: [[new THREE.SphereGeometry(0.35, 8, 6), [0xf4f8fb, 0xe6eef5], 0.05], [new THREE.DodecahedronGeometry(0.25, 0), [0xdfe9f2, 0xc5d3e0], 0.08], [new THREE.ConeGeometry(0.15, 0.4, 7), [0x9fd0e6, 0xf4f8fb], 0.2]],
       park: [[new THREE.BoxGeometry(0.25, 0.03, 0.18), [0xd94a3a, 0xf2b84b, 0x4a8fd9, 0xffffff], 0.02], [new THREE.CylinderGeometry(0.1, 0.1, 0.05, 12), [0xf2b84b, 0x4a8fd9, 0xd94a3a], 0.03], [new THREE.OctahedronGeometry(0.16), [0xff7ad1, 0x6ad8ff], 0.17]],
       site: [[new THREE.ConeGeometry(0.2, 0.55, 10), [0xf26a1b], 0.27], [new THREE.BoxGeometry(0.4, 0.1, 0.25), [0xf26a1b, 0x333333], 0.06], [new THREE.DodecahedronGeometry(0.2, 0), [0xf2b84b, 0xd94a3a], 0.13]],
-      city: [[new THREE.BoxGeometry(0.3, 0.03, 0.2), [0xd8d2c4, 0x9aa0a8], 0.02], [new THREE.CylinderGeometry(0.12, 0.12, 0.2, 8), [0x9aa0a8, 0x6f7680], 0.1], [new THREE.OctahedronGeometry(0.18), [0xd8d2c4, 0xb07a4a], 0.18]], space: null };
+      city: [[new THREE.BoxGeometry(0.3, 0.03, 0.2), [0xd8d2c4, 0x9aa0a8], 0.02], [new THREE.CylinderGeometry(0.12, 0.12, 0.2, 8), [0x9aa0a8, 0x6f7680], 0.1], [new THREE.OctahedronGeometry(0.18), [0xd8d2c4, 0xb07a4a], 0.18]], space: null, station: [[new THREE.CylinderGeometry(0.22, 0.22, 0.5, 8), [0xc0392b, 0x2b5fb0, 0x9a9a9a], 0.25]], field: [[new THREE.ConeGeometry(0.14, 0.3, 6), [0xff7a1a, 0xffffff], 0.15]] };
     const vs = kinds[style]; if (!vs) return;
     const groups = vs.map(function () { return []; });
     spots.forEach(function (q) { groups[Math.floor(rr() * vs.length)].push(q); });   // 每個位置隨機挑一種外形
