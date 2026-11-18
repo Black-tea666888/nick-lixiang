@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v99', items: ['排行榜名次被超越時，「社群」按鈕會出現紅點數字（打開社群就清除）', '戰隊聊天裡自己的訊息會顯示自己的照片頭像（只在本機）', '戰隊聊天與排行榜的未讀數字合併顯示在社群按鈕上'] };
+const UPD = { v: 'v100', items: ['新增 3 張地圖：地鐵隧道、加油站、醫院病房（共 14 張）', '地圖選擇的縮圖改成畫出真正的格子，每張圖都不一樣', '頭像、戰隊、排行榜的未讀提醒維持不變'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -801,11 +801,12 @@ function renderMapGrid() {
   const g = $('mapGrid'), cur = myMap(); g.textContent = '';
   W.MAPS.forEach(function (mp, i) {
     const T = mp.theme, b = document.createElement('button'); b.type = 'button'; b.className = 'mapCard' + (i === cur ? ' on' : '');
-    const sky = T.open ? '#' + (T.sky || 0).toString(16).padStart(6, '0') : '#1a1d20';
-    b.innerHTML = '<i class="sw"><u></u><s></s></i><b></b><span></span>';
-    b.querySelector('u').style.background = sky; b.querySelector('s').style.background = T.wall;
-    b.querySelector('.sw').style.background = T.floor;
-    b.querySelector('b').textContent = mp.name; b.querySelector('span').textContent = T.open ? '開放場景' : '室內';
+    // 縮圖直接畫出地圖的格子：牆、地板、出生點（綠）、怪物點（紅）
+    const cv = document.createElement('canvas'); cv.className = 'mapPrev'; cv.width = mp.rows[0].length * 4; cv.height = mp.rows.length * 4;
+    const x = cv.getContext('2d');
+    mp.rows.forEach(function (row, r) { for (let c = 0; c < row.length; c++) { const ch = row[c]; x.fillStyle = ch === '#' ? T.wall : ch === 'S' ? '#5fd17a' : ch === 'M' ? '#e0503a' : T.floor; x.fillRect(c * 4, r * 4, 4, 4); } });
+    b.appendChild(cv);
+    const nm = document.createElement('b'), sp = document.createElement('span'); nm.textContent = mp.name; sp.textContent = T.open ? '開放場景' : '室內'; b.appendChild(nm); b.appendChild(sp);
     b.addEventListener('click', function () { lsSet('rr_map', String(i)); Game.showMap(i); renderMapGrid(); });
     g.appendChild(b);
   });
