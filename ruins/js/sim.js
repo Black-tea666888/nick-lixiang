@@ -923,6 +923,20 @@ Sim.prototype._pickWander = function (m) {
   m.path = null;
 };
 
+/** 空中掃射（連殺 6 次解鎖）：在指定點 7 公尺內的怪物受 120 點傷害；25 秒冷卻；回傳擊倒數由事件告知 */
+Sim.prototype.airStrike = function (id, x, z) {
+  const p = this.player(id);
+  if (!p || this.phase !== 'play' || !p.alive || (p.airCd || 0) > 0) return;
+  x = Math.max(0, Math.min(COLS * CS, +x || 0)); z = Math.max(0, Math.min(ROWS * CS, +z || 0));
+  p.airCd = 25;
+  let kills = 0;
+  this.monsters.forEach(function (m) {
+    if (m.dead > 0 || Math.hypot(m.x - x, m.z - z) > 7) return;
+    monHit(m, 120);
+    if (m.hp <= 0) { kills++; m.dead = 12; m.state = 'wander'; m.path = null; }
+  });
+  this.events.push({ t: 'air', id: id, x: r2(x), z: r2(z), kills: kills });
+};
 /** 炸藥：炸開面前 3.5 公尺內的第一格牆，地形就此改變（怪物與玩家都能走新開的路）；8 公尺內的怪物暈 2 秒 */
 Sim.prototype.bomb = function (id, yaw) {
   const p = this.player(id);
@@ -1096,6 +1110,7 @@ Sim.prototype.step = function (dt) {
     if (p.gunCd > 0) p.gunCd -= dt;
     if (p.reload > 0) { p.reload -= dt; if (p.reload <= 0) { p.reload = 0; p.ammo = p.clip || 12; } }
     if ((p.skCd || 0) > 0) p.skCd -= dt;
+    if ((p.airCd || 0) > 0) p.airCd -= dt;
     if ((p.lkCd || 0) > 0) p.lkCd -= dt;
     if (p.lk) { p.lk.t -= dt; if (p.lk.t <= 0) this._lockerExit(p); }
     for (const k of ['shieldT', 'hideT', 'stealthT', 'rallyT']) if ((p[k] || 0) > 0) p[k] -= dt;

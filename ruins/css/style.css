@@ -87,7 +87,7 @@ body.solo #micBtn, body.solo #chatBtn { display: none; }
 #knob { width: 46px; height: 46px; margin: -23px 0 0 -23px; background: rgba(243,239,228,.4); }
 
 /* 觸控按鍵：實心鐵板方鍵，粉筆白字；只有「打」「跑」用警示黃。按下會往下壓。 */
-#run, #atk, #gun, #swap, #rescue, #locker, #smoke, #skill, #jump, #dash, #bomb, #tower, #veh {
+#run, #atk, #gun, #swap, #uav, #air, #rescue, #locker, #smoke, #skill, #jump, #dash, #bomb, #tower, #veh {
   position: fixed; display: none; pointer-events: auto; touch-action: none; padding: 0;
   width: 58px; height: 58px; border-radius: 12px; cursor: pointer;
   font: 900 17px/1 -apple-system, "PingFang TC", "Noto Sans TC", sans-serif; color: var(--chalk);
@@ -109,7 +109,8 @@ body.solo #gun { bottom: 116px; }
 /* 冷卻中：變暗＋斜線 */
 #skill.cd, #smoke.cd, #gun.cd { color: var(--chalk-2); background: repeating-linear-gradient(135deg, #2b3136 0 6px, #343b41 6px 12px); }
 body.touch.playing #rescue, body.touch.playing #locker, body.touch.playing #smoke, body.touch.playing #skill, body.touch.playing #jump, body.touch.playing #dash,
-body.touch.playing #run, body.touch.playing #atk, body.touch.playing #gun, body.touch.playing #swap, body.touch.playing #bomb { display: block; }
+body.touch.playing #run, body.touch.playing #atk, body.touch.playing #gun, body.touch.playing #swap, body.touch.playing #uav, body.touch.playing #air, body.touch.playing #bomb { display: block; }
+#uav, #air { background: #2f5d7a; }
 /* 切槍：小圓鍵，中間是迴轉箭頭 */
 #swap { border-radius: 50%; font-size: 24px; background: #3b4650; }
 body.td.touch.playing #tower, body.touch.playing.nearveh #veh { display: block; }

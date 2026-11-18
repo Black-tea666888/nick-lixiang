@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v112', items: ['修正開啟網頁時先閃出未排版文字的問題'] };
+const UPD = { v: 'v113', items: ['新增連殺：連續擊倒 3 次解鎖「偵」無人機（看到全圖敵人 15 秒），連續擊倒 6 次解鎖「空」空中掃射'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -683,6 +683,7 @@ function wireNet() {
       else if (d.t === 'gun') S.sim.shoot(from, d.yaw);
       else if (d.t === 'tower') S.sim.buildTower(from);
       else if (d.t === 'bomb') S.sim.bomb(from, d.yaw);
+      else if (d.t === 'air') S.sim.airStrike(from, d.x, d.z);
       else if (d.t === 'eq') { const pl = S.sim.player(from); if (pl && S.sim.setEquip(from, d.eq)) { if (Array.isArray(d.gems)) pl.gems = [0, 1, 2].map(function (k) { return Math.max(0, Math.min(5, d.gems[k] | 0)); }); hostBroadcast(rosterMsg()); } }
       else if (d.t === 'bye') { Net.drop(from); hostRemove(from); }
     } else if (S.mode === 'client') { S.lastHost = Date.now(); dispatch(d); }
@@ -1433,6 +1434,10 @@ function boot() {
   Game.onTower = function () {
     if (S.mode === 'client') Net.send({ t: 'tower' });
     else if (S.sim) S.sim.buildTower(S.myId);
+  };
+  Game.onAir = function (x, z) {
+    if (S.mode === 'client') Net.send({ t: 'air', x: x, z: z });
+    else if (S.sim) S.sim.airStrike(S.myId, x, z);
   };
   Game.onShoot = function (yaw) {
     if (S.mode === 'client') Net.send({ t: 'gun', yaw: yaw });

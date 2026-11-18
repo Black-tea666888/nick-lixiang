@@ -158,6 +158,7 @@ function floatText(text, bad) {
   const el = document.createElement('span'); el.textContent = text; if (bad) el.className = 'bad';
   $('floats').appendChild(el); setTimeout(function () { el.remove(); }, 1350);
 }
+let ksN = 0, ksT = 0, uavT = 0, airCdT = 0;   // 連殺數、最後擊倒時間、無人機剩餘秒數、空襲冷卻
 let shakeT = 0, jumpQ = false, dashQ = false, dashT = 0, dashCd = 0, dashDir = [0, 0];
 me.y = 0; me.vy = 0;
 // 提示訊息條：深色底板＋左側色條（warn 紅、good 綠、info 黃），時間依字數調整
@@ -538,7 +539,7 @@ function drawMini(L) {
     g.strokeStyle = '#ffffff'; g.lineWidth = 2; g.beginPath(); g.arc(view.zone[0] * k, view.zone[1] * k, Math.max(1, view.zr * k), 0, Math.PI * 2); g.stroke();
   }
   view.players.forEach(function (p) {          // 還活著的隊友（大逃殺不顯示對手）
-    if (p.id === myId || !p.alive || view.mode === 'br') return;
+    if (p.id === myId || !p.alive || (view.mode === 'br' && uavT <= 0)) return;
     g.fillStyle = CSSCOL[p.slot % 4];
     g.beginPath(); g.arc(p.x * k, p.z * k, MC * 0.38, 0, Math.PI * 2); g.fill();
   });
@@ -546,7 +547,7 @@ function drawMini(L) {
   const MC_COL = ['#ff5a2a', '#5ad0ff', '#8cff5a', '#b070ff'];
   for (let i = 0; i < view.monsters.length; i++) {
     const m = view.monsters[i];
-    if (!m.group.visible || view.weather === 4 || (view.mode !== 'hunt' && view.mode !== 'td' && Math.hypot(m.x - L.x, m.z - L.z) > (myPet() === 2 ? 22 : 14))) continue;   // 14 公尺內才顯示
+    if (!m.group.visible || (view.weather === 4 && uavT <= 0) || (uavT <= 0 && view.mode !== 'hunt' && view.mode !== 'td' && Math.hypot(m.x - L.x, m.z - L.z) > (myPet() === 2 ? 22 : 14))) continue;   // 無人機開啟時顯示全圖敵人   // 14 公尺內才顯示
     const mx = m.x * k, my = m.z * k;
     if (m.chase && Math.floor(Date.now() / 250) % 2) { g.strokeStyle = '#ffffff'; g.lineWidth = 1.5; g.beginPath(); g.arc(mx, my, MC * 0.75, 0, Math.PI * 2); g.stroke(); }
     g.fillStyle = MC_COL[i % 4]; g.strokeStyle = '#000'; g.lineWidth = 1;
@@ -1181,6 +1182,19 @@ let wpnMode = 'gun';
 function gunPress() {
   if (wpnMode === 'melee') attack(); else shoot();
 }
+// 連殺：自己擊倒怪物或玩家就 +1；15 秒沒有擊倒或死亡就歸零
+function addKill() {
+  ksN++; ksT = Date.now();
+  if (ksN === 3) toast('連殺 3！「偵」無人機可用（看全圖敵人）');
+  if (ksN === 6) toast('連殺 6！「空」空中掃射可用');
+}
+function useUav() { if (ksN >= 3 && uavT <= 0 && canControl()) { uavT = 15; toast('無人機偵察中（15 秒）'); } }
+function useAir() {
+  if (ksN < 6 || airCdT > 0 || !canControl() || !me.alive) return;
+  const fx = -Math.sin(me.yaw), fz = -Math.cos(me.yaw);
+  if (RR.Game.onAir) RR.Game.onAir(me.x + fx * 12, me.z + fz * 12);
+  ksN -= 6; airCdT = 25; toast('呼叫空中掃射…');
+}
 function swapPress() {
   wpnMode = wpnMode === 'gun' ? 'melee' : 'gun'; toast(wpnMode === 'gun' ? '切回槍' : '切換到近戰');
 }
@@ -1560,9 +1574,9 @@ function fpsWatch(dt) {
   }
 }
 /* ---------- 手機按鈕：位置與大小可自訂（直式、橫式各存一份） ---------- */
-const BTN = { swap: [244, 378, 52], scope: [58, 348, 58], bomb: [154, 314, 58], tower: [244, 296, 58], veh: [244, 218, 58], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
+const BTN = { swap: [244, 378, 52], uav: [334, 218, 52], air: [334, 296, 52], scope: [58, 348, 58], bomb: [154, 314, 58], tower: [244, 296, 58], veh: [244, 218, 58], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
 // 橫式：畫面矮，改成 4 欄 × 3 列，避免按鍵疊到上方的資訊和按鈕
-const BTN_L = { swap: [314, 212, 52], scope: [150, 290, 58], run: [62, 68, 76], atk: [150, 60, 64], gun: [150, 136, 58], rescue: [150, 212, 58], jump: [58, 154, 58], dash: [58, 226, 58],
+const BTN_L = { swap: [314, 212, 52], uav: [232, 290, 52], air: [314, 290, 52], scope: [150, 290, 58], run: [62, 68, 76], atk: [150, 60, 64], gun: [150, 136, 58], rescue: [150, 212, 58], jump: [58, 154, 58], dash: [58, 226, 58],
   skill: [232, 56, 58], smoke: [232, 134, 58], bomb: [232, 212, 58], tower: [314, 56, 58], veh: [314, 134, 58] };
 function btnMap() { return window.innerWidth > window.innerHeight ? BTN_L : BTN; }
 // 按鍵區太高、畫面放不下時自動縮小（上方留 84px 給資訊列）
@@ -1659,6 +1673,8 @@ function bindInput() {
     if (active && e.code === 'KeyM') RR.Game.toggleMic();
     if (e.code === 'KeyQ' && !e.repeat) trySmoke();
     if (e.code === 'KeyE' && !e.repeat && canControl()) swapPress();
+    if (e.code === 'KeyU' && !e.repeat) useUav();
+    if (e.code === 'KeyJ' && !e.repeat) useAir();
     if (e.code === 'KeyR' && !e.repeat) trySkill();
     if (e.code === 'KeyY' && !e.repeat && canControl()) { e.preventDefault(); lockerPress(); }
     if (e.code === 'KeyG' && !e.repeat && canControl() && !(e.target && /INPUT|TEXTAREA/.test(e.target.tagName))) { if ($('scrMini').classList.contains('hide')) openMini(); else closeMini(); }
@@ -1734,7 +1750,7 @@ function bindInput() {
   runBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   $('micBtn').addEventListener('click', function () { RR.Game.toggleMic(); });
   $('mini').addEventListener('click', function () { $('mini').classList.toggle('big'); });
-  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', gunPress], ['swap', swapPress], ['bomb', function () { if (RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100); }], ['veh', function () { vhQ = true; }], ['tower', function () { if (view.mode === 'td' && RR.Game.onTower) RR.Game.onTower(); }]].forEach(function (q) {
+  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', gunPress], ['swap', swapPress], ['uav', useUav], ['air', useAir], ['bomb', function () { if (RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100); }], ['veh', function () { vhQ = true; }], ['tower', function () { if (view.mode === 'td' && RR.Game.onTower) RR.Game.onTower(); }]].forEach(function (q) {
     const b = $(q[0]);
     b.addEventListener('touchstart', function (e) { e.preventDefault(); if (q[0] === 'gun') gunHeld = wpnMode === 'gun'; if (canControl()) q[1](); }, { passive: false });
     if (q[0] === 'gun') { const up = function (e) { e.preventDefault(); gunHeld = false; }; b.addEventListener('touchend', up, { passive: false }); b.addEventListener('touchcancel', up, { passive: false }); }
@@ -1814,6 +1830,10 @@ function updateMe(dt) {
     if (Math.floor(me.walkT / Math.PI) !== before) { Sfx.tone(wantRun ? 85 : 70, 0.06, 'sine', wantRun ? 0.09 : 0.045); Sfx.noise(0.035, wantRun ? 0.05 : 0.028); }
   }
   me.running = wantRun;
+  if (uavT > 0) uavT -= dt;
+  if (airCdT > 0) airCdT -= dt;
+  if (ksN && (!me.alive || Date.now() - ksT > 15000)) ksN = 0;
+  { const u = $('uav'), a = $('air'); if (u) u.classList.toggle('hide', !(ksN >= 3 && me.alive)); if (a) a.classList.toggle('hide', !(ksN >= 6 && me.alive)); }
   // 跑步時視野變寬，讓速度感更明顯
   const sniping = scopeOn && (settings.gun | 0) === 4;
   const fovT = sniping ? 24 : dashT > 0 ? 96 : wantRun ? 88 : 75;
@@ -2371,8 +2391,13 @@ RR.Game = {
       if (e.id === myId) toast(e.why === 'money' ? '資金不足：砲塔要 $100' : e.why === 'max' ? '最多 6 座砲塔' : '離另一座砲塔太近');
     } else if (e.t === 'shot') {
       showShot(e);
+      if (e.kill && e.id === myId) addKill();
       if (e.kill) { Sfx.tone(180, 0.35, 'sawtooth', 0.14, 60); floatText('+$50'); toast((e.id === myId ? '你' : nameOf(e.id)) + '擊倒了怪物！'); }
       else if (e.mi >= 0 && e.id === myId && view.mode !== 'hunt') toast('命中！怪物暈 2.5 秒');
+    } else if (e.t === 'air') {
+      Sfx.noise(0.5, 0.5); shakeT = Math.max(shakeT, 0.6);
+      if (e.id === myId) { for (let k = 0; k < (e.kills | 0); k++) addKill(); toast(e.kills ? '空中掃射擊倒 ' + e.kills + ' 隻！' : '空中掃射沒有命中'); }
+      else toast(nameOf(e.id) + ' 呼叫了空中掃射');
     } else if (e.t === 'boom') {
       Sfx.noise(0.35, 0.35); shakeT = Math.max(shakeT, 0.3);
       if (e.id === myId) toast('轟！附近的怪物暈了'); else if (me.alive && Math.hypot(e.x - me.x, e.z - me.z) < 10) toast(nameOf(e.id) + ' 丟了炸藥');
