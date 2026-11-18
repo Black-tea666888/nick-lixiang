@@ -106,7 +106,7 @@ const MAPS = [
     '#...................#',
     '#####################'
   ] },
-  { name: '雪地小鎮', theme: { wall: '#7b5b43', floor: '#e6edf3', ceil: '#000000', fog: 0.02, amb: 0xffffff, open: true, sky: 0xc7dbec, style: 'snow', wallH: 2.8, sun: 0.5, torch: 0.25 }, rows: [
+  { name: '雪地小鎮', theme: {exp: 0.85,  wall: '#7b5b43', floor: '#e6edf3', ceil: '#000000', fog: 0.02, amb: 0xffffff, open: true, sky: 0xc7dbec, style: 'snow', wallH: 2.8, sun: 0.5, torch: 0.25 }, rows: [
     '#####################',
     '#S..................#',
     '#.##..##..##..##.##.#',
@@ -140,7 +140,7 @@ const MAPS = [
     '#M.......#.........M#',
     '#####################'
   ] },
-  { name: '建築工地', theme: { wall: '#9c9b93', floor: '#8c7b62', ceil: '#000000', fog: 0.012, amb: 0xfff6e8, open: true, sky: 0x96c6ec, style: 'site', wallH: 3.0, sun: 0.62, torch: 0.2 }, rows: [
+  { name: '建築工地', theme: {exp: 0.85,  wall: '#9c9b93', floor: '#8c7b62', ceil: '#000000', fog: 0.012, amb: 0xfff6e8, open: true, sky: 0x96c6ec, style: 'site', wallH: 3.0, sun: 0.62, torch: 0.2 }, rows: [
     '#####################',
     '#S...#.......#......#',
     '#....#..###..#..##..#',
@@ -199,7 +199,7 @@ const MAPS = [
     '#M#.....M.....#....M#',
     '#####################'
   ] },
-  { name: '加油站', theme: { wall: '#c9c2b0', floor: '#4f5257', ceil: '#000000', fog: 0.01, amb: 0xfff1d0, open: true, sky: 0x8fc7e8, style: 'station', wallH: 2.6, sun: 0.9 }, rows: [
+  { name: '加油站', theme: {exp: 0.75,  wall: '#c9c2b0', floor: '#4f5257', ceil: '#000000', fog: 0.01, amb: 0xfff1d0, open: true, sky: 0x8fc7e8, style: 'station', wallH: 2.6, sun: 0.9 }, rows: [
     '#####################',
     '#S.....#.....#.....M#',
     '#..##..#..##.#..##..#',
@@ -238,7 +238,7 @@ const MAPS = [
     '#......M......#.....#',
     '#####################'
   ] },
-  { name: '高速休息站', theme: { wall: '#8a8f96', floor: '#505459', ceil: '#000000', fog: 0.02, amb: 0xffc890, open: true, sky: 0xf0a060, style: 'rest', wallH: 2.8, sun: 0.6 }, rows: [
+  { name: '高速休息站', theme: {exp: 0.7,  wall: '#8a8f96', floor: '#505459', ceil: '#000000', fog: 0.02, amb: 0xffc890, open: true, sky: 0xf0a060, style: 'rest', wallH: 2.8, sun: 0.6 }, rows: [
     '#####################',
     '#S.......M#........M#',
     '#.#.#####.#.#.#.#.#.#',
@@ -251,7 +251,7 @@ const MAPS = [
     '#..................M#',
     '#####################'
   ] },
-  { name: '摩天輪樂園', theme: { wall: '#e0a0c0', floor: '#7a6a8a', ceil: '#000000', fog: 0.01, amb: 0xfff0f5, open: true, sky: 0x6fb8ff, style: 'fair', wallH: 3.0, sun: 0.8 }, rows: [
+  { name: '摩天輪樂園', theme: {exp: 0.55,  wall: '#e0a0c0', floor: '#7a6a8a', ceil: '#000000', fog: 0.01, amb: 0xfff0f5, open: true, sky: 0x6fb8ff, style: 'fair', wallH: 3.0, sun: 0.8 }, rows: [
     '#####################',
     '#S................#M#',
     '#.#.###.#.#.#.###.#.#',
@@ -290,7 +290,7 @@ const MAPS = [
     '#.......#...........#',
     '#####################'
   ] },
-  { name: '校園操場', theme: { wall: '#d8c9a0', floor: '#7fb069', ceil: '#000000', fog: 0.01, amb: 0xffffff, open: true, sky: 0x9ad8ff, style: 'field', wallH: 2.4, sun: 0.9 }, rows: [
+  { name: '校園操場', theme: {exp: 0.65,  wall: '#d8c9a0', floor: '#7fb069', ceil: '#000000', fog: 0.01, amb: 0xffffff, open: true, sky: 0x9ad8ff, style: 'field', wallH: 2.4, sun: 0.9 }, rows: [
     '#####################',
     '#S#.................#',
     '#.#.#.###.#.#.#####.#',
