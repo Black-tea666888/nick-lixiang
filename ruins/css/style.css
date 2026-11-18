@@ -84,12 +84,12 @@ body.solo #micBtn, body.solo #chatBtn { display: none; }
 #knob { width: 46px; height: 46px; margin: -23px 0 0 -23px; background: rgba(243,239,228,.4); }
 
 /* 觸控按鍵：實心鐵板方鍵，粉筆白字；只有「打」「跑」用警示黃。按下會往下壓。 */
-#run, #atk, #gun, #rescue, #locker, #smoke, #skill, #jump, #dash, #bomb, #tower, #veh {
+#run, #atk, #gun, #swap, #rescue, #locker, #smoke, #skill, #jump, #dash, #bomb, #tower, #veh {
   position: fixed; display: none; pointer-events: auto; touch-action: none; padding: 0;
   width: 58px; height: 58px; border-radius: 12px; cursor: pointer;
   font: 900 17px/1 -apple-system, "PingFang TC", "Noto Sans TC", sans-serif; color: var(--chalk);
   background: var(--steel); border: 2px solid #111417; box-shadow: inset 0 -4px 0 rgba(0,0,0,.35); }
-#run:active, #atk:active, #gun:active, #rescue:active, #locker:active, #smoke:active, #skill:active, #jump:active, #dash:active, #bomb:active, #tower:active, #veh:active {
+#run:active, #atk:active, #gun:active, #swap:active, #rescue:active, #locker:active, #smoke:active, #skill:active, #jump:active, #dash:active, #bomb:active, #tower:active, #veh:active {
   transform: translateY(2px); box-shadow: inset 0 -1px 0 rgba(0,0,0,.35); }
 #run { right: 22px; bottom: 40px; width: 76px; height: 76px; background: var(--haz); color: var(--ink); }
 #run.on { background: #c99f00; box-shadow: inset 0 3px 0 rgba(0,0,0,.25); }
@@ -106,7 +106,9 @@ body.solo #gun { bottom: 116px; }
 /* 冷卻中：變暗＋斜線 */
 #skill.cd, #smoke.cd, #gun.cd { color: var(--chalk-2); background: repeating-linear-gradient(135deg, #2b3136 0 6px, #343b41 6px 12px); }
 body.touch.playing #rescue, body.touch.playing #locker, body.touch.playing #smoke, body.touch.playing #skill, body.touch.playing #jump, body.touch.playing #dash,
-body.touch.playing #run, body.touch.playing #atk, body.touch.playing #gun, body.touch.playing #bomb { display: block; }
+body.touch.playing #run, body.touch.playing #atk, body.touch.playing #gun, body.touch.playing #swap, body.touch.playing #bomb { display: block; }
+/* 切槍：小圓鍵，中間是迴轉箭頭 */
+#swap { border-radius: 50%; font-size: 24px; background: #3b4650; }
 body.td.touch.playing #tower, body.touch.playing.nearveh #veh { display: block; }
 body.solo #rescue, body.solo #atk { display: none !important; }
 #hideTag { position: absolute; bottom: 356px; left: 50%; transform: translateX(-50%); padding: 5px 12px; border-radius: 3px; font-size: 13px; font-weight: 700; color: var(--chalk); background: var(--bin); white-space: nowrap; }
@@ -448,7 +450,7 @@ body.btnedit #btnEdit { background: rgba(31,70,132,.88); }
 body.btnedit #btnEdit::after { content: '搖桿區'; position: fixed; left: 14px; bottom: 30%; color: var(--chalk-2); font-size: 15px; font-weight: 800; pointer-events: none; }
 body.btnedit #hud { display: block !important; z-index: 41; }
 body.btnedit #hud > * { visibility: hidden; }
-body.btnedit #hud > #run, body.btnedit #hud > #atk, body.btnedit #hud > #gun, body.btnedit #hud > #tower, body.btnedit #hud > #bomb, body.btnedit #hud > #veh,
+body.btnedit #hud > #run, body.btnedit #hud > #atk, body.btnedit #hud > #gun, body.btnedit #hud > #swap, body.btnedit #hud > #tower, body.btnedit #hud > #bomb, body.btnedit #hud > #veh,
 body.btnedit #hud > #jump, body.btnedit #hud > #dash, body.btnedit #hud > #rescue, body.btnedit #hud > #smoke, body.btnedit #hud > #skill {
   visibility: visible; display: block !important; z-index: 41; touch-action: none; outline: 2px dashed var(--chalk); outline-offset: 3px; }
 
