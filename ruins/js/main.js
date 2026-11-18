@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v95', items: ['戰隊有新訊息時，「戰隊聊天」與「社群」按鈕會顯示未讀數字', '手機大廳角色縮小，不再蓋到上方欄位', '出戰角色按鈕拿掉底線的「更換」字樣'] };
+const UPD = { v: 'v96', items: ['點主選單左上的頭像可以選底色（自訂頭像）', '大廳拿掉多餘的「房間代碼」字樣', '戰隊未讀數字顯示在「戰隊聊天」與「社群」按鈕上'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -728,6 +728,18 @@ function refreshPickSummary() {
   const ci = (+ls('rr_c') || 0) % W.CHARS.length, c = W.CHARS[ci], w = W.WEAPONS[((+ls('rr_w') || 0) % W.WEAPONS.length)], m = W.MAPS[myMap()];
   $('pickSum').textContent = c + '、' + (W.GUNS[myLook().gun] || W.GUNS[0]).name + '、' + (m ? m.name : '');
   $('avatar').textContent = c.charAt(0);
+  $('avatar').style.background = ls('rr_avatar') || 'var(--haz)';
+}
+// 頭像顏色：點頭像選一個底色（記在 rr_avatar）
+const AVA_COLORS = ['#f0c040', '#6ecbff', '#c79bff', '#ff7eb6', '#7dffe0', '#9be86a', '#ff8a3d', '#ff5b4d', '#e8dca0', '#8fa3ad', '#f1e6d6', '#2f4f6f'];
+function avaDraw() {
+  const cur = ls('rr_avatar') || '';
+  $('avaGrid').innerHTML = '';
+  AVA_COLORS.forEach(function (col) {
+    const b = mk('button', col === cur ? 'on' : ''); b.type = 'button'; b.style.background = col;
+    b.addEventListener('click', function () { lsSet('rr_avatar', col); refreshPickSummary(); $('avaPick').classList.add('hide'); });
+    $('avaGrid').appendChild(b);
+  });
 }
 function showMenu() {
   ccWatchStart();
@@ -1325,6 +1337,8 @@ function bind() {
   $('tutNext').addEventListener('click', function () { if (tutI < TUT.length - 1) tutShow(tutI + 1); else tutDone(); });
   Array.prototype.forEach.call(document.querySelectorAll('#regionAsk [data-r]'), function (b) { b.addEventListener('click', function () { const q = prog(); q.region = +b.dataset.r; progSave(q); lsSet('rr_region', '1'); $('regionAsk').classList.add('hide'); }); });
   $('tutSkip').addEventListener('click', tutDone);
+  $('avatar').addEventListener('click', function () { avaDraw(); $('avaPick').classList.remove('hide'); });
+  $('avaClose').addEventListener('click', function () { $('avaPick').classList.add('hide'); });
   $('updOk').addEventListener('click', function () { lsSet('rr_upd_seen', UPD.v); $('updNote').classList.add('hide'); });
   $('tutAgain').addEventListener('click', function () { tutShow(0); });
   $('miniInfoBtn').addEventListener('click', function () { Game.openMini(); });

@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
-<link rel="stylesheet" href="css/style.css?v=95">
+<link rel="stylesheet" href="css/style.css?v=96">
 </head>
 <body>
 <div id="boot"><div class="bootIn"><b>廢墟回收隊</b><i class="spin"></i><small id="bootTxt">載入中…</small></div></div>
@@ -92,7 +92,7 @@
   <div class="lb">
     <header class="lbTop">
       <div class="topbar lbId">
-        <div class="avatar" id="avatar"></div>
+        <button class="avatar" id="avatar" type="button" aria-label="更換頭像顏色"></button>
         <div class="who">
           <label class="nickRow"><input id="nick" type="text" maxlength="12" aria-label="暱稱（點一下改名）" placeholder="輸入你的名字" enterkeyhint="done"><span class="pen" id="nickPen" aria-hidden="true">改名</span></label>
           <div class="stats"><span>等級<b id="lvTag">Lv.1</b></span><span>最佳<b id="best">0</b>天</span></div>
@@ -496,7 +496,6 @@
 <!-- 大廳 -->
 <div class="screen hide" id="scrLobby">
   <div class="panel">
-    <div class="sub">房間代碼</div>
     <h1 id="roomCode">-----</h1>
     <button class="link" id="copyBtn" type="button">複製邀請連結</button>
     <input id="shareLink" class="hide" type="text" readonly>
@@ -554,6 +553,7 @@
 </div>
 
 <!-- 新手教學（第一次進遊戲時出現） -->
+<div class="modal hide" id="avaPick"><div class="panel small tut"><h2>選擇頭像顏色</h2><div class="avaGrid" id="avaGrid"></div><div class="row"><button class="btn" id="avaClose" type="button">關閉</button></div></div></div>
 <div class="modal hide" id="updNote"><div class="panel small tut"><h2>更新了 <span id="updVer"></span></h2><ul id="updList"></ul><div class="row"><button class="btn primary" id="updOk" type="button">知道了</button></div></div></div>
 <div class="modal hide" id="regionAsk"><div class="panel small tut"><h2>選擇你的地區</h2><p>排行榜會依地區分開，之後可以在社群的賽季分頁改。</p><div class="row"><button class="btn primary" data-r="0" type="button">台灣</button><button class="btn primary" data-r="1" type="button">香港</button></div></div></div>
 <div class="modal hide" id="tut"><div class="panel small tut">
@@ -572,14 +572,14 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=95"></script>
-<script src="js/sim.js?v=95"></script>
-<script src="js/audio.js?v=95"></script>
-<script src="js/auth.js?v=95"></script>
-<script src="js/cloud.js?v=95"></script>
-<script src="js/net.js?v=95"></script>
-<script src="js/game.js?v=95"></script>
-<script src="js/minigames.js?v=95"></script>
-<script src="js/main.js?v=95"></script>
+<script src="js/config.js?v=96"></script>
+<script src="js/sim.js?v=96"></script>
+<script src="js/audio.js?v=96"></script>
+<script src="js/auth.js?v=96"></script>
+<script src="js/cloud.js?v=96"></script>
+<script src="js/net.js?v=96"></script>
+<script src="js/game.js?v=96"></script>
+<script src="js/minigames.js?v=96"></script>
+<script src="js/main.js?v=96"></script>
 </body>
 </html>
