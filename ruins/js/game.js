@@ -226,6 +226,59 @@ const FLOOR_STYLES = ['hospital', 'garage', 'subway', 'dock', 'library', 'crypt'
 const CAP = { beach: [0xd9c9a0, 0.12, 0.1], snow: [0xf6f9fc, 0.3, 0.16], park: [0xf1e7d8, 0.1, 0.08], site: [0xb8b6ad, 0.1, 0.08] };
 let skyDome = null;
 // 把多個幾何（各帶一個矩陣與顏色）合成一個，讓同一種東西只要一次繪製
+// 回收品模型：每種東西用幾個小零件組成（顏色寫在頂點上）
+let salvageM = null;
+function salvageMat() { if (!salvageM) salvageM = litMat({ vertexColors: true }); return salvageM; }
+function salvageGeo(k) {
+  const P = [], T = function (g, x, y, z, rx, ry, rz, c) { P.push([g, M4(x, y, z, rx || 0, ry || 0, rz || 0), c]); };
+  const B = function (sx, sy, sz) { return new THREE.BoxGeometry(sx, sy, sz); }, C = function (r, h) { return new THREE.CylinderGeometry(r, r, h, 14); };
+  if (k === 0) {   // 齒輪
+    T(new THREE.TorusGeometry(0.3, 0.09, 8, 22), 0, 0, 0, 0, 0, 0, 0xb08d3a);
+    for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; T(B(0.13, 0.14, 0.12), Math.cos(a) * 0.38, Math.sin(a) * 0.38, 0, 0, 0, a, 0xb08d3a); }
+    T(C(0.13, 0.16), 0, 0, 0, Math.PI / 2, 0, 0, 0x7a5c24);
+  } else if (k === 1) {   // 電池
+    T(B(0.6, 0.32, 0.3), 0, 0, 0, 0, 0, 0, 0x2a2e33);
+    T(B(0.4, 0.33, 0.31), -0.04, 0, 0, 0, 0, 0, 0xd23a2a);
+    T(C(0.07, 0.06), 0.3, 0.1, 0.06, Math.PI / 2, 0, 0, 0xf0c020); T(C(0.07, 0.06), 0.3, -0.1, -0.06, Math.PI / 2, 0, 0, 0xc0c0c0);
+  } else if (k === 2) {   // 銅線圈
+    [-0.12, 0, 0.12].forEach(function (z) { T(new THREE.TorusGeometry(0.3, 0.07, 8, 20), 0, 0, z, 0, 0, 0, 0xc8793a); });
+    T(C(0.1, 0.5), 0, 0, 0, Math.PI / 2, 0, 0, 0x9a9a9a);
+  } else if (k === 3) {   // 舊收音機
+    T(B(0.7, 0.44, 0.3), 0, 0, 0, 0, 0, 0, 0x7a4a2a);
+    T(new THREE.CircleGeometry(0.14, 16), 0.12, -0.04, 0.16, 0, 0, 0, 0x2a2420);
+    T(B(0.2, 0.12, 0.02), -0.2, 0.1, 0.16, 0, 0, 0, 0xe8dcc0);
+    T(C(0.012, 0.6), 0.22, 0.42, 0, 0, 0, -0.5, 0xbfc5cc);
+  } else if (k === 4) {   // 玩具積木
+    T(B(0.34, 0.32, 0.34), -0.12, -0.14, 0, 0, 0, 0, 0x2a6fb8);
+    T(B(0.34, 0.32, 0.34), 0.14, -0.14, 0, 0, 0, 0, 0xf2c12e);
+    T(new THREE.SphereGeometry(0.2, 14, 10), 0.0, 0.14, 0, 0, 0, 0, 0xd9423a);
+  } else if (k === 5) {   // 馬達
+    T(C(0.26, 0.5), 0, 0, 0, 0, 0, Math.PI / 2, 0xb8c0c8);
+    T(C(0.27, 0.12), 0.28, 0, 0, 0, 0, Math.PI / 2, 0xc23a2a);
+    T(C(0.03, 0.22), -0.36, 0, 0, 0, 0, Math.PI / 2, 0x6a6a6a);
+  } else if (k === 6) {   // 金條
+    T(B(0.7, 0.24, 0.38), 0, 0, 0, 0, 0, 0, 0xf2c230);
+    T(B(0.5, 0.26, 0.2), 0, 0.02, 0, 0, 0, 0, 0xffe27a);
+  } else if (k === 7) {   // 燈泡
+    T(new THREE.SphereGeometry(0.24, 16, 12), 0, 0.1, 0, 0, 0, 0, 0xfff3c0);
+    T(C(0.13, 0.2), 0, -0.2, 0, 0, 0, 0, 0x9a9a9a);
+    T(B(0.14, 0.06, 0.14), 0, -0.34, 0, 0, 0, 0, 0x5a5a5a);
+  } else if (k === 8) {   // 電路板
+    T(B(0.72, 0.05, 0.52), 0, 0, 0, 0, 0, 0, 0x2e7d4a);
+    [[-0.2, 0.1], [0.12, -0.08], [0.2, 0.14], [-0.1, -0.16]].forEach(function (q) { T(B(0.16, 0.06, 0.14), q[0], 0.05, q[1], 0, 0, 0, 0x222222); });
+    for (let i = 0; i < 6; i++) T(B(0.04, 0.04, 0.12), -0.3 + i * 0.12, 0.04, 0.26, 0, 0, 0, 0xd4a017);
+  } else if (k === 9) {   // 儀表
+    T(C(0.3, 0.1), 0, 0, 0, Math.PI / 2, 0, 0, 0xf2f2ef);
+    T(new THREE.TorusGeometry(0.3, 0.05, 8, 22), 0, 0, 0.05, 0, 0, 0, 0x2a2a2a);
+    T(B(0.04, 0.22, 0.02), 0, 0.1, 0.07, 0, 0, 0.6, 0xd23a2a);
+  } else {   // 鐵罐
+    T(C(0.2, 0.55), 0, 0, 0, 0, 0, 0, 0xa9b0b8);
+    T(C(0.205, 0.2), 0, 0, 0, 0, 0, 0, 0xd23a2a);
+    T(C(0.19, 0.02), 0, 0.28, 0, 0, 0, 0, 0x8a9098);
+  }
+  return mergeGeos(P);
+}
+
 function mergeGeos(list) {
   let n = 0;
   const parts = list.map(function (e) {
@@ -2002,12 +2055,7 @@ RR.Game = {
     for (let i = 0; i < 6; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));
     setViewWeapon(0);
     skinGeos = [new THREE.SphereGeometry(0.28, 18, 14), new THREE.OctahedronGeometry(0.34, 0)];
-    itemGeos = [
-      new THREE.TorusGeometry(0.26, 0.1, 8, 16), new THREE.BoxGeometry(0.3, 0.5, 0.3), new THREE.CylinderGeometry(0.25, 0.25, 0.3, 12),
-      new THREE.BoxGeometry(0.55, 0.35, 0.25), new THREE.IcosahedronGeometry(0.28, 0), new THREE.CylinderGeometry(0.2, 0.28, 0.45, 10),
-      new THREE.BoxGeometry(0.6, 0.18, 0.28), new THREE.SphereGeometry(0.24, 12, 10), new THREE.BoxGeometry(0.5, 0.06, 0.4),
-      new THREE.OctahedronGeometry(0.3, 0), new THREE.CylinderGeometry(0.2, 0.2, 0.5, 12)
-    ];
+    itemGeos = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(salvageGeo);
     window.addEventListener('resize', resize); resize();
     bindInput();
     ready = true;
@@ -2108,7 +2156,7 @@ RR.Game = {
         lm.position.set(a[0], 0.45, a[1]); scene.add(lm);
         return { x: a[0], z: a[1], kind: a[2], value: 0, taken: false, mesh: lm };
       }
-      const mesh = new THREE.Mesh(isk === 1 ? skinGeos[0] : isk === 2 ? skinGeos[1] : itemGeos[a[2] % itemGeos.length], new THREE.MeshBasicMaterial({ color: icol }));
+      const mesh = new THREE.Mesh(isk === 1 ? skinGeos[0] : isk === 2 ? skinGeos[1] : itemGeos[a[2] % itemGeos.length], isk ? new THREE.MeshBasicMaterial({ color: icol }) : salvageMat());
       mesh.position.set(a[0], 0.75, a[1]); scene.add(mesh);
       return { x: a[0], z: a[1], kind: a[2], value: a[3], taken: false, mesh: mesh };
     });

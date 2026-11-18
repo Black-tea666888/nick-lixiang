@@ -482,7 +482,7 @@ Sim.prototype.startDay = function (day) {
   for (let i = cands.length - 1; i > 0; i--) {
     const j = Math.floor(this.rng() * (i + 1)), t = cands[i]; cands[i] = cands[j]; cands[j] = t;
   }
-  const count = hunt || br ? 0 : Math.min(cands.length, Math.round(floorCells.length / 12) + 2 * n + Math.min(day, 6));
+  const count = hunt || br ? 0 : Math.min(cands.length, Math.round(floorCells.length / 7) + 2 * n + Math.min(day, 6));
   this.items = [];
   for (let i = 0; i < count; i++) {
     const p = center(cands[i][0], cands[i][1]);
