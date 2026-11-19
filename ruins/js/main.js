@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v204', items: ['卡牌與 AR 的金幣也計入本週段位積分', '社群排行榜可以選 AR 抓怪（休閒模式）'] };
+const UPD = { v: 'v205', items: ['修正交易所（聊天與交易所）的返回按鈕沒反應', '大廳模式列與功能列可以用滑鼠滾輪或拖曳橫向滑動'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -2236,7 +2236,25 @@ function bind() {
   setInterval(function () { if (!$('scrShop').classList.contains('hide')) shopDraw(); }, 30000);
   $('marketOpen').addEventListener('click', marketOpen);
   $('exOpen').addEventListener('click', function () { mkTab = 'shop'; marketOpen(); });
-  $('mkDone').addEventListener('click', marketClose);
+  $('mkDone').addEventListener('click', function () { marketClose(); });
+  /* 滑鼠可以橫向滑動大廳的模式／功能列：滾輪轉成橫向、按住拖曳（不用捲軸，避免跳格） */
+  document.querySelectorAll('.lbSide, .modeStrip').forEach(function (el) {
+    el.addEventListener('wheel', function (e) {
+      if (el.scrollWidth <= el.clientWidth + 1) return;
+      const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      el.scrollLeft += d; e.preventDefault();
+    }, { passive: false });
+    let dragX = null, moved = false;
+    el.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'mouse') return; dragX = e.clientX; moved = false; });
+    el.addEventListener('pointermove', function (e) {
+      if (dragX == null) return;
+      const dx = e.clientX - dragX; if (Math.abs(dx) > 4) moved = true;
+      el.scrollLeft -= dx; dragX = e.clientX;
+    });
+    const end = function () { dragX = null; };
+    el.addEventListener('pointerup', end); el.addEventListener('pointerleave', end);
+    el.addEventListener('click', function (e) { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+  });
   Array.prototype.forEach.call(document.querySelectorAll('.mkTabs button'), function (b) { b.addEventListener('click', function () { mkSetTab(b.dataset.tab); }); });
   $('wcForm').addEventListener('submit', function (e) {
     e.preventDefault(); const v = $('wcInput').value; if (!v.trim()) return;
