@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v182', items: ['電腦可以自訂按鍵（設定 → 電腦按鍵）', '按 Esc 或手把 Start 打開選單；單人遊玩打開選單會暫停', '設定新增全螢幕按鈕'] };
+const UPD = { v: 'v183', items: ['模式改名：組隊回收、單人拾荒、AR 實境、清剿行動、死守回收車、廢墟生存戰', '「戰隊」改名為「拾荒團」（團長、副團長、團員）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -371,14 +371,14 @@ function shopBuy() {
   $('spModal').classList.add('hide'); renderProg(); shopDraw(); if (window.RR_refreshWardrobe) window.RR_refreshWardrobe();
   mtoast('買到' + CAT_LABEL[x[0]] + '「' + name + '」，到出戰角色換上', 'good'); Sfx.tone(660, 0.12, 'triangle', 0.14, 990);
 }
-/* ---------- 戰隊聊天 ---------- */
+/* ---------- 拾荒團聊天 ---------- */
 const ASK_CD = 7 * 3600e3;
 let ccOff = null, ccRows = [], ccLast = 0, ccTimer = null;
 function ccNote(text, btn) {
   const log = $('ccLog'); log.textContent = ''; log.appendChild(mk('p', 'ccEmpty', text));
   if (btn) { const b = mk('button', 'btn primary', btn); b.type = 'button'; b.addEventListener('click', function () { clanClose(); socTab = 'clan'; $('scrSocial').classList.remove('hide'); renderSocial(); }); log.appendChild(b); }
 }
-// 戰隊未讀：背景監看戰隊訊息，未讀數顯示在「戰隊聊天」與「社群」按鈕上
+// 拾荒團未讀：背景監看拾荒團訊息，未讀數顯示在「拾荒團聊天」與「社群」按鈕上
 let ccWatch = null, ccWatchClan = '', ccUnread = 0, rankUnread = 0, rankT = 0;
 function ccSeen() { return +(ls('rr_cc_seen') || 0); }
 function ccBadgeDraw() {
@@ -483,7 +483,7 @@ function tmDraw() {
   tmRows.forEach(function (r) {
     const row = mk('div', 'tmRow'), av = mk('span', 'ccAv', (r.hostName || '?').charAt(0)); av.style.background = '#f0c040';
     const info = mk('div', 'tmInfo'); info.appendChild(mk('b', null, (r.hostName || '玩家') + ' 的房間'));
-    info.appendChild(mk('span', null, (MODE_NAME[r.mode] || '多人合作') + (r.map ? '・' + r.map : '') + (r.play ? '・遊戲中' : '・等待中')));
+    info.appendChild(mk('span', null, (MODE_NAME[r.mode] || '組隊回收') + (r.map ? '・' + r.map : '') + (r.play ? '・遊戲中' : '・等待中')));
     statsLink(av, r.host, r.hostName);
     const n = mk('span', 'tmN', (r.n | 0) + '/' + (r.max || 4));
     const bt = mk('button', 'btn primary', '加入'); bt.type = 'button'; bt.addEventListener('click', function () { tmJoin(r.code); });
@@ -615,9 +615,9 @@ function clanOpen() {
   lsSet('rr_cc_seen', String(Date.now())); ccUnread = 0; ccBadgeDraw();
   show('scrClan'); $('coinTag5').textContent = prog().coins; ccAskDraw();
   const C = RR.Cloud, me = C.me();
-  $('ccName').textContent = me && me.clanName ? me.clanName : '戰隊聊天';
-  if (!C.ready()) { ccNote('戰隊聊天要先用 Google 或訪客登入並連上網路。'); return; }
-  if (!me || !me.clan) { ccNote('你還沒加入戰隊。', '去加入或建立戰隊'); return; }
+  $('ccName').textContent = me && me.clanName ? me.clanName : '拾荒團聊天';
+  if (!C.ready()) { ccNote('拾荒團聊天要先用 Google 或訪客登入並連上網路。'); return; }
+  if (!me || !me.clan) { ccNote('你還沒加入拾荒團。', '去加入或建立拾荒團'); return; }
   ccNote('讀取中…');
   if (ccOff) ccOff();
   ccOff = C.clanChat(function (err, rows) { if (err) { ccNote(C.message(err)); return; } ccRows = rows; ccDraw(); });
@@ -768,7 +768,7 @@ function renderGunStats(i) {
   box.textContent = '';
   const cat = document.createElement('p'); cat.className = 'gCatTag'; cat.textContent = GUN_CATS[gunCat(i)]; box.appendChild(cat);
   const title = document.createElement('p'); title.className = 'gNote';
-  title.textContent = G.name + (G.n > 1 ? '：一次 ' + G.n + ' 顆，近距離很強' : G.auto ? '：按住連發' : G.range >= 70 ? '：一發入魂，射得最遠' : '：穩定好用') + '。回收模式每天 ' + G.clip[0] + ' 發，命中讓怪物暈 ' + G.stun + ' 秒。';
+  title.textContent = G.name + (G.n > 1 ? '：一次 ' + G.n + ' 顆，近距離很強' : G.auto ? '：按住連發' : G.range >= 70 ? '：一發入魂，射得最遠' : '：穩定好用') + '。回收任務每天 ' + G.clip[0] + ' 發，命中讓怪物暈 ' + G.stun + ' 秒。';
   box.appendChild(title);
   vals.forEach(function (x, k) {
     const row = document.createElement('div'); row.className = 'gRow';
@@ -870,7 +870,7 @@ function hostRemove(id) {
 function hostTick() {
   const now = Date.now(), dt = Math.min(0.1, (now - S.lastTick) / 1000); S.lastTick = now;
   const sim = S.sim;
-  // 單人遊玩打開選單時暫停（多人不能暫停，別人還在玩）
+  // 單人拾荒打開選單時暫停（多人不能暫停，別人還在玩）
   if (S.mode === 'solo' && !$('hudMenu').classList.contains('hide')) return;
   sim.setInput(S.myId, Game.input());
   sim.step(dt);
@@ -888,7 +888,7 @@ function startHostLoop() {
   S.timers.push(setInterval(hostTick, 33));
 }
 function rosterAny() { return S.mode === 'solo' ? { t: 'roster', code: null, hostId: 'me', mode: S.sim.mode, base: S.base | 0, players: S.sim.roster() } : rosterMsg(); }
-function hostStart(day) { const info = S.sim.startDay(day || 1); hostBroadcast(rosterAny()); hostBroadcast(info); }   // 先送名單（大逃殺會加入電腦玩家），再送開局資料
+function hostStart(day) { const info = S.sim.startDay(day || 1); hostBroadcast(rosterAny()); hostBroadcast(info); }   // 先送名單（廢墟生存戰會加入電腦玩家），再送開局資料
 
 /* ---------- 進入各種模式 ---------- */
 function startSolo(gmode) {
@@ -1049,7 +1049,7 @@ function showUpdNote() {
   $('updNote').classList.remove('hide');
 }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '多人合作', solo: '單人遊玩', hunt: '獵殺模式', td: '塔防模式', br: '大逃殺', ar: 'AR 模式' };
+const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
@@ -1078,9 +1078,9 @@ function rotMaps() {
 function openTierInfo() {
   const b = $('tierBody'), C = RR.Cloud, N = W.MAPS.length; b.textContent = '';
   const row = function (name, min, now) { const r = mk('div', 'srow' + (now ? ' me' : '')); r.appendChild(mk('span', 'nm', name)); r.appendChild(mk('span', 'sc', min + ' 分起')); b.appendChild(r); };
-  b.appendChild(mk('div', 'sec', '戰隊段位（本週積分）'));
+  b.appendChild(mk('div', 'sec', '拾荒團段位（本週積分）'));
   C.TIERS.forEach(function (t) { row(t.n, t.min, false); });
-  b.appendChild(mk('p', 'note', '每局金幣累積成戰隊本週積分，每週一重算，歷史最高段位會保留。'));
+  b.appendChild(mk('p', 'note', '每局金幣累積成拾荒團本週積分，每週一重算，歷史最高段位會保留。'));
   b.appendChild(mk('div', 'sec', '個人段位（本週積分）'));
   const mine = myWeekPts(), now = ptierOf(mine);
   PTIERS.forEach(function (t, i) { row(t.n, t.min, i === now); });
@@ -1143,7 +1143,7 @@ function tickLobby() {
   pv.textContent = '互相傷害：' + (S.pvp ? '開' : '關') + (S.mode === 'host' ? '' : '（房主設定）');
   pv.classList.toggle('off', !S.pvp);
   $('baseBtn').textContent = '基地：' + W.BASE_STYLES[S.base | 0].n + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
-  $('modeBtn').textContent = '模式：' + (S.gmode === 'td' ? '塔防（守住回收車）' : S.gmode === 'hunt' ? '獵殺（用槍打怪物）' : S.gmode === 'br' ? '大逃殺（互相對戰，活到最後）' : '回收（撿廢料賣錢）') + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
+  $('modeBtn').textContent = '模式：' + (S.gmode === 'td' ? '死守（守住回收車）' : S.gmode === 'hunt' ? '清剿（用槍打怪物）' : S.gmode === 'br' ? '廢墟生存戰（互相對戰，活到最後）' : '回收（撿廢料賣錢）') + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
   $('mapBtn').textContent = '地圖：' + W.MAPS[S.map || 0].name + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
 }
 // 新手教學：第一次開始遊戲時出現，之後可從「設定與說明」重看
@@ -1163,11 +1163,11 @@ function tutDone() { $('tut').classList.add('hide'); lsSet('rr_tut', '1'); }
 const ACH = [
   ['first', '初次出勤', '完成第一局', function (t) { return t.games >= 1; }, 20],
   ['win1', '第一桶金', '第一次過關', function (t) { return t.wins >= 1; }, 30],
-  ['day5', '老練回收員', '回收模式通過第 5 天', function (t) { return t.coop >= 5; }, 100],
-  ['day10', '廢墟傳說', '回收模式通過第 10 天', function (t) { return t.coop >= 10; }, 300],
-  ['hunt3', '獵人', '獵殺模式通過第 3 關', function (t) { return t.hunt >= 3; }, 100],
-  ['td3', '守門員', '塔防模式通過第 3 關', function (t) { return t.td >= 3; }, 100],
-  ['br1', '最後生還者', '大逃殺拿到第 1 名', function (t) { return t.brWins >= 1; }, 150],
+  ['day5', '老練回收員', '回收任務通過第 5 天', function (t) { return t.coop >= 5; }, 100],
+  ['day10', '廢墟傳說', '回收任務通過第 10 天', function (t) { return t.coop >= 10; }, 300],
+  ['hunt3', '獵人', '清剿行動通過第 3 關', function (t) { return t.hunt >= 3; }, 100],
+  ['td3', '守門員', '死守回收車通過第 3 關', function (t) { return t.td >= 3; }, 100],
+  ['br1', '最後生還者', '廢墟生存戰拿到第 1 名', function (t) { return t.brWins >= 1; }, 150],
   ['mk50', '清道夫', '累計擊倒 50 隻怪物', function (t) { return t.mk >= 50; }, 150],
   ['g20', '常客', '玩滿 20 局', function (t) { return t.games >= 20; }, 200],
   ['rich', '小富翁', '同時持有 1000 金幣', function (t, p) { return p.coins >= 1000; }, 100],
@@ -1177,10 +1177,10 @@ const ACH = [
   ['wins50', '過關達人', '累計過關 50 次', function (t) { return t.wins >= 50; }, 300],
   ['g50', '老鳥', '玩滿 50 局', function (t) { return t.games >= 50; }, 300],
   ['g100', '鐵人', '玩滿 100 局', function (t) { return t.games >= 100; }, 500],
-  ['coop20', '回收大師', '回收模式通過第 20 天', function (t) { return t.coop >= 20; }, 500],
-  ['hunt10', '獵殺專家', '獵殺模式通過第 10 關', function (t) { return t.hunt >= 10; }, 300],
-  ['td10', '塔防大師', '塔防模式通過第 10 關', function (t) { return t.td >= 10; }, 300],
-  ['br3', '大逃殺常客', '大逃殺拿到第 1 名 3 次', function (t) { return t.brWins >= 3; }, 300],
+  ['coop20', '回收大師', '回收任務通過第 20 天', function (t) { return t.coop >= 20; }, 500],
+  ['hunt10', '清剿專家', '清剿行動通過第 10 關', function (t) { return t.hunt >= 10; }, 300],
+  ['td10', '死守大師', '死守回收車通過第 10 關', function (t) { return t.td >= 10; }, 300],
+  ['br3', '廢墟生存戰常客', '廢墟生存戰拿到第 1 名 3 次', function (t) { return t.brWins >= 3; }, 300],
   ['rich300', '小有積蓄', '同時持有 300 金幣', function (t, p) { return p.coins >= 300; }, 40],
   ['rich5000', '大富豪', '同時持有 5000 金幣', function (t, p) { return p.coins >= 5000; }, 300],
   ['wins3', '穩定輸出', '累計過關 3 次', function (t) { return t.wins >= 3; }, 60],
@@ -1188,10 +1188,10 @@ const ACH = [
   ['mk1000', '屠怪王', '累計擊倒 1000 隻怪物', function (t) { return t.mk >= 1000; }, 800],
   ['wins100', '百戰百勝', '累計過關 100 次', function (t) { return t.wins >= 100; }, 800],
   ['g200', '資深員工', '玩滿 200 局', function (t) { return t.games >= 200; }, 1000],
-  ['coop30', '廢墟長老', '回收模式通過第 30 天', function (t) { return t.coop >= 30; }, 800],
-  ['hunt20', '獵殺老手', '獵殺模式通過第 20 關', function (t) { return t.hunt >= 20; }, 500],
-  ['td20', '城牆守護者', '塔防模式通過第 20 關', function (t) { return t.td >= 20; }, 500],
-  ['br10', '逃殺之王', '大逃殺拿到第 1 名 10 次', function (t) { return t.brWins >= 10; }, 800],
+  ['coop30', '廢墟長老', '回收任務通過第 30 天', function (t) { return t.coop >= 30; }, 800],
+  ['hunt20', '清剿老手', '清剿行動通過第 20 關', function (t) { return t.hunt >= 20; }, 500],
+  ['td20', '城牆守護者', '死守回收車通過第 20 關', function (t) { return t.td >= 20; }, 500],
+  ['br10', '逃殺之王', '廢墟生存戰拿到第 1 名 10 次', function (t) { return t.brWins >= 10; }, 800],
   ['rich10000', '億萬富翁', '同時持有 10000 金幣', function (t, p) { return p.coins >= 10000; }, 800]
 ];
 // 任務進度：每個成就的（統計欄位, 目標數）；金幣看目前持有量。列表上會顯示「目前 / 目標」
@@ -1202,7 +1202,7 @@ function achProgress(a, p) {
   return [Math.min(cur, g[1]), g[1]];
 }
 function dayStr(off) { const d = new Date(Date.now() + (off || 0) * 864e5); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
-/** 一局結束：更新統計、解鎖成就、回報排行榜與戰隊。回傳要加在結算畫面的文字。 */
+/** 一局結束：更新統計、解鎖成就、回報排行榜與拾荒團。回傳要加在結算畫面的文字。 */
 /* ---------- 歷史戰績 ----------
  * 每局結束記一筆（本機與雲端都只留最近 30 場；登入雲端時存到 users/{uid}/matches，換裝置也看得到，別人點你的頭像也看得到） */
 function saveMatch(rec) {
@@ -1252,7 +1252,7 @@ function stHeadDraw(pf, mine) {
   const img = mine ? ls('rr_avatar_img') : (pf.avImg || '');
   if (img) { av.textContent = ''; av.style.background = 'center / cover no-repeat url(' + img + ')'; } else av.style.background = (mine ? ls('rr_avatar') : pf.av) || '#f0c040';
   const tx = mk('div', 'stWho'); tx.appendChild(mk('b', null, (pf.name || '玩家') + (mine ? '（你）' : '')));
-  tx.appendChild(mk('span', null, (pf.lv ? 'Lv.' + pf.lv : '') + (pf.clanTag ? '　戰隊 [' + pf.clanTag + ']' : '') + (pf.region ? '　' + (pf.region === 'hk' ? '香港' : '台灣') : '')));
+  tx.appendChild(mk('span', null, (pf.lv ? 'Lv.' + pf.lv : '') + (pf.clanTag ? '　拾荒團 [' + pf.clanTag + ']' : '') + (pf.region ? '　' + (pf.region === 'hk' ? '香港' : '台灣') : '')));
   tx.appendChild(mk('span', 'stId', 'ID ' + (pf.code || '—')));
   { const bits = []; if (pf.days) bits.push('遊玩 ' + pf.days + ' 天'); if (pf.since) bits.push(pf.since + ' 加入'); const sn = mine ? '線上' : seenText(pf.seen); if (sn) bits.push(sn); if (bits.length) tx.appendChild(mk('span', 'stDays', bits.join('　'))); }
   if (mine) {
@@ -1398,7 +1398,7 @@ function dailyLogin() {
   say('每日登入獎勵：金幣 +' + gift + '（連續第 ' + streak + ' 天' + (streak < 7 ? '，明天再來會更多' : '') + '）');
 }
 /* ---------- 社群畫面 ---------- */
-const MODE_NAME = { coop: '回收', hunt: '獵殺', td: '塔防', br: '大逃殺' };
+const MODE_NAME = { coop: '回收任務', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰' };
 let socTab = 'rank', socMode = 'coop', socScope = 'week';
 function mk(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function socNote(text) { const b = $('socBody'); b.appendChild(mk('p', 'note', text)); }
@@ -1419,21 +1419,21 @@ function socRows(rows, unit, emptyText) {
 }
 function scoreUnit(mode) { return function (v) { return mode === 'ar' ? v + ' 隻' : mode === 'br' ? v + ' 勝' : mode === 'coop' ? '第 ' + v + ' 天' : '第 ' + v + ' 關'; }; }
 const CLAN_TYPE = { open: '開放加入', approve: '需要批准', invite: '僅限邀請' }, CLAN_REGION = { all: '全球', tw: '台灣', hk: '香港' };
-/** 戰隊名片：徽章、名稱、描述、類型、最低等級、地區、人數（戰隊頁上方與戰隊列表共用） */
+/** 拾荒團名片：徽章、名稱、描述、類型、最低等級、地區、人數（拾荒團頁上方與拾荒團列表共用） */
 function clanCard(c, extra) {
   const C = RR.Cloud, box = mk('div', 'clanCard');
   box.appendChild(mk('span', 'clanBadge', C.CLAN_BADGES[c.badge | 0] || C.CLAN_BADGES[0]));
-  const tx = mk('div', 'clanTx'); tx.appendChild(mk('b', null, c.name || '戰隊'));
+  const tx = mk('div', 'clanTx'); tx.appendChild(mk('b', null, c.name || '拾荒團'));
   if (c.desc) tx.appendChild(mk('span', 'clanDesc', c.desc));
   const chips = mk('div', 'clanChips');
   [CLAN_TYPE[c.type || 'open'], (c.minLv | 0) ? 'Lv ' + (c.minLv | 0) + ' 以上' : '不限等級', CLAN_REGION[c.region || 'all'], (c.count | 0) + ' / 30 人'].concat(extra || []).forEach(function (t) { chips.appendChild(mk('i', null, t)); });
   tx.appendChild(chips); box.appendChild(tx);
   return box;
 }
-/** 戰隊設定表單（隊長、副隊長） */
+/** 拾荒團設定表單（團長、副團長） */
 function clanSettingsForm(c, done) {
   const C = RR.Cloud, f = mk('div', 'clanSet'), st = { badge: c.badge | 0 };
-  f.appendChild(mk('b', null, '戰隊設定'));
+  f.appendChild(mk('b', null, '拾荒團設定'));
   f.appendChild(mk('span', 'lbl', '徽章'));
   const bg = mk('div', 'clanBadges');
   C.CLAN_BADGES.forEach(function (e, i) { const bt = mk('button', i === st.badge ? 'on' : '', e); bt.type = 'button'; bt.addEventListener('click', function () { st.badge = i; Array.prototype.forEach.call(bg.children, function (x, k) { x.classList.toggle('on', k === i); }); }); bg.appendChild(bt); });
@@ -1441,11 +1441,11 @@ function clanSettingsForm(c, done) {
   f.appendChild(mk('span', 'lbl', '描述（60 字內）'));
   const ds = mk('textarea'); ds.maxLength = 60; ds.rows = 2; ds.value = c.desc || ''; ds.placeholder = '例如：每天上線、一起衝大師'; f.appendChild(ds);
   const sel = function (label, opts, cur) { f.appendChild(mk('span', 'lbl', label)); const s = mk('select'); opts.forEach(function (o) { const op = mk('option', null, o[1]); op.value = o[0]; if (String(o[0]) === String(cur)) op.selected = true; s.appendChild(op); }); f.appendChild(s); return s; };
-  const ty = sel('類型', [['open', '開放加入（任何人都能直接加入）'], ['approve', '需要批准（申請後由隊長或副隊長同意）'], ['invite', '僅限邀請（只能用戰隊代碼加入）']], c.type || 'open');
+  const ty = sel('類型', [['open', '開放加入（任何人都能直接加入）'], ['approve', '需要批准（申請後由團長或副團長同意）'], ['invite', '僅限邀請（只能用拾荒團代碼加入）']], c.type || 'open');
   const lv = sel('最低等級', Array.from({ length: 21 }, function (_, i) { return [i * 5, i ? 'Lv ' + i * 5 + ' 以上' : '不限']; }), c.minLv | 0);
   const rg = sel('地區', [['all', '全球'], ['tw', '台灣'], ['hk', '香港']], c.region || 'all');
   const sv = mk('button', 'btn primary', '儲存'); sv.type = 'button';
-  sv.addEventListener('click', function () { sv.disabled = true; C.clanSettings({ badge: st.badge, desc: ds.value, type: ty.value, minLv: +lv.value, region: rg.value }, function (err) { sv.disabled = false; if (err) { say(C.message(err)); return; } mtoast('戰隊設定已儲存'); done(); }); });
+  sv.addEventListener('click', function () { sv.disabled = true; C.clanSettings({ badge: st.badge, desc: ds.value, type: ty.value, minLv: +lv.value, region: rg.value }, function (err) { sv.disabled = false; if (err) { say(C.message(err)); return; } mtoast('拾荒團設定已儲存'); done(); }); });
   f.appendChild(sv);
   return f;
 }
@@ -1571,34 +1571,34 @@ function renderSocial() {
     b.appendChild(mk('p', 'note wait', '讀取中…'));
     C.clan(guard(function (info) {
       if (!info) {
-        socNote('加入戰隊後，每局得到的金幣數會同時累積成戰隊積分。本週積分決定段位，每週一重算。');
-        // 申請中的戰隊：被批准就自動加入
+        socNote('加入拾荒團後，每局得到的金幣數會同時累積成拾荒團積分。本週積分決定段位，每週一重算。');
+        // 申請中的拾荒團：被批准就自動加入
         const pend = mk('div'); b.appendChild(pend);
         C.checkApply(function (e2, r) {
           if (renderSocial.token !== token || e2 || !r) return;
-          if (r.state === 'joined') { say('「' + r.name + '」批准了你的申請，已加入戰隊。'); renderSocial(); return; }
-          if (r.state === 'rejected') { pend.appendChild(mk('p', 'note', '你申請的戰隊' + (r.name ? '「' + r.name + '」' : '') + '沒有通過，可以再找其他戰隊。')); return; }
-          if (r.state === 'wait') { pend.appendChild(mk('p', 'note', '已申請加入「' + r.name + '」，等待隊長或副隊長批准。')); const cx = mk('button', 'btn', '取消申請'); cx.type = 'button'; cx.addEventListener('click', function () { C.cancelApply(function () { renderSocial(); }); }); pend.appendChild(cx); }
+          if (r.state === 'joined') { say('「' + r.name + '」批准了你的申請，已加入拾荒團。'); renderSocial(); return; }
+          if (r.state === 'rejected') { pend.appendChild(mk('p', 'note', '你申請的拾荒團' + (r.name ? '「' + r.name + '」' : '') + '沒有通過，可以再找其他拾荒團。')); return; }
+          if (r.state === 'wait') { pend.appendChild(mk('p', 'note', '已申請加入「' + r.name + '」，等待團長或副團長批准。')); const cx = mk('button', 'btn', '取消申請'); cx.type = 'button'; cx.addEventListener('click', function () { C.cancelApply(function () { renderSocial(); }); }); pend.appendChild(cx); }
         });
         const r1 = mk('div', 'soc-row'), tag = mk('input'); tag.type = 'text'; tag.maxLength = 4; tag.placeholder = '邀請代碼（4 碼）'; tag.autocapitalize = 'characters';
         const jb = mk('button', 'btn primary', '加入'); jb.type = 'button';
-        jb.addEventListener('click', function () { jb.disabled = true; C.joinClan(tag.value, function (err, c) { jb.disabled = false; if (err) { say(C.message(err)); return; } say('已加入戰隊「' + c.name + '」。'); renderSocial(); }); });
+        jb.addEventListener('click', function () { jb.disabled = true; C.joinClan(tag.value, function (err, c) { jb.disabled = false; if (err) { say(C.message(err)); return; } say('已加入拾荒團「' + c.name + '」。'); renderSocial(); }); });
         r1.appendChild(tag); r1.appendChild(jb); b.appendChild(r1);
-        const r2 = mk('div', 'soc-row'), nm = mk('input'); nm.type = 'text'; nm.maxLength = 12; nm.placeholder = '新戰隊名稱';
+        const r2 = mk('div', 'soc-row'), nm = mk('input'); nm.type = 'text'; nm.maxLength = 12; nm.placeholder = '新拾荒團名稱';
         const cb = mk('button', 'btn', '建立（200 金幣）'); cb.type = 'button';
         cb.addEventListener('click', function () {
-          const q = prog(); if (q.coins < 200) { say('金幣不夠：建立戰隊要 200 金幣，你有 ' + q.coins + '。'); return; }
+          const q = prog(); if (q.coins < 200) { say('金幣不夠：建立拾荒團要 200 金幣，你有 ' + q.coins + '。'); return; }
           cb.disabled = true;
-          C.createClan(nm.value, function (err, c) { cb.disabled = false; if (err) { say(C.message(err)); return; } const q2 = prog(); q2.coins -= 200; progSave(q2); renderProg(); say('戰隊「' + c.name + '」建立完成。把代碼 ' + c.tag + ' 傳給朋友就能加入。'); renderSocial(); });
+          C.createClan(nm.value, function (err, c) { cb.disabled = false; if (err) { say(C.message(err)); return; } const q2 = prog(); q2.coins -= 200; progSave(q2); renderProg(); say('拾荒團「' + c.name + '」建立完成。把代碼 ' + c.tag + ' 傳給朋友就能加入。'); renderSocial(); });
         });
         r2.appendChild(nm); r2.appendChild(cb); b.appendChild(r2);
-        // 瀏覽戰隊：看得到每個戰隊的設定，依類型直接加入或申請
-        b.appendChild(mk('div', 'sec', '尋找戰隊'));
+        // 瀏覽拾荒團：看得到每個拾荒團的設定，依類型直接加入或申請
+        b.appendChild(mk('div', 'sec', '尋找拾荒團'));
         const bl = mk('div'); bl.appendChild(mk('p', 'ccEmpty', '讀取中…')); b.appendChild(bl);
         C.browseClans(function (e3, rows) {
           if (renderSocial.token !== token) return; bl.textContent = '';
           if (e3) { bl.appendChild(mk('p', 'ccEmpty', C.message(e3))); return; }
-          if (!rows.length) { bl.appendChild(mk('p', 'ccEmpty', '還沒有戰隊，建立第一個吧。')); return; }
+          if (!rows.length) { bl.appendChild(mk('p', 'ccEmpty', '還沒有拾荒團，建立第一個吧。')); return; }
           const myLv = levelOf(prog().xp), pending = C.me() && C.me().pendClan;
           rows.forEach(function (c) {
             const card = clanCard(c), t = c.type || 'open', full = (c.count | 0) >= 30, lowLv = (c.minLv | 0) > myLv;
@@ -1606,8 +1606,8 @@ function renderSocial() {
             bt.type = 'button'; bt.disabled = full || lowLv || t === 'invite' || (t === 'approve' && !!pending);
             bt.addEventListener('click', function () {
               bt.disabled = true;
-              if (t === 'open') C.joinOpenClan(c.id, function (err, cl) { bt.disabled = false; if (err) { say(C.message(err)); return; } say('已加入戰隊「' + cl.name + '」。'); renderSocial(); });
-              else C.applyClan(c.id, function (err) { if (err) { bt.disabled = false; say(C.message(err)); return; } say('已送出申請，隊長或副隊長批准後就會加入「' + c.name + '」。'); renderSocial(); });
+              if (t === 'open') C.joinOpenClan(c.id, function (err, cl) { bt.disabled = false; if (err) { say(C.message(err)); return; } say('已加入拾荒團「' + cl.name + '」。'); renderSocial(); });
+              else C.applyClan(c.id, function (err) { if (err) { bt.disabled = false; say(C.message(err)); return; } say('已送出申請，團長或副團長批准後就會加入「' + c.name + '」。'); renderSocial(); });
             });
             card.appendChild(bt); bl.appendChild(card);
           });
@@ -1617,7 +1617,7 @@ function renderSocial() {
         b.appendChild(clanCard(Object.assign({}, info.clan, { count: info.members.length }), ['累計 ' + (info.clan.score | 0) + ' 分']));
         const staff = info.clan.owner === RR.Cloud.uid() || (info.clan.deputies || []).indexOf(RR.Cloud.uid()) >= 0;
         if (staff) {
-          const setWrap = mk('div'), sb = mk('button', 'btn', '戰隊設定'); sb.type = 'button'; sb.style.margin = '0 0 8px';
+          const setWrap = mk('div'), sb = mk('button', 'btn', '拾荒團設定'); sb.type = 'button'; sb.style.margin = '0 0 8px';
           sb.addEventListener('click', function () { if (setWrap.firstChild) { setWrap.textContent = ''; return; } setWrap.appendChild(clanSettingsForm(info.clan, renderSocial)); });
           b.appendChild(sb); b.appendChild(setWrap);
           // 加入申請
@@ -1628,7 +1628,7 @@ function renderSocial() {
             rows.forEach(function (x) {
               const r = mk('div', 'srow'); r.appendChild(mk('span', 'nm', (x.name || '玩家') + (x.lv ? '　Lv.' + x.lv : '')));
               const ok = mk('button', 'btn primary', '批准'), no = mk('button', 'btn', '拒絕'); ok.type = no.type = 'button';
-              ok.addEventListener('click', function () { C.answerReq(x.uid, true, function (err) { if (err) say(C.message(err)); else mtoast('已批准，對方下次打開戰隊頁就會加入'); renderSocial(); }); });
+              ok.addEventListener('click', function () { C.answerReq(x.uid, true, function (err) { if (err) say(C.message(err)); else mtoast('已批准，對方下次打開拾荒團頁就會加入'); renderSocial(); }); });
               no.addEventListener('click', function () { C.answerReq(x.uid, false, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
               r.appendChild(ok); r.appendChild(no); rq.appendChild(r);
             });
@@ -1638,9 +1638,9 @@ function renderSocial() {
         { const tb2 = mk('button', 'btn', '段位與輪換說明'); tb2.type = 'button'; tb2.style.margin = '0 0 8px'; tb2.addEventListener('click', openTierInfo); b.appendChild(tb2); }
         b.appendChild(mk('p', 'note', '本週 ' + wsNow + ' 分，段位 ' + TT[ti].n + (ti < TT.length - 1 ? '（下一階 ' + TT[ti + 1].n + ' 還差 ' + (TT[ti + 1].min - wsNow) + ' 分）' : '') + '；歷史最高 ' + TT[bi].n));
         b.appendChild(mk('div', 'bigcode', info.clan.tag));
-        { const cc = mk('button', 'btn primary', '打開戰隊聊天'); cc.type = 'button'; cc.style.width = '100%'; cc.style.margin = '6px 0 10px'; cc.addEventListener('click', function () { $('scrSocial').classList.add('hide'); renderSocial.token = null; clanOpen(); }); b.appendChild(cc); }
+        { const cc = mk('button', 'btn primary', '打開拾荒團聊天'); cc.type = 'button'; cc.style.width = '100%'; cc.style.margin = '6px 0 10px'; cc.addEventListener('click', function () { $('scrSocial').classList.add('hide'); renderSocial.token = null; clanOpen(); }); b.appendChild(cc); }
         const isLeader = info.clan.owner === RR.Cloud.uid(), deps = info.clan.deputies || [];
-        const roleOf = function (m) { return m.uid === info.clan.owner ? '隊長' : deps.indexOf(m.uid) >= 0 ? '副隊長' : '隊員'; };
+        const roleOf = function (m) { return m.uid === info.clan.owner ? '團長' : deps.indexOf(m.uid) >= 0 ? '副團長' : '團員'; };
         socRows(info.members.map(function (m) { return Object.assign({}, m, { name: (m.name || '玩家') + ' 〔' + roleOf(m) + '〕' }); }), function (v) { return v + ' 分'; });
         const my = RR.Cloud.uid();
         const amDep = deps.indexOf(my) >= 0;
@@ -1649,28 +1649,28 @@ function renderSocial() {
           const isDep = deps.indexOf(m.uid) >= 0, r = mk('div', 'srow');
           r.appendChild(mk('span', 'nm', (m.name || '玩家') + ' · ' + roleOf(m)));
           if (isLeader) {
-            const bt = mk('button', 'btn', isDep ? '取消副隊長' : '設為副隊長'); bt.type = 'button';
+            const bt = mk('button', 'btn', isDep ? '取消副團長' : '設為副團長'); bt.type = 'button';
             bt.addEventListener('click', function () { C.setDeputy(m.uid, !isDep, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
             r.appendChild(bt);
-            const tb = mk('button', 'btn', '轉移隊長'); tb.type = 'button';
-            tb.addEventListener('click', function () { if (!window.confirm('確定把隊長轉給「' + (m.name || '玩家') + '」？你會變成隊員。')) return; C.transferLeader(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
+            const tb = mk('button', 'btn', '轉移團長'); tb.type = 'button';
+            tb.addEventListener('click', function () { if (!window.confirm('確定把團長轉給「' + (m.name || '玩家') + '」？你會變成團員。')) return; C.transferLeader(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
             r.appendChild(tb);
           }
           if (isLeader || !isDep) {
             const kb = mk('button', 'btn', '踢出'); kb.type = 'button';
-            kb.addEventListener('click', function () { if (!window.confirm('確定要把「' + (m.name || '玩家') + '」踢出戰隊？')) return; C.kickMember(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
+            kb.addEventListener('click', function () { if (!window.confirm('確定要把「' + (m.name || '玩家') + '」踢出拾荒團？')) return; C.kickMember(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
             r.appendChild(kb);
           }
           b.appendChild(r);
         });
-        const lv = mk('button', 'btn', '退出戰隊'); lv.type = 'button'; lv.addEventListener('click', function () { C.leaveClan(function (err) { if (err) say(C.message(err)); renderSocial(); }); }); b.appendChild(lv);
+        const lv = mk('button', 'btn', '退出拾荒團'); lv.type = 'button'; lv.addEventListener('click', function () { C.leaveClan(function (err) { if (err) say(C.message(err)); renderSocial(); }); }); b.appendChild(lv);
       }
-      b.appendChild(mk('div', 'sec', '戰隊排行榜（本週）'));
+      b.appendChild(mk('div', 'sec', '拾荒團排行榜（本週）'));
       C.topClans(function (err, rows) {
         if (err || renderSocial.token !== token) return;
-        if (!rows.length) { socNote('本週還沒有戰隊得分。'); return; }
+        if (!rows.length) { socNote('本週還沒有拾荒團得分。'); return; }
         rows.forEach(function (c, i) { const r = mk('div', 'srow' + (C.me() && C.me().clan === c.id ? ' me' : '')); r.appendChild(mk('span', 'rk', String(i + 1))); const nm = mk('span', 'nm', (C.CLAN_BADGES[c.badge | 0] || '') + ' ' + c.name); nm.appendChild(mk('small', null, '　' + (c.count | 0) + ' 人・' + CLAN_TYPE[c.type || 'open'])); r.appendChild(nm); r.appendChild(mk('span', 'sc', (c.wscore | 0) + ' 分 · ' + C.TIERS[C.tierOf(c.wscore)].n));
-          if (!(C.me() && C.me().clan) && (c.count | 0) < 30 && (c.type || 'open') === 'open') { const j = mk('button', 'btn primary', '+'); j.type = 'button'; j.title = '加入戰隊'; j.addEventListener('click', function () { j.disabled = true; C.joinOpenClan(c.id, function (err, cl) { j.disabled = false; if (err) { say(C.message(err)); return; } say('已加入戰隊「' + cl.name + '」。'); renderSocial(); }); }); r.appendChild(j); }
+          if (!(C.me() && C.me().clan) && (c.count | 0) < 30 && (c.type || 'open') === 'open') { const j = mk('button', 'btn primary', '+'); j.type = 'button'; j.title = '加入拾荒團'; j.addEventListener('click', function () { j.disabled = true; C.joinOpenClan(c.id, function (err, cl) { j.disabled = false; if (err) { say(C.message(err)); return; } say('已加入拾荒團「' + cl.name + '」。'); renderSocial(); }); }); r.appendChild(j); }
           b.appendChild(r); });
       });
     }));
@@ -1714,14 +1714,14 @@ function showResult(e) {
       { score: mine ? (mine.earned | 0) : (e.money | 0), kills: mine ? mine.mk | 0 : 0, deaths: mine && !mine.alive ? 1 : 0, mvp: !!(mine && best && best.id === mine.id && (e.stats || []).length > 1), n: (e.stats || []).length }); }
   let top = null; if (e.stats) e.stats.forEach(function (p) { if (p.earned > 0 && (!top || p.earned > top.earned)) top = p; });
   const hunt = S.gmode === 'hunt', td = S.gmode === 'td';
-  if (hunt) $('resTitle').textContent = e.win ? '獵殺第 ' + e.day + ' 關完成！' : '獵殺失敗';
+  if (hunt) $('resTitle').textContent = e.win ? '清剿第 ' + e.day + ' 關完成！' : '清剿失敗';
   $('resText').textContent = hunt ? (e.win
     ? '擊倒 ' + (e.money / 50) + ' 隻怪物（目標 ' + (e.quota / 50) + ' 隻），還剩 ' + e.time + ' 秒。下一關目標更多、怪物更快。'
     : (e.why === 'time' ? '時間到，只擊倒 ' + (e.money / 50) + ' / ' + (e.quota / 50) + ' 隻。' : '全員被抓，擊倒 ' + (e.money / 50) + ' / ' + (e.quota / 50) + ' 隻。') + ' 止步第 ' + e.day + ' 關。') : e.win
     ? '賺到 $' + e.money + '（目標 $' + e.quota + '），還剩 ' + e.time + ' 秒。明天目標更高，怪物也更快。'
     : (e.why === 'time' ? '時間到，只賺到 $' + e.money + ' / $' + e.quota + '。' : '全員被抓。帶回 $' + e.money + ' / $' + e.quota + '。') + ' 止步第 ' + e.day + ' 天。';
   if (td) {
-    $('resTitle').textContent = e.win ? '塔防第 ' + e.day + ' 關守住了！' : '回收車被攻破';
+    $('resTitle').textContent = e.win ? '死守第 ' + e.day + ' 關守住了！' : '回收車被攻破';
     $('resText').textContent = e.win ? '核心還剩 ' + e.core + '。下一關怪物更多、更硬、更快。' : (e.why === 'time' ? '時間到，怪物還沒清完。' : '核心歸零。') + ' 止步第 ' + e.day + ' 關。';
     const ts = e.win ? 1 + (e.core >= 70 ? 1 : 0) + (e.core >= 100 ? 1 : 0) : 0, sb2 = $('resStars'); sb2.textContent = '';
     for (let k = 0; k < 3; k++) { const x = document.createElement(k < ts ? 'span' : 'i'); x.textContent = '★'; sb2.appendChild(x); }
@@ -1764,13 +1764,13 @@ function bind() {
   $('guestBtn').addEventListener('click', function () { Sfx.unlock(); Auth.guest(); });
   $('logoutBtn').addEventListener('click', function () { Auth.signOut(); });
   $('delData').addEventListener('click', function () {
-    if (!confirm('確定刪除所有資料？進度、排行榜、好友、戰隊都會刪除，無法復原。')) return;
+    if (!confirm('確定刪除所有資料？進度、排行榜、好友、拾荒團都會刪除，無法復原。')) return;
     const wipeLocal = function () {
       Object.keys(localStorage).forEach(function (k) { if (/^rr_/.test(k)) { try { localStorage.removeItem(k); } catch (e) {} } });
     };
     if (!RR.Cloud || !RR.Cloud.ready()) { wipeLocal(); RR.Auth.signOut().then(function () { location.reload(); }); return; }
     RR.Cloud.deleteMyData(function (e) {
-      if (e) { alert(e.code === 'owner' ? '你是隊長，請先把隊長位子轉給別人再刪除資料。' : '刪除失敗：' + (e.code || e.message || '未知錯誤') + '，請再試一次。'); return; }
+      if (e) { alert(e.code === 'owner' ? '你是團長，請先把團長位子轉給別人再刪除資料。' : '刪除失敗：' + (e.code || e.message || '未知錯誤') + '，請再試一次。'); return; }
       RR.Auth.deleteAccount().then(function () { wipeLocal(); alert('資料已刪除。'); location.reload(); }, function (err) {
         wipeLocal();
         alert(err && err.code === 'auth/requires-recent-login' ? '雲端資料已刪除。登入帳號需要重新登入後才能刪除，請先登出、登入一次後再按一次。' : '雲端資料已刪除，但登入帳號刪除失敗：' + ((err && err.code) || '未知錯誤'));
