@@ -1036,8 +1036,9 @@ function drawMonBar(m) {
   m.barTex.needsUpdate = true;
 }
 
-function buildMonster(kind) {
+function buildMonster(kind, v) {
   const col = MON_COL[kind] || MON_COL.fire;
+  v = (v | 0) % 6;   // 怪物外觀變化：每隻怪固定一種輪廓，全部都是黑色系（玩家不能自訂）
   const g = new THREE.Group();
   const skinM = RR.Game && RR.Game.settings ? RR.Game.settings.monSkin | 0 : 0;   // 怪物造型：0 預設（黑）、1 骸骨白、2 霓虹
   const dark = litMat({ color: skinM === 1 ? 0xe8e2d0 : skinM === 2 ? 0x101018 : 0x0c0c0e, shininess: 30, emissive: new THREE.Color(col[1]).multiplyScalar(skinM === 2 ? 0.75 : skinM === 1 ? 0.02 : 0.07) });
@@ -1057,6 +1058,19 @@ function buildMonster(kind) {
   };
   const a1 = mkArm(-0.42), a2 = mkArm(0.42);
   g.add(body, head, e1, e2, mouth, a1, a2);
+  if (v === 1) {                    // 長顎：拉長的頭、一排尖牙
+    head.scale.z = 1.5; head.position.z = 0.12;
+    for (let k = -2; k <= 2; k++) { const t = part(new THREE.ConeGeometry(0.03, 0.13, 4), dark, k * 0.06, 2.3, 0.5); t.rotation.x = Math.PI / 2; g.add(t); }
+  } else if (v === 2) {             // 背刺：背上一排黑色骨刺
+    for (let k = 0; k < 5; k++) { const sp = part(new THREE.ConeGeometry(0.08, 0.3, 5), dark, 0, 1.0 + k * 0.32, -0.24); sp.rotation.x = -Math.PI / 2; g.add(sp); }
+  } else if (v === 3) {             // 駝背長臂：身體前傾、手臂更長
+    body.rotation.x = 0.28; head.position.set(0, 2.35, 0.3); e1.position.set(-0.13, 2.41, 0.6); e2.position.set(0.13, 2.41, 0.6); mouth.position.set(0, 2.19, 0.62);
+    a1.scale.y = a2.scale.y = 1.3;
+  } else if (v === 4) {             // 肋骨：身體外露的環狀肋骨
+    for (let k = 0; k < 4; k++) { const rib = part(new THREE.TorusGeometry(0.27, 0.03, 8, 18), dark, 0, 0.85 + k * 0.3, 0); rib.rotation.x = Math.PI / 2; g.add(rib); }
+  } else if (v === 5) {             // 三眼：額頭多一顆發光眼
+    g.add(part(new THREE.SphereGeometry(0.06, 20, 16), eyeM, 0, 2.72, 0.3));
+  }
   if (kind === 'fire') {            // 火：兩支角、背後火焰
     const hornG = new THREE.ConeGeometry(0.07, 0.42, 6);
     const h1 = part(hornG, tint, -0.2, 2.98, 0), h2 = part(hornG, tint, 0.2, 2.98, 0); h1.rotation.z = 0.35; h2.rotation.z = -0.35;
@@ -2370,7 +2384,7 @@ RR.Game = {
     cartView = new THREE.Group(); cartView.add(part(new THREE.BoxGeometry(0.9, 0.3, 0.6), pmat(0xd9902f, 0.25), 0, -0.78, -1.05), part(new THREE.CylinderGeometry(0.02, 0.02, 0.8, 8), pmat(0x9aa3a8, 0.15), 0, -0.5, -0.62)); cartView.children[1].rotation.z = Math.PI / 2; cartView.visible = false; camera.add(cartView);
     torch.position.set(0.25, -0.2, 0); camera.add(torch); camera.add(torch.target); torch.target.position.set(0, -0.05, -1);
     buildLevel();
-    for (let i = 0; i < 6; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));
+    for (let i = 0; i < 6; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4], i));
     setViewWeapon(0);
     skinGeos = [new THREE.SphereGeometry(0.28, 18, 14), new THREE.OctahedronGeometry(0.34, 0)];
     itemGeos = REAL_VARIANTS.map(function (n, k) { const out = []; for (let v = 0; v < n; v++) out.push(realGeo(k, v)); return out; });
@@ -2749,7 +2763,7 @@ RR.Game = {
     RR.Game.settings.monSkin = v | 0;
     if (!ready) return;
     view.monsters.forEach(function (m) { scene.remove(m.group); });
-    view.monsters = []; for (let i = 0; i < 6; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));
+    view.monsters = []; for (let i = 0; i < 6; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4], i));
   },
   setQuality: function (q) { quality = q === 'low' || q === 'mid' ? q : 'high'; applyQuality(); },
   setBtnScale: function (v) { btnScale = Math.max(0.7, Math.min(1.5, +v || 1)); layoutButtons(); },
