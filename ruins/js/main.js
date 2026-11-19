@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v177', items: ['所有下拉選單改成遊戲風格，每台手機看起來都一樣'] };
+const UPD = { v: 'v178', items: ['個人頁顯示遊玩天數、加入日期、上次上線（幾分鐘／幾小時／幾天前）', '好友列表顯示多久前在線', '戰隊聊天的請求金幣也有頭像，點了可以看個人頁'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -644,7 +644,9 @@ function ccDraw() {
     if (m.k !== 'req') return;
     const got = m.got | 0, need = m.need | 0, gave = (m.donors && m.donors[my]) | 0;
     const card = mk('div', 'ccReq' + (mine ? ' me' : ''));
-    card.appendChild(mk('div', 'ccWho', (mine ? '你' : m.name) + ' 正在請求金幣'));
+    { const who = mk('div', 'ccWho'), av = mk('span', 'ccAv', (m.name || '?').charAt(0)), myImg = mine ? ls('rr_avatar_img') : '';
+      if (myImg) { av.textContent = ''; av.style.background = 'center / cover no-repeat url(' + myImg + ')'; } else av.style.background = m.av || '#f0c040';
+      who.appendChild(av); who.appendChild(mk('span', null, (mine ? '你' : m.name) + ' 正在請求金幣')); statsLink(who, m.uid, m.name); card.appendChild(who); }
     const body = mk('div', 'ccBody'), bar = mk('div', 'ccMeter'), fill = mk('i');
     fill.style.width = Math.min(100, got / need * 100) + '%'; bar.appendChild(fill); bar.appendChild(mk('span', null, got + ' / ' + need)); body.appendChild(bar);
     let btn;
@@ -1223,7 +1225,7 @@ function statsOpen(uid, name) {
   if (mine) {
     let a = []; try { a = JSON.parse(ls('rr_hist') || '[]'); } catch (e) {}
     const p = prog();
-    stHeadDraw({ name: myName(), lv: levelOf(p.xp), clanTag: C && C.me() ? C.me().clanTag : '', code: C && C.me() ? C.me().code : '', bio: p.bio, st: p.st, ach: p.ach }, true);
+    stHeadDraw({ name: myName(), lv: levelOf(p.xp), clanTag: C && C.me() ? C.me().clanTag : '', code: C && C.me() ? C.me().code : '', bio: p.bio, st: p.st, ach: p.ach, days: p.pdays, since: p.since }, true);
     const local = Array.isArray(a) ? a : [];
     stRows = local; stDraw();
     // 先顯示本機，再拿雲端的戰績合併（換裝置玩的場次也會出現）
@@ -1250,6 +1252,7 @@ function stHeadDraw(pf, mine) {
   const tx = mk('div', 'stWho'); tx.appendChild(mk('b', null, (pf.name || '玩家') + (mine ? '（你）' : '')));
   tx.appendChild(mk('span', null, (pf.lv ? 'Lv.' + pf.lv : '') + (pf.clanTag ? '　戰隊 [' + pf.clanTag + ']' : '') + (pf.region ? '　' + (pf.region === 'hk' ? '香港' : '台灣') : '')));
   tx.appendChild(mk('span', 'stId', 'ID ' + (pf.code || '—')));
+  { const bits = []; if (pf.days) bits.push('遊玩 ' + pf.days + ' 天'); if (pf.since) bits.push(pf.since + ' 加入'); const sn = mine ? '線上' : seenText(pf.seen); if (sn) bits.push(sn); if (bits.length) tx.appendChild(mk('span', 'stDays', bits.join('　'))); }
   if (mine) {
     const bi = mk('input', 'stBio'); bi.type = 'text'; bi.maxLength = 30; bi.placeholder = '寫一句簡介（30 字內）'; bi.value = pf.bio || '';
     bi.addEventListener('change', function () { const p = prog(); p.bio = bi.value.replace(/[<>]/g, '').trim().slice(0, 30); progSave(p); RR.Cloud.saveSoon(); });
@@ -1363,6 +1366,27 @@ function checkWeekReward() {
     progSave(q); renderProg();
     if (won) bannerShow('上週全區前 3 名！', '獲得限定頭飾「冠軍王冠」');
   }
+}
+/** 遊玩天數：每天第一次打開遊戲 +1（舊玩家第一次用戰績裡不同的日期補算） */
+function markPlayDay() {
+  const p = prog(), td = dayStr(0);
+  if (p.pday === td) return;
+  if (p.pdays == null) {
+    let h = []; try { h = JSON.parse(ls('rr_hist') || '[]'); } catch (e) {}
+    const ds = {}; (Array.isArray(h) ? h : []).forEach(function (r) { if (r && r.t) { const d = new Date(r.t); ds[d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate()] = 1; } });
+    delete ds[td]; p.pdays = Object.keys(ds).length;
+    if (!p.since) { const ts = (Array.isArray(h) ? h : []).map(function (r) { return r && r.t; }).filter(Boolean); const d0 = new Date(ts.length ? Math.min.apply(null, ts) : Date.now()); p.since = d0.getFullYear() + '/' + (d0.getMonth() + 1) + '/' + d0.getDate(); }
+  }
+  p.pdays = (p.pdays | 0) + 1; p.pday = td;
+  if (!p.since) { const d = new Date(); p.since = d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate(); }
+  progSave(p);
+}
+/** 上次上線：線上／幾分鐘前／幾小時前／幾天前 */
+function seenText(t) {
+  t = Number(t) || 0; if (!t) return '';
+  const m = Math.floor((Date.now() - t) / 60000);
+  if (m < 4) return '線上'; if (m < 60) return m + ' 分鐘前在線'; if (m < 1440) return Math.floor(m / 60) + ' 小時前在線';
+  return Math.min(999, Math.floor(m / 1440)) + ' 天前在線';
 }
 function dailyLogin() {
   const p = prog(), td = dayStr(0);
@@ -1526,12 +1550,12 @@ function renderSocial() {
     const fl = mk('div'); b.appendChild(fl);
     // 先顯示上次的好友列表，再更新，不用每次都等
     const paint = function (rows) {
-      lsSet('rr_friends', JSON.stringify(rows.slice(0, 40).map(function (f) { return { uid: f.uid, name: f.name, lv: f.lv, online: f.online, room: f.room, clan: f.clan }; })));
+      lsSet('rr_friends', JSON.stringify(rows.slice(0, 40).map(function (f) { return { uid: f.uid, name: f.name, lv: f.lv, online: f.online, seen: f.seen, room: f.room, clan: f.clan }; })));
       fl.textContent = '';
       if (!rows.length) { fl.appendChild(mk('p', 'note', '還沒有好友。把上面的代碼傳給朋友，或輸入他的代碼。')); return; }
       rows.forEach(function (f) {
         const r = mk('div', 'srow'); r.appendChild(mk('span', f.online ? 'dotOn' : 'dotOff'));
-        const nm = mk('span', 'nm', f.name); statsLink(nm, f.uid, f.name); nm.appendChild(mk('small', null, '　Lv.' + f.lv + (f.clan ? ' [' + f.clan + ']' : '') + (f.online ? (f.room ? '，在房間 ' + f.room : '，線上') : '，離線'))); r.appendChild(nm);
+        const nm = mk('span', 'nm', f.name); statsLink(nm, f.uid, f.name); nm.appendChild(mk('small', null, '　Lv.' + f.lv + (f.clan ? ' [' + f.clan + ']' : '') + (f.online ? (f.room ? '，在房間 ' + f.room : '，線上') : '，' + (seenText(f.seen) || '離線')))); r.appendChild(nm);
         if (f.online && f.room) { const j = mk('button', 'btn primary', '加入'); j.type = 'button'; j.addEventListener('click', function () { $('scrSocial').classList.add('hide'); $('codeInput').value = f.room; joinRoom(); }); r.appendChild(j); }
         const del = mk('button', 'btn', '刪除'); del.type = 'button'; del.addEventListener('click', function () { C.removeFriend(f.uid, function () { renderSocial(); }); }); r.appendChild(del);
         fl.appendChild(r);
@@ -2155,7 +2179,8 @@ function boot() {
   Auth.init(function (user) {
     if (!user) { lastUid = null; RR.Cloud.onUser(null); if (S.mode) leave(); else show('scrLogin'); return; }
     if (!S.mode) showMenu();
-    if (user.uid !== lastUid) { lastUid = user.uid; RR.Cloud.onUser(user, function () { renderProg(); if (!S.mode) dailyLogin(); checkWeekReward(); pendingFriend(); }); }
+    markPlayDay();
+    if (user.uid !== lastUid) { lastUid = user.uid; RR.Cloud.onUser(user, function () { markPlayDay(); renderProg(); if (!S.mode) dailyLogin(); checkWeekReward(); pendingFriend(); }); }
   });
 }
 boot();
