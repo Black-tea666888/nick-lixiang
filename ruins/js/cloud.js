@@ -62,7 +62,7 @@ function avatarData() {
 }
 function profile() {
   const p = H.prog(), st = p.st || {};
-  return Object.assign({ name: clean(H.name(), 12), bio: clean(p.bio, 30), ach: (Array.isArray(p.ach) ? p.ach : []).slice(0, 80).map(function (a) { return clean(a, 16); }), lv: H.level(), coins: p.coins | 0, xp: p.xp | 0, region: REGION_KEY[p.region | 0] || 'tw',
+  return Object.assign({ name: clean(H.name(), 12), bio: clean(p.bio, 30), days: p.pdays | 0, since: clean(p.since, 12), ach: (Array.isArray(p.ach) ? p.ach : []).slice(0, 80).map(function (a) { return clean(a, 16); }), lv: H.level(), coins: p.coins | 0, xp: p.xp | 0, region: REGION_KEY[p.region | 0] || 'tw',
     st: { games: st.games | 0, wins: st.wins | 0, mk: st.mk | 0, brWins: st.brWins | 0 }, seen: Date.now(), room: room || '', v: 1 }, avatarData());
 }
 /** 公開資料寫在 users 文件；進度寫在只有本人能讀的 save/main（舊版進度欄位會順便清掉） */
@@ -359,7 +359,7 @@ const Cloud = {
       return Promise.all(ids.slice(0, 40).map(function (id) { return userRef(id).get(); }));
     }).then(function (snaps) {
       const now = Date.now(), rows = [];
-      snaps.forEach(function (s) { if (!s.exists) return; const d = s.data(); rows.push({ uid: s.id, name: d.name || '玩家', lv: d.lv | 0, online: now - (Number(d.seen) || 0) < 200000, room: d.room || '', clan: d.clanTag || '' }); });
+      snaps.forEach(function (s) { if (!s.exists) return; const d = s.data(); rows.push({ uid: s.id, name: d.name || '玩家', lv: d.lv | 0, online: now - (Number(d.seen) || 0) < 200000, seen: Number(d.seen) || 0, room: d.room || '', clan: d.clanTag || '' }); });
       rows.sort(function (a, b) { return (b.online - a.online) || (b.lv - a.lv); });
       cb(null, rows);
     }).catch(fail(cb));
@@ -546,7 +546,8 @@ const Cloud = {
   },
   clanAsk: function (cb) {
     if (!Cloud.ready() || !me || !me.clan) { cb({ code: 'no-clan' }); return; }
-    Cloud.msgs().add({ uid: uid, name: profile().name, k: 'req', need: Cloud.ASK_NEED, got: 0, claimed: 0, donors: {}, t: Date.now() }).then(function () { cb(null); }).catch(fail(cb));
+    let av = ''; try { av = localStorage.getItem('rr_avatar') || ''; } catch (e) {}
+    Cloud.msgs().add({ uid: uid, name: profile().name, av: av, k: 'req', need: Cloud.ASK_NEED, got: 0, claimed: 0, donors: {}, t: Date.now() }).then(function () { cb(null); }).catch(fail(cb));
   },
   /** 捐 10 金幣給一則請求；cb(err) 成功才扣捐贈者的金幣 */
   clanGive: function (mid, cb) {

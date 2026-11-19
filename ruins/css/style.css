@@ -1070,3 +1070,9 @@ select.fselNative { position: absolute !important; width: 1px !important; height
 .fselItem.on::before { content: '✓ '; }
 .fselItem:disabled { opacity: .45; cursor: default; }
 .field .fsel { width: 100%; }
+
+/* 個人頁：遊玩天數、加入日期、上次上線 */
+.stWho .stDays { font-size: 12px; font-weight: 700; opacity: .85; }
+/* 戰隊聊天的請求卡：頭像可以點開個人頁 */
+.ccReq .ccWho { display: flex; align-items: center; gap: 8px; }
+.ccReq .ccWho .ccAv { width: 28px; height: 28px; font-size: 13px; }
