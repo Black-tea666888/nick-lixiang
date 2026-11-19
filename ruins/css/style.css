@@ -853,3 +853,29 @@ body.touch.playing:not(.lk-near):not(.btnedit) #locker { display: none !importan
 /* 技能好了：閃一下提示 */
 #hud > #skill.ready { animation: skReady 1s ease-out 2; border-color: #ffe27a; }
 @keyframes skReady { 0% { box-shadow: 0 0 0 0 rgba(255,226,122,.9); } 100% { box-shadow: 0 0 0 18px rgba(255,226,122,0); } }
+/* 個人戰績 */
+#scrStats { z-index: 28; background: var(--bin); }
+#scrStats .cc { gap: 8px; }
+.stHead { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px; background: var(--steel); border: 2px solid var(--ink); border-radius: 4px; color: var(--chalk); }
+.stAv { width: 46px !important; height: 46px !important; font-size: 22px !important; }
+.stWho { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.stWho b { font-size: 18px; }
+.stWho span { font-size: 13px; color: var(--chalk-2, #c9c4b6); }
+.stTot { width: 100%; display: flex; gap: 14px; font-size: 13px; font-weight: 700; color: var(--haz); }
+.stTabs button { font-size: 13px; padding: 8px 0; }
+.stSum { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.stSum div { display: flex; flex-direction: column; align-items: center; padding: 6px 0; background: var(--steel); border: 2px solid var(--ink); border-radius: 3px; color: var(--chalk); }
+.stSum b { font-size: 18px; color: var(--haz); }
+.stSum span { font-size: 12px; }
+.stList { gap: 4px !important; padding: 6px !important; }
+.stRow { display: grid; grid-template-columns: 1.1fr .8fr .9fr 1.6fr; align-items: center; gap: 6px; padding: 8px; background: rgba(0,0,0,.18); border-left: 4px solid #6a7480; color: var(--chalk); font-size: 14px; }
+.stRow.win { border-left-color: var(--haz); }
+.stTh { background: none; border-left-color: transparent; font-size: 12px; color: var(--chalk-2, #c9c4b6); padding: 2px 8px; }
+.stRes b { font-size: 16px; }
+.stRow.win .stRes b { color: var(--haz); }
+.stMvp { display: inline-block; margin-left: 4px; padding: 1px 5px; font-size: 11px; font-style: normal; font-weight: 900; color: var(--ink); background: var(--haz); border-radius: 2px; vertical-align: 2px; }
+.stNum { font-weight: 900; font-variant-numeric: tabular-nums; }
+.stMode { display: flex; flex-direction: column; min-width: 0; }
+.stMode small { font-size: 11px; color: var(--chalk-2, #c9c4b6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stLink { cursor: pointer; }
+.srow.stLink:hover, .ccHead.stLink:hover b { text-decoration: underline; }
