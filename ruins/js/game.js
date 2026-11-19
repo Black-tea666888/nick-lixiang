@@ -144,6 +144,55 @@ const touch = { joyId: null, lookId: null, ox: 0, oy: 0, jx: 0, jy: 0, lx: 0, ly
 const settings = { sens: 1 };
 // 手機改用 Lambert 材質（逐頂點打光），GPU 負擔約少一半，畫面差異很小；電腦維持 Phong
 const LITE = ('ontouchstart' in window) || !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+// 即時陰影：高畫質（電腦的標準畫質也開）時，手電筒與陽光會投出真的影子
+let SHADOWS = false, dust = null, sunTgt = null;
+function shadowWanted() { return quality === 'high' || (quality === 'mid' && !LITE); }
+/** 角色、怪物身上的實心零件會投影（描邊外殼與腳下的圓形陰影除外） */
+function castAll(g) { g.traverse(function (o) { if (o.isMesh && !o.material.transparent && o.material.side !== THREE.BackSide) o.castShadow = true; }); }
+let glowTex = null;
+function getGlowTex() {
+  if (glowTex) return glowTex;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64; const g = cv.getContext('2d');
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64); glowTex = new THREE.CanvasTexture(cv); return glowTex;
+}
+/** 發光光暈（怪物眼睛）：加色混合的小貼片，暗處特別明顯 */
+function glowSprite(col, s) {
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: getGlowTex(), color: col, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }));
+  sp.scale.set(s, s, 1); return sp;
+}
+/** 空氣中飄的灰塵：圍著鏡頭的一團小點，慢慢飄，超出範圍就從另一邊繞回來 */
+function buildDust() {
+  const N = LITE ? 160 : 320, pos = new Float32Array(N * 3), vel = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) { pos[i * 3] = (Math.random() - 0.5) * 16; pos[i * 3 + 1] = Math.random() * 3.4; pos[i * 3 + 2] = (Math.random() - 0.5) * 16; vel[i * 3] = (Math.random() - 0.5) * 0.12; vel[i * 3 + 1] = (Math.random() - 0.5) * 0.05; vel[i * 3 + 2] = (Math.random() - 0.5) * 0.12; }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xd8d0b8, map: getGlowTex(), size: 0.03, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending }));
+  pts.frustumCulled = false; pts.userData.vel = vel; return pts;
+}
+function tickFx(dt) {
+  if (dust) {
+    const p = dust.geometry.attributes.position.array, v = dust.userData.vel, cx = camera.position.x, cz = camera.position.z;
+    for (let i = 0; i < p.length; i += 3) {
+      p[i] += v[i] * dt; p[i + 1] += v[i + 1] * dt; p[i + 2] += v[i + 2] * dt;
+      if (p[i] - cx > 8) p[i] -= 16; else if (p[i] - cx < -8) p[i] += 16;
+      if (p[i + 2] - cz > 8) p[i + 2] -= 16; else if (p[i + 2] - cz < -8) p[i + 2] += 16;
+      if (p[i + 1] > 3.4) p[i + 1] = 0.1; else if (p[i + 1] < 0.05) p[i + 1] = 3.3;
+    }
+    dust.geometry.attributes.position.needsUpdate = true;
+  }
+  // 陽光的陰影範圍跟著玩家走（只算附近 30 公尺，影子比較清楚）
+  if (sun && sun.castShadow && sunTgt) {
+    sunTgt.position.set(camera.position.x, 0, camera.position.z);
+    sun.position.set(camera.position.x + 18, 40, camera.position.z + 12);
+  }
+}
+function applyShadows() {
+  if (!renderer) return;
+  const on = shadowWanted();
+  if (on !== SHADOWS) { SHADOWS = on; renderer.shadowMap.enabled = on; if (scene) scene.traverse(function (o) { if (o.material) [].concat(o.material).forEach(function (m) { m.needsUpdate = true; }); }); }
+  if (torch) torch.castShadow = on && !(baseLight && baseLight.open);
+  if (sun) sun.castShadow = on && !!(baseLight && baseLight.open);
+}
 function litMat(o) {
   if (!LITE) return new THREE.MeshPhongMaterial(o);
   const m = new THREE.MeshLambertMaterial(), p = {};
@@ -775,7 +824,7 @@ function buildLevel() {
   let seed = 1234 + W.mapIndex * 77; const rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
   const crateM = litMat({ map: makeTex('#7a5a3a', '30,20,10', true), shininess: 4 }), barrelM = litMat({ color: 0x556b5a, emissive: 0x0c140e, shininess: 40 });
   const lampM = new THREE.MeshBasicMaterial({ color: 0xdfeee6 }), bandM = new THREE.MeshBasicMaterial({ color: 0xc9a227 });
-  let lamps = 0;
+  let lamps = 0; const shafts = [];
   W.floorCells.forEach(function (fc) {
     const c = fc[0], r = fc[1], cx = c * CS + CS / 2, cz = r * CS + CS / 2;
     if (Math.hypot(cx - VAN[0], cz - VAN[1]) < CS * 1.5) return;
@@ -796,8 +845,17 @@ function buildLevel() {
     if (!open && (c + r * 2) % (/office|hospital/.test(style) ? 3 : 5) === 0 && lamps < 70) {   // 燈條：發光但不投光（省效能）
       lamps++;
       const lp = part(new THREE.BoxGeometry(1.3, 0.05, 0.22), lampM, cx, WH - 0.04, cz); if (c % 2) lp.rotation.y = Math.PI / 2; level.add(lp);
+      shafts.push([cx, cz]);
     }
   });
+  // 燈下的光柱：上亮下淡的半透明圓錐（加色混合，不算光照，很省）
+  if (shafts.length) {
+    const hh = WH - 0.06, sg = mergeGeos(shafts.map(function (s) { return [new THREE.CylinderGeometry(0.5, 1.6, hh, 18, 1, true), M4(s[0], hh / 2, s[1]), 0xe6efe8]; }));
+    const sp = sg.attributes.position.array, scol = sg.attributes.color.array;
+    for (let k = 0; k < sp.length; k += 3) { const f = Math.pow(Math.max(0, sp[k + 1] / hh), 1.8); scol[k] *= f; scol[k + 1] *= f; scol[k + 2] *= f; }
+    const sm = new THREE.Mesh(sg, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    sm.renderOrder = 2; level.add(sm);
+  }
   // 回收車車體（放在光圈旁，緊貼最近的牆）
   const sc0 = W.cellOf(VAN[0], VAN[1]), vw = [[-1, 0], [0, -1], [1, 0], [0, 1]].filter(function (d) { return W.isWall(sc0[0] + d[0], sc0[1] + d[1]); })[0];
   if (vw) {
@@ -806,7 +864,14 @@ function buildLevel() {
     [[-0.5, 0.42], [0.95, 0.42], [-0.5, -0.42], [0.95, -0.42]].forEach(function (q) { const w = part(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 10), tyre, q[0], 0.2, q[1]); w.rotation.x = Math.PI / 2; tg.add(w); });
     tg.position.set(VAN[0] + vw[0] * (CS / 2 - 0.5), 0, VAN[1] + vw[1] * (CS / 2 - 0.5)); tg.rotation.y = vw[0] ? Math.PI / 2 : 0; level.add(tg);
   }
+  // 場景陰影：牆、道具會投影也會接影子；地板、天花板只接影子
+  level.traverse(function (o) {
+    if (!o.isMesh || !o.material || o === skyDome || !(o.material.isMeshPhongMaterial || o.material.isMeshLambertMaterial)) return;
+    o.receiveShadow = true; o.castShadow = o.geometry.type !== 'PlaneGeometry';
+  });
   scene.add(level);
+  if (dust) dust.visible = !open;
+  applyShadows();
   buildMini();
 }
 
@@ -878,7 +943,10 @@ function buildMonster(kind) {
     g.add(cloak, hood);
   }
   // 不再每隻怪掛一盞點光源：光源數一變，所有材質都要重新編譯（手機會頓一下），怪多時每個像素也要多算一盞光
+  castAll(g);
   addOutline(g, col[1], 1.06); addShadow(g, 0.6);
+  // 眼睛的光暈：黑暗中遠遠就看得到兩點紅光
+  [e1, e2].forEach(function (e) { const gs = glowSprite(col[0], 0.42); gs.position.copy(e.position); gs.position.z += 0.02; g.add(gs); });
   g.scale.set(1, tall, 1);
   g.visible = false; scene.add(g);
   // 血量條＋護盾條：畫在同一張小畫布上，數值變了才重畫
@@ -1048,6 +1116,14 @@ function buildChar(c, slot, h, o, pet) {
       part(new THREE.BoxGeometry(0.2, 0.16, 0.04), pmat(0x1c2220, 0.05), -0.12, 1.02, 0.26),
       part(new THREE.SphereGeometry(0.012, 10, 8), glow, -0.08, 1.64, 0.27), part(new THREE.SphereGeometry(0.012, 10, 8), glow, 0.12, 1.64, 0.27),
       part(new THREE.BoxGeometry(0.07, 0.13, 0.03), dark, -0.095, 1.5, 0.27), part(new THREE.BoxGeometry(0.1, 0.02, 0.02), dark, -0.095, 1.52, 0.27));
+    // 回收員的反光背心條與回收背包（背帶、側袋、捲起的垃圾袋）
+    const hv = litMat({ color: 0xd9f23a, emissive: 0x4a5a08, shininess: 60 }), pack = pmat(0x3d4a3e, 0.08), strap = pmat(0x1c2220, 0.05);
+    [0.82, 1.1].forEach(function (y) { const st = part(new THREE.TorusGeometry(0.262, 0.024, 8, 40), hv, 0, y, 0); st.rotation.x = Math.PI / 2; g.add(st); });
+    g.add(part(new THREE.BoxGeometry(0.4, 0.46, 0.2), pack, 0, 1.04, -0.36), part(new THREE.BoxGeometry(0.34, 0.12, 0.06), pack, 0, 0.88, -0.48),
+      part(new THREE.CylinderGeometry(0.09, 0.09, 0.42, 18), pmat(0x2a6a3a, 0.1), 0, 1.33, -0.36),
+      part(new THREE.BoxGeometry(0.05, 0.5, 0.03), strap, -0.13, 1.06, 0.255), part(new THREE.BoxGeometry(0.05, 0.5, 0.03), strap, 0.13, 1.06, 0.255),
+      part(new THREE.BoxGeometry(0.1, 0.03, 0.04), hv, 0, 0.94, -0.5));
+    g.children[g.children.length - 4].rotation.z = Math.PI / 2;
   }
   // 手腳（以肩膀／腳踝為軸，走路時擺動）
   const sx = c === 1 ? 0.34 : 0.33, limb = c === 1 ? pmat(0x9aa3a8, 0.12) : o ? M : pmat(c === 6 ? 0x4fae5a : c === 7 ? 0x9be8c8 : COLORS[slot % 4], 0.12), shoe = pmat(0x1c2220, 0.05);
@@ -1055,6 +1131,12 @@ function buildChar(c, slot, h, o, pet) {
   const pants = pmat(c === 1 ? 0x7d868c : 0x27313c, 0.1);
   const mkFoot = function (x) { const pv = new THREE.Group(); pv.position.set(x, 0.64, 0); pv.add(part(new THREE.CylinderGeometry(0.105, 0.09, 0.56, 16), pants, 0, -0.28, 0), part(new THREE.BoxGeometry(0.18, 0.12, 0.32), shoe, 0, -0.58, 0.06), part(new THREE.BoxGeometry(0.2, 0.04, 0.34), dark, 0, -0.65, 0.06), part(new THREE.BoxGeometry(0.1, 0.02, 0.1), glow, 0, -0.52, 0.16)); return pv; };
   const aL = mkArm(-sx), aR = mkArm(sx), fL = mkFoot(-0.13), fR = mkFoot(0.13);
+  // 護膝與手肘：讓手腳不只是一根圓柱
+  if (c !== 1 && c !== 3) {
+    const pad = pmat(0x1c2220, 0.06);
+    [fL, fR].forEach(function (f) { f.add(part(new THREE.BoxGeometry(0.15, 0.12, 0.06), pad, 0, -0.27, 0.1)); });
+    [aL, aR].forEach(function (a) { a.add(part(new THREE.SphereGeometry(0.075, 16, 12), limb, 0, -0.31, 0)); });
+  }
   aR.rotation.x = -0.45;   // 右手往前握著攻擊物
   g.add(aL, aR, fL, fR);
   g.userData.limbs = [aL, aR, fL, fR];
@@ -1067,6 +1149,7 @@ function buildChar(c, slot, h, o, pet) {
   }
   const hat = buildHat(h || 0); if (hat) { hat.position.y = [1.84, 1.78, 1.95, 1.87, 1.89, 1.9, 1.84, 2.08][c] || 1.84; if (c === 1) hat.position.x = 0.14; g.add(hat); }
   addSurface(g);
+  castAll(g);
   addOutline(g, 0x05080a, 1.07); addShadow(g, 0.42);
   const pm = buildPet(pet || 0); if (pm) { pm.position.set(-0.75, 0, -0.25); g.add(pm); g.userData.pet = pm; }
   return g;
@@ -1555,6 +1638,7 @@ function applyQuality() {
   const target = quality === 'low' ? 480 : quality === 'mid' ? 720 : 1080;
   renderer.setPixelRatio(Math.max(0.75, Math.min(window.devicePixelRatio || 1, target / short)));
   renderer.setSize(window.innerWidth, window.innerHeight, false);
+  applyShadows();
 }
 function fpsWatch(dt) {
   fpsT += dt; fpsN++;
@@ -1907,6 +1991,7 @@ function interpolate(dt, now) {
       if (L) { L[0].rotation.x = sw * 0.9; L[1].rotation.x = -0.45 - sw * 0.25 - (p.swingT > 0 ? Math.sin((1 - p.swingT / 0.28) * Math.PI) * 1.1 : 0); L[2].rotation.x = -sw * 0.7; L[3].rotation.x = sw * 0.7; }
       p.airY = (p.airY || 0) + (((p.flags & 8) ? 0.75 : 0) - (p.airY || 0)) * Math.min(1, dt * 10);
       p.avatar.position.y = Math.abs(Math.sin(p.walk)) * 0.04 * sp + p.airY;
+      p.avatar.scale.y = 1 + Math.sin(now * 2.1 + (p.walk || 0)) * 0.012 * (1 - sp);   // 站著時微微呼吸
       const pt = p.avatar.userData.pet; if (pt) { pt.position.y = (pt.userData.fly ? Math.sin(now * 3) * 0.08 : Math.abs(Math.sin(p.walk * 1.3)) * 0.07 * sp) - p.airY; }
     }
   });
@@ -2048,6 +2133,7 @@ function frame(nowMs) {
   hudT -= dt; if (hudT <= 0) { hudT = 0.15; tickHud(); }
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('show'); }
   pvs.forEach(function (pv) { if (pv.model && pv.canvas.offsetParent) { pv.model.rotation.y = (pv.gun ? Math.PI / 2 + Math.sin(now * 0.7) * 0.6 : pv.sway ? -0.35 + Math.sin(now * 0.6) * 0.3 : now * 0.9) + (pv.spin || 0); pv.model.rotation.x = pv.gun ? 0.15 : 0; pv.r.render(pv.sc, pv.cam); } });
+  tickFx(dt);
   renderer.render(scene, camera);
 }
 
@@ -2071,6 +2157,12 @@ RR.Game = {
     hemi = new THREE.HemisphereLight(0xcfd8e6, 0x3a3f3a, 0.45); scene.add(hemi);
     sun = new THREE.DirectionalLight(0xfff2d8, 0); sun.position.set(30, 60, 20); scene.add(sun);
     torch = new THREE.SpotLight(0xfff0cc, 2.2, 42, 0.62, 0.55, 1.2);
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    torch.shadow.mapSize.set(LITE ? 512 : 1024, LITE ? 512 : 1024); torch.shadow.camera.near = 0.3; torch.shadow.camera.far = 30; torch.shadow.bias = -0.0008;
+    sun.shadow.mapSize.set(LITE ? 1024 : 2048, LITE ? 1024 : 2048); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02;
+    { const sc = sun.shadow.camera; sc.left = -30; sc.right = 30; sc.top = 30; sc.bottom = -30; sc.near = 1; sc.far = 120; }
+    sunTgt = new THREE.Object3D(); scene.add(sunTgt); sun.target = sunTgt;
+    dust = buildDust(); scene.add(dust);
     buildGunView(settings.gun | 0);
     cartView = new THREE.Group(); cartView.add(part(new THREE.BoxGeometry(0.9, 0.3, 0.6), pmat(0xd9902f, 0.25), 0, -0.78, -1.05), part(new THREE.CylinderGeometry(0.02, 0.02, 0.8, 8), pmat(0x9aa3a8, 0.15), 0, -0.5, -0.62)); cartView.children[1].rotation.z = Math.PI / 2; cartView.visible = false; camera.add(cartView);
     torch.position.set(0.25, -0.2, 0); camera.add(torch); camera.add(torch.target); torch.target.position.set(0, -0.05, -1);
@@ -2079,7 +2171,7 @@ RR.Game = {
     setViewWeapon(0);
     skinGeos = [new THREE.SphereGeometry(0.28, 18, 14), new THREE.OctahedronGeometry(0.34, 0)];
     itemGeos = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(salvageGeo);
-    window.addEventListener('resize', resize); resize();
+    window.addEventListener('resize', resize); resize(); applyShadows();
     bindInput();
     ready = true;
     requestAnimationFrame(frame);
