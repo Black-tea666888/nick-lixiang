@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v141', items: ['拿到櫃子裡的近戰武器會得到 4 秒護盾', '每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v142', items: ['週排行榜每週日 24:00 重新計算；上週各模式全區前 3 名獲得限定頭飾「冠軍王冠」', '拿到櫃子裡的近戰武器會得到 4 秒護盾', '每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -217,7 +217,7 @@ function wheelSpin() {
   else {
     const cat = sg[0], names = catNames(cat);
     let pickI = sg[1];
-    if (pickI == null) { const pool = []; for (let k = 1; k < names.length; k++) if (!owns(p, cat, k)) pool.push(k); pickI = pool.length ? pool[Math.floor(Math.random() * pool.length)] : 1 + Math.floor(Math.random() * (names.length - 1)); }
+    if (pickI == null) { const pool = []; for (let k = 1; k < names.length; k++) if (!owns(p, cat, k) && !(cat === 'hat' && k === LIMITED_HAT)) pool.push(k); pickI = pool.length ? pool[Math.floor(Math.random() * pool.length)] : 1 + Math.floor(Math.random() * (cat === 'hat' ? LIMITED_HAT - 1 : names.length - 1)); }
     shown = [cat, pickI];
     if (owns(p, cat, pickI)) { p.coins += 25; msg = '「' + names[pickI] + '」已經有了，換成金幣 +25'; }
     else { if (cat === 'hat') p.hats.push(pickI); else p.own[cat].push(pickI); fresh = true; msg = '抽到' + CAT_LABEL[cat] + '「' + names[pickI] + '」'; }
@@ -646,6 +646,7 @@ function ccAsk() {
 }
 /* ---------- 成長系統（存在這台裝置上）：金幣、經驗、每日任務、頭飾 ---------- */
 const HAT_COST = [0, 60, 100, 150, 250, 400];
+const LIMITED_HAT = 6;   // 冠軍王冠：不進商店、不進轉蛋，只給上週週排行榜各模式前 3 名
 const MISSIONS = [['完成 1 天', 1, 30], ['團隊累計賺到 $800', 800, 40], ['拿到一次 3 顆星', 1, 50]];
 function today() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 function prog() {
@@ -1234,6 +1235,30 @@ function afterMatch(mode, win, day, myStat, coins, info) {
   }
   return got.length ? '，成就：' + got.join('、') : '';
 }
+/** 上週排行榜各模式前 3 名：送限定頭飾（每週只結算一次，查詢失敗就下次再試） */
+function checkWeekReward() {
+  const C = RR.Cloud;
+  if (!C || !C.ready()) return;
+  const lastW = C.weekId() - 1, uid = C.uid();
+  if (prog().rewW === lastW) return;
+  let left = C.MODES.length, won = false, failed = false;
+  C.MODES.forEach(function (m) {
+    C.top(m, 'w' + lastW, function (err, rows) {
+      if (err) failed = true;
+      else if ((rows || []).slice(0, 3).some(function (r) { return r.uid === uid; })) won = true;
+      if (--left === 0) finish();
+    });
+  });
+  function finish() {
+    if (failed) return;
+    const q = prog();
+    if (q.rewW === lastW) return;
+    q.rewW = lastW;
+    if (won && q.hats.indexOf(LIMITED_HAT) < 0) q.hats.push(LIMITED_HAT);
+    progSave(q); renderProg();
+    if (won) bannerShow('上週全區前 3 名！', '獲得限定頭飾「冠軍王冠」');
+  }
+}
 function dailyLogin() {
   const p = prog(), td = dayStr(0);
   if (p.login && p.login.d === td) return;
@@ -1284,6 +1309,7 @@ function renderSocial() {
   if (socTab === 'rank') {
     const mine = myWeekPts();
     const tr = mk('p', 'note', '我的本週段位：' + PTIERS[ptierOf(mine)].n + '（' + mine + ' 分）');
+    b.appendChild(mk('p', 'note', '排行榜每週日 24:00（台灣時間）重新計算。上週各模式全區前 3 名，會獲得限定造型「冠軍王冠」。'));
     const tbtn = mk('button', 'btn', '段位與輪換說明'); tbtn.type = 'button'; tbtn.style.margin = '6px 0 10px';
     tbtn.addEventListener('click', openTierInfo); b.appendChild(tr); b.appendChild(tbtn);
     const rankSel = socSelect(C.MODES.map(function (m) { return [m, MODE_NAME[m] + '模式']; }).concat([['mix', '全部模式']]), socMode, function (v) { socMode = v; renderSocial(); });
@@ -1614,7 +1640,7 @@ function bind() {
   const gBtns = cards($('gGrid'), W.GUNS.map(function (g) { return g.name; }), function () { return ''; }, function (i) {
     look.gun = i; lsSet('rr_gun', String(i)); showLook();
   });
-  const hBtns = cards($('hGrid'), W.HATS, function (i) { return ''; }, function (i) {
+  const hBtns = cards($('hGrid'), W.HATS.slice(0, LIMITED_HAT), function (i) { return ''; }, function (i) {
     const p = prog();
     if (p.hats.indexOf(i) < 0) {
       if (p.coins < HAT_COST[i]) { say('金幣不夠：「' + W.HATS[i] + '」要 ' + HAT_COST[i] + ' 金幣，你有 ' + p.coins + '。過關和每日任務可以賺金幣。'); return; }
@@ -1829,7 +1855,7 @@ function boot() {
   Auth.init(function (user) {
     if (!user) { lastUid = null; RR.Cloud.onUser(null); if (S.mode) leave(); else show('scrLogin'); return; }
     if (!S.mode) showMenu();
-    if (user.uid !== lastUid) { lastUid = user.uid; RR.Cloud.onUser(user, function () { renderProg(); if (!S.mode) dailyLogin(); }); }
+    if (user.uid !== lastUid) { lastUid = user.uid; RR.Cloud.onUser(user, function () { renderProg(); if (!S.mode) dailyLogin(); checkWeekReward(); }); }
   });
 }
 boot();

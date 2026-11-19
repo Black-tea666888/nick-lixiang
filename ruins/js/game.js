@@ -1330,6 +1330,11 @@ function buildHat(h) {
     g.add(part(new THREE.CylinderGeometry(0.012, 0.012, 0.38, 16), pmat(0xb8c0c4, 0.2), 0, 0.17, 0), part(new THREE.SphereGeometry(0.05, 20, 16), new THREE.MeshBasicMaterial({ color: 0x7dffb0 }), 0, 0.38, 0));
   } else if (h === 4) {
     const r = part(new THREE.TorusGeometry(0.2, 0.025, 12, 36), new THREE.MeshBasicMaterial({ color: 0xfff3a0 }), 0, 0.18, 0); r.rotation.x = Math.PI / 2; g.add(r);
+  } else if (h === 6) {   // 冠軍王冠：金色大光環、上面五顆紅寶石
+    const gold = pmat(0xffd24a, 0.45), red = new THREE.MeshBasicMaterial({ color: 0xff3b3b });
+    g.add(part(new THREE.TorusGeometry(0.22, 0.03, 12, 36), gold, 0, 0.02, 0));
+    g.children[0].rotation.x = Math.PI / 2;
+    for (let k = 0; k < 5; k++) g.add(part(new THREE.SphereGeometry(0.035, 10, 8), red, Math.cos(k * 1.2566 + 1.57) * 0.22, 0.02, Math.sin(k * 1.2566 + 1.57) * 0.22));
   } else {
     const gold = pmat(0xffd24a, 0.45);
     g.add(part(new THREE.CylinderGeometry(0.2, 0.18, 0.1, 24, 1, true), gold, 0, 0.0, 0));
