@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=127" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=128" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -34,12 +34,15 @@
   <div id="plist"></div>
   <canvas id="mini" aria-label="小地圖"></canvas>
   <div id="hudBtns">
+    <button id="hudMore" type="button" aria-label="選單" aria-expanded="false">≡</button>
     <button id="micBtn" type="button">麥克風</button>
     <button id="chatBtn" type="button">聊天</button>
-    <button id="miniBtn" type="button">小遊戲</button>
-    <button id="hudGear" type="button">背包</button>
-    <button id="hudHelp" type="button">說明</button>
-    <button id="leaveBtn" type="button">離開</button>
+    <div id="hudMenu" class="hide">
+      <button id="miniBtn" type="button">小遊戲</button>
+      <button id="hudGear" type="button">背包</button>
+      <button id="hudHelp" type="button">說明</button>
+      <button id="leaveBtn" type="button">離開</button>
+    </div>
   </div>
   <div id="spec" class="hide">觀戰中：<b id="specName"></b>（點畫面切換）</div>
   <div id="floats"></div>
@@ -110,19 +113,18 @@
       </div>
       <button class="lbCoin" id="coinBtn" type="button" aria-label="金幣，點一下去抽獎機"><span>金幣</span><b id="coinTag">0</b><i>+</i></button>
       <div class="lbIcons">
+        <button class="icon" id="marketOpen" type="button" aria-label="聊天與組隊">聊天</button>
         <button class="icon" id="socialOpen" type="button">社群<i class="badge hide" id="socBadge"></i></button>
         <button class="icon" id="helpBtn" type="button" aria-label="設定與說明">設定</button>
+        <button class="icon" id="moreBtn" type="button" aria-label="更多" aria-haspopup="true">更多<i class="badge hide" id="moreBadge"></i></button>
       </div>
+      <div class="moreMenu hide" id="moreMenu" role="menu"><button class="mItem" id="misBtn" type="button">每日任務 <small id="fsMis">0 / 3 完成</small></button><button class="mItem" id="clanChatOpen" type="button"><i class="badge hide" id="ccBadge"></i>戰隊聊天</button><button class="mItem" id="miniInfoBtn" type="button">小遊戲</button><button class="mItem" id="joinOpen" type="button">用房間代碼加入</button><button class="mItem" id="logoutBtn" type="button">登出 <small id="whoProv"></small></button></div>
     </header>
     <nav class="lbSide" aria-label="功能">
       <button class="tile big" id="pickBtn" type="button"><span class="tag">出戰角色</span><b id="pickSum"></b></button>
       <button class="tile" id="gearOpen" type="button"><b>裝備與寶石</b><span>配件、寶石升級</span></button>
       <button class="tile hot" id="wheelOpen" type="button"><b>回收抽獎機</b><span>每天免費一次</span></button>
       <button class="tile" id="shopOpen" type="button"><b>市集</b><span id="shopSub">每日精選、免費補給</span></button>
-      <button class="tile" id="clanChatOpen" type="button"><i class="badge hide" id="ccBadge"></i><b>戰隊聊天</b><span>請求、捐贈金幣</span></button>
-      <button class="tile" id="marketOpen" type="button"><b>聊天與組隊</b><span>世界頻道、快速組隊、交易所</span></button>
-      <button class="tile" id="miniInfoBtn" type="button"><b>小遊戲</b><span>不用進遊戲也能玩</span></button>
-      <button class="tile" id="misBtn" type="button"><b>每日任務</b><span id="fsMis">0 / 3 完成</span></button>
     </nav>
     <div class="lbStage"><canvas id="lobbyChar" width="300" height="380" aria-hidden="true"></canvas><div class="lbName" id="lbName"></div></div>
     <footer class="lbBottom">
@@ -137,7 +139,6 @@
         <button class="mapChip" id="mapChip" type="button"><span>地圖</span><b id="mapName">廢棄設施</b></button>
         <button class="startBtn" id="goBtn" type="button"><small id="startMode">多人合作</small><b>開始</b></button>
       </div>
-      <div class="lbLinks"><button class="joinBtn" id="joinOpen" type="button"><span>朋友給你代碼？</span><b>用房間代碼加入</b></button><button class="joinBtn" id="logoutBtn" type="button"><span>目前登入：<span id="whoProv"></span></span><b>登出</b></button></div>
     </footer>
     <div class="hide" id="modeHidden"><button id="createBtn" type="button" tabindex="-1">多人合作</button><button id="soloBtn" type="button" tabindex="-1">單人遊玩</button><button id="huntBtn" type="button" tabindex="-1">獵殺模式</button><button id="tdBtn" type="button" tabindex="-1">塔防模式</button><button id="brBtn" type="button" tabindex="-1">大逃殺</button></div>
   </div>
@@ -632,14 +633,14 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=127"></script>
-<script src="js/sim.js?v=127"></script>
-<script src="js/audio.js?v=127"></script>
-<script src="js/auth.js?v=127"></script>
-<script src="js/cloud.js?v=127"></script>
-<script src="js/net.js?v=127"></script>
-<script src="js/game.js?v=127"></script>
-<script src="js/minigames.js?v=127"></script>
-<script src="js/main.js?v=127"></script>
+<script src="js/config.js?v=128"></script>
+<script src="js/sim.js?v=128"></script>
+<script src="js/audio.js?v=128"></script>
+<script src="js/auth.js?v=128"></script>
+<script src="js/cloud.js?v=128"></script>
+<script src="js/net.js?v=128"></script>
+<script src="js/game.js?v=128"></script>
+<script src="js/minigames.js?v=128"></script>
+<script src="js/main.js?v=128"></script>
 </body>
 </html>

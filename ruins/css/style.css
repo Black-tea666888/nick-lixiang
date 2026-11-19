@@ -59,6 +59,15 @@ input { -webkit-user-select: text; user-select: text; }
 #hudBtns button { font: inherit; font-size: 12px; font-weight: 700; padding: 6px 9px; min-width: 78px; min-height: 34px; cursor: pointer;
   background: rgba(34,39,44,.9); color: var(--chalk); border: 0; border-bottom: 3px solid #111417; border-radius: 3px; }
 #hudBtns button:active { transform: translateY(2px); border-bottom-width: 1px; }
+#hudMenu { display: flex; flex-direction: column; gap: 6px; }
+#hudMenu.hide { display: none; }
+#hudMore { min-width: 0 !important; padding: 6px 12px !important; }
+.moreMenu { position: absolute; right: 12px; top: 56px; z-index: 30; display: flex; flex-direction: column; min-width: 180px; padding: 6px; background: var(--panel, #1b1a17); border: 1px solid var(--line, #4a463d); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+.moreMenu.hide { display: none; }
+.mItem { font: inherit; text-align: left; background: none; border: 0; color: inherit; padding: 10px 12px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.mItem:hover, .mItem:focus-visible { background: rgba(255,255,255,.07); outline: none; }
+.mItem small { opacity: .7; font-size: .85em; }
+.mItem .badge { position: static; }
 body.solo #micBtn, body.solo #chatBtn { display: none; }
 #micBtn.spk { background: var(--haz); color: var(--ink); }
 #micBtn.loud { background: var(--rust); color: var(--chalk); }
