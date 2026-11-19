@@ -654,11 +654,17 @@ function buildLevel() {
   if (hemi) { hemi.intensity = (open ? 0.55 : 0.45 * br) * ex; hemi.color.setHex(open && sk ? sk[0] : 0xcfd8e6).lerp(new THREE.Color(0xffffff), open ? 0.55 : 0); hemi.groundColor.set(open ? T.floor : '#3a3f3a').multiplyScalar(open ? 0.7 : 1); }
   if (sun) { sun.intensity = open ? ((T.sun || 0.5) + 0.12) * ex : 0; sun.color.setHex(T.style === 'park' || T.style === 'city' ? 0xffd2a0 : 0xfff2d8); }
   skyDome = null;
+  // 戶外總亮度上限：環境光＋半球光＋陽光加起來不超過 1.05，淺色牆面才不會過曝
+  if (open && ambient && hemi && sun) {
+    const tot = ambient.intensity + hemi.intensity + sun.intensity, cap = 1.05;
+    if (tot > cap) { const k = cap / tot; ambient.intensity *= k; hemi.intensity *= k; sun.intensity *= k; }
+  }
   if (camera) { camera.far = open ? 600 : 80; camera.updateProjectionMatrix(); }
   // 遠景用：不吃霧，但顏色先往地平線色混，看起來像隔著空氣
   const hazeMat = function (c, k) { return litMat({ color: new THREE.Color(c).lerp(new THREE.Color(skyC), k == null ? 0.5 : k), fog: false }); };
   if (open && sk) { skyDome = makeSky(sk[0], sk[1]); skyDome.position.set(W.COLS * CS / 2, 0, W.ROWS * CS / 2); skyDome.renderOrder = -1; level.add(skyDome); }
-  torchBase = T.torch != null ? T.torch : 2.2;
+  // 戶外沒設定手電筒亮度時用 0.2：白天開 2.2 的手電筒，靠近淺色牆會整片反白
+  torchBase = T.torch != null ? T.torch : open ? 0.2 : 2.2;
   baseLight = { fog: scene.fog.density, fogC: skyC, amb: ambient ? ambient.intensity : 1, hemi: hemi ? hemi.intensity : 0.4, sun: sun ? sun.intensity : 0, torch: torchBase, open: open };
   const style = T.style || 'ruin', wallH = T.wallH || WH;
   const floorTex = (open || FLOOR_STYLES.indexOf(style) >= 0) && style !== 'city' && style !== 'space' ? makeFloorTex(style, T.floor) : makeTex(T.floor, '0,0,0', false); floorTex.repeat.set(COLS, ROWS);
