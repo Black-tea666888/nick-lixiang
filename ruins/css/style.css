@@ -1091,3 +1091,10 @@ select.fselNative { position: absolute !important; width: 1px !important; height
 .card, .srow, .gCat, .ccReq, .clanSet, .arDex, .arPick, .qrCard, .fselPanel, .keyRow { background: var(--kraft-la); }
 .gCat > .cards, .gCat summary { background: transparent; }
 .mcard b, .tile b, .card b, .srow .nm, .panel h2 { text-shadow: 0 1px 0 rgba(255,248,230,.55); }   /* 背景透出來時字也清楚 */
+
+/* 手把選取框：黃黑警示色外框，只在用手把時出現 */
+.padMode .padFocus { outline: 3px solid var(--haz); outline-offset: 2px; box-shadow: 0 0 0 6px rgba(30,26,22,.85), 0 0 18px rgba(255,200,40,.55); position: relative; z-index: 2; }
+.padMode .padFocus:focus { outline: 3px solid var(--haz); }
+
+/* 手機上「衝」跟「跳」重複，只留跳（衝刺改成鍵盤 C／手把 B） */
+body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; }

@@ -2213,6 +2213,7 @@ function padDead(v) { return Math.abs(v) < 0.18 ? 0 : (v - Math.sign(v) * 0.18) 
 function pollPad(dt) {
   const gps = navigator.getGamepads ? navigator.getGamepads() : null, gp = gps && Array.prototype.find.call(gps, function (g) { return g && g.connected; });
   if (!gp) { pad.x = pad.y = 0; if (pad.shoot) { pad.shoot = false; gunHeld = false; } return; }
+  if (RR.PadNav && RR.PadNav.owns()) { pad.x = pad.y = 0; if (pad.shoot) { pad.shoot = false; gunHeld = false; } pad.prev = gp.buttons.map(function (b) { return !!(b && (b.pressed || b.value > 0.5)); }); return; }   // 選單開著：手把交給選單
   pad.on = true;
   const ax = gp.axes, bt = function (i) { const b = gp.buttons[i]; return b ? (typeof b === 'object' ? b.value > 0.5 || b.pressed : b > 0.5) : false; };
   const down = function (i) { const now = bt(i), was = !!pad.prev[i]; pad.prev[i] = now; return now && !was; };
@@ -2538,6 +2539,8 @@ function frame(nowMs) {
 
 /* ---------- 對外介面 ---------- */
 RR.Game = {
+  /** 正在遊戲中、可以控制角色（手把選單用來判斷要不要接管） */
+  controlling: function () { return canControl(); },
   buildMonster: buildMonster,   // AR 抓怪借用怪物模型
   KEY_ACTIONS: KEY_ACTIONS,
   /** 目前每個動作綁的按鍵（預設按鍵 → 實際按鍵） */

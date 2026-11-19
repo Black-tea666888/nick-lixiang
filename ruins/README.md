@@ -267,3 +267,4 @@ Firebase 沒有內建 LINE，走 OpenID Connect：
 - 電腦按鍵自訂（KEY_ACTIONS、rr_keys，衝突時互換）、Esc／手把 Start／滑鼠離開鎖定打開選單、單人遊玩開選單暫停、全螢幕按鈕（v182）。
 - 模式改名：組隊回收、單人拾荒、AR 實境、清剿行動、死守回收車、廢墟生存戰；戰隊改名拾荒團（團長／副團長／團員）（v183）。
 - 半透明毛玻璃面板：.panel、模式卡、主頁按鈕、列表、拾荒團名片等（--kraft-a／--kraft-la、backdrop-filter）（v184）。
+- 手把選單操作 js/padnav.js（十字鍵／搖桿移動、A 確定、B 返回、LB／RB 分頁、右搖桿捲動；遊戲中由 pollPad 接手）；手機拿掉「衝」鍵（v185）。
