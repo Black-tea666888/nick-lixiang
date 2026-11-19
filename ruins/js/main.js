@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v167', items: ['AR 抓怪移到大廳下方的模式列，選好後按開始'] };
+const UPD = { v: 'v168', items: ['AR 模式分兩種玩法：抓怪、迷宮', 'AR 迷宮：迷宮的牆出現在相機畫面上，轉手機看方向、按住前進，撿 3 個零件找出口（每天前 3 次 +20 金幣）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1008,7 +1008,7 @@ function showUpdNote() {
   $('updNote').classList.remove('hide');
 }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '多人合作', solo: '單人遊玩', hunt: '獵殺模式', td: '塔防模式', br: '大逃殺', ar: 'AR 抓怪' };
+const LOBBY_MODE = { coop: '多人合作', solo: '單人遊玩', hunt: '獵殺模式', td: '塔防模式', br: '大逃殺', ar: 'AR 模式' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
@@ -1713,6 +1713,14 @@ function bind() {
     if (!RR.AR) return;
     RR.AR.open({
       counts: arCounts, dex: arDex,
+      // 迷宮：每天前 3 次逃出 +20 金幣 +10 經驗；記錄最快時間
+      onMaze: function (r) {
+        const p = prog(); if (p.mzDay !== today()) { p.mzDay = today(); p.mzToday = 0; }
+        const parts = [], best = +p.mzBest || 0;
+        if (!best || r.time < best) { p.mzBest = Math.round(r.time * 10) / 10; parts.push(best ? '新紀錄！' : '最快紀錄 ' + p.mzBest + ' 秒'); }
+        if ((p.mzToday | 0) < 3) { p.mzToday = (p.mzToday | 0) + 1; p.coins += 20; p.xp += 10; parts.push('+20 金幣'); } else parts.push('今天的迷宮獎勵已領完');
+        progSave(p); renderProg(); return parts.join('，');
+      },
       buddy: function () { return prog().arBuddy || ''; },
       pick: function (k, v) { const p = prog(); p.arBuddy = k + ':' + v; progSave(p); },
       missions: function () { const p = prog(), m = arMisState(p); return AR_MIS.map(function (x, i) { return [x[0], m[x[1]] | 0, x[2], !!m.done[i], x[3]]; }); },
@@ -1736,6 +1744,12 @@ function bind() {
     });
   });
   $('arDexBtn').addEventListener('click', function () { RR.AR.dexToggle(); });
+  $('arPickCatch').addEventListener('click', function () { RR.AR.start('catch'); });
+  $('arPickMaze').addEventListener('click', function () { RR.AR.start('maze'); });
+  $('arAgain').addEventListener('click', function () { RR.AR.again(); });
+  { const fb = $('arFwd'), on = function (e) { e.preventDefault(); e.stopPropagation(); RR.AR.fwd(true); fb.classList.add('on'); }, off = function (e) { e.preventDefault(); RR.AR.fwd(false); fb.classList.remove('on'); };
+    fb.addEventListener('touchstart', on, { passive: false }); fb.addEventListener('touchend', off, { passive: false }); fb.addEventListener('touchcancel', off, { passive: false });
+    fb.addEventListener('mousedown', on); fb.addEventListener('mouseup', off); fb.addEventListener('mouseleave', off); }
   $('arDexClose').addEventListener('click', function () { RR.AR.dexToggle(); });
   $('arClose').addEventListener('click', function () { RR.AR.close(); refreshLobby(); });
   $('arThrow').addEventListener('click', function (e) { e.stopPropagation(); RR.AR.throwNet(); });

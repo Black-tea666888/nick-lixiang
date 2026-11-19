@@ -990,3 +990,17 @@ body.touch.playing:not(.lk-near):not(.btnedit) #locker { display: none !importan
 #reload { display: none !important; }
 
 .mapChip.dim { opacity: .35; pointer-events: none; }
+
+/* AR 選玩法、迷宮 */
+.arPick { position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); z-index: 3; display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--kraft-l); color: var(--ink); border: 3px solid var(--ink); box-shadow: 4px 4px 0 rgba(17,20,23,.5); }
+.arPick.hide { display: none; }
+.arPick > b { font-size: 18px; font-weight: 900; }
+.arPick .mcard { width: 100%; min-height: 76px; text-align: left; }
+.arBox:has(.arPick:not(.hide)) .arRing, .arBox:has(.arPick:not(.hide)) .arThrow, .arBox:has(.arPick:not(.hide)) #arDexBtn, .arBox:has(.arPick:not(.hide)) .arName { display: none; }
+.arMap, .arFwd { display: none; }
+.arBox.maze .arMap { display: block; position: absolute; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 62px); width: 110px; height: 110px; border: 3px solid var(--ink); image-rendering: pixelated; }
+.arBox.maze .arFwd { display: block; position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 28px); transform: translateX(-50%); width: 120px; height: 88px; border-radius: 44px; font: inherit; font-size: 17px; font-weight: 900; color: var(--ink); background: var(--haz); border: 3px solid var(--ink); box-shadow: 3px 3px 0 rgba(17,20,23,.6); touch-action: none; user-select: none; -webkit-user-select: none; }
+.arBox.maze .arFwd.on { background: #fff; }
+.arBox.maze .arRing, .arBox.maze .arThrow, .arBox.maze .arTiming, .arBox.maze .arName, .arBox.maze #arDexBtn, .arBox.maze .arArrow { display: none !important; }
+.arAgain { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 130px); transform: translateX(-50%); width: auto !important; padding: 0 20px; z-index: 2; }
+.arBox.maze .arMsg { bottom: calc(env(safe-area-inset-bottom, 0px) + 180px); }
