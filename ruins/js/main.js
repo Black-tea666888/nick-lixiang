@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v197', items: ['主畫面版本支援 Google 登入（官方按鈕）'] };
+const UPD = { v: 'v198', items: ['所有確認與提示改用遊戲內對話框（市集購買、拾荒團、刪除資料），不再用系統視窗'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -57,7 +57,9 @@ document.addEventListener('DOMContentLoaded', function () { fancyAll(); }); fanc
 function lsSet(k, v) { const same = ls(k) === String(v); try { localStorage.setItem(k, v); } catch (e) {} if (!same && RR.Cloud) RR.Cloud.localChanged(k); }
 let showMapName = function () {};
 function show(id) { SCREENS.forEach(function (s) { $(s).classList.toggle('hide', s !== id); }); bannerHide(); }
-function say(text) { $('msgText').textContent = text; $('msg').classList.remove('hide'); }
+let sayDone = null, askYes = null;
+function say(text, done) { $('msgText').textContent = text; $('msg').classList.remove('hide'); sayDone = done || null; }
+function ask(text, onYes) { $('askText').textContent = text; askYes = onYes; $('askDlg').classList.remove('hide'); }
 function busy(on, text) { $('busyText').textContent = text || '請稍候…'; $('busy').classList.toggle('hide', !on); if (!on) $('busyCancel').classList.add('hide'); }
 // 配對伺服器（Render 免費方案閒置 15 分鐘會休眠，喚醒要 30～60 秒）：開遊戲就先叫醒，連線失敗時自動重試並判斷原因
 function peerBase() { const k = RR.CONFIG && RR.CONFIG.peer; if (!k || !k.host) return null; return (k.secure === false ? 'http://' : 'https://') + k.host + (k.port && k.port !== 443 && k.port !== 80 ? ':' + k.port : ''); }
@@ -551,13 +553,14 @@ function mkDraw() {
       btn = mk('button', 'btn' + (ok && rich ? ' primary' : ''), !ok ? (o.kind === 'gem' ? '已滿級' : '已擁有') : rich ? '買' : '金幣不夠');
       btn.disabled = !ok || !rich;
       btn.addEventListener('click', function () {
-        if (!confirm('用 ' + o.price + ' 金幣買' + o.label + '？')) return;
-        btn.disabled = true;
-        RR.Cloud.marketBuy(o.id, function (err, d) {
-          if (err) { mtoast(err.code === 'sold' || err.code === 'gone' ? '慢了一步，已經被買走了' : RR.Cloud.message(err), 'warn'); btn.disabled = false; return; }
-          const q = prog(); q.coins = Math.max(0, q.coins - (d.price | 0)); if (tradeCanGet(q, d.kind, d.item)) tradeGive(q, d.kind, d.item); progSave(q);
-          RR.Cloud.marketGot(o.id); mkCoins(); mkFillSelect();
-          tradeLogAdd('buy', d.label, d.price, o.sellerName); bannerShow('交易成功：買到 ' + d.label, '花費 ' + (d.price | 0) + ' 金幣，已放進你的收藏');
+        ask('用 ' + o.price + ' 金幣買' + o.label + '？', function () {
+          btn.disabled = true;
+          RR.Cloud.marketBuy(o.id, function (err, d) {
+            if (err) { mtoast(err.code === 'sold' || err.code === 'gone' ? '慢了一步，已經被買走了' : RR.Cloud.message(err), 'warn'); btn.disabled = false; return; }
+            const q = prog(); q.coins = Math.max(0, q.coins - (d.price | 0)); if (tradeCanGet(q, d.kind, d.item)) tradeGive(q, d.kind, d.item); progSave(q);
+            RR.Cloud.marketGot(o.id); mkCoins(); mkFillSelect();
+            tradeLogAdd('buy', d.label, d.price, o.sellerName); bannerShow('交易成功：買到 ' + d.label, '花費 ' + (d.price | 0) + ' 金幣，已放進你的收藏');
+          });
         });
       });
     }
@@ -1786,12 +1789,12 @@ function renderSocial() {
             bt.addEventListener('click', function () { C.setDeputy(m.uid, !isDep, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
             r.appendChild(bt);
             const tb = mk('button', 'btn', '轉移團長'); tb.type = 'button';
-            tb.addEventListener('click', function () { if (!window.confirm('確定把團長轉給「' + (m.name || '玩家') + '」？你會變成團員。')) return; C.transferLeader(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
+            tb.addEventListener('click', function () { ask('確定把團長轉給「' + (m.name || '玩家') + '」？你會變成團員。', function () { C.transferLeader(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); }); });
             r.appendChild(tb);
           }
           if (isLeader || !isDep) {
             const kb = mk('button', 'btn', '踢出'); kb.type = 'button';
-            kb.addEventListener('click', function () { if (!window.confirm('確定要把「' + (m.name || '玩家') + '」踢出拾荒團？')) return; C.kickMember(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
+            kb.addEventListener('click', function () { ask('確定要把「' + (m.name || '玩家') + '」踢出拾荒團？', function () { C.kickMember(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); }); });
             r.appendChild(kb);
           }
           b.appendChild(r);
@@ -1898,17 +1901,18 @@ function bind() {
   $('guestBtn').addEventListener('click', function () { Sfx.unlock(); Auth.guest(); });
   $('logoutBtn').addEventListener('click', function () { Auth.signOut(); });
   $('delData').addEventListener('click', function () {
-    if (!confirm('確定刪除所有資料？進度、排行榜、好友、拾荒團都會刪除，無法復原。')) return;
-    const wipeLocal = function () {
-      Object.keys(localStorage).forEach(function (k) { if (/^rr_/.test(k)) { try { localStorage.removeItem(k); } catch (e) {} } });
-    };
-    if (!RR.Cloud || !RR.Cloud.ready()) { wipeLocal(); RR.Auth.signOut().then(function () { location.reload(); }); return; }
-    RR.Cloud.deleteMyData(function (e) {
-      if (e) { alert(e.code === 'owner' ? '你是團長，請先把團長位子轉給別人再刪除資料。' : '刪除失敗：' + (e.code || e.message || '未知錯誤') + '，請再試一次。'); return; }
-      RR.Auth.deleteAccount().then(function () { wipeLocal(); alert('資料已刪除。'); location.reload(); }, function (err) {
-        wipeLocal();
-        alert(err && err.code === 'auth/requires-recent-login' ? '雲端資料已刪除。登入帳號需要重新登入後才能刪除，請先登出、登入一次後再按一次。' : '雲端資料已刪除，但登入帳號刪除失敗：' + ((err && err.code) || '未知錯誤'));
-        location.reload();
+    ask('確定刪除所有資料？進度、排行榜、好友、拾荒團都會刪除，無法復原。', function () {
+      const wipeLocal = function () {
+        Object.keys(localStorage).forEach(function (k) { if (/^rr_/.test(k)) { try { localStorage.removeItem(k); } catch (e) {} } });
+      };
+      const reload = function () { location.reload(); };
+      if (!RR.Cloud || !RR.Cloud.ready()) { wipeLocal(); RR.Auth.signOut().then(reload); return; }
+      RR.Cloud.deleteMyData(function (e) {
+        if (e) { say(e.code === 'owner' ? '你是團長，請先把團長位子轉給別人再刪除資料。' : '刪除失敗：' + (e.code || e.message || '未知錯誤') + '，請再試一次。'); return; }
+        RR.Auth.deleteAccount().then(function () { wipeLocal(); say('資料已刪除。', reload); }, function (err) {
+          wipeLocal();
+          say(err && err.code === 'auth/requires-recent-login' ? '雲端資料已刪除。登入帳號需要重新登入後才能刪除，請先登出、登入一次後再按一次。' : '雲端資料已刪除，但登入帳號刪除失敗：' + ((err && err.code) || '未知錯誤'), reload);
+        });
       });
     });
   });
@@ -2035,7 +2039,9 @@ function bind() {
   });
   $('confirmNo').addEventListener('click', function () { $('confirm').classList.add('hide'); });
   $('confirmYes').addEventListener('click', leave);
-  $('msgOk').addEventListener('click', function () { $('msg').classList.add('hide'); });
+  $('msgOk').addEventListener('click', function () { const f = sayDone; sayDone = null; $('msg').classList.add('hide'); if (f) f(); });
+  $('askNo').addEventListener('click', function () { askYes = null; $('askDlg').classList.add('hide'); });
+  $('askYes').addEventListener('click', function () { const f = askYes; askYes = null; $('askDlg').classList.add('hide'); if (f) f(); });
   $('qrClose').addEventListener('click', function () { $('qrBox').classList.add('hide'); });
   // 手機以橫式為主：按開始／加入時進全螢幕並鎖成橫式（Android 支援；iPhone 不能鎖，改用直式時的提示）
   const lockLandscape = function () {
