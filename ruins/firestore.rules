@@ -94,7 +94,7 @@ service cloud.firestore {
       allow create: if signedIn() && request.resource.data.seller == request.auth.uid
         && request.resource.data.status == 'open'
         && request.resource.data.kind in ['skin', 'acc', 'gem']
-        && request.resource.data.price is int && request.resource.data.price >= 1 && request.resource.data.price <= 99999
+        && request.resource.data.price is int && request.resource.data.price >= 1 && request.resource.data.price <= 1000
         && request.resource.data.label is string && request.resource.data.label.size() <= 30
         && request.resource.data.sellerName is string && request.resource.data.sellerName.size() <= 20
         && !('buyer' in request.resource.data) && !('paid' in request.resource.data) && !('got' in request.resource.data);
