@@ -2718,7 +2718,7 @@ RR.Game = {
     } else if (e.t === 'swing') {
       if (e.id !== myId) { const p = view.players.get(e.id); if (p) { p.swingT = 0.28; if (Math.hypot(p.x - lastL.x, p.z - lastL.z) < 14) Sfx.noise(0.1, 0.05); } }
     } else if (e.t === 'hit') {
-      if (e.id === myId) { hurtFlash = 1; shakeT = 0.3; Sfx.tone(160, 0.25, 'square', 0.2, 70); if (e.hp > 0) toast('被 ' + nameOf(e.by) + ' 打了！'); }
+      if (e.id === myId) { hurtFlash = 1; shakeT = 0.3; Sfx.tone(160, 0.25, 'square', 0.2, 70); if (e.hp > 0) toast(e.by ? '被 ' + nameOf(e.by) + ' 打了！' : '被怪物打傷了，再被碰到就倒了！'); }
       else if (e.by === myId) Sfx.tone(240, 0.12, 'square', 0.12, 120);
     } else if (e.t === 'killed') {
       const p = view.players.get(e.id); if (p) p.alive = false;
