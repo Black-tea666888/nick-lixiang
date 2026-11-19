@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v199', items: ['怪物卡牌卡背加上警示黃斜紋與紙紋（暫定，待確認）'] };
+const UPD = { v: 'v201', items: ['矮螢幕（小手機、橫向）大廳可捲動，開始列與按鈕不再被蓋住或擠出畫面', '返回改為回上一頁：拾荒團回聊天、外觀回轉盤'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -379,7 +379,7 @@ const ASK_CD = 7 * 3600e3;
 let ccOff = null, ccRows = [], ccLast = 0, ccTimer = null;
 function ccNote(text, btn) {
   const log = $('ccLog'); log.textContent = ''; log.appendChild(mk('p', 'ccEmpty', text));
-  if (btn) { const b = mk('button', 'btn primary', btn); b.type = 'button'; b.addEventListener('click', function () { clanClose(); socTab = 'clan'; $('scrSocial').classList.remove('hide'); renderSocial(); }); log.appendChild(b); }
+  if (btn) { const b = mk('button', 'btn primary', btn); b.type = 'button'; b.addEventListener('click', function () { clanFrom = null; clanClose(); socTab = 'clan'; $('scrSocial').classList.remove('hide'); renderSocial(); }); log.appendChild(b); }
 }
 // 拾荒團未讀：背景監看拾荒團訊息，未讀數顯示在「拾荒團聊天」與「社群」按鈕上
 let ccWatch = null, ccWatchClan = '', ccUnread = 0, rankUnread = 0, rankT = 0;
@@ -475,7 +475,8 @@ function marketOpen() {
   });
   mkFillSelect();
 }
-function marketClose() { if (wcOff) wcOff(); if (mkOff) mkOff(); if (tmOff) tmOff(); wcOff = mkOff = tmOff = null; bannerHide(); showMenu(); }
+let clanFrom = null, pickFrom = null;
+function marketClose(keep) { if (wcOff) wcOff(); if (mkOff) mkOff(); if (tmOff) tmOff(); wcOff = mkOff = tmOff = null; bannerHide(); if (!keep) showMenu(); }
 /* 快速組隊：列出別人公開的房間，點「加入」或「快速加入」直接進房 */
 let tmOff = null, tmRows = [];
 function tmNote(t) { const l = $('tmList'); l.textContent = ''; l.appendChild(mk('p', 'ccEmpty', t)); }
@@ -503,7 +504,7 @@ function tmPublish() {
   RR.Cloud.roomPublish(Net.code(), { mode: S.sim.mode, map: (W.MAPS[S.sim.map | 0] || {}).name || '', n: n, max: S.sim.mode === 'br' ? 6 : 4, play: play });
 }
 function mkSetTab(t) {
-  if (t === 'clan') { marketClose(); clanOpen(); return; }
+  if (t === 'clan') { marketClose(true); clanFrom = 'market'; clanOpen(); return; }
   mkTab = t;
   document.getElementById('scrMarket').classList.toggle('tmOn', t === 'team');
   Array.prototype.forEach.call(document.querySelectorAll('.mkTabs button'), function (b) { b.classList.toggle('on', b.dataset.tab === t); b.setAttribute('aria-selected', b.dataset.tab === t); });
@@ -627,7 +628,13 @@ function clanOpen() {
   ccOff = C.clanChat(function (err, rows) { if (err) { ccNote(C.message(err)); return; } ccRows = rows; ccDraw(); });
   clearInterval(ccTimer); ccTimer = setInterval(ccAskDraw, 30000);
 }
-function clanClose() { if (ccOff) ccOff(); ccOff = null; clearInterval(ccTimer); showMenu(); }
+function clanClose() {
+  if (ccOff) ccOff(); ccOff = null; clearInterval(ccTimer);
+  const f = clanFrom; clanFrom = null;
+  if (f === 'market') { marketOpen(); return; }
+  showMenu();
+  if (f === 'social') { socTab = 'clan'; $('scrSocial').classList.remove('hide'); renderSocial(); }
+}
 function ccAskDraw() {
   const left = (prog().askAt || 0) + ASK_CD - Date.now();
   $('ccAsk').disabled = left > 0; $('ccAskT').textContent = left > 0 ? hm(left) : '隊友捐給你';
@@ -1774,7 +1781,7 @@ function renderSocial() {
         { const tb2 = mk('button', 'btn', '段位與輪換說明'); tb2.type = 'button'; tb2.style.margin = '0 0 8px'; tb2.addEventListener('click', openTierInfo); b.appendChild(tb2); }
         b.appendChild(mk('p', 'note', '本週 ' + wsNow + ' 分，段位 ' + TT[ti].n + (ti < TT.length - 1 ? '（下一階 ' + TT[ti + 1].n + ' 還差 ' + (TT[ti + 1].min - wsNow) + ' 分）' : '') + '；歷史最高 ' + TT[bi].n));
         b.appendChild(mk('div', 'bigcode', info.clan.tag));
-        { const cc = mk('button', 'btn primary', '打開拾荒團聊天'); cc.type = 'button'; cc.style.width = '100%'; cc.style.margin = '6px 0 10px'; cc.addEventListener('click', function () { $('scrSocial').classList.add('hide'); renderSocial.token = null; clanOpen(); }); b.appendChild(cc); }
+        { const cc = mk('button', 'btn primary', '打開拾荒團聊天'); cc.type = 'button'; cc.style.width = '100%'; cc.style.margin = '6px 0 10px'; cc.addEventListener('click', function () { $('scrSocial').classList.add('hide'); renderSocial.token = null; clanFrom = 'social'; clanOpen(); }); b.appendChild(cc); }
         const isLeader = info.clan.owner === RR.Cloud.uid(), deps = info.clan.deputies || [];
         const roleOf = function (m) { return m.uid === info.clan.owner ? '團長' : deps.indexOf(m.uid) >= 0 ? '副團長' : '團員'; };
         socRows(info.members.map(function (m) { return Object.assign({}, m, { name: (m.name || '玩家') + ' 〔' + roleOf(m) + '〕' }); }), function (v) { return v + ' 分'; });
@@ -2206,7 +2213,7 @@ function bind() {
     b.addEventListener('click', function () { if (wheelBusy) return; wheelI = k; dwWin = -1; dwSel = 0; $('wheelWear').classList.add('hide'); wheelDraw(); });
     $('wheelSel').appendChild(b);
   });
-  $('wheelWear').addEventListener('click', function () { show('scrPick'); });
+  $('wheelWear').addEventListener('click', function () { pickFrom = 'wheel'; show('scrPick'); });
   $('dwSkip').checked = ls('rr_skipAnim') === '1'; $('dwSkip').addEventListener('change', function () { lsSet('rr_skipAnim', $('dwSkip').checked ? '1' : '0'); });
   const openGear = function () { renderGear(); $('scrGear').classList.remove('hide'); $('scrGear').scrollTop = 0; try { if (document.exitPointerLock) document.exitPointerLock(); } catch (e) {} };
   $('gearOpen').addEventListener('click', openGear); $('hudGear').addEventListener('click', openGear);
@@ -2240,9 +2247,10 @@ function bind() {
   $('ccForm').addEventListener('submit', function (e) { e.preventDefault(); ccSend(); });
   $('ccInput').addEventListener('keydown', function (e) { e.stopPropagation(); });
   $('ccInput').addEventListener('keyup', function (e) { e.stopPropagation(); });
-  $('pickBtn').addEventListener('click', function () { show('scrPick'); });
-  $('pickDone').addEventListener('click', function () { showMenu(); });
-  $('pickOk').addEventListener('click', function () { showMenu(); });
+  $('pickBtn').addEventListener('click', function () { pickFrom = null; show('scrPick'); });
+  function pickBack() { const f = pickFrom; pickFrom = null; if (f === 'wheel') openWheel(); else showMenu(); }
+  $('pickDone').addEventListener('click', pickBack);
+  $('pickOk').addEventListener('click', pickBack);
   // 說明頁：主題選單 → 單一主題；遊戲中也能從右上角「說明」打開（蓋在遊戲上，關掉就回到遊戲）
   const helpList = function () { $('helpTopic').classList.add('hide'); document.querySelector('#scrHelp .helpBody').classList.remove('hide'); };
   const helpOpen = function () { helpList(); $('scrHelp').classList.remove('hide'); $('scrHelp').scrollTop = 0; try { if (document.exitPointerLock) document.exitPointerLock(); } catch (e) {} };
