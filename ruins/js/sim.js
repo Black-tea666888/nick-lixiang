@@ -344,7 +344,7 @@ const WEAPONS = ['鐵管', '扳手', '球棒', '平底鍋', '雨傘', '鹹魚'];
 // range＝射程、w＝命中寬度、n＝一次幾顆、spread＝散布（弧度）、stun＝回收模式暈眩秒數、reload＝換彈秒數、auto＝按住連發（槍全部免費，造型才要抽）
 const GUNS = [
   { name: '手槍', dmg: 34, pvp: 25, cd: 0.22, clip: [6, 12], range: 45, w: 0.8, n: 1, spread: 0, stun: 2.5, reload: 1.4, auto: false, cost: 0 },
-  { name: '霰彈槍', dmg: 15, pvp: 11, cd: 0.75, clip: [3, 6], range: 16, w: 0.9, n: 6, spread: 0.16, stun: 2.2, reload: 1.9, auto: false, cost: 0 },
+  { name: '霰彈槍', dmg: 15, pvp: 11, cd: 0.75, clip: [3, 6], range: 20, w: 1.0, n: 6, spread: 0.1, stun: 2.2, reload: 1.9, auto: false, cost: 0 },
   { name: '步槍', dmg: 22, pvp: 17, cd: 0.13, clip: [12, 24], range: 52, w: 0.7, n: 1, spread: 0.025, stun: 1.6, reload: 1.8, auto: true, cost: 0 },
   { name: '衝鋒槍', dmg: 15, pvp: 11, cd: 0.08, clip: [16, 32], range: 28, w: 0.8, n: 1, spread: 0.07, stun: 1.1, reload: 1.6, auto: true, cost: 0 },
   { name: '狙擊槍', dmg: 95, pvp: 75, cd: 1.1, clip: [3, 5], range: 80, w: 0.45, n: 1, spread: 0, stun: 4.2, reload: 2.3, auto: false, cost: 0 },
@@ -352,7 +352,7 @@ const GUNS = [
   { name: '機關槍', dmg: 18, pvp: 13, cd: 0.1, clip: [20, 40], range: 40, w: 0.8, n: 1, spread: 0.05, stun: 1.3, reload: 2.6, auto: true, cost: 0 },
   { name: '弓弩', dmg: 60, pvp: 45, cd: 0.9, clip: [4, 6], range: 60, w: 0.5, n: 1, spread: 0, stun: 3.5, reload: 1.6, auto: false, cost: 0 },
   { name: '三連發', dmg: 26, pvp: 19, cd: 0.45, clip: [9, 12], range: 40, w: 0.7, n: 3, spread: 0.05, stun: 2, reload: 1.8, auto: false, cost: 0 },
-  { name: '雙管霰彈', dmg: 12, pvp: 9, cd: 0.9, clip: [2, 4], range: 12, w: 1.0, n: 10, spread: 0.22, stun: 2.4, reload: 2.2, auto: false, cost: 0 },
+  { name: '雙管霰彈', dmg: 12, pvp: 9, cd: 0.9, clip: [2, 4], range: 15, w: 1.1, n: 10, spread: 0.15, stun: 2.4, reload: 2.2, auto: false, cost: 0 },
   { name: '迷你衝鋒', dmg: 9, pvp: 7, cd: 0.05, clip: [30, 50], range: 22, w: 0.8, n: 1, spread: 0.1, stun: 0.8, reload: 1.4, auto: true, cost: 0 },
   { name: '重機槍', dmg: 28, pvp: 20, cd: 0.16, clip: [30, 60], range: 60, w: 0.7, n: 1, spread: 0.06, stun: 1.8, reload: 4.0, auto: true, cost: 0 },
   { name: '雷射槍', dmg: 40, pvp: 30, cd: 0.35, clip: [8, 14], range: 70, w: 0.5, n: 1, spread: 0.01, stun: 3, reload: 2.0, auto: false, cost: 0 },
@@ -656,21 +656,23 @@ Sim.prototype.shoot = function (id, yaw) {
       }
     }
     let hx, hz, kill = false;
+    // 距離衰減：射程 40% 以內全傷害，越遠越低，最遠只剩 35%（遠遠看到輪廓就能打死太簡單）
+    const fall = hd <= G.range * 0.4 ? 1 : Math.max(0.35, 1 - (hd - G.range * 0.4) / (G.range * 0.6) * 0.65);
     if (hitP) {
       hx = hitP.x; hz = hitP.z;
-      hitP.hp -= G.pvp * (p.boost ? 1.5 : 1) * gem; hitP.hurtT = 0;
+      hitP.hp -= G.pvp * (p.boost ? 1.5 : 1) * gem * fall; hitP.hurtT = 0;
       if (hitP.hp <= 0) { kill = true; this._brKill(hitP, p); }
       else this.events.push({ t: 'hit', id: hitP.id, by: p.id, hp: Math.round(hitP.hp) });
     } else if (hit >= 0) {
       const m = this.monsters[hit]; hx = m.x; hz = m.z;
       if (hunt) {
-        monHit(m, G.dmg * gem); m.cool = 0.25;
+        monHit(m, G.dmg * gem * fall); m.cool = 0.25;
         if (m.hp <= 0) { kill = true; m.dead = td ? 1e9 : 3; m.idle = td; m.state = 'wander'; m.path = null; this.money += 50; p.earned += 50; p.mk = (p.mk || 0) + 1; }
         else if (!td) { m.state = 'chase'; m.target = p.id; m.goal = cellOf(p.x, p.z); m.lost = 0; m.repath = 0; }
       } else {
         m.cool = Math.max(m.cool || 0, G.stun + 0.2 * (p.gems ? p.gems[0] : 0));
         // 回收模式：打到血量歸零會暫時倒下，過 12 秒在別處刷新（不給金幣）
-        if (!br) { monHit(m, G.dmg * gem); if (m.hp <= 0) { kill = true; m.dead = 12; m.state = 'wander'; m.path = null; } }
+        if (!br) { monHit(m, G.dmg * gem * fall); if (m.hp <= 0) { kill = true; m.dead = 12; m.state = 'wander'; m.path = null; } }
       }
     } else {
       let d = 0; hx = p.x; hz = p.z;
