@@ -2199,7 +2199,7 @@ function updateMe(dt) {
   if (view.zone && me.alive && Math.hypot(me.x - view.zone[0], me.z - view.zone[1]) > view.zr) { outT -= dt; if (outT <= 0) { outT = 2.5; toast('你在安全區外，正在扣血！往白圈裡跑'); Sfx.tone(300, 0.15, 'square', 0.08); } hurtFlash = Math.max(hurtFlash, 0.35); }
   if (gunMesh) { const kk = gunMesh.userData.kick || 0, tt = performance.now() / 1000, mv = (keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD || Math.abs(touch.jx) + Math.abs(touch.jy) > 0.1) ? 1 : 0.25;
     gunMesh.userData.kick = Math.max(0, kk - dt * 8); gunMesh.position.set(-0.26 + Math.sin(tt * 5) * 0.006 * mv, -0.27 + kk * 0.025 + Math.abs(Math.cos(tt * 5)) * 0.008 * mv, -0.5 + kk * 0.06); gunMesh.rotation.x = kk * 0.18; gunMesh.rotation.z = Math.sin(tt * 2.5) * 0.01 * mv; }
-  if (gunHeld && gunT <= 0 && (W.GUNS[settings.gun | 0] || {}).auto) shoot();
+  if (gunHeld && gunT <= 0 && wpnMode === 'gun') shoot();   // 每一種槍按住都會連續射擊（速度依各槍的射擊間隔）
   if (shakeT > 0) shakeT = Math.max(0, shakeT - dt);
   const sk2 = shakeT * 0.22;
   camera.position.set(me.x + (Math.random() - 0.5) * sk2, 1.65 + me.y + (moving && me.vy === 0 ? Math.sin(me.walkT * 2) * 0.045 : 0) + (Math.random() - 0.5) * sk2, me.z + (Math.random() - 0.5) * sk2);
