@@ -196,3 +196,7 @@ Firebase 沒有內建 LINE，走 OpenID Connect：
 - 畫面效果：高畫質（電腦的標準畫質也開）會開即時陰影（`applyShadows()`：室內手電筒、戶外陽光跟著玩家），角色與怪物用 `castAll()` 投影；室內燈下有加色光柱、鏡頭周圍有飄浮灰塵（`buildDust()`、`tickFx()`）；怪物眼睛加光暈（`glowSprite()`）；`#vig` 畫面暗角。
 - 交易所（`scrMarket`）：世界頻道存在 `world` 集合，掛單存在 `market` 集合（open → sold／cancel，賣家 `paid`、買家 `got`）。相關函式在 `cloud.js` 的 `worldChat`、`marketPost`、`marketBuy`、`marketCancel`、`marketPayouts`，畫面邏輯在 `main.js` 的 `marketOpen()`。需要重新發布 `firestore.rules`。注意：進度在玩家裝置上，交易無法防止改檔作弊。
 - 回收物外觀：`realGeo(kind, variant)` 為每種回收物做 3～4 款真實物品造型（`REAL_VARIANTS`），依位置固定選一款；價值仍依種類。
+- 換彈與換武器：`Sim.reloadGun()`、`Sim.switchGun()`（主槍 `p.gun1`／副槍），子彈打完設 `p.reload`；用戶端 `reloadPress()`（H）、`weaponPress()`（K）。
+- 陀螺儀：`gyroSet()` 與 `devicemotion` 監聽，依 `screen.orientation.angle` 換軸，設定存在 `rr_gyro`。
+- 推車乘客：`veh.pass`（最多 2 人），快照 `veh[3]`，用戶端 `me.passenger` 時鎖在車旁。
+- 技能提示：`skillHint()`，開局與冷卻結束時呼叫，文字來自 `Game.skillText()`（main.js 的 `CINFO`）。

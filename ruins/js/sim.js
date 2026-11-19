@@ -531,7 +531,8 @@ Sim.prototype.startDay = function (day) {
   // 載具：回收車旁的推車（大逃殺沒有）
   this.players.forEach(function (p) { p.veh = false; });
   const vs = br ? null : this._spotAt(VAN[0], VAN[1], 2.5, 6);
-  this.veh = vs ? { x: vs[0], z: vs[1], rider: null } : null;
+  this.players.forEach(function (p) { p.ride = false; });
+  this.veh = vs ? { x: vs[0], z: vs[1], rider: null, pass: [] } : null;
   if (br) this._startBR();
   return self.dayInfo();
 };
@@ -613,7 +614,7 @@ Sim.prototype.shoot = function (id, yaw) {
   const G = GUNS[p.gun | 0], td = this.mode === 'td', hunt = this.mode === 'hunt' || td, br = this.mode === 'br';
   const gem = 1 + 0.08 * (p.gems ? p.gems[0] : 0);
   p.gunCd = G.cd; p.ammo--;
-  if (p.ammo <= 0) p.ammo = p.clip || 12;   // 子彈不限量：打完自動補滿，不用裝填
+  if (p.ammo <= 0) { p.reload = G.reload; this.events.push({ t: 'reload', id: id, s: G.reload }); }   // 子彈不限量，但打完要花時間換彈
   for (let k = 0; k < G.n; k++) {
     const a = p.yaw + (G.spread ? (this.rng() - 0.5) * 2 * G.spread : 0), fx = -Math.sin(a), fz = -Math.cos(a);
     let hit = -1, hd = G.range;
@@ -939,6 +940,22 @@ Sim.prototype.airStrike = function (id, x, z) {
   });
   this.events.push({ t: 'air', id: id, x: r2(x), z: r2(z), kills: kills });
 };
+/** 手動換彈：彈匣沒滿、沒在換彈時開始換 */
+Sim.prototype.reloadGun = function (id) {
+  const p = this.player(id);
+  if (!p || this.phase !== 'play' || !p.alive || p.reload > 0 || p.ammo >= (p.clip || 12)) return;
+  p.reload = GUNS[p.gun | 0].reload; this.events.push({ t: 'reload', id: id, s: p.reload });
+};
+/** 換武器：在出戰的主槍與副槍（手槍；主槍就是手槍時副槍是步槍）之間切換，換槍要 0.7 秒 */
+Sim.prototype.switchGun = function (id) {
+  const p = this.player(id);
+  if (!p || this.phase !== 'play' || !p.alive) return;
+  if (p.gun1 == null) p.gun1 = p.gun | 0;
+  const second = p.gun1 === 0 ? 2 : 0, next = (p.gun | 0) === p.gun1 ? second : p.gun1;
+  const hunt = this.mode === 'hunt' || this.mode === 'td' || this.mode === 'br';
+  p.gun = next; p.clip = Math.round(GUNS[next].clip[hunt ? 1 : 0] * (hasAcc(p, 3) ? 1.5 : 1)); p.ammo = p.clip; p.reload = 0.7; p.gunCd = 0;
+  this.events.push({ t: 'gunsw', id: id, gun: next });
+};
 /** 炸藥：炸開面前 3.5 公尺內的第一格牆，地形就此改變（怪物與玩家都能走新開的路）；8 公尺內的怪物暈 2 秒 */
 Sim.prototype.bomb = function (id, yaw) {
   const p = this.player(id);
@@ -1151,13 +1168,21 @@ Sim.prototype.step = function (dt) {
     const v = this.veh;
     for (let k = 0; k < this.players.length; k++) {
       const p = this.players[k];
+      v.pass = v.pass || [];
       if (p.veh && !p.alive) { p.veh = false; v.rider = null; }
+      if (p.ride && !p.alive) { p.ride = false; v.pass = v.pass.filter(function (q) { return q !== p.id; }); }
       if (!p.vq) continue;
       p.vq = false;
       if (p.veh) { p.veh = false; v.rider = null; this.events.push({ t: 'veh', id: p.id, on: false }); }
-      else if (p.alive && !v.rider && Math.hypot(p.x - v.x, p.z - v.z) < 2.4) { p.veh = true; v.rider = p.id; this.events.push({ t: 'veh', id: p.id, on: true }); }
+      else if (p.ride) { p.ride = false; v.pass = v.pass.filter(function (q) { return q !== p.id; }); this.events.push({ t: 'veh', id: p.id, on: false, pass: true }); }
+      else if (p.alive && Math.hypot(p.x - v.x, p.z - v.z) < 2.4) {
+        if (!v.rider) { p.veh = true; v.rider = p.id; this.events.push({ t: 'veh', id: p.id, on: true }); }
+        else if (v.pass.length < 2) { p.ride = true; v.pass.push(p.id); this.events.push({ t: 'veh', id: p.id, on: true, pass: true }); }   // 有人開車：坐上後座（最多 2 人）
+      }
     }
     if (v.rider) { const rp = this.player(v.rider); if (rp && rp.veh) { v.x = rp.x; v.z = rp.z; } else v.rider = null; }
+    // 乘客跟著車子走（坐在車子兩側）
+    const sim = this; (v.pass || []).forEach(function (id, k) { const q = sim.player(id); if (q) { q.x = v.x + (k ? -0.75 : 0.75); q.z = v.z + 0.4; } });
   }
   // 救援：按住 E 站在倒地隊友 2 公尺內 2 秒，把隊友救起（血量 50，身上廢料留在原地）
   for (let k = 0; k < alive.length; k++) {
@@ -1251,7 +1276,7 @@ Sim.prototype.snapshot = function () {
     bk: BROKEN.length ? BROKEN : undefined,
     td: this.td ? [this.td.core, this.td.left + this.monsters.filter(function (m) { return !m.idle; }).length, this.td.total] : undefined,
     tw: this.towers && this.towers.length ? this.towers.map(function (t) { return [t.x, t.z]; }) : undefined,
-    veh: this.veh ? [r2(this.veh.x), r2(this.veh.z), this.veh.rider || 0] : undefined,
+    veh: this.veh ? [r2(this.veh.x), r2(this.veh.z), this.veh.rider || 0, (this.veh.pass || []).slice()] : undefined,
     pad: this.pad ? [r2(this.pad[0]), r2(this.pad[1])] : null,
     tr: this.trophy ? [r2(this.trophy[0]), r2(this.trophy[1])] : null,
     bp: this.boardPos ? [r2(this.boardPos[0]), r2(this.boardPos[1])] : null,

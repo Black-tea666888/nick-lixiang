@@ -113,8 +113,35 @@ function cdNum(id, left) {
   let n = el.querySelector('.cdNum'); if (!n) { n = document.createElement('b'); n.className = 'cdNum'; el.appendChild(n); }
   const t = left > 0 ? String(left) : ''; if (n.textContent !== t) { n.textContent = t; el.classList.toggle('cd', left > 0); }
 }
+/** 技能提示：自動跳出技能名稱與效果，技能鍵閃一下 */
+function skillHint(head) {
+  const t = RR.Game.skillText ? RR.Game.skillText() : ''; if (!t) return;
+  toast(head + '｜' + t + (isTouchDev() ? '（按閃電鍵）' : '（按 R）'));
+  const b = $('skill'); if (b) { b.classList.remove('ready'); void b.offsetWidth; b.classList.add('ready'); setTimeout(function () { b.classList.remove('ready'); }, 2100); }
+}
+/* 陀螺儀瞄準：轉動手機時把轉速加到視角（依直式／橫式換軸） */
+let gyroOn = false, gyroT = 0;
+function gyroSet(on) {
+  gyroOn = !!on; try { localStorage.setItem('rr_gyro', on ? '1' : '0'); } catch (e) {}
+  if (!on) return;
+  const D = window.DeviceMotionEvent;
+  if (D && typeof D.requestPermission === 'function') D.requestPermission().then(function (r) { if (r !== 'granted') { gyroOn = false; const c = $('setGyro'); if (c) c.checked = false; toast('沒有取得動作感應權限，陀螺儀瞄準已關閉'); } }).catch(function () {});
+}
+window.addEventListener('devicemotion', function (e) {
+  const now = performance.now(), dt = Math.min(0.05, (now - (gyroT || now)) / 1000); gyroT = now;
+  if (!gyroOn || !canControl() || !e.rotationRate || me.inLk) return;
+  const r = e.rotationRate, D2R = Math.PI / 180, k = 1.1 * (settings.sens || 1) * dt * D2R;
+  const ang = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0);
+  const b = r.beta || 0, g = r.gamma || 0;
+  let dy, dp;
+  if (ang === 90) { dy = b; dp = -g; } else if (ang === 270 || ang === -90) { dy = -b; dp = g; } else { dy = g; dp = b; }
+  me.yaw += dy * k; me.pitch = Math.max(-1.2, Math.min(1.2, me.pitch + dp * k));
+});
 function renderTT() {
-  cdNum('skill', Math.ceil((skEnd - Date.now()) / 1000));
+  const skLeft = Math.ceil((skEnd - Date.now()) / 1000);
+  if (renderTT.prevSk > 0 && skLeft <= 0 && canControl()) skillHint('技能好了');
+  renderTT.prevSk = skLeft;
+  cdNum('skill', skLeft);
   cdNum('smoke', Math.ceil((smEnd - Date.now()) / 1000));
   if ($('scrMini').classList.contains('hide')) return;
   if (miniInPlay && !canControl()) { closeMini(); return; }
@@ -1382,6 +1409,8 @@ function useAir() {
   if (RR.Game.onAir) RR.Game.onAir(me.x + fx * 12, me.z + fz * 12);
   ksN -= 6; airCdT = 25; toast('呼叫空中掃射…');
 }
+function reloadPress() { if (canControl() && RR.Game.onReload) RR.Game.onReload(); }
+function weaponPress() { if (canControl() && RR.Game.onGunSwitch) { if (wpnMode === 'melee') swapPress(); RR.Game.onGunSwitch(); } }
 function swapPress() {
   wpnMode = wpnMode === 'gun' ? 'melee' : 'gun'; toast(wpnMode === 'gun' ? '切回槍' : '切換到近戰');
 }
@@ -1763,11 +1792,12 @@ function fpsWatch(dt) {
   }
 }
 /* ---------- 手機按鈕：位置與大小可自訂（直式、橫式各存一份） ---------- */
-const BTN = { swap: [244, 378, 52], uav: [334, 218, 52], air: [334, 296, 52], scope: [58, 348, 58], bomb: [154, 314, 58], tower: [244, 296, 58], veh: [244, 218, 58], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
+const BTN = { reload: [154, 392, 46], wsw: [334, 62, 46], locker: [334, 140, 52], swap: [244, 378, 52], uav: [334, 218, 52], air: [334, 296, 52], scope: [58, 348, 58], bomb: [154, 314, 58], tower: [244, 296, 58], veh: [244, 218, 46], run: [64, 84, 76], atk: [154, 66, 64], gun: [154, 150, 58], rescue: [154, 232, 58], jump: [58, 184, 58], dash: [58, 266, 58], skill: [244, 62, 58], smoke: [244, 140, 58] };   // [離右邊, 離底部, 直徑]
 // 橫式：畫面矮，改成 4 欄 × 3 列，避免按鍵疊到上方的資訊和按鈕
 const BTN_L = { run: [62, 56, 76], atk: [142, 56, 64], gun: [222, 56, 58], swap: [302, 56, 52], uav: [382, 56, 52],
   jump: [62, 136, 58], dash: [142, 136, 58], rescue: [222, 136, 58], scope: [302, 136, 58], air: [382, 136, 52],
-  skill: [62, 216, 58], smoke: [142, 216, 58], bomb: [222, 216, 58], tower: [302, 216, 58], veh: [382, 216, 58] };   // 橫式：三排、每排五顆（與螢幕右下角的道具列一樣排成一橫列）
+  skill: [62, 216, 58], smoke: [142, 216, 58], bomb: [222, 216, 58], tower: [302, 216, 58], veh: [382, 216, 46],
+  reload: [462, 56, 46], wsw: [462, 136, 46], locker: [462, 216, 52] };   // 橫式：三排、每排五顆（與螢幕右下角的道具列一樣排成一橫列）
 function btnMap() { return window.innerWidth > window.innerHeight ? BTN_L : BTN; }
 // 按鍵區太高、畫面放不下時自動縮小（上方留 84px 給資訊列）
 function fitScale(map) {
@@ -1875,7 +1905,8 @@ const ICONS = {
   locker: '<rect x="6" y="3" width="12" height="18" rx="1"/><path d="M12 3v18"/><path d="M8.5 6.5h2M13.5 6.5h2M8.5 8.5h2M13.5 8.5h2"/><path d="M10.5 13v2M13.5 13v2"/>',
   smoke: '<path d="M7 18a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 0 9.5z"/>',
   scope: '<circle cx="12" cy="12" r="7.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/><circle cx="12" cy="12" r="1"/>',
-  skill: '<path d="M13 2L5 13.5h6L10 22l9-12.5h-6z"/>'
+  skill: '<path d="M13 2L5 13.5h6L10 22l9-12.5h-6z"/>',
+  wsw: '<path d="M3 10h12l2-2h3v5h-4l-1 1H9l-1 3H5l1-4H3z"/><path d="M7 20h10l-2.5-2.5"/>'
 };
 function setIcon(id, name) {
   const el = $(id); if (!el || el.dataset.icon === name) return;
@@ -1883,7 +1914,7 @@ function setIcon(id, name) {
   el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[name] + '</svg>';
 }
 function initIcons() {
-  ['run', 'atk', 'gun', 'swap', 'uav', 'air', 'tower', 'bomb', 'veh', 'jump', 'dash', 'rescue', 'locker', 'smoke', 'scope', 'skill'].forEach(function (id) {
+  ['run', 'atk', 'gun', 'swap', 'uav', 'air', 'tower', 'bomb', 'veh', 'jump', 'dash', 'rescue', 'locker', 'smoke', 'scope', 'skill', 'reload', 'wsw'].forEach(function (id) {
     const el = $(id); if (!el) return;
     if (!el.getAttribute('aria-label')) el.setAttribute('aria-label', el.textContent.trim());
     el.title = el.getAttribute('aria-label'); setIcon(id, id);
@@ -1891,6 +1922,7 @@ function initIcons() {
 }
 function bindInput() {
   initIcons();
+  { const g = $('setGyro'); let saved = false; try { saved = localStorage.getItem('rr_gyro') === '1'; } catch (e) {} gyroOn = saved; if (g) { g.checked = saved; g.addEventListener('change', function () { gyroSet(g.checked); }); } }
   window.addEventListener('keydown', function (e) {
     if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
     keys[e.code] = true;
@@ -1899,6 +1931,8 @@ function bindInput() {
     if (e.code === 'KeyQ' && !e.repeat) trySmoke();
     if (e.code === 'KeyE' && !e.repeat && canControl()) swapPress();
     if (e.code === 'KeyU' && !e.repeat) useUav();
+    if (e.code === 'KeyH' && !e.repeat) reloadPress();
+    if (e.code === 'KeyK' && !e.repeat) weaponPress();
     if (e.code === 'KeyJ' && !e.repeat) useAir();
     if (e.code === 'KeyR' && !e.repeat) trySkill();
     if (e.code === 'KeyY' && !e.repeat && canControl()) { e.preventDefault(); lockerPress(); }
@@ -1975,7 +2009,7 @@ function bindInput() {
   runBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   $('micBtn').addEventListener('click', function () { RR.Game.toggleMic(); });
   $('mini').addEventListener('click', function () { $('mini').classList.toggle('big'); });
-  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', gunPress], ['swap', swapPress], ['uav', useUav], ['air', useAir], ['bomb', function () { if (RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100); }], ['veh', function () { vhQ = true; }], ['tower', function () { if (view.mode === 'td' && RR.Game.onTower) RR.Game.onTower(); }]].forEach(function (q) {
+  [['jump', function () { jumpQ = true; }], ['dash', function () { dashQ = true; }], ['gun', gunPress], ['swap', swapPress], ['uav', useUav], ['air', useAir], ['reload', reloadPress], ['wsw', weaponPress], ['bomb', function () { if (RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100); }], ['veh', function () { vhQ = true; }], ['tower', function () { if (view.mode === 'td' && RR.Game.onTower) RR.Game.onTower(); }]].forEach(function (q) {
     const b = $(q[0]);
     b.addEventListener('touchstart', function (e) { e.preventDefault(); if (q[0] === 'gun') gunHeld = wpnMode === 'gun'; if (canControl()) q[1](); }, { passive: false });
     if (q[0] === 'gun') { const up = function (e) { e.preventDefault(); gunHeld = false; }; b.addEventListener('touchend', up, { passive: false }); b.addEventListener('touchcancel', up, { passive: false }); }
@@ -2009,6 +2043,10 @@ function updateMe(dt) {
   if (keys.ArrowLeft) me.yaw += 2.2 * dt;
   if (keys.ArrowRight) me.yaw -= 2.2 * dt;
   if (me.inLk) { if (lkPos) { me.x = lkPos[0]; me.z = lkPos[1]; } return; }   // 躲在櫃子裡不能移動
+  if (me.passenger && view.veh) {   // 坐後座：跟著車子走，可以轉頭、開槍
+    let vx = view.veh[0], vz = view.veh[1]; const rp = view.players.get(view.veh[2]); if (rp) { vx = rp.x; vz = rp.z; }
+    me.x = vx + (me.passIdx ? -0.75 : 0.75); me.z = vz + 0.4; return;
+  }
   let f = 0, s = 0;
   if (keys.KeyW || keys.ArrowUp) f += 1;
   if (keys.KeyS || keys.ArrowDown) f -= 1;
@@ -2425,6 +2463,7 @@ RR.Game = {
     view.mode = info.mode || 'coop'; document.body.classList.toggle('td', view.mode === 'td'); syncTowers([]); view.td = null;
     document.body.classList.toggle('hunt', view.mode === 'hunt'); document.body.classList.toggle('br', view.mode === 'br');
     applyWeather(info.weather || 0); quakeT = 0; me.riding = false; rings.forEach(function (r) { scene.remove(r.mesh); }); rings.length = 0;
+    setTimeout(function () { if (canControl() && view.mode !== 'br') skillHint('你的技能'); }, info.weather ? 7000 : 3500);
     if (info.weather) setTimeout(function () { toast('今天的天氣：' + W.WEATHERS[info.weather] + ['', '（雨聲蓋過腳步，怪物比較聽不到你）', '（你和怪物都看不遠）', '（很暗，靠手電筒；怪物也看不遠）', '（能見度低，小地圖看不到怪物）'][info.weather]); }, 2600);
     view.zone = info.zone || null; view.zr = info.zone ? info.zone[2] : 0; outT = 0;
     if (zoneMesh) { scene.remove(zoneMesh); zoneMesh = null; }
@@ -2474,14 +2513,16 @@ RR.Game = {
     if (s.veh) {
       if (!cartMesh) { cartMesh = buildCart(); scene.add(cartMesh); }
       const rid = s.veh[2]; me.riding = rid === myId && me.alive;
+      const ps = s.veh[3] || []; me.passIdx = me.alive ? ps.indexOf(myId) : -1; me.passenger = me.passIdx >= 0;
       let cx = s.veh[0], cz = s.veh[1], cyaw = cartMesh.rotation.y;
       if (rid && rid !== myId) { const rp = view.players.get(rid); if (rp) { cx = rp.x; cz = rp.z; cyaw = rp.yaw; } }
       cartMesh.visible = rid !== myId; cartMesh.position.set(cx, 0, cz); cartMesh.rotation.y = cyaw;
       view.veh = s.veh;
-    } else { if (cartMesh) cartMesh.visible = false; view.veh = null; me.riding = false; }
+    } else { if (cartMesh) cartMesh.visible = false; view.veh = null; me.riding = false; me.passenger = false; }
     if (cartView) cartView.visible = !!me.riding;
-    const nearV = view.veh && me.alive && (me.riding || (!view.veh[2] && Math.hypot(view.veh[0] - me.x, view.veh[1] - me.z) < 2.4));
-    document.body.classList.toggle('nearveh', !!nearV); setIcon('veh', me.riding ? 'exit' : 'veh');
+    const seatFree = !view.veh || !view.veh[2] || (view.veh[3] || []).length < 2;   // 沒人開車可以開；有人開車可以坐後座（最多 2 人）
+    const nearV = view.veh && me.alive && (me.riding || me.passenger || (seatFree && Math.hypot(view.veh[0] - me.x, view.veh[1] - me.z) < 2.4));
+    document.body.classList.toggle('nearveh', !!nearV); setIcon('veh', me.riding || me.passenger ? 'exit' : 'veh');
     if (s.pad && !padMesh) {
       padMesh = new THREE.Mesh(new THREE.RingGeometry(0.6, 1.0, 40), new THREE.MeshBasicMaterial({ color: 0x66e0ff, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
       padMesh.rotation.x = -Math.PI / 2; padMesh.position.y = 0.05; scene.add(padMesh);
@@ -2589,8 +2630,13 @@ RR.Game = {
       });
     } else if (e.t === 'boom') {
       showBoom(e.x, e.z);
+    } else if (e.t === 'gunsw') {
+      if (e.id === myId) { RR.Game.setGun(e.gun); toast('換成' + ((W.GUNS[e.gun] || {}).name || '槍')); }
+    } else if (e.t === 'reload') {
+      if (e.id === myId) { Sfx.tone(180, 0.08, 'square', 0.05, 120); }
     } else if (e.t === 'veh') {
-      if (e.id === myId) toast(e.on ? '推上推車：速度快、多放 2 件，但很吵，不能跳、衝、開槍' : '下車了');
+      if (e.id === myId) toast(e.pass ? (e.on ? '坐上推車後座：隊友開車，你可以開槍掩護' : '下車了') : e.on ? '推上推車：速度快、多放 2 件，但很吵，不能跳、衝、開槍；隊友可以坐後座' : '下車了');
+      else if (e.on && e.pass && view.veh && view.veh[2] === myId) toast(nameOf(e.id) + ' 坐上你的推車');
       Sfx.tone(e.on ? 300 : 220, 0.12, 'triangle', 0.1, e.on ? 450 : 160);
     } else if (e.t === 'brkill') {
       const vp = view.players.get(e.id); if (vp) vp.alive = false;

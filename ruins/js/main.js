@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v124', items: ['手機按鍵改成透明圓鍵＋圖示（不寫字），冷卻時圖示變淡並顯示秒數'] };
+const UPD = { v: 'v125', items: ['新增換彈鍵（電腦 H）與換武器鍵（主槍／副槍，電腦 K）；子彈打完要換彈', '設定新增陀螺儀瞄準', '推車可以載 2 位隊友坐後座（可開槍掩護），車子鍵改小', '技能好了或開局時自動提示技能效果'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -814,6 +814,8 @@ function wireNet() {
       else if (d.t === 'gun') S.sim.shoot(from, d.yaw);
       else if (d.t === 'tower') S.sim.buildTower(from);
       else if (d.t === 'bomb') S.sim.bomb(from, d.yaw);
+      else if (d.t === 'reload') S.sim.reloadGun(from);
+      else if (d.t === 'gunsw') S.sim.switchGun(from);
       else if (d.t === 'air') S.sim.airStrike(from, d.x, d.z);
       else if (d.t === 'eq') { const pl = S.sim.player(from); if (pl && S.sim.setEquip(from, d.eq)) { if (Array.isArray(d.gems)) pl.gems = [0, 1, 2].map(function (k) { return Math.max(0, Math.min(5, d.gems[k] | 0)); }); hostBroadcast(rosterMsg()); } }
       else if (d.t === 'bye') { Net.drop(from); hostRemove(from); }
@@ -1581,6 +1583,16 @@ function boot() {
     if (S.mode === 'client') Net.send({ t: 'atk', yaw: yaw });
     else if (S.sim) S.sim.attack(S.myId, yaw);
   };
+  Game.onReload = function () {
+    if (S.mode === 'client') Net.send({ t: 'reload' });
+    else if (S.sim) S.sim.reloadGun(S.myId);
+  };
+  Game.onGunSwitch = function () {
+    if (S.mode === 'client') Net.send({ t: 'gunsw' });
+    else if (S.sim) S.sim.switchGun(S.myId);
+  };
+  /** 技能好了的提示文字（依出戰角色） */
+  Game.skillText = function () { const c = CINFO[myLook().c % CINFO.length]; return c[0] + '：' + c[1]; };
   Game.onBomb = function (yaw) {
     if (S.mode === 'client') Net.send({ t: 'bomb', yaw: yaw });
     else if (S.sim) S.sim.bomb(S.myId, yaw);
