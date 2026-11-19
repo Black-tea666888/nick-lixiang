@@ -169,7 +169,7 @@ body.playing.chatting #chatLog .old { display: block; }
 .screen { background: rgba(31,70,132,.74); z-index: 10; }
 .modal { background: rgba(17,20,23,.6); z-index: 30; }
 #scrLobby { padding-bottom: 200px; align-items: flex-start; }
-#scrHelp, #scrGear, #scrSocial { z-index: 26; background: var(--bin); align-items: flex-start; }
+#scrHelp, #scrGear, #scrSocial, #scrTier { z-index: 26; background: var(--bin); align-items: flex-start; }
 #scrMini { z-index: 25; background: var(--bin); }
 /* 面板＝一張牛皮紙單：墨線邊、紙片硬陰影 */
 .panel { max-width: 380px; width: 100%; margin: auto; text-align: center; color: var(--ink);

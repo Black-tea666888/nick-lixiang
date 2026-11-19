@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v132', items: ['戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v133', items: ['段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -968,8 +968,37 @@ function refreshLobby() {
   $('lbName').textContent = W.CHARS[look.c] + '　' + (W.GUNS[look.gun] || W.GUNS[0]).name;
   Game.preview($('lobbyChar'), look.c, look.w, look.h, look.o, look.pet, true);
 }
+/* ---------- 段位與地圖輪換 ---------- */
+const PTIERS = [
+  { n: '新秀', min: 0 }, { n: '專家', min: 1000 }, { n: '達人', min: 2000 }, { n: '菁英', min: 3000 },
+  { n: '大師', min: 4500 }, { n: '宗師', min: 6000 }, { n: '傳奇', min: 8000 }
+];
+function ptierOf(s) { let i = 0; for (let k = 0; k < PTIERS.length; k++) if ((s | 0) >= PTIERS[k].min) i = k; return i; }
+function myWeekPts() { const p = prog(); return p.wk === RR.Cloud.weekId() ? (p.wpts | 0) : 0; }
+/** 本週輪換地圖：依週次固定抽 6 張，全部玩家一致 */
+function rotMaps() {
+  const N = W.MAPS.length, want = Math.min(6, N), out = [];
+  let s = (RR.Cloud.weekId() * 9301 + 49297) % 233280;
+  while (out.length < want) { s = (s * 9301 + 49297) % 233280; const i = Math.floor(s / 233280 * N); if (out.indexOf(i) < 0) out.push(i); }
+  return out;
+}
+function openTierInfo() {
+  const b = $('tierBody'), C = RR.Cloud, N = W.MAPS.length; b.textContent = '';
+  const row = function (name, min, now) { const r = mk('div', 'srow' + (now ? ' me' : '')); r.appendChild(mk('span', 'nm', name)); r.appendChild(mk('span', 'sc', min + ' 分起')); b.appendChild(r); };
+  b.appendChild(mk('div', 'sec', '戰隊段位（本週積分）'));
+  C.TIERS.forEach(function (t) { row(t.n, t.min, false); });
+  b.appendChild(mk('p', 'note', '每局金幣累積成戰隊本週積分，每週一重算，歷史最高段位會保留。'));
+  b.appendChild(mk('div', 'sec', '個人段位（本週積分）'));
+  const mine = myWeekPts(), now = ptierOf(mine);
+  PTIERS.forEach(function (t, i) { row(t.n, t.min, i === now); });
+  b.appendChild(mk('p', 'note', '你目前：' + PTIERS[now].n + '（本週 ' + mine + ' 分）。每局金幣累積成本週積分，每週一重算。'));
+  b.appendChild(mk('div', 'sec', '地圖輪換'));
+  b.appendChild(mk('p', 'note', '通用池：全部 ' + N + ' 張地圖隨時可選。'));
+  b.appendChild(mk('p', 'note', '本週輪換（' + rotMaps().length + ' 張）：' + rotMaps().map(function (i) { return W.MAPS[i].name; }).join('、') + '。在輪換地圖上的對局，段位積分 +20%，金幣不變。每週一換。'));
+  $('scrTier').classList.remove('hide');
+}
 function renderMapGrid() {
-  const g = $('mapGrid'), cur = myMap(); g.textContent = '';
+  const g = $('mapGrid'), cur = myMap(), rot = rotMaps(); g.textContent = '';
   W.MAPS.forEach(function (mp, i) {
     const T = mp.theme, b = document.createElement('button'); b.type = 'button'; b.className = 'mapCard' + (i === cur ? ' on' : '');
     // 縮圖直接畫出地圖的格子：牆、地板、出生點（綠）、怪物點（紅）
@@ -977,7 +1006,7 @@ function renderMapGrid() {
     const x = cv.getContext('2d');
     mp.rows.forEach(function (row, r) { for (let c = 0; c < row.length; c++) { const ch = row[c]; x.fillStyle = ch === '#' ? T.wall : ch === 'S' ? '#5fd17a' : ch === 'M' ? '#e0503a' : T.floor; x.fillRect(c * 4, r * 4, 4, 4); } });
     b.appendChild(cv);
-    const nm = document.createElement('b'), sp = document.createElement('span'); nm.textContent = mp.name; sp.textContent = T.open ? '開放場景' : '室內'; b.appendChild(nm); b.appendChild(sp);
+    const nm = document.createElement('b'), sp = document.createElement('span'); nm.textContent = mp.name; sp.textContent = (T.open ? '開放場景' : '室內') + (rot.indexOf(i) >= 0 ? ' · 本週輪換' : ''); b.appendChild(nm); b.appendChild(sp);
     b.addEventListener('click', function () { lsSet('rr_map', String(i)); Game.showMap(i); renderMapGrid(); });
     g.appendChild(b);
   });
@@ -1157,11 +1186,15 @@ function afterMatch(mode, win, day, myStat, coins, info) {
   else if (win && day > t[mode]) t[mode] = day;
   const got = [];
   ACH.forEach(function (a) { if (p.ach.indexOf(a[0]) < 0 && a[3](t, p)) { p.ach.push(a[0]); p.coins += a[4]; got.push(a[1] + ' +' + a[4]); } });
+  // 段位積分：金幣同時累積成個人本週積分（跨週歸零）；輪換地圖 +20%，金幣本身不變
+  const w = RR.Cloud.weekId(), pts = Math.round((coins | 0) * (rotMaps().indexOf(myMap()) >= 0 ? 1.2 : 1));
+  if (p.wk !== w) { p.wk = w; p.wpts = 0; }
+  p.wpts = (p.wpts | 0) + pts;
   progSave(p);
   if (RR.Cloud.ready()) {
     if (mode === 'br') { if (win) RR.Cloud.submit('br', 1); }
     else if (t[mode] > 0) RR.Cloud.submit(mode, t[mode]);
-    RR.Cloud.clanAdd(coins);
+    RR.Cloud.clanAdd(pts);
   }
   return got.length ? '，成就：' + got.join('、') : '';
 }
@@ -1213,6 +1246,10 @@ function renderSocial() {
   const guard = function (fn) { return function (err, data) { if (renderSocial.token !== token) return; const w = b.querySelector('.wait'); if (w) w.remove(); if (err) { socNote(C.message(err)); return; } fn(data); }; };
   const modeSel = socSelect(C.MODES.map(function (m) { return [m, MODE_NAME[m] + '模式']; }), socMode, function (v) { socMode = v; renderSocial(); });
   if (socTab === 'rank') {
+    const mine = myWeekPts();
+    const tr = mk('p', 'note', '我的本週段位：' + PTIERS[ptierOf(mine)].n + '（' + mine + ' 分）');
+    const tbtn = mk('button', 'btn', '段位與輪換說明'); tbtn.type = 'button'; tbtn.style.margin = '6px 0 10px';
+    tbtn.addEventListener('click', openTierInfo); b.appendChild(tr); b.appendChild(tbtn);
     const rankSel = socSelect(C.MODES.map(function (m) { return [m, MODE_NAME[m] + '模式']; }).concat([['mix', '全部模式']]), socMode, function (v) { socMode = v; renderSocial(); });
     const row = mk('div', 'soc-row'); row.appendChild(rankSel);
     row.appendChild(socSelect([['week', '本週'], ['all', '總榜']], socScope, function (v) { socScope = v; renderSocial(); })); b.appendChild(row);
@@ -1290,6 +1327,7 @@ function renderSocial() {
       } else {
         const wsNow = info.clan.wk === C.weekId() ? (info.clan.wscore | 0) : 0, ti = C.tierOf(wsNow), bi = info.clan.best | 0, TT = C.TIERS;
         b.appendChild(mk('p', 'note', '戰隊「' + info.clan.name + '」，' + info.members.length + ' / 30 人，累計 ' + (info.clan.score | 0) + ' 分，代碼'));
+        { const tb2 = mk('button', 'btn', '段位與輪換說明'); tb2.type = 'button'; tb2.style.margin = '0 0 8px'; tb2.addEventListener('click', openTierInfo); b.appendChild(tb2); }
         b.appendChild(mk('p', 'note', '本週 ' + wsNow + ' 分，段位 ' + TT[ti].n + (ti < TT.length - 1 ? '（下一階 ' + TT[ti + 1].n + ' 還差 ' + (TT[ti + 1].min - wsNow) + ' 分）' : '') + '；歷史最高 ' + TT[bi].n));
         b.appendChild(mk('div', 'bigcode', info.clan.tag));
         { const cc = mk('button', 'btn primary', '打開戰隊聊天'); cc.type = 'button'; cc.style.width = '100%'; cc.style.margin = '6px 0 10px'; cc.addEventListener('click', function () { $('scrSocial').classList.add('hide'); renderSocial.token = null; clanOpen(); }); b.appendChild(cc); }
@@ -1458,6 +1496,7 @@ function bind() {
   (function () { const cv = $('lobbyChar'); let lastX = null; cv.addEventListener('pointerdown', function (e) { lastX = e.clientX; cv.setPointerCapture(e.pointerId); }); cv.addEventListener('pointermove', function (e) { if (lastX == null) return; Game.previewSpin(cv, e.clientX - lastX); lastX = e.clientX; }); const up = function () { lastX = null; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); })();
   $('goBtn').addEventListener('click', function () { const b = $('modeStrip').querySelector('[data-mode="' + selMode() + '"]'); if (b) $(b.dataset.go).click(); });
   $('mapChip').addEventListener('click', function () { renderMapGrid(); show('scrMap'); });
+  $('tierInfoMap').addEventListener('click', openTierInfo); $('tierDone').addEventListener('click', function () { $('scrTier').classList.add('hide'); });
   $('mapOk').addEventListener('click', function () { showMenu(); }); $('mapDone').addEventListener('click', function () { showMenu(); });
   $('joinOpen').addEventListener('click', function () { $('joinModal').classList.remove('hide'); setTimeout(function () { $('codeInput').focus(); }, 50); });
   $('joinClose').addEventListener('click', function () { $('joinModal').classList.add('hide'); });
