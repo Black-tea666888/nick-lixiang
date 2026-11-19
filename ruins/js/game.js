@@ -1041,7 +1041,7 @@ function drawMonBar(m) {
 
 function buildMonster(kind, v) {
   const col = MON_COL[kind] || MON_COL.fire;
-  v = (v | 0) % 6;   // 怪物外觀變化：每隻怪固定一種輪廓，全部都是黑色系（玩家不能自訂）
+  v = (v | 0) % 8;   // 怪物外觀變化：每隻怪固定一種輪廓，全部都是黑色系（玩家不能自訂）
   const g = new THREE.Group();
   const skinM = RR.Game && RR.Game.settings ? RR.Game.settings.monSkin | 0 : 0;   // 怪物造型：0 預設（黑）、1 骸骨白、2 霓虹
   const dark = litMat({ color: skinM === 1 ? 0xe8e2d0 : skinM === 2 ? 0x101018 : 0x0c0c0e, shininess: 30, emissive: new THREE.Color(col[1]).multiplyScalar(skinM === 2 ? 0.75 : skinM === 1 ? 0.02 : 0.07) });
@@ -1073,6 +1073,17 @@ function buildMonster(kind, v) {
     for (let k = 0; k < 4; k++) { const rib = part(new THREE.TorusGeometry(0.27, 0.03, 8, 18), dark, 0, 0.85 + k * 0.3, 0); rib.rotation.x = Math.PI / 2; g.add(rib); }
   } else if (v === 5) {             // 三眼：額頭多一顆發光眼
     g.add(part(new THREE.SphereGeometry(0.06, 20, 16), eyeM, 0, 2.72, 0.3));
+  } else if (v === 6) {             // 枯瘦長臂：細到見骨的身體、垂到地上的手臂、拉長的頭、直裂的嘴
+    body.scale.set(0.6, 1, 0.6); head.scale.set(0.8, 1.6, 0.9); head.position.y = 2.6;
+    a1.scale.y = a2.scale.y = 1.5; a1.rotation.z = -0.06; a2.rotation.z = 0.06;
+    mouth.scale.set(0.25, 4, 1); mouth.position.y = 2.36;
+    for (let k = 0; k < 5; k++) { const rib = part(new THREE.TorusGeometry(0.15, 0.018, 6, 14), dark, 0, 1.25 + k * 0.17, 0); rib.rotation.x = Math.PI / 2; g.add(rib); }
+  } else if (v === 7) {             // 巨獸：體型大一倍半、頭頂角冠、粗尾巴、胸口發光裂紋
+    const hornG = new THREE.ConeGeometry(0.08, 0.5, 6);
+    [-0.22, 0, 0.22].forEach(function (x, k) { const h = part(hornG, dark, x, 3.0 + (k === 1 ? 0.1 : 0), -0.05); h.rotation.x = -0.4; h.rotation.z = -x * 1.2; g.add(h); });
+    const tail = part(new THREE.ConeGeometry(0.3, 2.2, 10), dark, 0, 0.45, -1.1); tail.rotation.x = -Math.PI / 2 + 0.25; g.add(tail);
+    for (let k = 0; k < 4; k++) { const ck = part(new THREE.BoxGeometry(0.03, 0.34, 0.02), tint, (k - 1.5) * 0.09, 1.5 + (k % 2) * 0.22, 0.33); ck.rotation.z = (k % 2 ? 0.5 : -0.5); g.add(ck); }
+    body.scale.set(1.35, 1, 1.35);
   }
   if (kind === 'fire') {            // 火：兩支角、背後火焰
     const hornG = new THREE.ConeGeometry(0.07, 0.42, 6);
@@ -1102,6 +1113,7 @@ function buildMonster(kind, v) {
   const barTex = new THREE.CanvasTexture(barCv);
   const bar = new THREE.Sprite(new THREE.SpriteMaterial({ map: barTex, transparent: true, depthTest: false, fog: false }));
   bar.scale.set(1.3, 0.24, 1); bar.position.set(0, 3.05, 0); bar.visible = false; bar.renderOrder = 10; g.add(bar);
+  if (v === 7) g.scale.setScalar(1.5);
   return { group: g, arms: [a1, a2], x: 0, z: 0, rot: 0, tx: 0, tz: 0, trot: 0, chase: false, fresh: true, bar: bar, barCv: barCv, barTex: barTex, barKey: '' };
 }
 
@@ -2402,7 +2414,7 @@ RR.Game = {
     cartView = new THREE.Group(); cartView.add(part(new THREE.BoxGeometry(0.9, 0.3, 0.6), pmat(0xd9902f, 0.25), 0, -0.78, -1.05), part(new THREE.CylinderGeometry(0.02, 0.02, 0.8, 8), pmat(0x9aa3a8, 0.15), 0, -0.5, -0.62)); cartView.children[1].rotation.z = Math.PI / 2; cartView.visible = false; camera.add(cartView);
     torch.position.set(0.25, -0.2, 0); camera.add(torch); camera.add(torch.target); torch.target.position.set(0, -0.05, -1);
     buildLevel();
-    for (let i = 0; i < 6; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4], i));
+    for (let i = 0; i < 6; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4], i + (view.day | 0) * 2));
     setViewWeapon(0);
     skinGeos = [new THREE.SphereGeometry(0.28, 18, 14), new THREE.OctahedronGeometry(0.34, 0)];
     itemGeos = REAL_VARIANTS.map(function (n, k) { const out = []; for (let v = 0; v < n; v++) out.push(realGeo(k, v)); return out; });
@@ -2781,7 +2793,7 @@ RR.Game = {
     RR.Game.settings.monSkin = v | 0;
     if (!ready) return;
     view.monsters.forEach(function (m) { scene.remove(m.group); });
-    view.monsters = []; for (let i = 0; i < 6; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4], i));
+    view.monsters = []; for (let i = 0; i < 6; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4], i + (view.day | 0) * 2));
   },
   setQuality: function (q) { quality = q === 'low' || q === 'mid' ? q : 'high'; applyQuality(); },
   setBtnScale: function (v) { btnScale = Math.max(0.7, Math.min(1.5, +v || 1)); layoutButtons(); },
