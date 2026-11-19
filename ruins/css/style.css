@@ -821,3 +821,13 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
 
 /* 戰隊排行榜每列右邊的「+」：直接加入 */
 .srow > .btn { min-width: 44px; padding: 6px 10px; margin-left: 8px; }
+/* 櫃子：不在旁邊就不顯示「櫃」鍵（自訂按鈕位置時仍顯示） */
+body.touch.playing:not(.lk-near):not(.btnedit) #locker { display: none !important; }
+/* 躲在櫃子裡：四周是鐵板，只能從門上的通風縫往外看 */
+#lkView { position: fixed; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 45%, rgba(0,0,0,0) 45%, rgba(8,12,16,.85) 100%),
+    repeating-linear-gradient(180deg, rgba(14,22,30,.9) 0 20px, rgba(0,0,0,0) 20px 38px);
+}
+#lkView::before, #lkView::after { content: ''; position: absolute; top: 0; bottom: 0; width: 16%; background: linear-gradient(90deg, #0b1218, #1a2a36); }
+#lkView::before { left: 0; } #lkView::after { right: 0; transform: scaleX(-1); }
