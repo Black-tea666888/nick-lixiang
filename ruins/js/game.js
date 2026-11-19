@@ -21,6 +21,7 @@ function myGem(i) { const pm = view.players.get(myId); return pm && pm.gems ? pm
 function hpPct() { return Math.max(0, Math.min(100, me.hp / (myEq(4) ? 130 : 100) * 100)) + '%'; }
 function myPet() { const pm = view.players.get(myId); return pm && pm.pet ? pm.pet : 0; }
 // 背包容量：基礎 3 格 + 背包等級（每 10 等 +1，最多 +10）+ 大背包配件 + 推車
+function myBt() { const pm = view.players.get(myId); return pm && pm.bt ? pm.bt | 0 : 0; }
 function myCap() { const pm = view.players.get(myId); return W.BAG_MAX + (pm && pm.bt ? pm.bt | 0 : 0) + (myEq(2) ? 1 : 0) + (me.riding ? 2 : 0); }
 function myC() { const pm = view.players.get(myId); return pm && pm.c ? pm.c : 0; }
 // 藍色（冰）怪物附近：減速
@@ -232,7 +233,7 @@ function litMat(o) {
   Object.keys(o || {}).forEach(function (k) { if (m[k] !== undefined) p[k] = o[k]; });
   m.setValues(p); return m;
 }
-let specId = null, beatT = 0, toastT = 0, fullHintT = 0, loudT = 0, spk = false, hudT = 0, lastL = me, dragging = false;
+let specId = null, beatT = 0, toastT = 0, fullHintT = 0, lockHintT = 0, loudT = 0, spk = false, hudT = 0, lastL = me, dragging = false;
 let itemGeos = null, skinGeos = null;
 
 // 飄字（賣出金額、受傷）
@@ -2161,6 +2162,14 @@ function updateMe(dt) {
   camera.rotation.set(me.pitch, me.yaw, 0);
   $('stamBar').style.width = (me.stam * 100).toFixed(0) + '%';
   $('stam').className = me.tired ? 'tired' : '';
+  // 物品等級太高、背包等級不夠的提示
+  lockHintT -= dt;
+  if (lockHintT <= 0) {
+    for (let i = 0; i < view.items.length; i++) {
+      const it = view.items[i], kd = W.KINDS[it.kind];
+      if (!it.taken && kd && (kd.req | 0) > myBt() && Math.hypot(it.x - me.x, it.z - me.z) < 1.5) { toast('需要' + W.BAG_TIERS[kd.req | 0] + '（Lv' + ((kd.req | 0) * 10) + '）才撿得起' + kd.n); lockHintT = 3; break; }
+    }
+  }
   // 背包滿的提示
   fullHintT -= dt;
   if (me.bagN >= myCap() && fullHintT <= 0) {
