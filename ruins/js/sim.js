@@ -438,6 +438,16 @@ Sim.prototype.player = function (id) {
   for (let i = 0; i < this.players.length; i++) if (this.players[i].id === id) return this.players[i];
   return null;
 };
+/** 房間大廳裡換造型／槍：更新這位玩家的裝備（只在大廳有效，開局後不能換） */
+Sim.prototype.updateLook = function (id, look) {
+  const p = this.player(id);
+  if (!p || this.phase !== 'lobby') return;
+  look = look || {};
+  p.c = pick(look.c, CHARS.length); p.w = pick(look.w, WEAPONS.length); p.h = pick(look.h, HATS.length);
+  p.o = pick(look.o, COSTUMES.length); p.pet = pick(look.pet, PETS.length);
+  p.gun = pick(look.gun, GUNS.length); p.eq = cleanEq(look.eq); p.gems = cleanGems(look.gems);
+  p.clip = GUNS[p.gun].clip[0]; p.ammo = p.clip;
+};
 Sim.prototype.addPlayer = function (id, name, look) {
   if (this.player(id)) return this.player(id);
   if (this.players.length >= MAX_PLAYERS) return null;
