@@ -581,7 +581,7 @@ Sim.prototype.setInput = function (id, m) {
   const x = +m.x, z = +m.z, yaw = +m.yaw;
   if (isFinite(x) && isFinite(z) && !blocked(x, z, 0.3)) { p.x = x; p.z = z; }
   if (isFinite(yaw)) p.yaw = yaw;
-  p.run = !!m.run; p.loud = !!m.loud; p.air = !!m.air; if (m.vh) p.vq = true;
+  p.run = !!m.run; p.loud = !!m.loud; p.air = !!m.air; p.wt = !!m.wt; if (m.vh) p.vq = true;
 };
 
 // 櫃子：靠近按「櫃」進去躲（最多 8 秒、再按一次出來），進去時順便拿到櫃內的攻擊物；出來後冷卻 10 秒
@@ -1128,7 +1128,7 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   }
   for (let i = 0; i < alive.length; i++) {
     const p = alive[i];
-    if (p.alive && !(p.shieldT > 0) && !p.air && !inBase(this, p) && Math.hypot(p.x - m.x, p.z - m.z) < 1.15) {   // 跳在空中時、在光圈裡抓不到
+    if (p.alive && !(p.shieldT > 0) && !p.air && !p.wt && !inBase(this, p) && Math.hypot(p.x - m.x, p.z - m.z) < 1.15) {   // 跳在空中時、在光圈裡抓不到
       if (hasAcc(p, 6) && !p.esc) { p.esc = true; m.cool = 2.5; m.state = 'wander'; m.path = null; this.events.push({ t: 'escape', id: p.id }); break; }   // 急救針
       if ((p.monCd || 0) > 0) continue;   // 剛被打過，短暫無敵，不會連續被扣
       p.monCd = 1.5;
