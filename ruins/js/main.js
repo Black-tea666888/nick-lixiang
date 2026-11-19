@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v218', items: ['休閒模式新增國際象棋（同機雙人）', '交易成功的提示保留 10 秒，點一下可以關掉', '交易紀錄可以手動刪除單筆或清空', '賽車改成開車跑圈，賽道上有 3 台 AI 對手車', '新增信箱：更新內容改放進信箱，不再每次跳出提醒'] };
+const UPD = { v: 'v220', items: ['信箱按鈕只留在主頁，不再蓋住角色資料'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -56,7 +56,7 @@ new MutationObserver(function (list) { list.forEach(function (m) { m.addedNodes.
 document.addEventListener('DOMContentLoaded', function () { fancyAll(); }); fancyAll();
 function lsSet(k, v) { const same = ls(k) === String(v); try { localStorage.setItem(k, v); } catch (e) {} if (!same && RR.Cloud) RR.Cloud.localChanged(k); }
 let showMapName = function () {};
-function show(id) { SCREENS.forEach(function (s) { $(s).classList.toggle('hide', s !== id); }); $('mailBtn').classList.toggle('hide', id !== 'scrHub' && id !== 'scrMenu'); bannerHide(); const rh = document.getElementById('raceHud'); if (rh) rh.classList.add('hide'); }   // 離開遊戲畫面時一起收起賽車計時
+function show(id) { SCREENS.forEach(function (s) { $(s).classList.toggle('hide', s !== id); }); $('mailBtn').classList.toggle('hide', id !== 'scrHub'); bannerHide(); const rh = document.getElementById('raceHud'); if (rh) rh.classList.add('hide'); }   // 離開遊戲畫面時一起收起賽車計時
 let sayDone = null, askYes = null;
 function say(text, done) { $('msgText').textContent = text; $('msg').classList.remove('hide'); sayDone = done || null; }
 function ask(text, onYes) { $('askText').textContent = text; askYes = onYes; $('askDlg').classList.remove('hide'); }
