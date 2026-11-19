@@ -190,6 +190,11 @@ body.playing.chatting #chatLog .old { display: block; }
 .btn { font: inherit; font-size: 16px; font-weight: 800; min-height: 48px; padding: 11px 14px; cursor: pointer; color: var(--ink);
   background: var(--kraft-l); border: 2px solid var(--ink); border-radius: 6px; box-shadow: 0 3px 0 var(--ink); }
 .btn.primary { background: var(--haz); }
+/* 交易所的下拉與價格欄位：跟按鍵同一種樣式 */
+#mkItem, #mkPrice { font: inherit; font-size: 16px; font-weight: 800; min-height: 48px; padding: 8px 12px; color: var(--ink); background: var(--kraft-l); border: 2px solid var(--ink); border-radius: 6px; box-shadow: 0 3px 0 var(--ink); min-width: 0; outline: none; }
+#mkPrice { width: 100%; }
+#mkPrice:focus, #mkItem:focus { background: #fff8ea; }
+#mkPrice::placeholder { color: rgba(30,26,22,.55); font-weight: 700; }
 .btn:active { transform: translateY(3px); box-shadow: 0 0 0 var(--ink); }
 .btn.off { opacity: .5; }
 .icon { flex: none; min-width: 48px; height: 40px; padding: 0 10px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; color: var(--ink);
