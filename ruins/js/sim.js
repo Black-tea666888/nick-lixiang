@@ -1116,7 +1116,15 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
     const p = alive[i];
     if (p.alive && !(p.shieldT > 0) && !p.air && !inBase(this, p) && Math.hypot(p.x - m.x, p.z - m.z) < 1.15) {   // 跳在空中時、在光圈裡抓不到
       if (hasAcc(p, 6) && !p.esc) { p.esc = true; m.cool = 2.5; m.state = 'wander'; m.path = null; this.events.push({ t: 'escape', id: p.id }); break; }   // 急救針
-      p.alive = false; p.run = p.loud = false;
+      if ((p.monCd || 0) > 0) continue;   // 剛被打過，短暫無敵，不會連續被扣
+      p.monCd = 1.5;
+      p.hp -= maxHp(p) / 2; p.hurtT = 0;   // 怪物一次扣一半血，碰到兩下才會倒
+      if (p.hp > 0) {
+        this.events.push({ t: 'hit', id: p.id, by: null, hp: Math.round(p.hp) });
+        m.state = 'wander'; m.path = null; m.cool = 1.5;   // 怪物退開，讓玩家有時間跑
+        break;
+      }
+      p.hp = 0; p.alive = false; p.run = p.loud = false;
       this.events.push({ t: 'caught', id: p.id, x: r2(m.x), z: r2(m.z) });
       this._dropBag(p);
       m.state = 'wander'; m.path = null; m.cool = 3;
@@ -1144,7 +1152,7 @@ Sim.prototype.step = function (dt) {
     if ((p.airCd || 0) > 0) p.airCd -= dt;
     if ((p.lkCd || 0) > 0) p.lkCd -= dt;
     if (p.lk) { p.lk.t -= dt; if (p.lk.t <= 0) this._lockerExit(p); }
-    for (const k of ['shieldT', 'hideT', 'stealthT', 'rallyT']) if ((p[k] || 0) > 0) p[k] -= dt;
+    for (const k of ['shieldT', 'hideT', 'stealthT', 'rallyT', 'monCd']) if ((p[k] || 0) > 0) p[k] -= dt;
     p.hurtT += dt;
     if (inBase(this, p)) { if (p.hp < maxHp(p)) p.hp = Math.min(maxHp(p), p.hp + 15 * dt); }   // 光圈裡每秒回 15 血
     else if (this.mode !== 'br' && p.hurtT > 5 && p.hp < maxHp(p)) p.hp = Math.min(maxHp(p), p.hp + 6 * dt);   // 5 秒沒受傷後慢慢回血
