@@ -281,3 +281,4 @@ Firebase 沒有內建 LINE，走 OpenID Connect：
 - 更新（v196）：填入 Google Web 用戶端 ID（js/config.js），加到主畫面的 iPhone 版改用 Google 官方登入按鈕。
 - 修正（v197）：主畫面版本（iPhone 加到主畫面）的 Google 登入改用官方按鈕；原本按鈕在初始化前就畫，永遠用不到。
 - 修正（v198）：市集購買、拾荒團轉移與踢出、刪除資料改用遊戲內對話框，不再用系統的 confirm／alert。
+- 修正（v199）：怪物卡牌卡背加上警示黃斜紋與紙紋，暫定樣式，待你確認。
