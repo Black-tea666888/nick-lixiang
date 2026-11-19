@@ -712,10 +712,10 @@ function drawMini(L) {
   const g = miniCtx, k = MC / CS;
   g.clearRect(0, 0, mini.width, mini.height);
   g.drawImage(miniBase, 0, 0);
-  if (view.zone) {   // 大逃殺安全區
+  if (view.zone) {   // 廢墟生存戰安全區
     g.strokeStyle = '#ffffff'; g.lineWidth = 2; g.beginPath(); g.arc(view.zone[0] * k, view.zone[1] * k, Math.max(1, view.zr * k), 0, Math.PI * 2); g.stroke();
   }
-  view.players.forEach(function (p) {          // 還活著的隊友（大逃殺不顯示對手）
+  view.players.forEach(function (p) {          // 還活著的隊友（廢墟生存戰不顯示對手）
     if (p.id === myId || !p.alive || (view.mode === 'br' && uavT <= 0)) return;
     g.fillStyle = CSSCOL[p.slot % 4];
     g.beginPath(); g.arc(p.x * k, p.z * k, MC * 0.38, 0, Math.PI * 2); g.fill();
@@ -1624,7 +1624,7 @@ function buildCart() {
   addShadow(g, 0.7);
   return g;
 }
-// 塔防：砲塔模型與射擊
+// 死守：砲塔模型與射擊
 const towerMeshes = [];
 function syncTowers(list) {
   list = list || [];
@@ -2189,7 +2189,7 @@ function bindInput() {
  * 程式裡都用預設按鍵判斷；玩家改了按鍵，就把新按鍵翻譯成預設按鍵（keyCode），原本的預設按鍵則停用，避免一鍵兩用。 */
 const KEY_ACTIONS = [['前進', 'KeyW'], ['後退', 'KeyS'], ['左移', 'KeyA'], ['右移', 'KeyD'], ['跑步', 'ShiftLeft'], ['跳', 'Space'], ['衝刺', 'KeyC'],
   ['開槍', 'KeyX'], ['近戰攻擊', 'KeyF'], ['切近戰／救人', 'KeyE'], ['換槍', 'KeyK'], ['開鏡', 'KeyZ'], ['煙霧彈', 'KeyQ'], ['技能', 'KeyR'], ['炸藥', 'KeyB'],
-  ['躲櫃子', 'KeyY'], ['上車', 'KeyV'], ['無人機', 'KeyU'], ['空中掃射', 'KeyJ'], ['蓋塔（塔防）', 'KeyT'], ['小遊戲', 'KeyG'], ['麥克風', 'KeyM']];
+  ['躲櫃子', 'KeyY'], ['上車', 'KeyV'], ['無人機', 'KeyU'], ['空中掃射', 'KeyJ'], ['蓋塔（死守）', 'KeyT'], ['小遊戲', 'KeyG'], ['麥克風', 'KeyM']];
 let keyMap = {}, keyBack = {}, keyCapture = null;
 function keyLoad() {
   keyMap = {}; keyBack = {};
@@ -2687,7 +2687,7 @@ RR.Game = {
     view.items = info.items.map(function (a) {
       const isk = RR.Game.settings.itemSkin | 0;   // 回收品造型：0 預設、1 糖果（圓球粉彩）、2 寶石（八面體亮色）
       const icol = isk === 1 ? [0xffb3d1, 0xb3e5ff, 0xfff0a8, 0xd5b8ff, 0xb8ffd9][a[2] % 5] : isk === 2 ? [0xff4a6a, 0x4ac8ff, 0x6aff8a, 0xffd24a, 0xc86aff][a[2] % 5] : [0xffd166, 0x6ecbff, 0xff9f5a, 0xc9a0ff, 0xff7eb6, 0x9be564, 0xffe94a, 0xfff3b0, 0x5affc9, 0xffb86b, 0xbfc7d1][a[2] % 11];
-      if (a[2] >= 20) {   // 大逃殺補給箱：綠 急救、藍 護甲、紅 火力
+      if (a[2] >= 20) {   // 廢墟生存戰補給箱：綠 急救、藍 護甲、紅 火力
         const lm = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.45, 0.6), new THREE.MeshBasicMaterial({ color: [0x4ade80, 0x5aa9ff, 0xff5a5a][a[2] - 20] || 0xffffff }));
         lm.position.set(a[0], 0.45, a[1]); scene.add(lm);
         return { x: a[0], z: a[1], kind: a[2], value: 0, taken: false, mesh: lm };
@@ -2722,7 +2722,7 @@ RR.Game = {
     $('flash').style.opacity = 0; $('warn').style.opacity = 0; $('spec').classList.add('hide');
     Sfx.drone(true);
     updateHud();
-    toast(view.mode === 'td' ? '塔防第 ' + info.day + ' 關：守住回收車！開槍打怪，按「塔」花 $100 蓋砲塔' : view.mode === 'br' ? '大逃殺：活到最後！白圈外會扣血，補給箱：綠 急救、藍 護甲、紅 火力' : view.mode === 'hunt' ? '獵殺第 ' + info.day + ' 關：用槍擊倒 ' + (info.quota / 50) + ' 隻怪物（每隻 $50）' : '第 ' + info.day + ' 天：把廢料帶回金色回收車，賺到 $' + info.quota);
+    toast(view.mode === 'td' ? '死守第 ' + info.day + ' 關：守住回收車！開槍打怪，按「塔」花 $100 蓋砲塔' : view.mode === 'br' ? '廢墟生存戰：活到最後！白圈外會扣血，補給箱：綠 急救、藍 護甲、紅 火力' : view.mode === 'hunt' ? '清剿第 ' + info.day + ' 關：用槍擊倒 ' + (info.quota / 50) + ' 隻怪物（每隻 $50）' : '第 ' + info.day + ' 天：把廢料帶回金色回收車，賺到 $' + info.quota);
     lockPointer();
   },
   onSnapshot: function (s) {
@@ -2789,7 +2789,7 @@ RR.Game = {
       if (!a || s.ph === 'lobby') { m.group.visible = false; continue; }
       m.tx = a[0]; m.tz = a[1]; m.trot = a[2]; m.chase = !!a[3]; m.hpV = a[4]; m.shV = a[5] || 0; m.maxV = a[6] || 100; m.shMaxV = a[7] || 40;
       if (m.fresh) { m.x = m.tx; m.z = m.tz; m.rot = m.trot; m.fresh = false; }
-      m.group.visible = a[4] !== 0;   // 獵殺模式：被擊倒的怪物先消失，重生後再出現
+      m.group.visible = a[4] !== 0;   // 清剿行動：被擊倒的怪物先消失，重生後再出現
       if (!m.group.visible) m.fresh = true;
     }
     if (s.it && s.it.length === view.items.length) {

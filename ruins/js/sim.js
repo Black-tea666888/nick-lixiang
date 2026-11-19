@@ -340,8 +340,8 @@ const CHARS = ['回收員', '機器人', '太空人', '貓貓', '南瓜頭', '�
 const COSTUMES = ['隊伍色', '迷彩', '霓虹', '黃金', '忍者', '雪白'];        // 服裝（純外觀）
 const PETS = ['無', '小狗', '貓頭鷹', '小機器人', '史萊姆'];   // 寵物：小狗 速度+5%、貓頭鷹 怪物偵測距離+8 公尺、小機器人 賣出+10%、史萊姆 體力回復+20%
 const WEAPONS = ['鐵管', '扳手', '球棒', '平底鍋', '雨傘', '鹹魚'];
-// 槍械：dmg＝對怪物（獵殺／塔防）每顆傷害、pvp＝大逃殺對人傷害、cd＝射擊間隔、clip＝[回收模式每天子彈, 其他模式彈匣]、
-// range＝射程、w＝命中寬度、n＝一次幾顆、spread＝散布（弧度）、stun＝回收模式暈眩秒數、reload＝換彈秒數、auto＝按住連發（槍全部免費，造型才要抽）
+// 槍械：dmg＝對怪物（清剿／死守）每顆傷害、pvp＝廢墟生存戰對人傷害、cd＝射擊間隔、clip＝[回收任務每天子彈, 其他模式彈匣]、
+// range＝射程、w＝命中寬度、n＝一次幾顆、spread＝散布（弧度）、stun＝回收任務暈眩秒數、reload＝換彈秒數、auto＝按住連發（槍全部免費，造型才要抽）
 const GUNS = [
   { name: '手槍', dmg: 34, pvp: 25, cd: 0.22, clip: [6, 12], range: 45, w: 0.8, n: 1, spread: 0, stun: 2.5, reload: 1.4, auto: false, cost: 0 },
   { name: '霰彈槍', dmg: 15, pvp: 11, cd: 0.75, clip: [3, 6], range: 20, w: 1.0, n: 6, spread: 0.1, stun: 2.2, reload: 1.9, auto: false, cost: 0 },
@@ -437,7 +437,7 @@ function Sim(rng) {
   this.pvp = true;   // 互相傷害（房主可在大廳開關）
   this.map = 0;      // 地圖編號（房主可在大廳選）
   this.baseStyle = 0;   // 基地造型（房主在大廳選，見 BASE_STYLES）
-  this.mode = 'coop'; // coop 回收模式／hunt 獵殺模式（用槍擊倒怪物）
+  this.mode = 'coop'; // coop 回收任務／hunt 清剿行動（用槍擊倒怪物）
 }
 Sim.prototype.player = function (id) {
   for (let i = 0; i < this.players.length; i++) if (this.players[i].id === id) return this.players[i];
@@ -485,9 +485,9 @@ Sim.prototype.startDay = function (day) {
   this.boardPos = this._spotAt(VAN[0], VAN[1], 2.5, 4) || [VAN[0] + 2.5, VAN[1]];
   this.tt = newTT();
   this.trophy = this._spotAt(VAN[0], VAN[1], 12, 25);   // 搶獎盃：地圖上一座獎盃，按住 E 3 秒的人拿走
-  const td = this.mode === 'td', hunt = this.mode === 'hunt' || td, br = this.mode === 'br';   // 塔防沿用獵殺的槍與彈匣
+  const td = this.mode === 'td', hunt = this.mode === 'hunt' || td, br = this.mode === 'br';   // 死守沿用清剿的槍與彈匣
   this.players = this.players.filter(function (p) { return !p.ai; });   // 上一局的機器人先清掉
-  this.quota = br ? 0 : hunt ? 50 * (5 + 2 * (day - 1) + 2 * (n - 1)) : quotaFor(day, n); this.events = [];   // 獵殺：每擊倒一隻 $50
+  this.quota = br ? 0 : hunt ? 50 * (5 + 2 * (day - 1) + 2 * (n - 1)) : quotaFor(day, n); this.events = [];   // 清剿：每擊倒一隻 $50
   this.smokes = [];
   this.players.forEach(function (p) { p.skCd = 0; p.smCd = 0; p.shieldT = 0; p.hideT = 0; p.stealthT = 0; p.rallyT = 0; });   // 每天開始技能冷卻歸零
   // 物品：隨機放在離起點有段距離的格子
@@ -523,11 +523,11 @@ Sim.prototype.startDay = function (day) {
     p.alive = true; p.bag = []; p.x = VAN[0] + o[0]; p.z = VAN[1] + o[1]; p.yaw = -Math.PI * 0.75;
     p.bombs = 99;   // 炸藥不限量（顯示成 ∞）
     p.run = p.loud = false; p.hp = maxHp(p); p.atkCd = 0; p.hurtT = 99; p.esc = false;
-    p.clip = Math.round(GUNS[p.gun | 0].clip[hunt || br ? 1 : 0] * (hasAcc(p, 3) ? 1.5 : 1)); p.ammo = p.clip; p.gunCd = 0; p.reload = 0;   // 回收模式每天 6 發（擊中讓怪物暈 2.5 秒）；獵殺模式彈匣 12 發、自動裝填
+    p.clip = Math.round(GUNS[p.gun | 0].clip[hunt || br ? 1 : 0] * (hasAcc(p, 3) ? 1.5 : 1)); p.ammo = p.clip; p.gunCd = 0; p.reload = 0;   // 回收任務每天 6 發（擊中讓怪物暈 2.5 秒）；清剿行動彈匣 12 發、自動裝填
     if (day === 1) { p.earned = 0; p.kills = 0; p.mk = 0; }
   });
   this.zone = null; this.pz = null;
-  // 塔防：怪物一波一波走向回收車（核心），玩家開槍、花錢蓋砲塔守住它
+  // 死守：怪物一波一波走向回收車（核心），玩家開槍、花錢蓋砲塔守住它
   this.td = null; this.towers = [];
   if (td) {
     const total = 10 + 4 * (day - 1) + 3 * (n - 1);
@@ -535,7 +535,7 @@ Sim.prototype.startDay = function (day) {
     this.money = 100; this.quota = 0;   // 開局 $100，剛好蓋一座砲塔；每擊倒一隻 +$50
     for (let i = 0; i < 6; i++) this.monsters.push({ x: VAN[0], z: VAN[1], rot: 0, state: 'wander', path: null, goal: null, lost: 0, repath: 0, cool: 0, target: null, hp: 0, maxHp: 100, sh: MON_SH, shMax: MON_SH, shT: 0, dead: 1e9, idle: true });
   }
-  // 天氣與天然災害（第 1 天固定晴朗、沒有災害；大逃殺不啟用）
+  // 天氣與天然災害（第 1 天固定晴朗、沒有災害；廢墟生存戰不啟用）
   const openMap = !!MAPS[this.map].theme.open;
   this.weather = 0; this.disT = -1; this.strikes = [];
   if (!br && day > 1) {
@@ -544,7 +544,7 @@ Sim.prototype.startDay = function (day) {
     this.disT = 60 + this.rng() * 100;   // 剩餘時間到這個秒數時發生
     this.disKind = this.rng() < 0.5 ? 'quake' : 'strike';
   }
-  // 載具：回收車旁的推車（大逃殺沒有）
+  // 載具：回收車旁的推車（廢墟生存戰沒有）
   this.players.forEach(function (p) { p.veh = false; });
   const vs = br ? null : this._spotAt(VAN[0], VAN[1], 2.5, 6);
   this.players.forEach(function (p) { p.ride = false; });
@@ -622,8 +622,8 @@ Sim.prototype.setEquip = function (id, eq) {
   p.eq = cleanEq(eq); p.hp = Math.min(p.hp, maxHp(p));
   return true;
 };
-/** 開槍：依槍種（GUNS）沿面對方向打出一或多顆子彈，每顆打中最近、沒被牆擋住的怪物（大逃殺也會打到人）。
- *  回收模式＝暈眩；獵殺／塔防＝扣血，歸零擊倒並得 $50。 */
+/** 開槍：依槍種（GUNS）沿面對方向打出一或多顆子彈，每顆打中最近、沒被牆擋住的怪物（廢墟生存戰也會打到人）。
+ *  回收任務＝暈眩；清剿／死守＝扣血，歸零擊倒並得 $50。 */
 Sim.prototype.shoot = function (id, yaw) {
   const p = this.player(id);
   if (!p || this.phase !== 'play' || !p.alive || p.gunCd > 0 || p.reload > 0) return;
@@ -671,7 +671,7 @@ Sim.prototype.shoot = function (id, yaw) {
         else if (!td) { m.state = 'chase'; m.target = p.id; m.goal = cellOf(p.x, p.z); m.lost = 0; m.repath = 0; }
       } else {
         m.cool = Math.max(m.cool || 0, G.stun + 0.2 * (p.gems ? p.gems[0] : 0));
-        // 回收模式：打到血量歸零會暫時倒下，過 12 秒在別處刷新（不給金幣）
+        // 回收任務：打到血量歸零會暫時倒下，過 12 秒在別處刷新（不給金幣）
         if (!br) { monHit(m, G.dmg * gem * fall); if (m.hp <= 0) { kill = true; m.dead = 12; m.state = 'wander'; m.path = null; } }
       }
     } else {
@@ -682,7 +682,7 @@ Sim.prototype.shoot = function (id, yaw) {
     this.events.push({ t: 'shot', id: id, g: p.gun | 0, q: k ? 1 : undefined, x: r2(p.x), z: r2(p.z), hx: r2(hx), hz: r2(hz), mi: hit, kill: kill && !hitP, pk: hitP ? hitP.id : undefined, ammo: p.ammo });
   }
 };
-/* ---------- 大逃殺 ---------- */
+/* ---------- 廢墟生存戰 ---------- */
 const BR_TOTAL = 6;   // 真人 + 機器人的總人數
 const BOT_NAMES = ['阿鐵', '小綠', '老皮', '閃電', '麻糬', '黑糖', '豆花', '小黃', '阿布', '大熊', '胖虎', '小貓', '阿泰', '鯊魚', '檸檬', '阿福', '小風', '阿龍', '奶茶', '小火', '阿志', '栗子', 'Ace', 'Blaze', 'Cobra', 'Dash', 'Echo', 'Fox', 'Ghost', 'Hawk', 'Ivy', 'Jet', 'Kite', 'Luna', 'Mako', 'Nova', 'Onyx', 'Pixel', 'Quill', 'Rex', 'Sage', 'Tank', 'Ugo', 'Vex', 'Wolf', 'Xena', 'Yeti', 'Zed', 'Bolt', 'Cinder', 'Drift', 'Ember', 'Frost', 'Gale', 'Haze', 'Ion', 'Jinx', 'Koda', 'Lark', 'Mars', 'Neon', 'Orca', 'Pilot', 'Raven', 'Shade', 'Titan', 'Umbra', 'Viper', 'Wren', 'Yuki', 'Zen', 'Bruno', 'Chico', 'Dante', 'Elio', 'Felix', 'Gino', 'Hugo', 'Ivan', 'Jules', 'Kenji', 'Leo', 'Milo', 'Nico', 'Oscar', 'Pablo', 'Quinn', 'Rafa', 'Sami', 'Tomas', 'Uri', 'Vito', 'Waldo', 'Yuto', '小風鈴', '阿哲', '小明', '阿杰', '大頭', '小胖', '阿呆', '小七', '阿光', '小蝦', '阿毛', '小雲', '阿海', '大白', '小丸', '阿怪', '小喵', '阿貝', '大寶', '小果', '阿鷹', '小墨', '阿恩', '大海', '笑點王', '冷笑話', '段子手', '吐槽君', '搞怪哥', '爆笑王', '無厘頭', '冷面笑匠', '包袱哥', '烏龍王', '哈哈長', '逗逗鳥', '笑不停', '大笑喵', '搞笑龍', '憨憨王', '呆萌君', '笑死我', '嘴砲王', '呱呱哥', '滑稽仔', '捧腹獸', '笑哈哈', '老梗王', '冷場王', '爆肝笑匠', '小丑魚', '豆腐笑', '嘻嘻哈', '搞事鬼'];
 // 隨機抽一個沒被用過的機器人名字；名字用完才會重複
@@ -759,7 +759,7 @@ Sim.prototype._stepBR = function (dt, alive) {
     this._end(true, left.length <= 1 ? 'last' : 'time');
   }
 };
-// 回收模式的毒圈：30 秒後從地圖外圈開始，慢慢往基地漫；毒區內會扣血（最低留 1），基地光圈裡不會
+// 回收任務的毒圈：30 秒後從地圖外圈開始，慢慢往基地漫；毒區內會扣血（最低留 1），基地光圈裡不會
 Sim.prototype._stepPoison = function (dt, alive) {
   const elapsed = DAY_TIME - this.time;
   if (elapsed < 30) { this.pz = null; return; }
@@ -801,7 +801,7 @@ Sim.prototype._bot = function (p, dt, alive) {
     else { const sp = 4.6 * dt; p.x += dx / d * Math.min(sp, d); p.z += dz / d * Math.min(sp, d); if (!tgt) p.yaw = Math.atan2(-dx, -dz); p.run = false; }
   }
 };
-// 獵殺模式：被擊倒的怪物在離玩家最遠的候選格重生
+// 清剿行動：被擊倒的怪物在離玩家最遠的候選格重生
 Sim.prototype._respawn = function (m) {
   let best = null, bd = -1;
   for (let k = 0; k < 14; k++) {
@@ -814,7 +814,7 @@ Sim.prototype._respawn = function (m) {
 };
 
 /** 近戰攻擊：前方 2.4 公尺、約 110 度扇形內最近的玩家。兩下致死。 */
-// 近戰打怪物（獵殺／塔防／回收）：前方扇形內最近的怪物，傷害先扣護盾；回收模式打中會暈
+// 近戰打怪物（清剿／死守／回收）：前方扇形內最近的怪物，傷害先扣護盾；回收任務打中會暈
 Sim.prototype._meleeMon = function (a, wf) {
   const fx = -Math.sin(a.yaw), fz = -Math.cos(a.yaw), dmg = wf ? wf.dmg : 50;
   let best = null, bd = wf ? wf.rng : 2.4;
@@ -995,7 +995,7 @@ Sim.prototype.bomb = function (id, yaw) {
   if (broke) this.events.push({ t: 'break', id: id, c: hit[0], r: hit[1], n: p.bombs });
   else this.events.push({ t: 'boom', id: id, x: r2(cp[0]), z: r2(cp[1]) });
 };
-/** 塔防：花 $100 在腳邊蓋一座砲塔（最多 6 座、彼此至少隔 3 公尺） */
+/** 死守：花 $100 在腳邊蓋一座砲塔（最多 6 座、彼此至少隔 3 公尺） */
 Sim.prototype.buildTower = function (id) {
   const p = this.player(id);
   if (!p || this.phase !== 'play' || this.mode !== 'td' || !p.alive) return;
@@ -1141,7 +1141,7 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   }
 };
 
-// 回收車的黃色光圈＝安全區：怪物打不到、會回血（大逃殺沒有安全區）
+// 回收車的黃色光圈＝安全區：怪物打不到、會回血（廢墟生存戰沒有安全區）
 const BASE_R = 1.85;
 function inBase(sim, p) { return sim.mode !== 'br' && Math.hypot(p.x - VAN[0], p.z - VAN[1]) < BASE_R; }
 Sim.prototype.step = function (dt) {

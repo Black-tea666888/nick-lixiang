@@ -1,4 +1,4 @@
-/* 雲端（Firebase Firestore）：存檔同步、排行榜、區域賽季、好友、戰隊。
+/* 雲端（Firebase Firestore）：存檔同步、排行榜、區域賽季、好友、拾荒團。
  * 沒有設定 Firebase、或玩家用本機訪客時，全部功能安靜地停用（RR.Cloud.ready() 為 false）。
  * 注意：分數由玩家裝置回報，沒有伺服器驗證；安全規則只保證「不能改別人的資料」。 */
 (function () {
@@ -14,7 +14,7 @@ function ls(k) { try { return localStorage.getItem(k); } catch (e) { return null
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 /** 週次：以台灣時間每週一 00:00 換週 */
 function weekId(off) { return Math.floor((Date.now() / 864e5 + 8 / 24 + 3) / 7) + (off || 0); }
-/** 戰隊段位：依「本週積分」分級，每週一重算；best 記錄歷史最高段位（索引） */
+/** 拾荒團段位：依「本週積分」分級，每週一重算；best 記錄歷史最高段位（索引） */
 const TIERS = [
   { n: '青銅', min: 0 }, { n: '白銀', min: 300 }, { n: '黃金', min: 800 }, { n: '白金', min: 1800 },
   { n: '鑽石', min: 3500 }, { n: '大師', min: 6000 }, { n: '宗師', min: 10000 }
@@ -76,7 +76,7 @@ function push() {
 }
 
 const CLAN_BADGES = ['🛡️', '⚡', '🔥', '💀', '🦖', '🐺', '🦅', '⭐', '👑', '🎯', '☢️', '🌙'];
-/** 加入戰隊（共用）：檢查人數、等級，寫隊員文件、人數 +1、記到自己的資料 */
+/** 加入拾荒團（共用）：檢查人數、等級，寫團員文件、人數 +1、記到自己的資料 */
 function joinRef(ref, cd, cb) {
   if ((cd.count | 0) >= 30) { cb({ code: 'full' }); return; }
   if ((cd.minLv | 0) > (profile().lv | 0)) { cb({ code: 'clan-lv', need: cd.minLv | 0 }); return; }
@@ -148,8 +148,8 @@ const Cloud = {
   /** 目前所在的房間代碼（好友可以直接加入）；離開時傳 null */
   setRoom: function (code) { room = code || null; if (Cloud.ready()) userRef().set({ room: room || '', seen: Date.now() }, { merge: true }).catch(fail()); },
 
-  /** 刪除雲端上所有屬於自己的資料：進度、排行榜、好友、戰隊發言、戰隊身分。
-   * 隊長要先把位子轉給別人。Firebase 登入帳號另外由 RR.Auth.deleteAccount() 刪除。cb(err) */
+  /** 刪除雲端上所有屬於自己的資料：進度、排行榜、好友、拾荒團發言、拾荒團身分。
+   * 團長要先把位子轉給別人。Firebase 登入帳號另外由 RR.Auth.deleteAccount() 刪除。cb(err) */
   deleteMyData: function (cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
     const id = uid, U = userRef(id), clanId = me && me.clan;
@@ -304,7 +304,7 @@ const Cloud = {
     ['all', 'w' + w, p.region + '_w' + w].forEach(function (scope) {
       const ref = db.collection(Cloud.board(mode, scope)).doc(uid);
       ref.get().then(function (s) {
-        // 大逃殺是累計勝場，其餘取最高紀錄
+        // 廢墟生存戰是累計勝場，其餘取最高紀錄
         if (mode === 'br' || mode === 'ar') row.score = ((s.exists && s.data().score) | 0) + Math.floor(score);   // AR 是累計抓到的隻數
         else if (s.exists && (s.data().score | 0) >= row.score) return;
         return ref.set(Object.assign({}, row));
@@ -365,7 +365,7 @@ const Cloud = {
     }).catch(fail(cb));
   },
 
-  /* ---------- 戰隊 ---------- */
+  /* ---------- 拾荒團 ---------- */
   createClan: function (name, cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
     name = clean(name, 12);
@@ -379,7 +379,7 @@ const Cloud = {
       return userRef().set({ clan: ref.id, clanTag: tag, clanName: name }, { merge: true });
     }).then(function () { cb(null, { id: ref.id, tag: tag, name: name }); }).catch(fail(cb));
   },
-  /** 用戰隊代碼加入＝受邀請：不管戰隊類型都能加入，但等級要夠 */
+  /** 用拾荒團代碼加入＝受邀請：不管拾荒團類型都能加入，但等級要夠 */
   joinClan: function (tag, cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
     tag = String(tag || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
@@ -390,7 +390,7 @@ const Cloud = {
       return joinRef(q.docs[0].ref, q.docs[0].data(), cb);
     }).catch(fail(cb));
   },
-  /** 從戰隊列表加入：只有「開放加入」的戰隊可以直接加入 */
+  /** 從拾荒團列表加入：只有「開放加入」的拾荒團可以直接加入 */
   joinOpenClan: function (id, cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
     if (me && me.clan) { cb({ code: 'in-clan' }); return; }
@@ -401,21 +401,21 @@ const Cloud = {
       return joinRef(ref, cd, cb);
     }).catch(fail(cb));
   },
-  /** 戰隊設定（隊長、副隊長）：描述、徽章、類型、最低等級、地區 */
+  /** 拾荒團設定（團長、副團長）：描述、徽章、類型、最低等級、地區 */
   clanSettings: function (o, cb) {
     if (!Cloud.ready() || !me || !me.clan) { cb({ code: 'no-clan' }); return; }
     const d = { desc: clean(o.desc, 60), badge: Math.max(0, Math.min(CLAN_BADGES.length - 1, o.badge | 0)), type: ['open', 'approve', 'invite'].indexOf(o.type) >= 0 ? o.type : 'open',
       minLv: Math.max(0, Math.min(100, (o.minLv | 0) - (o.minLv | 0) % 5)), region: ['all', 'tw', 'hk'].indexOf(o.region) >= 0 ? o.region : 'all' };
     db.collection('clans').doc(me.clan).update(d).then(function () { cb(null); }).catch(fail(cb));
   },
-  /** 公開的戰隊列表（依累計積分），給沒戰隊的人瀏覽 */
+  /** 公開的拾荒團列表（依累計積分），給沒拾荒團的人瀏覽 */
   browseClans: function (cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
     db.collection('clans').orderBy('score', 'desc').limit(40).get().then(function (q) {
       const rows = []; q.forEach(function (d) { const x = d.data(); x.id = d.id; if ((x.count | 0) > 0) rows.push(x); }); cb(null, rows);
     }).catch(fail(cb));
   },
-  /** 申請加入「需要批准」的戰隊：寫一筆申請，隊長／副隊長批准後，下次打開戰隊頁會自動加入 */
+  /** 申請加入「需要批准」的拾荒團：寫一筆申請，團長／副團長批准後，下次打開拾荒團頁會自動加入 */
   applyClan: function (id, cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
     if (me && me.clan) { cb({ code: 'in-clan' }); return; }
@@ -445,7 +445,7 @@ const Cloud = {
       });
     }).catch(fail(cb));
   },
-  /** 隊長／副隊長看加入申請 */
+  /** 團長／副團長看加入申請 */
   clanReqs: function (cb) {
     if (!Cloud.ready() || !me || !me.clan) { cb(null, []); return; }
     db.collection('clans').doc(me.clan).collection('reqs').get().then(function (q) {
@@ -457,19 +457,19 @@ const Cloud = {
     const r = db.collection('clans').doc(me.clan).collection('reqs').doc(target);
     (ok ? r.update({ ok: true }) : r.delete()).then(function () { cb(null); }).catch(fail(cb));
   },
-  /** 隊長設定或取消副隊長（寫在戰隊文件的 deputies 陣列裡） */
+  /** 團長設定或取消副團長（寫在拾荒團文件的 deputies 陣列裡） */
   setDeputy: function (target, on, cb) {
     if (!Cloud.ready() || !me || !me.clan) { if (cb) cb({ code: 'no-clan' }); return; }
     const FV = window.firebase.firestore.FieldValue;
     db.collection('clans').doc(me.clan).update({ deputies: on ? FV.arrayUnion(target) : FV.arrayRemove(target) }).then(function () { if (cb) cb(null); }).catch(fail(cb));
   },
-  /** 隊長把位子轉給成員：owner 改成對方，並把對方從副隊長名單移除 */
+  /** 團長把位子轉給成員：owner 改成對方，並把對方從副團長名單移除 */
   transferLeader: function (target, cb) {
     if (!Cloud.ready() || !me || !me.clan) { if (cb) cb({ code: 'no-clan' }); return; }
     const FV = window.firebase.firestore.FieldValue;
     db.collection('clans').doc(me.clan).update({ owner: target, deputies: FV.arrayRemove(target) }).then(function () { if (cb) cb(null); }).catch(fail(cb));
   },
-  /** 隊長／副隊長踢人：刪掉成員文件並把人數減 1 */
+  /** 團長／副團長踢人：刪掉成員文件並把人數減 1 */
   kickMember: function (target, cb) {
     if (!Cloud.ready() || !me || !me.clan) { if (cb) cb({ code: 'no-clan' }); return; }
     const ref = db.collection('clans').doc(me.clan);
@@ -480,7 +480,7 @@ const Cloud = {
   leaveClan: function (cb) {
     if (!Cloud.ready() || !me || !me.clan) { if (cb) cb({ code: 'no-clan' }); return; }
     const ref = db.collection('clans').doc(me.clan);
-    // 先改人數（此時自己還是隊員，規則允許），再刪自己的隊員文件
+    // 先改人數（此時自己還是團員，規則允許），再刪自己的團員文件
     ref.update({ count: window.firebase.firestore.FieldValue.increment(-1) }).then(function () {
       return ref.collection('members').doc(uid).delete();
     }).then(function () {
@@ -488,7 +488,7 @@ const Cloud = {
       return userRef().set({ clan: '', clanTag: '', clanName: '' }, { merge: true });
     }).then(function () { if (cb) cb(null); }).catch(fail(cb));
   },
-  /** 每局結束把得分貢獻給戰隊 */
+  /** 每局結束把得分貢獻給拾荒團 */
   clanAdd: function (pts) {
     if (!Cloud.ready() || !me || !me.clan || !(pts > 0)) return;
     pts = Math.floor(pts);
@@ -512,7 +512,7 @@ const Cloud = {
       if (!r[0].exists) { cb(null, null); return; }
       const members = []; r[1].forEach(function (d) { const x = d.data(); x.uid = d.id; members.push(x); });
       members.sort(function (a, b) { return (b.score | 0) - (a.score | 0); });
-      if (!members.some(function (x) { return x.uid === uid; })) {   // 已被踢出：清掉本機的戰隊資料
+      if (!members.some(function (x) { return x.uid === uid; })) {   // 已被踢出：清掉本機的拾荒團資料
         me.clan = ''; me.clanTag = ''; me.clanName = ''; userRef().set({ clan: '', clanTag: '', clanName: '' }, { merge: true }).catch(fail());
         cb(null, null); return;
       }
@@ -522,12 +522,12 @@ const Cloud = {
   },
   topClans: function (cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
-    // 本週排行：只取本週有積分的戰隊
+    // 本週排行：只取本週有積分的拾荒團
     db.collection('clans').orderBy('wscore', 'desc').limit(40).get().then(function (q) {
       const rows = []; q.forEach(function (d) { const x = d.data(); x.id = d.id; if (x.wk === weekId()) rows.push(x); }); cb(null, rows.slice(0, 20));
     }).catch(fail(cb));
   },
-  /* ---------- 戰隊聊天：文字、請求金幣、捐贈 ---------- */
+  /* ---------- 拾荒團聊天：文字、請求金幣、捐贈 ---------- */
   ASK_NEED: 100, GIVE: 10, GIVE_MAX: 30,
   msgs: function () { return db.collection('clans').doc(me.clan).collection('msgs'); },
   /** 即時訂閱最新 40 則；回傳取消函式。onRows(err, rows)（新到舊） */
@@ -581,7 +581,7 @@ const Cloud = {
   message: function (e) {
     const c = e && e.code;
     return { offline: '雲端功能要先登入（Google 或訪客）並連上網路。', 'bad-code': '代碼格式不對。', self: '這是你自己的代碼。', 'not-found': '找不到這個代碼。',
-      'bad-name': '名稱至少 2 個字。', 'in-clan': '你已經在一個戰隊裡，請先退出。', full: '這個戰隊已滿（30 人）。', 'clan-closed': '這個戰隊不開放直接加入。', 'clan-lv': '你的等級還不夠加入這個戰隊。', 'no-clan': '你不在任何戰隊。', gone: '這則請求已經不見了。', 'own-req': '不能捐給自己。', 'req-full': '這則請求已經收滿了。', 'give-max': '每則請求你最多捐 30 金幣。',
+      'bad-name': '名稱至少 2 個字。', 'in-clan': '你已經在一個拾荒團裡，請先退出。', full: '這個拾荒團已滿（30 人）。', 'clan-closed': '這個拾荒團不開放直接加入。', 'clan-lv': '你的等級還不夠加入這個拾荒團。', 'no-clan': '你不在任何拾荒團。', gone: '這則請求已經不見了。', 'own-req': '不能捐給自己。', 'req-full': '這則請求已經收滿了。', 'give-max': '每則請求你最多捐 30 金幣。',
       'permission-denied': '雲端拒絕了這個操作：請確認 Firestore 的安全規則已經發布。', unavailable: '連不到雲端，請檢查網路。' }[c] || ('雲端錯誤：' + (c || (e && e.message) || '未知'));
   }
 };

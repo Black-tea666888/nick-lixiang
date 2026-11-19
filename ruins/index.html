@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=182" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=183" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -133,19 +133,19 @@
     <div class="lbStage"><canvas id="lobbyChar" width="300" height="380" aria-hidden="true"></canvas><div class="lbName" id="lbName"></div></div>
     <footer class="lbBottom">
       <div class="modeStrip" id="modeStrip" role="radiogroup" aria-label="選擇模式">
-        <button class="mcard" type="button" data-mode="coop" data-go="createBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c0-4 2.5-6 5-6s5 2 5 6M11 20c0-4 2.5-6 5-6s5 2 5 6"/></svg><b>多人合作</b><span>建房邀 3 位隊友</span></button>
-        <button class="mcard" type="button" data-mode="solo" data-go="soloBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-5 3-8 7-8s7 3 7 8"/></svg><b>單人遊玩</b><span>自己練習回收</span></button>
-        <button class="mcard" type="button" data-mode="ar" data-go="arOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><circle cx="12" cy="12" r="3.5"/></svg><b>AR 模式</b><span>抓怪・迷宮</span></button>
-        <button class="mcard" type="button" data-mode="hunt" data-go="huntBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><b>獵殺模式</b><span>拿槍獵殺怪物</span></button>
-        <button class="mcard" type="button" data-mode="td" data-go="tdBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V9l6-5 6 5v12z"/><path d="M10 21v-5h4v5M9 11h6"/></svg><b>塔防模式</b><span>守住回收車</span></button>
-        <button class="mcard" type="button" data-mode="br" data-go="brBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="3 2.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg><b>大逃殺</b><span>6 人混戰</span></button>
+        <button class="mcard" type="button" data-mode="coop" data-go="createBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c0-4 2.5-6 5-6s5 2 5 6M11 20c0-4 2.5-6 5-6s5 2 5 6"/></svg><b>組隊回收</b><span>建房邀 3 位隊友</span></button>
+        <button class="mcard" type="button" data-mode="solo" data-go="soloBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-5 3-8 7-8s7 3 7 8"/></svg><b>單人拾荒</b><span>自己練習回收</span></button>
+        <button class="mcard" type="button" data-mode="ar" data-go="arOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><circle cx="12" cy="12" r="3.5"/></svg><b>AR 實境</b><span>抓怪・迷宮</span></button>
+        <button class="mcard" type="button" data-mode="hunt" data-go="huntBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><b>清剿行動</b><span>拿槍清剿怪物</span></button>
+        <button class="mcard" type="button" data-mode="td" data-go="tdBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V9l6-5 6 5v12z"/><path d="M10 21v-5h4v5M9 11h6"/></svg><b>死守回收車</b><span>守住回收車</span></button>
+        <button class="mcard" type="button" data-mode="br" data-go="brBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="3 2.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg><b>廢墟生存戰</b><span>6 人混戰</span></button>
       </div>
       <div class="startBox">
         <button class="mapChip" id="mapChip" type="button"><span>地圖</span><b id="mapName">廢棄設施</b></button>
-        <button class="startBtn" id="goBtn" type="button"><small id="startMode">多人合作</small><b>開始</b></button>
+        <button class="startBtn" id="goBtn" type="button"><small id="startMode">組隊回收</small><b>開始</b></button>
       </div>
     </footer>
-    <div class="hide" id="modeHidden"><button id="arOpen" type="button" tabindex="-1">AR 模式</button><button id="createBtn" type="button" tabindex="-1">多人合作</button><button id="soloBtn" type="button" tabindex="-1">單人遊玩</button><button id="huntBtn" type="button" tabindex="-1">獵殺模式</button><button id="tdBtn" type="button" tabindex="-1">塔防模式</button><button id="brBtn" type="button" tabindex="-1">大逃殺</button></div>
+    <div class="hide" id="modeHidden"><button id="arOpen" type="button" tabindex="-1">AR 實境</button><button id="createBtn" type="button" tabindex="-1">組隊回收</button><button id="soloBtn" type="button" tabindex="-1">單人拾荒</button><button id="huntBtn" type="button" tabindex="-1">清剿行動</button><button id="tdBtn" type="button" tabindex="-1">死守回收車</button><button id="brBtn" type="button" tabindex="-1">廢墟生存戰</button></div>
   </div>
 </div>
 
@@ -297,7 +297,7 @@
     </header>
     <div class="hubGrid">
     <section class="hubChat">
-    <div class="mkTabs" role="tablist"><button type="button" class="on" data-tab="chat" role="tab">世界頻道</button><button type="button" data-tab="clan" role="tab">戰隊</button><button type="button" data-tab="shop" role="tab">交易所</button><button type="button" data-tab="team" role="tab" class="hubTeamTab">組隊</button></div>
+    <div class="mkTabs" role="tablist"><button type="button" class="on" data-tab="chat" role="tab">世界頻道</button><button type="button" data-tab="clan" role="tab">拾荒團</button><button type="button" data-tab="shop" role="tab">交易所</button><button type="button" data-tab="team" role="tab" class="hubTeamTab">組隊</button></div>
     <div class="ccLog" id="wcLog" aria-live="polite"></div>
     <form class="ccBar" id="wcForm" autocomplete="off">
       <input id="wcInput" type="text" maxlength="80" placeholder="在世界頻道說話、喊價" enterkeyhint="send">
@@ -319,12 +319,12 @@
   </div>
 </div>
 
-<!-- 戰隊聊天 -->
+<!-- 拾荒團聊天 -->
 <div class="screen hide" id="scrClan">
   <div class="cc">
     <header class="dwTop">
       <button class="icon" id="clanDone" type="button" aria-label="返回">‹</button>
-      <b class="dwTitle" id="ccName">戰隊聊天</b>
+      <b class="dwTitle" id="ccName">拾荒團聊天</b>
       <div class="lbCoin dwCoin"><span>金幣</span><b id="coinTag5">0</b></div>
     </header>
     <div class="ccLog" id="ccLog" aria-live="polite"></div>
@@ -414,7 +414,7 @@
 <h3>電腦</h3>
 <table><tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>移動（滑鼠轉視角）</td></tr><tr><td><kbd>Shift</kbd></td><td>奔跑</td></tr>
 <tr><td><kbd>空白鍵</kbd> <kbd>C</kbd></td><td>跳躍、衝刺</td></tr><tr><td><kbd>Y</kbd></td><td>靠近櫃子按一下躲進去（最多 8 秒），再按一下出來；裡面會拿到一把攻擊物</td></tr><tr><td><kbd>R</kbd> <kbd>Q</kbd></td><td>角色技能、煙霧彈</td></tr>
-<tr><td><kbd>左鍵</kbd> / <kbd>F</kbd></td><td>揮武器</td></tr><tr><td><kbd>右鍵</kbd> / <kbd>X</kbd></td><td>開槍</td></tr><tr><td><kbd>T</kbd></td><td>塔防：蓋砲塔</td></tr><tr><td><kbd>B</kbd></td><td>炸藥：炸開面前的牆</td></tr><tr><td><kbd>E</kbd></td><td>按住救隊友、搶獎盃</td></tr>
+<tr><td><kbd>左鍵</kbd> / <kbd>F</kbd></td><td>揮武器</td></tr><tr><td><kbd>右鍵</kbd> / <kbd>X</kbd></td><td>開槍</td></tr><tr><td><kbd>T</kbd></td><td>死守：蓋砲塔</td></tr><tr><td><kbd>B</kbd></td><td>炸藥：炸開面前的牆</td></tr><tr><td><kbd>E</kbd></td><td>按住救隊友、搶獎盃</td></tr>
 <tr><td><kbd>V</kbd></td><td>上／下推車</td></tr><tr><td><kbd>G</kbd></td><td>小遊戲</td></tr><tr><td><kbd>M</kbd> <kbd>Enter</kbd></td><td>麥克風、聊天</td></tr><tr><td><kbd>Esc</kbd></td><td>釋放滑鼠</td></tr></table>
 <h3>遊戲手把（Xbox／PS／Steam Deck）</h3>
 <table><tr><td>移動／轉視角</td><td>左搖桿／右搖桿</td></tr><tr><td>開槍（按住連射）／開鏡</td><td>RT／LT</td></tr><tr><td>跳／衝刺</td><td>A／B</td></tr><tr><td>切近戰（按住救人）／換槍</td><td>X／Y</td></tr><tr><td>煙霧彈／技能</td><td>LB／RB</td></tr><tr><td>切換跑步／近戰攻擊</td><td>按下左搖桿／按下右搖桿</td></tr><tr><td>UAV／櫃子／炸藥／空中掃射</td><td>十字鍵 上／下／左／右</td></tr><tr><td>上車／選單</td><td>Back／Start</td></tr></table>
@@ -431,7 +431,7 @@
 <li>怪物靠近到 14 公尺內，小地圖才會出現牠的三角形。</li></ul>
       </section>
       <section class="htopic hide" data-topic="safe"><h2>保命方法</h2>
-<ul><li><b>槍</b>：在「出戰角色」的「武器」選槍（全部免費；槍枝造型到抽獎機抽）：手槍穩定、霰彈槍一次 6 顆近距離強、步槍和衝鋒槍按住連發、狙擊槍一發高傷害射最遠、破甲重狙更重更慢、機關槍按住狂射、弓弩慢但狠、三連發一次三顆、雙管霰彈近距離十顆、迷你衝鋒超快速連發、重機槍大彈匣慢速、雷射槍中遠距離高傷、燃燒槍一次兩顆、魔法杖、旋風巨炮（重砲，慢）、赤焰雙管與 遊騎兵步槍（連發）、冰紅茶（一次四顆）、水槍（超快、傷害很低）、魚槍（重擊）、貓咪槍、狗狗槍、大蔥槍。快速點兩下「槍」按鈕可以切換成近戰（副武器），按鈕會顯示「近」，再點兩下切回槍。回收模式每天子彈有限，打中怪物讓牠暈（打不死）；對準怪物、中間不能有牆。</li><li><b>↻ 切槍</b>：「槍」鍵只負責開火；旁邊的圓形「↻」鍵切換槍與近戰（電腦按 E）。</li><li><b>連殺</b>：自己擊倒怪物或玩家會累積連殺（15 秒內沒擊倒或死亡就歸零）。連殺 3 次解鎖「偵」無人機（15 秒內看到全圖敵人，電腦按 U）；連殺 6 次解鎖「空」空中掃射（在面前 12 公尺處轟炸 7 公尺範圍，消耗 6 連殺，冷卻 25 秒，電腦按 J）。</li>
+<ul><li><b>槍</b>：在「出戰角色」的「武器」選槍（全部免費；槍枝造型到抽獎機抽）：手槍穩定、霰彈槍一次 6 顆近距離強、步槍和衝鋒槍按住連發、狙擊槍一發高傷害射最遠、破甲重狙更重更慢、機關槍按住狂射、弓弩慢但狠、三連發一次三顆、雙管霰彈近距離十顆、迷你衝鋒超快速連發、重機槍大彈匣慢速、雷射槍中遠距離高傷、燃燒槍一次兩顆、魔法杖、旋風巨炮（重砲，慢）、赤焰雙管與 遊騎兵步槍（連發）、冰紅茶（一次四顆）、水槍（超快、傷害很低）、魚槍（重擊）、貓咪槍、狗狗槍、大蔥槍。快速點兩下「槍」按鈕可以切換成近戰（副武器），按鈕會顯示「近」，再點兩下切回槍。回收任務每天子彈有限，打中怪物讓牠暈（打不死）；對準怪物、中間不能有牆。</li><li><b>↻ 切槍</b>：「槍」鍵只負責開火；旁邊的圓形「↻」鍵切換槍與近戰（電腦按 E）。</li><li><b>連殺</b>：自己擊倒怪物或玩家會累積連殺（15 秒內沒擊倒或死亡就歸零）。連殺 3 次解鎖「偵」無人機（15 秒內看到全圖敵人，電腦按 U）；連殺 6 次解鎖「空」空中掃射（在面前 12 公尺處轟炸 7 公尺範圍，消耗 6 連殺，冷卻 25 秒，電腦按 J）。</li>
 <li><b>配件與寶石</b>：主選單「裝備與寶石」購買。配件最多同時裝 2 個，對局中按右上角「背包」可以換；寶石升級後永久有效。</li>
 <li><b>炸藥</b>：不限數量。站在牆前按「炸」／B，面前 3.5 公尺內的那格牆會被炸開，變成新的路（最外圈炸不開）；面前沒有能炸的牆，就在面前爆炸。附近的怪物會暈 2 秒，但牠之後也能走這條新路。隔天牆會恢復。</li>
 <li><b>煙霧彈</b>：怪物走到煙附近會停下來。</li>
@@ -439,7 +439,7 @@
 <li><b>櫃子</b>（小地圖藍點）：站在旁邊不要跑，怪物看不到你；貼太近還是會被抓。</li>
 <li><b>煙霧彈</b>：冒出一團煙約 6 秒，站在煙裡怪物看不到你。冷卻 20 秒。</li>
 <li><b>跑</b>：跑步一定比怪物快，體力約可跑 6～7 秒；跑到牠看不到你，約 3.5 秒後牠會放棄。</li>
-<li><b>跳</b>：人在空中時抓不到你，耗 18% 體力。</li><li><b>爬牆</b>：朝牆按兩次跳可以爬上牆頭，站上去後能走動。</li><li><b>基地造型</b>：房主在大廳按「基地」可切換回收車、信號塔、圓頂營地、四柱燈四種造型與光圈顏色。</li><li><b>櫃子</b>：靠近櫃子時才會出現「櫃」鍵，按下（電腦按 Y）躲進去最多 8 秒，怪物看不到你，但不能移動；出來後 10 秒內不能再躲。櫃子裡有一把攻擊物，拿到後當天的近戰數值會換成它（只對玩家生效）。</li><li><b>隱私</b>：收集哪些資料、怎麼刪除，見<a href="../privacy.html">隱私權政策</a>。</li><li><b>按鍵圖示</b>：子彈＝開火、刀＝近戰、跑步人形＝跑、雙箭頭往上＝跳、雙箭頭往右＝衝、雲＝煙霧彈、閃電＝技能、炸彈＝炸藥、雙向箭頭＝切槍、方向盤＝上車、置物櫃＝躲櫃子、門加箭頭＝出來／下車、十字＝救隊友。長按按鍵可看名稱（電腦滑鼠停在上面）。</li><li><b>換彈與換武器</b>：子彈打完會自動換彈；按迴轉箭頭鍵（電腦 H）提早換彈。換武器鍵（電腦 K）在出戰的主槍和副槍（手槍；主槍是手槍時副槍是步槍）之間切換，要 0.7 秒。</li><li><b>陀螺儀瞄準</b>：設定裡打開後，轉動手機就能轉視角（iPhone 會先詢問動作感應權限）。</li><li><b>推車載人</b>：有人開推車時，隊友靠近按方向盤鍵就能坐後座（最多 2 人），跟著車子走，可以開槍；再按一次下車。</li><li><b>技能提示</b>：開局和技能冷卻結束時，會自動跳出你的技能效果，閃電鍵也會閃一下。</li><li><b>個人戰績</b>：點大廳左上的頭像看自己的戰績（可分模式看勝率、擊倒、MVP）；在排行榜、好友、戰隊、世界頻道、戰隊聊天點別人的名字，可以看他的戰績。換頭像改到戰績頁右上角。</li><li><b>聊天與組隊</b>：大廳的「聊天與組隊」有世界頻道、戰隊、交易所，右邊（手機在「組隊」分頁）是快速組隊：列出大家公開的房間，按「加入」或「快速加入」直接進房，按「建立房間」開房後別人就看得到。</li><li><b>交易所</b>：在「聊天與組隊」的「交易所」分頁。可以用金幣買賣造型、頭飾、配件和寶石等級；掛單時東西會先從你身上扣掉，下架才退回；賣出後下次打開交易所會收到金幣。</li><li><b>刪除資料</b>：登入後在「設定」最下面按「刪除我的資料」，會刪掉雲端進度、排行榜、好友、戰隊發言與登入帳號（隊長要先轉讓隊長）。</li><li><b>毒圈</b>：開局 30 秒後，地圖外的黃色毒會慢慢往基地漫；毒區裡會持續扣血（最低留 1 血），毒圈越縮小傷害越高，基地光圈裡安全。</li><li><b>怪物倒下</b>：回收模式打到血量歸零會倒下，約 12 秒後在別處刷新（不給金幣）。</li>
+<li><b>跳</b>：人在空中時抓不到你，耗 18% 體力。</li><li><b>爬牆</b>：朝牆按兩次跳可以爬上牆頭，站上去後能走動。</li><li><b>基地造型</b>：房主在大廳按「基地」可切換回收車、信號塔、圓頂營地、四柱燈四種造型與光圈顏色。</li><li><b>櫃子</b>：靠近櫃子時才會出現「櫃」鍵，按下（電腦按 Y）躲進去最多 8 秒，怪物看不到你，但不能移動；出來後 10 秒內不能再躲。櫃子裡有一把攻擊物，拿到後當天的近戰數值會換成它（只對玩家生效）。</li><li><b>隱私</b>：收集哪些資料、怎麼刪除，見<a href="../privacy.html">隱私權政策</a>。</li><li><b>按鍵圖示</b>：子彈＝開火、刀＝近戰、跑步人形＝跑、雙箭頭往上＝跳、雙箭頭往右＝衝、雲＝煙霧彈、閃電＝技能、炸彈＝炸藥、雙向箭頭＝切槍、方向盤＝上車、置物櫃＝躲櫃子、門加箭頭＝出來／下車、十字＝救隊友。長按按鍵可看名稱（電腦滑鼠停在上面）。</li><li><b>換彈與換武器</b>：子彈打完會自動換彈；按迴轉箭頭鍵（電腦 H）提早換彈。換武器鍵（電腦 K）在出戰的主槍和副槍（手槍；主槍是手槍時副槍是步槍）之間切換，要 0.7 秒。</li><li><b>陀螺儀瞄準</b>：設定裡打開後，轉動手機就能轉視角（iPhone 會先詢問動作感應權限）。</li><li><b>推車載人</b>：有人開推車時，隊友靠近按方向盤鍵就能坐後座（最多 2 人），跟著車子走，可以開槍；再按一次下車。</li><li><b>技能提示</b>：開局和技能冷卻結束時，會自動跳出你的技能效果，閃電鍵也會閃一下。</li><li><b>個人戰績</b>：點大廳左上的頭像看自己的戰績（可分模式看勝率、擊倒、MVP）；在排行榜、好友、拾荒團、世界頻道、拾荒團聊天點別人的名字，可以看他的戰績。換頭像改到戰績頁右上角。</li><li><b>聊天與組隊</b>：大廳的「聊天與組隊」有世界頻道、拾荒團、交易所，右邊（手機在「組隊」分頁）是快速組隊：列出大家公開的房間，按「加入」或「快速加入」直接進房，按「建立房間」開房後別人就看得到。</li><li><b>交易所</b>：在「聊天與組隊」的「交易所」分頁。可以用金幣買賣造型、頭飾、配件和寶石等級；掛單時東西會先從你身上扣掉，下架才退回；賣出後下次打開交易所會收到金幣。</li><li><b>刪除資料</b>：登入後在「設定」最下面按「刪除我的資料」，會刪掉雲端進度、排行榜、好友、拾荒團發言與登入帳號（團長要先轉讓團長）。</li><li><b>毒圈</b>：開局 30 秒後，地圖外的黃色毒會慢慢往基地漫；毒區裡會持續扣血（最低留 1 血），毒圈越縮小傷害越高，基地光圈裡安全。</li><li><b>怪物倒下</b>：回收任務打到血量歸零會倒下，約 12 秒後在別處刷新（不給金幣）。</li>
 <li><b>衝</b>：瞬間往前衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒。</li>
 <li><b>技能</b>：每個角色不同，見「角色技能」。按鈕上的數字是冷卻秒數。</li>
 <li><b>救隊友</b>：隊友倒地時靠近按住「救」2 秒。</li></ul>
@@ -464,9 +464,9 @@
 <tr><td>金色方塊</td><td>回收車</td></tr><tr><td>藍色方塊</td><td>櫃子（躲藏點）</td></tr><tr><td>彩色三角</td><td>靠近的怪物（閃白圈代表正在追人）</td></tr></table>
       </section>
       <section class="htopic hide" data-topic="bonus"><h2>加分與小遊戲</h2>
-<ul><li><b>獵殺模式</b>：沒有廢料，改成用槍獵殺怪物。3 槍擊倒一隻得 $50，彈匣 12 發打完自動裝填；怪物 3 秒後在遠處重生。在時間內擊倒指定數量就過關，小地圖會顯示所有怪物。</li>
-<li><b>塔防模式</b>：怪物從遠處一波波走向回收車，每闖入一隻核心 -15，核心歸零就輸。開槍打怪（每隻 $50），按「塔」／T 花 $100 在腳邊蓋砲塔（最多 6 座，會自動射擊 11 公尺內的怪物）。清完整波就過關。這個模式怪物不會抓人。</li>
-<li><b>大逃殺</b>：6 人各自為戰（人數不足由電腦補滿），用槍或近戰淘汰對手。白色圓圈是安全區，20 秒後開始縮小，圈外會持續扣血。補給箱：綠色 急救 +40、藍色 護甲（生命上限 150）、紅色 火力（傷害 ×1.5）。小地圖不顯示對手。多人由房主在大廳切換模式。</li>
+<ul><li><b>清剿行動</b>：沒有廢料，改成用槍清剿怪物。3 槍擊倒一隻得 $50，彈匣 12 發打完自動裝填；怪物 3 秒後在遠處重生。在時間內擊倒指定數量就過關，小地圖會顯示所有怪物。</li>
+<li><b>死守回收車</b>：怪物從遠處一波波走向回收車，每闖入一隻核心 -15，核心歸零就輸。開槍打怪（每隻 $50），按「塔」／T 花 $100 在腳邊蓋砲塔（最多 6 座，會自動射擊 11 公尺內的怪物）。清完整波就過關。這個模式怪物不會抓人。</li>
+<li><b>廢墟生存戰</b>：6 人各自為戰（人數不足由電腦補滿），用槍或近戰淘汰對手。白色圓圈是安全區，20 秒後開始縮小，圈外會持續扣血。補給箱：綠色 急救 +40、藍色 護甲（生命上限 150）、紅色 火力（傷害 ×1.5）。小地圖不顯示對手。多人由房主在大廳切換模式。</li>
 <li><b>天氣</b>（第 2 天起隨機）：下雨（雨聲蓋過腳步）、濃霧（大家都看不遠）、停電（室內很暗）、風暴（小地圖看不到怪物）。</li>
 <li><b>天然災害</b>（第 2 天起每天一次）：地震會讓所有人變慢、怪物站不穩；落石或隕石會先出現紅圈，2.5 秒後砸下，圈內扣 40 血，也能砸暈怪物。</li>
 <li><b>推車</b>：回收車旁有一台推車，靠近按「車」（電腦 V）推著走：速度很快、可多放 2 件廢料，但很吵會引來怪物，而且不能跳、衝、開槍。再按一次下車。</li>
@@ -482,12 +482,12 @@
 <li><b>地區排行榜</b>：第一次進遊戲會選台灣或香港，之後可在社群 → 賽季分頁改。</li>
 <li><b>雲端存檔</b>：用 Google 登入後，金幣、等級、造型會存到雲端，換手機也拿得回來。訪客的進度只跟著這台裝置。</li>
 <li><b>每日登入</b>：每天第一次進主選單送金幣，連續登入越多天送越多。</li>
-<li><b>轉移隊長</b>：隊長可以在戰隊成員列按「轉移隊長」，把隊長位子給隊員（你會變成隊員）。</li><li><b>成就進度</b>：社群 → 成就分頁列出全部成就（共 32 個、分階段），未完成的會顯示「目前 / 目標」。</li><li><b>戰隊加入</b>：社群的戰隊排行榜每列右邊有「+」，按一下就加入該戰隊（未滿 30 人、你還沒有戰隊時才會出現）。</li><li><b>社群</b>（主選單）：各模式排行榜、每週區域賽季（上週前 10 名可領金幣）、好友（用 6 碼代碼互加，可看到誰在線上並直接加入他的房間）、戰隊（建立要 200 金幣，用 4 碼代碼加入，每局得分會累積到戰隊）、成就。</li>
+<li><b>轉移團長</b>：團長可以在拾荒團成員列按「轉移團長」，把團長位子給團員（你會變成團員）。</li><li><b>成就進度</b>：社群 → 成就分頁列出全部成就（共 32 個、分階段），未完成的會顯示「目前 / 目標」。</li><li><b>拾荒團加入</b>：社群的拾荒團排行榜每列右邊有「+」，按一下就加入該拾荒團（未滿 30 人、你還沒有拾荒團時才會出現）。</li><li><b>社群</b>（主選單）：各模式排行榜、每週區域賽季（上週前 10 名可領金幣）、好友（用 6 碼代碼互加，可看到誰在線上並直接加入他的房間）、拾荒團（建立要 200 金幣，用 4 碼代碼加入，每局得分會累積到拾荒團）、成就。</li>
 <li><b>跳上箱子</b>：靠牆的木箱、鐵桶可以跳上去站著（櫃子太高跳不上去）。</li>
 <li>過關拿<b>金幣</b>和<b>經驗</b>，經驗會提升等級。</li>
 <li>主選單有 3 個<b>每日任務</b>，完成另外給金幣。</li>
 <li><b>市集</b>（主選單）：「免費補給」每天送金幣和經驗，補給箱每 4 小時能領一次；「每日精選」每天 0 點換 6 件造型，用金幣直接買（點卡片先看預覽）。</li>
-<li><b>個人段位</b>：每局獲得的金幣會累積成本週積分，依積分分新秀、專家、達人、菁英、大師、宗師、傳奇。每週一重算。</li><li><b>地圖輪換</b>：每週有 6 張地圖標註「本週輪換」，在輪換地圖上的對局，段位積分 +20%（金幣不變）。</li><li><b>戰隊段位</b>：每局金幣會累積成戰隊的「本週積分」，依積分分青銅、白銀、黃金、白金、鑽石、大師、宗師。每週一重算，歷史最高段位會保留。社群 → 戰隊可看本週排行。</li><li><b>戰隊聊天</b>（主選單）：跟戰隊隊友打字聊天。每 7 小時能「請求金幣」一次，隊友每次捐 10、最多收 100；捐的人每次得 10 經驗（每則最多捐 30）。收到的金幣按「領取」拿走。</li>
+<li><b>個人段位</b>：每局獲得的金幣會累積成本週積分，依積分分新秀、專家、達人、菁英、大師、宗師、傳奇。每週一重算。</li><li><b>地圖輪換</b>：每週有 6 張地圖標註「本週輪換」，在輪換地圖上的對局，段位積分 +20%（金幣不變）。</li><li><b>拾荒團段位</b>：每局金幣會累積成拾荒團的「本週積分」，依積分分青銅、白銀、黃金、白金、鑽石、大師、宗師。每週一重算，歷史最高段位會保留。社群 → 拾荒團可看本週排行。</li><li><b>拾荒團聊天</b>（主選單）：跟拾荒團隊友打字聊天。每 7 小時能「請求金幣」一次，隊友每次捐 10、最多收 100；捐的人每次得 10 經驗（每則最多捐 30）。收到的金幣按「領取」拿走。</li>
 <li>金幣可在「出戰角色」解鎖<b>頭飾</b>，隊友也看得到。</li>
 <li><b>寵物加成</b>：小狗 速度 +5%、貓頭鷹 怪物在小地圖顯示的距離 14→22 公尺、小機器人 賣出 +10%、史萊姆 體力回復 +20%。</li>
 <li>進度只存在這台裝置上。</li></ul>
@@ -500,8 +500,8 @@
 <li>網路無法直連時會自動改走伺服器中繼（遊戲照常，但語音可能不通）。</li>
 <li><b>聽不到聲音</b>：檢查手機靜音鍵（iPhone 側邊）並調高媒體音量。</li>
 <li><b>連不上房間</b>：免費伺服器閒置會休眠，第一次連線會自動等它醒來（最多約 1 分鐘，可按取消）。如果提示「伺服器是舊版本」，到 Render 後台按 Manual Deploy。</li>
-<li><b>怎麼開始</b>：主選單下方先點一張模式卡片（多人合作、單人、獵殺、塔防、大逃殺），旁邊的「地圖」可以換地圖，再按大大的「開始」。朋友給你房間代碼時，按最下面「用房間代碼加入」。</li>
-<li><b>回收車光圈是安全區</b>：站在黃色光圈裡怪物打不到你，還會每秒回 15 血（光圈會變綠）。大逃殺沒有安全區。</li>
+<li><b>怎麼開始</b>：主選單下方先點一張模式卡片（組隊回收、單人、清剿、死守、廢墟生存戰），旁邊的「地圖」可以換地圖，再按大大的「開始」。朋友給你房間代碼時，按最下面「用房間代碼加入」。</li>
+<li><b>回收車光圈是安全區</b>：站在黃色光圈裡怪物打不到你，還會每秒回 15 血（光圈會變綠）。廢墟生存戰沒有安全區。</li>
 <li><b>按鈕太多</b>：設定裡「手機上顯示的按鈕」取消勾選就能暫時隱藏（鍵盤快捷鍵照樣能用）。</li>
 <li><b>改名字</b>：主選單點自己的名字（旁邊有「改名」）直接輸入，按完成就會儲存。</li>
 <li><b>安裝成 App</b>：安卓 Chrome 在設定按「安裝到主畫面」；iPhone Safari 按分享 →「加入主畫面」。從主畫面開是全螢幕，第二次開會更快，沒網路也能打開（連線玩仍要網路）。</li>
@@ -604,7 +604,7 @@
     <div class="row"><button class="btn" id="btnEditReset" type="button">恢復預設</button><button class="btn primary" id="btnEditDone" type="button">完成</button></div></div>
 </div>
 
-<!-- 社群：排行榜、賽季、好友、戰隊、成就 -->
+<!-- 社群：排行榜、賽季、好友、拾荒團、成就 -->
 <div class="screen hide" id="scrSocial">
   <div class="panel lobby">
     <div class="topbar">
@@ -612,7 +612,7 @@
       <div class="who"><b class="ttl">社群</b></div>
     </div>
     <div class="tabs" id="socTabs">
-      <button type="button" data-tab="rank" class="on">排行榜</button><button type="button" data-tab="season">賽季</button><button type="button" data-tab="friends">好友</button><button type="button" data-tab="clan">戰隊</button><button type="button" data-tab="ach">成就</button>
+      <button type="button" data-tab="rank" class="on">排行榜</button><button type="button" data-tab="season">賽季</button><button type="button" data-tab="friends">好友</button><button type="button" data-tab="clan">拾荒團</button><button type="button" data-tab="ach">成就</button>
     </div>
     <div id="socBody"></div>
   </div>
@@ -627,7 +627,7 @@
       <button class="btn hide" id="stAva" type="button" style="flex:none;font-size:13px;padding:8px 10px">換頭像</button>
     </header>
     <div class="stHead" id="stHead"></div>
-    <div class="mkTabs stTabs" id="stTabs" role="tablist"><button type="button" class="on" data-m="all">全部</button><button type="button" data-m="coop">回收</button><button type="button" data-m="hunt">獵殺</button><button type="button" data-m="td">塔防</button><button type="button" data-m="br">大逃殺</button></div>
+    <div class="mkTabs stTabs" id="stTabs" role="tablist"><button type="button" class="on" data-m="all">全部</button><button type="button" data-m="coop">回收</button><button type="button" data-m="hunt">清剿</button><button type="button" data-m="td">死守</button><button type="button" data-m="br">廢墟生存戰</button></div>
     <div class="stSum" id="stSum"></div>
     <div class="ccLog stList" id="stList"></div>
   </div>
@@ -655,15 +655,15 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=182"></script>
-<script src="js/sim.js?v=182"></script>
-<script src="js/audio.js?v=182"></script>
-<script src="js/auth.js?v=182"></script>
-<script src="js/cloud.js?v=182"></script>
-<script src="js/net.js?v=182"></script>
-<script src="js/game.js?v=182"></script>
-<script src="js/minigames.js?v=182"></script>
-<script src="js/ar.js?v=182"></script>
-<script src="js/main.js?v=182"></script>
+<script src="js/config.js?v=183"></script>
+<script src="js/sim.js?v=183"></script>
+<script src="js/audio.js?v=183"></script>
+<script src="js/auth.js?v=183"></script>
+<script src="js/cloud.js?v=183"></script>
+<script src="js/net.js?v=183"></script>
+<script src="js/game.js?v=183"></script>
+<script src="js/minigames.js?v=183"></script>
+<script src="js/ar.js?v=183"></script>
+<script src="js/main.js?v=183"></script>
 </body>
 </html>
