@@ -1004,3 +1004,10 @@ body.touch.playing:not(.lk-near):not(.btnedit) #locker { display: none !importan
 .arBox.maze .arRing, .arBox.maze .arThrow, .arBox.maze .arTiming, .arBox.maze .arName, .arBox.maze #arDexBtn, .arBox.maze .arArrow { display: none !important; }
 .arAgain { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 130px); transform: translateX(-50%); width: auto !important; padding: 0 20px; z-index: 2; }
 .arBox.maze .arMsg { bottom: calc(env(safe-area-inset-bottom, 0px) + 180px); }
+
+/* 個人戰績頁的成就 */
+.stAch { flex-basis: 100%; margin-top: 8px; }
+.stAch summary { cursor: pointer; font-weight: 900; font-size: 14px; padding: 6px 0; }
+.stAchList { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 6px; }
+.stAchList span { padding: 4px 8px; font-size: 12px; font-weight: 700; color: var(--ink-2); background: var(--kraft); border: 2px solid var(--ink); }
+.stAchList span.on { color: var(--ink); background: var(--haz); }
