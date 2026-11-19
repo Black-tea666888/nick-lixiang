@@ -454,6 +454,9 @@ summary { color: var(--ink-2); font-size: 13px; cursor: pointer; text-align: cen
 .tips { list-style: none; margin: 0; padding: 0; }
 .tips li { font-size: 13px; line-height: 1.7; padding: 9px 2px; border-bottom: 1px solid rgba(30,26,22,.3); }
 .helpBody .field { padding: 8px 0; margin: 0; border-bottom: 1px solid rgba(30,26,22,.3); }
+.helpBody .field:has(input[type=range]), .helpBody .field:has(select) { flex-direction: column; align-items: stretch; gap: 6px; }
+.helpBody .field input[type=range] { width: 100%; }
+.helpBody .field select { width: 100%; }
 kbd { display: inline-block; min-width: 26px; padding: 1px 6px; margin-right: 3px; font: inherit; font-size: 12px; font-weight: 800; text-align: center; color: var(--ink); background: var(--chalk); border: 2px solid var(--ink); border-radius: 3px; box-shadow: 0 2px 0 var(--ink); }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 1px; margin-right: 8px; border: 1px solid var(--ink); }
 
