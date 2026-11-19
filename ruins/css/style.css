@@ -141,6 +141,7 @@ body.br #mini { top: 262px; }
 #pips i { display: inline-block; width: 11px; height: 11px; margin-left: 3px; border: 2px solid var(--haz); vertical-align: -1px; }
 #pips i.on { background: var(--haz); }
 #pips.full i { background: #fff; border-color: #fff; }
+#pips.many i { width: 7px; height: 7px; margin-left: 2px; border-width: 1px; }
 #floats { position: absolute; left: 0; right: 0; top: 47%; height: 0; text-align: center; }
 #floats span { position: absolute; left: 0; right: 0; font-size: 26px; font-weight: 900; color: var(--haz); text-shadow: 0 2px 0 #000; animation: floatUp 1.3s ease-out forwards; }
 #floats span.bad { color: var(--red); }

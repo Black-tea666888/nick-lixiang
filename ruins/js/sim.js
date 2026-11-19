@@ -319,7 +319,10 @@ const GEM_NOTE = ['每級：槍傷害 +8%、擊暈 +0.2 秒', '每級：跑步�
 function cleanEq(a) { const out = []; (Array.isArray(a) ? a : []).forEach(function (v) { v = v | 0; if (v > 0 && v < ACCS.length && out.indexOf(v) < 0 && out.length < 2) out.push(v); }); return out; }
 function cleanGems(a) { const out = [0, 0, 0]; if (Array.isArray(a)) for (let i = 0; i < 3; i++) out[i] = Math.max(0, Math.min(5, a[i] | 0)); return out; }
 function hasAcc(p, k) { return !!p.eq && p.eq.indexOf(k) >= 0; }
-function bagCap(p) { return (hasAcc(p, 2) ? BAG_MAX + 1 : BAG_MAX) + (p.veh ? 2 : 0); }   // 推車上可以多放 2 件
+// 背包等級：每 10 等解鎖一個（Lv10～Lv100 共 10 級），每級多 1 格
+const BAG_TIERS = ['普通背包', '帆布背包', '皮革背包', '登山背包', '青銅背包', '白銀背包', '黃金背包', '白金背包', '鑽石背包', '紫晶背包', '傳說背包'];
+function bagTierOf(level) { return Math.max(0, Math.min(10, Math.floor((level | 0) / 10))); }
+function bagCap(p) { return BAG_MAX + (p.bt | 0) + (hasAcc(p, 2) ? 1 : 0) + (p.veh ? 2 : 0); }   // 推車上可以多放 2 件
 // 天氣：0 晴朗、1 下雨（開放場景；雨聲蓋過腳步，怪物聽力 ×0.7）、2 濃霧（怪物視線變短）、3 停電（室內；很暗，怪物視線變短）、4 沙塵暴／太陽風暴（開放場景；能見度低、小地圖不顯示怪物）
 const WEATHERS = ['晴朗', '下雨', '濃霧', '停電', '風暴'];
 const WX_SIGHT = [1, 1.15, 2.1, 1.6, 1.9], WX_HEAR = [1, 0.7, 1, 1, 0.85];
@@ -447,6 +450,7 @@ Sim.prototype.updateLook = function (id, look) {
   p.o = pick(look.o, COSTUMES.length); p.pet = pick(look.pet, PETS.length);
   p.gun = pick(look.gun, GUNS.length); p.eq = cleanEq(look.eq); p.gems = cleanGems(look.gems);
   p.clip = GUNS[p.gun].clip[0]; p.ammo = p.clip;
+  p.bt = Math.max(0, Math.min(10, look.bt | 0));
 };
 Sim.prototype.addPlayer = function (id, name, look) {
   if (this.player(id)) return this.player(id);
@@ -454,7 +458,7 @@ Sim.prototype.addPlayer = function (id, name, look) {
   let slot = 0;
   while (this.players.some(function (p) { return p.slot === slot; })) slot++;
   look = look || {};
-  const p = { id: id, name: String(name || '玩家').slice(0, 12), slot: slot, c: pick(look.c, CHARS.length), w: pick(look.w, WEAPONS.length), h: pick(look.h, HATS.length), o: pick(look.o, COSTUMES.length), pet: pick(look.pet, PETS.length), gun: pick(look.gun, GUNS.length), eq: cleanEq(look.eq), gems: cleanGems(look.gems), x: VAN[0], z: VAN[1], yaw: 0,
+  const p = { id: id, name: String(name || '玩家').slice(0, 12), slot: slot, bt: Math.max(0, Math.min(10, look.bt | 0)), c: pick(look.c, CHARS.length), w: pick(look.w, WEAPONS.length), h: pick(look.h, HATS.length), o: pick(look.o, COSTUMES.length), pet: pick(look.pet, PETS.length), gun: pick(look.gun, GUNS.length), eq: cleanEq(look.eq), gems: cleanGems(look.gems), x: VAN[0], z: VAN[1], yaw: 0,
     run: false, loud: false, spk: false, alive: true, bag: [], hp: 100, atkCd: 0, hurtT: 99, earned: 0, kills: 0,
     clip: GUNS[pick(look.gun, GUNS.length)].clip[0], ammo: GUNS[pick(look.gun, GUNS.length)].clip[0], gunCd: 0, reload: 0, bombs: 99, smCd: 0 };   // 中途加入也要有子彈、炸藥
   this.players.push(p);
@@ -468,7 +472,7 @@ Sim.prototype.removePlayer = function (id) {
   if (this.phase === 'play' && this.mode !== 'br' && !this.players.some(function (q) { return q.alive; })) this._end(false, 'dead');
 };
 Sim.prototype.roster = function () {
-  return this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, c: p.c, w: p.w, h: p.h || 0, o: p.o || 0, pet: p.pet || 0, gun: p.gun || 0, eq: p.eq || [], gems: p.gems || [0, 0, 0] }; });
+  return this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, c: p.c, w: p.w, h: p.h || 0, o: p.o || 0, pet: p.pet || 0, gun: p.gun || 0, eq: p.eq || [], gems: p.gems || [0, 0, 0], bt: p.bt | 0 }; });
 };
 
 Sim.prototype.startDay = function (day) {
@@ -1306,7 +1310,7 @@ Sim.prototype.snapshot = function () {
 };
 
 const BASE_STYLES = [{ n: '回收車（預設）', c: 0xffc24a, sh: 0 }, { n: '信號塔', c: 0x6ad8ff, sh: 1 }, { n: '圓頂營地', c: 0x9dff7a, sh: 2 }, { n: '四柱燈', c: 0xff7ad1, sh: 3 }, { n: '藍色回收車', c: 0x4a9cff, sh: 0 }, { n: '紅色信號塔', c: 0xff5a4a, sh: 1 }, { n: '金色圓頂', c: 0xffe066, sh: 2 }, { n: '紫色四柱燈', c: 0xb07aff, sh: 3 }];
-const api = { BASE_STYLES: BASE_STYLES, MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
+const api = { BAG_TIERS: BAG_TIERS, bagTierOf: bagTierOf, BASE_STYLES: BASE_STYLES, MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
   KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, GUNS: GUNS, BASE_R: BASE_R, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, breakWall: breakWall, restoreMap: restoreMap, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
   quotaFor: quotaFor, Sim: Sim, setMap: setMap };
 

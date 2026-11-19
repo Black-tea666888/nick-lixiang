@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v153', items: ['交易紀錄與最高紀錄也跟著帳號同步，換裝置會合併', '裝備與造型跟著帳號同步：換裝置也一樣（按鍵、音效等設定仍留在本機）', '戰績與頭像同步雲端：換裝置也看得到，戰績保留最近 30 場', '怪物外觀增加：長顎、背刺、駝背長臂、肋骨、三眼，全部黑色系', '怪物碰到玩家不再直接死：一次扣一半血，碰兩下才會倒', '設定裡的手機按鈕勾選改用新圖示（不再是舊文字）', '特效機與槍枝造型機：第一輪全部抽到後進入第二輪（新造型）', '好友頁先顯示上次的列表，不用每次等很久', '修正交易成功的黃色橫幅收不掉（切換畫面、點一下、切到背景都會收起）', '大廳新增獨立的「交易所」按鈕', '修正大廳換槍、換造型後，進局內沒有跟著換', '週排行榜每週日 24:00 重新計算；上週各模式全區前 3 名獲得限定頭飾「冠軍王冠」', '拿到櫃子裡的近戰武器會得到 4 秒護盾', '每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v154', items: ['背包等級：每 10 等解鎖一個背包（帆布、皮革、…、黃金、白金、…傳說），共 10 級，每級多 1 格', '交易紀錄與最高紀錄也跟著帳號同步，換裝置會合併', '裝備與造型跟著帳號同步：換裝置也一樣（按鍵、音效等設定仍留在本機）', '戰績與頭像同步雲端：換裝置也看得到，戰績保留最近 30 場', '怪物外觀增加：長顎、背刺、駝背長臂、肋骨、三眼，全部黑色系', '怪物碰到玩家不再直接死：一次扣一半血，碰兩下才會倒', '設定裡的手機按鈕勾選改用新圖示（不再是舊文字）', '特效機與槍枝造型機：第一輪全部抽到後進入第二輪（新造型）', '好友頁先顯示上次的列表，不用每次等很久', '修正交易成功的黃色橫幅收不掉（切換畫面、點一下、切到背景都會收起）', '大廳新增獨立的「交易所」按鈕', '修正大廳換槍、換造型後，進局內沒有跟著換', '週排行榜每週日 24:00 重新計算；上週各模式全區前 3 名獲得限定頭飾「冠軍王冠」', '拿到櫃子裡的近戰武器會得到 4 秒護盾', '每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -116,7 +116,7 @@ function renderGear() {
 function myLook() {
   const p = prog(), n = function (k) { return parseInt(ls(k) || '0', 10) || 0; }, own = function (cat, v) { return p.own[cat].indexOf(v) >= 0 ? v : 0; };
   const h = n('rr_h');
-  return { c: n('rr_c'), w: n('rr_w'), h: p.hats.indexOf(h) >= 0 ? h : 0, o: own('o', n('rr_o')), pet: own('pet', n('rr_pet')), gun: Math.min(W.GUNS.length - 1, n('rr_gun')), eq: myEquip(p), gems: p.gems };
+  return { c: n('rr_c'), w: n('rr_w'), h: p.hats.indexOf(h) >= 0 ? h : 0, o: own('o', n('rr_o')), pet: own('pet', n('rr_pet')), gun: Math.min(W.GUNS.length - 1, n('rr_gun')), eq: myEquip(p), gems: p.gems, bt: W.bagTierOf(levelOf(p.xp)) };
 }
 // 只影響自己畫面的造型：回收品、怪物、彈道
 function applyLocalSkins() {
@@ -682,6 +682,7 @@ function levelOf(xp) { return 1 + Math.floor(Math.sqrt(xp / 60)); }
 function renderProg() {
   const p = prog(), lv = levelOf(p.xp), lo = 60 * (lv - 1) * (lv - 1), hi = 60 * lv * lv;
   $('lvTag').textContent = lv; $('coinTag').textContent = p.coins; $('coinTag2').textContent = p.coins;
+  $('bagTag').textContent = W.BAG_TIERS[W.bagTierOf(lv)].replace('背包', '');
   $('xpFill').style.width = Math.min(100, (p.xp - lo) / (hi - lo) * 100) + '%';
   const box = $('missions'); box.textContent = '';
   MISSIONS.forEach(function (m, i) {
@@ -696,13 +697,15 @@ function renderProg() {
 function progOnResult(e, stars) {
   const p = prog();
   const coins = e.win ? Math.floor(e.money / 10) + stars * 10 : Math.floor(e.money / 20), xp = coins + 10;
+  const lv0 = levelOf(p.xp);
   p.coins += coins; p.xp += xp;
+  const bagUp = W.bagTierOf(levelOf(p.xp)) > W.bagTierOf(lv0) ? W.BAG_TIERS[W.bagTierOf(levelOf(p.xp))] : '';
   if (e.win) p.m[0] += 1;
   p.m[1] += e.money; if (stars >= 3) p.m[2] += 1;
   let bonus = 0;
   MISSIONS.forEach(function (m, i) { if (!p.done[i] && p.m[i] >= m[1]) { p.done[i] = true; p.coins += m[2]; bonus += m[2]; } });
   progSave(p);
-  return '金幣 +' + coins + '，經驗 +' + xp + (bonus ? '，每日任務完成 +' + bonus : '');
+  return '金幣 +' + coins + '，經驗 +' + xp + (bonus ? '，每日任務完成 +' + bonus : '') + (bagUp ? '，解鎖' + bagUp + '（背包 +1 格）' : '');
 }
 function myMap() { const m = parseInt(ls('rr_map') || '0', 10) || 0; return m >= 0 && m < W.MAPS.length ? m : 0; }
 function rosterEntry(id) { for (let i = 0; i < S.roster.length; i++) if (S.roster[i].id === id) return S.roster[i]; return null; }
@@ -1104,8 +1107,8 @@ function tickLobby() {
 // 新手教學：第一次開始遊戲時出現，之後可從「設定與說明」重看
 const TUT = [
   ['目標', '在時間內把廢料帶回金色回收車，賺到當天的目標金額。上方的進度條滿了就過關。'],
-  ['撿與賣', '走近發亮的廢料就會撿起來，背包最多 3 件。走回回收車會自動賣掉。跟著畫面上方的箭頭就能找到回收車。'],
-  ['怪物', '怪物看得到你，也聽得到跑步聲。聽到心跳聲變快就代表牠在附近。背包滿 3 件時牠會被引過來。'],
+  ['撿與賣', '走近發亮的廢料就會撿起來，背包容量依等級提升（Lv10 起每 10 等多 1 格）。走回回收車會自動賣掉。跟著畫面上方的箭頭就能找到回收車。'],
+  ['怪物', '怪物看得到你，也聽得到跑步聲。聽到心跳聲變快就代表牠在附近。背包滿時牠會被引過來。'],
   ['保命工具', '「技」是角色技能、「煙」是煙霧彈（躲進煙裡怪物看不到你），按鈕上的數字是冷卻秒數。隊友倒地時按住「救」。']
 ];
 let tutI = 0;

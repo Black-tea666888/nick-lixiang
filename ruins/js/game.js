@@ -20,6 +20,8 @@ function myEq(k) { const pm = view.players.get(myId); return !!(pm && pm.eq && p
 function myGem(i) { const pm = view.players.get(myId); return pm && pm.gems ? pm.gems[i] | 0 : 0; }
 function hpPct() { return Math.max(0, Math.min(100, me.hp / (myEq(4) ? 130 : 100) * 100)) + '%'; }
 function myPet() { const pm = view.players.get(myId); return pm && pm.pet ? pm.pet : 0; }
+// 背包容量：基礎 3 格 + 背包等級（每 10 等 +1，最多 +10）+ 大背包配件 + 推車
+function myCap() { const pm = view.players.get(myId); return W.BAG_MAX + (pm && pm.bt ? pm.bt | 0 : 0) + (myEq(2) ? 1 : 0) + (me.riding ? 2 : 0); }
 function myC() { const pm = view.players.get(myId); return pm && pm.c ? pm.c : 0; }
 // 藍色（冰）怪物附近：減速
 function iceNear() {
@@ -2161,7 +2163,7 @@ function updateMe(dt) {
   $('stam').className = me.tired ? 'tired' : '';
   // 背包滿的提示
   fullHintT -= dt;
-  if (me.bagN >= W.BAG_MAX && fullHintT <= 0) {
+  if (me.bagN >= myCap() && fullHintT <= 0) {
     for (let i = 0; i < view.items.length; i++) {
       const it = view.items[i];
       if (!it.taken && Math.hypot(it.x - me.x, it.z - me.z) < 1.5) { toast('背包滿了，先回回收車賣掉'); fullHintT = 3; break; }
@@ -2284,8 +2286,8 @@ function updateHud() {
   const gb = $('gun'); setIcon('gun', wpnMode === 'melee' ? 'knife' : me.reloading ? 'reload' : 'gun'); gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
   const qf = $('qfill'), pct = view.mode === 'td' && view.td ? view.td[0] : view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
   qf.style.width = pct + '%'; qf.classList.toggle('done', pct >= 100);
-  const cap = (myEq(2) ? 4 : 3) + (me.riding ? 2 : 0), pp = $('pips'); while (pp.children.length < 6) pp.appendChild(document.createElement('i')); if ($('bagCap').textContent !== String(cap)) $('bagCap').textContent = cap;
-  for (let i = 0; i < 6; i++) { pp.children[i].className = i < me.bagN ? 'on' : ''; pp.children[i].style.display = i < cap ? '' : 'none'; } pp.className = me.bagN >= cap ? 'full' : '';
+  const cap = myCap(), pp = $('pips'); while (pp.children.length < 16) pp.appendChild(document.createElement('i')); if ($('bagCap').textContent !== String(cap)) $('bagCap').textContent = cap;
+  for (let i = 0; i < 16; i++) { pp.children[i].className = i < me.bagN ? 'on' : ''; pp.children[i].style.display = i < cap ? '' : 'none'; } pp.className = (me.bagN >= cap ? 'full' : '') + (cap > 6 ? ' many' : '');
   $('day').textContent = view.day;
   const s = Math.max(0, Math.ceil(view.time)), mm = Math.floor(s / 60), ss = s % 60;
   $('timer').textContent = mm + ':' + (ss < 10 ? '0' : '') + ss;
@@ -2462,7 +2464,7 @@ RR.Game = {
       let p = view.players.get(r.id);
       if (p && (p.name !== r.name || p.slot !== r.slot || p.c !== r.c || p.w !== r.w || (p.h || 0) !== (r.h || 0) || (p.o || 0) !== (r.o || 0) || (p.pet || 0) !== (r.pet || 0))) { if (p.avatar) scene.remove(p.avatar); view.players.delete(r.id); p = null; }
       if (!p) {
-        p = { id: r.id, name: r.name, slot: r.slot, c: r.c || 0, w: r.w || 0, h: r.h || 0, o: r.o || 0, pet: r.pet || 0, eq: r.eq || [], gems: r.gems || [0, 0, 0], swingT: 0, x: W.VAN[0], z: W.VAN[1], yaw: 0, tx: W.VAN[0], tz: W.VAN[1], tyaw: 0, alive: true, bagN: 0, flags: 0, avatar: null, row: null, fresh: true };
+        p = { id: r.id, name: r.name, slot: r.slot, c: r.c || 0, w: r.w || 0, h: r.h || 0, o: r.o || 0, pet: r.pet || 0, bt: r.bt | 0, eq: r.eq || [], gems: r.gems || [0, 0, 0], swingT: 0, x: W.VAN[0], z: W.VAN[1], yaw: 0, tx: W.VAN[0], tz: W.VAN[1], tyaw: 0, alive: true, bagN: 0, flags: 0, avatar: null, row: null, fresh: true };
         if (r.id !== myId) { p.avatar = buildAvatar(p); p.avatar.visible = false; }
         else setViewWeapon(p.w);
         view.players.set(r.id, p);

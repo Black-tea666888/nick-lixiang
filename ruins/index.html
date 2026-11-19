@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=153" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=154" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -107,7 +107,7 @@
         <button class="avatar" id="avatar" type="button" aria-label="更換頭像顏色"></button>
         <div class="who">
           <label class="nickRow"><input id="nick" type="text" maxlength="12" aria-label="暱稱（點一下改名）" placeholder="輸入你的名字" enterkeyhint="done"><span class="pen" id="nickPen" aria-hidden="true">改名</span></label>
-          <div class="stats"><span>等級<b id="lvTag">Lv.1</b></span><span>最佳<b id="best">0</b>天</span></div>
+          <div class="stats"><span>等級<b id="lvTag">Lv.1</b></span><span>背包<b id="bagTag">普通</b></span><span>最佳<b id="best">0</b>天</span></div>
           <div id="xpBar"><i id="xpFill"></i></div>
         </div>
       </div>
@@ -388,7 +388,7 @@
     <div id="helpTopic" class="hide">
       <section class="htopic hide" data-topic="goal"><h2>目標與流程</h2>
 <ul><li>在時間內把廢料帶回<b>金色回收車</b>，賺到當天的目標金額就過關。</li>
-<li>走近發亮的廢料會自動撿起，背包最多 <b>3 件</b>；走回回收車自動賣出。</li>
+<li>走近發亮的廢料會自動撿起，背包容量依等級提升（Lv10 起每 10 等多 1 格，最多 13 件）；走回回收車自動賣出。</li>
 <li>畫面上方的箭頭指向回收車，左上的進度條是今天的進度。</li>
 <li>背包是空的時候走得比較快；背越多越慢。</li>
 <li>每過一天，目標更高、怪物更快；第 6 天起有 4 隻怪物。</li></ul>
@@ -413,7 +413,7 @@
 <tr><td><i class="dot" style="background:#b070ff"></i>暗影</td><td>追得更快</td></tr></table>
 <ul><li>怪物頭上有<b>血量條</b>（紅）和<b>護盾條</b>（藍）：先打掉護盾才會扣血；5 秒沒被打，護盾會慢慢回來。</li>
 <li>怪物<b>看得到</b>你，也<b>聽得到</b>跑步聲和太大聲的麥克風。</li>
-<li>背包滿 3 件時，附近的怪物會被引過來。</li>
+<li>背包滿時，附近的怪物會被引過來。</li>
 <li>心跳聲變快代表牠在附近；出現「發現你了！」就快跑。</li>
 <li>怪物靠近到 14 公尺內，小地圖才會出現牠的三角形。</li></ul>
       </section>
@@ -462,7 +462,7 @@
 <li><b>圈圈叉叉（單機）</b>：主選單「小遊戲」可以和電腦下（簡單贏 +5、困難贏 +12 金幣），或兩人用同一支手機輪流。單機小遊戲每天最多拿 60 金幣。</li>
 <li><b>隊伍圈圈叉叉</b>：遊戲中按「小遊戲」。前兩位落子的人是 X 與 O，連成一線團隊 +150。</li>
 <li><b>回收抽獎機</b>：用金幣抽服裝、寵物、頭飾、造型、特效和槍枝造型（綜合、服裝、寵物、特效、槍械五台）。所有獎品都排在格子裡，點一格可以先預覽（服裝和寵物穿在角色身上、槍枝造型看 3D 槍），不想看動畫可以勾「跳過動畫」。每台機器的獎品和機率都列在下方，每格機率相同；綜合機每天免費一次，抽到已有的換成 25 金幣。</li>
-<li><b>傳送陣</b>：背包滿 3 件後附近會出現，踩上去直接傳回回收車。</li></ul>
+<li><b>傳送陣</b>：背包滿後附近會出現，踩上去直接傳回回收車。</li></ul>
       </section>
       <section class="htopic hide" data-topic="grow"><h2>星等與成長</h2>
 <ul><li>過關給 <b>1～3 顆星</b>：超過目標 30%、剩 60 秒以上各加一顆。</li>
@@ -640,14 +640,14 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=153"></script>
-<script src="js/sim.js?v=153"></script>
-<script src="js/audio.js?v=153"></script>
-<script src="js/auth.js?v=153"></script>
-<script src="js/cloud.js?v=153"></script>
-<script src="js/net.js?v=153"></script>
-<script src="js/game.js?v=153"></script>
-<script src="js/minigames.js?v=153"></script>
-<script src="js/main.js?v=153"></script>
+<script src="js/config.js?v=154"></script>
+<script src="js/sim.js?v=154"></script>
+<script src="js/audio.js?v=154"></script>
+<script src="js/auth.js?v=154"></script>
+<script src="js/cloud.js?v=154"></script>
+<script src="js/net.js?v=154"></script>
+<script src="js/game.js?v=154"></script>
+<script src="js/minigames.js?v=154"></script>
+<script src="js/main.js?v=154"></script>
 </body>
 </html>
