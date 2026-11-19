@@ -497,6 +497,7 @@ Sim.prototype.startDay = function (day) {
   // 物品：隨機放在離起點有段距離的格子
   const cands = floorCells.filter(function (c) {
     if (Math.abs(c[0] - startCell[0]) + Math.abs(c[1] - startCell[1]) < 4) return false;
+    if (solidHit(center(c[0], c[1])[0], center(c[0], c[1])[1], 2.2)) return false;   // 擺設旁邊不放物品
     return !MONSTER_CELLS.some(function (m) { return m[0] === c[0] && m[1] === c[1]; });
   });
   for (let i = cands.length - 1; i > 0; i--) {
@@ -908,7 +909,7 @@ Sim.prototype._spotAt = function (cx, cz, lo, hi) {
   for (let i = 0; i < floorCells.length; i++) {
     const c = center(floorCells[i][0], floorCells[i][1]);
     const d = Math.hypot(c[0] - cx, c[1] - cz);
-    if (d >= lo && d <= hi && !blocked(c[0], c[1], 0.5)) pool.push(c);
+    if (d >= lo && d <= hi && !blocked(c[0], c[1], 0.5) && !solidHit(c[0], c[1], 0.5)) pool.push(c);
   }
   if (!pool.length) return null;
   return pool[Math.floor(this.rng() * pool.length)];
@@ -1366,6 +1367,31 @@ function restoreMap() {
   const i = mapIndex; mapIndex = -1; setMap(i);
   return true;
 }
+/* 擺設的碰撞圓（木箱、鐵桶），規則和 game.js 蓋地圖時一樣（同一個固定種子），讓主機的模擬知道哪裡有擺設 */
+let SOLIDS = [];
+function propSolids(mi) {
+  let seed = 1234 + mi * 77; const rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const out = [];
+  floorCells.forEach(function (fc) {
+    const c = fc[0], r = fc[1], cx = c * CS + CS / 2, cz = r * CS + CS / 2;
+    if (Math.hypot(cx - VAN[0], cz - VAN[1]) < CS * 1.5) return;
+    if (LOCKERS.some(function (k) { return Math.hypot(k[0] - cx, k[1] - cz) < CS * 0.75; })) return;
+    const walls4 = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(function (d) { return isWall(c + d[0], r + d[1]); });
+    const roll = rnd();
+    if (walls4.length && roll < 0.22) {
+      const d = walls4[Math.floor(rnd() * walls4.length)], off = CS / 2 - 0.42, side = (rnd() - 0.5) * 1.6;
+      const px = cx + d[0] * off + (d[0] ? 0 : side), pz = cz + d[1] * off + (d[1] ? 0 : side);
+      if (roll < 0.12) {
+        const sz = 0.55 + rnd() * 0.25, sol = [px, pz, sz * 0.55, sz]; out.push(sol); rnd();   // 箱子轉向（只影響畫面）
+        if (rnd() < 0.4) { sol[3] = sz + sz * 0.7; rnd(); }   // 疊的小箱子（只影響畫面）
+      } else {
+        out.push([px, pz, 0.32, 0.92]);
+      }
+    }
+  });
+  return out;
+}
+function solidHit(x, z, r) { for (let i = 0; i < SOLIDS.length; i++) { const q = SOLIDS[i]; if (Math.hypot(q[0] - x, q[1] - z) < q[2] + r) return true; } return false; }
 function setMap(i) {
   i = pick(i, MAPS.length);
   if (i === mapIndex) return i;
@@ -1402,6 +1428,7 @@ function setMap(i) {
   floorCells.forEach(function (fc) { tryLocker(fc, 3); });   // 開放地圖轉角少：貼著單面牆也可以放
   LOCKER_W = LOCKERS.map(function () { return Math.floor(Math.random() * WEAPONS.length); });
   api.lockers = LOCKERS;
+  SOLIDS = propSolids(i).concat(LOCKERS.map(function (k) { return [k[0], k[1], 0.3, 2.1]; }));
   api.MAP = MAP; api.ROWS = ROWS; api.COLS = COLS; api.VAN = VAN; api.floorCells = floorCells; api.mapIndex = i;
   api.theme = MAPS[i].theme; api.mapName = MAPS[i].name; api.monsterCells = MONSTER_CELLS;
   return i;
