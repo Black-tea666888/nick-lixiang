@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v201', items: ['矮螢幕（小手機、橫向）大廳可捲動，開始列與按鈕不再被蓋住或擠出畫面', '返回改為回上一頁：拾荒團回聊天、外觀回轉盤'] };
+const UPD = { v: 'v202', items: ['社群搜尋框可以輸入 6 碼好友代碼找人（原本只能搜名字）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1668,15 +1668,17 @@ function renderSocial() {
     b.appendChild(mk('div', 'bigcode', (C.me() && C.me().code) || '------'));
     { const myQr = mk('button', 'btn', '我的 QR code'); myQr.type = 'button'; myQr.addEventListener('click', function () { qrShow(myName(), C.me() && C.me().code); }); b.appendChild(myQr); }
     // 用名字搜尋玩家：可以直接加好友，或顯示對方的 QR code 讓別人掃
-    const srow = mk('div', 'soc-row'), sinp = mk('input'); sinp.type = 'text'; sinp.maxLength = 12; sinp.placeholder = '搜尋玩家名字'; sinp.autocomplete = 'off';
+    const srow = mk('div', 'soc-row'), sinp = mk('input'); sinp.type = 'text'; sinp.maxLength = 12; sinp.placeholder = '輸入玩家名字或 6 碼代碼'; sinp.autocomplete = 'off';
     const sbtn = mk('button', 'btn', '搜尋'); sbtn.type = 'button';
     const sres = mk('div');
     const doSearch = function () {
       sres.textContent = ''; sres.appendChild(mk('p', 'ccEmpty', '搜尋中…'));
-      C.searchUsers(sinp.value, function (err, rows) {
+      const typed = String(sinp.value || '').replace(/\s+/g, ' ').trim().slice(0, 12), asCode = typed.toUpperCase();
+      const lookup = /^[A-Z0-9]{6}$/.test(asCode) ? function (cb) { C.findByCode(asCode, cb); } : function (cb) { C.searchUsers(typed, cb); };
+      lookup(function (err, rows) {
         sres.textContent = '';
         if (err) { sres.appendChild(mk('p', 'ccEmpty', C.message(err))); return; }
-        if (!rows.length) { sres.appendChild(mk('p', 'ccEmpty', '找不到這個名字的玩家。')); return; }
+        if (!rows.length) { sres.appendChild(mk('p', 'ccEmpty', asCode.length === 6 && lookup.length && /^[A-Z0-9]{6}$/.test(asCode) ? '找不到這個代碼的玩家。' : '找不到這個名字的玩家。')); return; }
         rows.forEach(function (u) {
           const r = mk('div', 'srow'); r.appendChild(mk('span', 'nm', u.name + (u.lv ? '　Lv.' + u.lv : '')));
           const qb = mk('button', 'btn', 'QR'); qb.type = 'button'; qb.addEventListener('click', function () { qrShow(u.name, u.code); });
