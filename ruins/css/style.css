@@ -739,6 +739,10 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
   padding: 9px 12px 9px 18px; font-size: 15px; font-weight: 700; line-height: 1.45; color: var(--chalk); text-align: left;
   background: #1c2024; border: 2px solid #111417; border-radius: 3px; opacity: 0; transform: translate(-50%, -6px); transition: opacity .18s, transform .18s; pointer-events: none; }
 #mtoast.show { opacity: 1; transform: translate(-50%, 0); }
+#banner { position: fixed; top: 0; left: 0; right: 0; z-index: 70; display: flex; flex-direction: column; gap: 2px; padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px; background: var(--haz); color: var(--ink); border-bottom: 3px solid var(--ink); box-shadow: 0 6px 16px rgba(0,0,0,.4); transform: translateY(-110%); transition: transform .25s ease; cursor: pointer; }
+#banner.show { transform: none; }
+#banner b { font-size: 16px; font-weight: 900; }
+#banner span { font-size: 13px; color: var(--ink-2); }
 #mtoast::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--haz); }
 #mtoast.k-warn::before { background: var(--rust); }
 #mtoast.k-good::before { background: #3f9a52; }
