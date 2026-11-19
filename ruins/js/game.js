@@ -2771,8 +2771,17 @@ RR.Game = {
       const ps = s.veh[3] || []; me.passIdx = me.alive ? ps.indexOf(myId) : -1; me.passenger = me.passIdx >= 0;
       let cx = s.veh[0], cz = s.veh[1], cyaw = cartMesh.rotation.y;
       if (rid && rid !== myId) { const rp = view.players.get(rid); if (rp) { cx = rp.x; cz = rp.z; cyaw = rp.yaw; } }
+      // 沒人開的推車若落在箱子、櫃子裡，就移到附近的空地（最多 1.5 格，玩家仍在上車距離內）
+      if (!rid && hitSolid(cx, cz, 0)) {
+        let fixed = null;
+        for (let r = 0.5; r <= 1.5 && !fixed; r += 0.5) for (let a = 0; a < 16 && !fixed; a++) {
+          const x = cx + Math.cos(a * Math.PI / 8) * r, z = cz + Math.sin(a * Math.PI / 8) * r;
+          if (!hitSolid(x, z, 0) && !W.blocked(x, z, 0.4)) fixed = [x, z];
+        }
+        if (fixed) { cx = fixed[0]; cz = fixed[1]; }
+      }
       cartMesh.visible = rid !== myId; cartMesh.position.set(cx, 0, cz); cartMesh.rotation.y = cyaw;
-      view.veh = s.veh;
+      view.veh = [cx, cz, s.veh[2], s.veh[3]];
     } else { if (cartMesh) cartMesh.visible = false; view.veh = null; me.riding = false; me.passenger = false; }
     if (cartView) cartView.visible = !!me.riding;
     const seatFree = !view.veh || !view.veh[2] || (view.veh[3] || []).length < 2;   // 沒人開車可以開；有人開車可以坐後座（最多 2 人）
