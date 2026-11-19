@@ -322,18 +322,18 @@ function hasAcc(p, k) { return !!p.eq && p.eq.indexOf(k) >= 0; }
 // 背包等級：每 10 等解鎖一個（Lv10～Lv100 共 10 級），每級多 1 格
 const BAG_TIERS = ['普通背包', '帆布背包', '皮革背包', '登山背包', '青銅背包', '白銀背包', '黃金背包', '白金背包', '鑽石背包', '紫晶背包', '傳說背包'];
 function bagTierOf(level) { return Math.max(0, Math.min(10, Math.floor((level | 0) / 10))); }
-function itemReq(it) { const k = KINDS[it.kind]; return k ? k.req | 0 : 0; }
+const RARITY = ['普通', '優良', '稀有', '傳說'];
 function bagCap(p) { return BAG_MAX + (p.bt | 0) + (hasAcc(p, 2) ? 1 : 0) + (p.veh ? 2 : 0); }   // 推車上可以多放 2 件
 // 天氣：0 晴朗、1 下雨（開放場景；雨聲蓋過腳步，怪物聽力 ×0.7）、2 濃霧（怪物視線變短）、3 停電（室內；很暗，怪物視線變短）、4 沙塵暴／太陽風暴（開放場景；能見度低、小地圖不顯示怪物）
 const WEATHERS = ['晴朗', '下雨', '濃霧', '停電', '風暴'];
 const WX_SIGHT = [1, 1.15, 2.1, 1.6, 1.9], WX_HEAR = [1, 0.7, 1, 1, 0.85];
 function maxHp(p) { return hasAcc(p, 4) ? 130 : 100; }
 const KINDS = [
-  // req＝撿起來需要的背包等級（0～10）：越值錢的東西，背包要等級夠高才裝得下
-  { n: '齒輪', lo: 25, hi: 45, req: 0 }, { n: '電池', lo: 40, hi: 70, req: 2 }, { n: '銅線圈', lo: 60, hi: 95, req: 4 },
-  { n: '舊收音機', lo: 35, hi: 60, req: 2 }, { n: '玩具', lo: 20, hi: 40, req: 0 }, { n: '馬達', lo: 50, hi: 80, req: 4 },
-  { n: '金條', lo: 100, hi: 140, req: 7 }, { n: '燈泡', lo: 30, hi: 50, req: 1 }, { n: '電路板', lo: 45, hi: 70, req: 3 },
-  { n: '儀表', lo: 55, hi: 85, req: 5 }, { n: '鐵罐', lo: 20, hi: 40, req: 0 }
+  // rar＝稀有度（0 普通、1 優良、2 稀有、3 傳說）：越值錢越稀有，地圖上會用不同顏色的光圈標出來；誰都撿得起來
+  { n: '齒輪', lo: 25, hi: 45, rar: 0 }, { n: '電池', lo: 40, hi: 70, rar: 1 }, { n: '銅線圈', lo: 60, hi: 95, rar: 2 },
+  { n: '舊收音機', lo: 35, hi: 60, rar: 1 }, { n: '玩具', lo: 20, hi: 40, rar: 0 }, { n: '馬達', lo: 50, hi: 80, rar: 2 },
+  { n: '金條', lo: 100, hi: 140, rar: 3 }, { n: '燈泡', lo: 30, hi: 50, rar: 0 }, { n: '電路板', lo: 45, hi: 70, rar: 1 },
+  { n: '儀表', lo: 55, hi: 85, rar: 2 }, { n: '鐵罐', lo: 20, hi: 40, rar: 0 }
 ];
 
 const CHARS = ['回收員', '機器人', '太空人', '貓貓', '南瓜頭', '紙箱人', '恐龍', '外星人'];
@@ -1254,7 +1254,7 @@ Sim.prototype.step = function (dt) {
     if (it.taken) continue;
     for (let k = 0; k < alive.length; k++) {
       const p = alive[k];
-      if (p.bag.length < bagCap(p) && (p.bt | 0) >= itemReq(it) && Math.hypot(it.x - p.x, it.z - p.z) < 1.5) {
+      if (p.bag.length < bagCap(p) && Math.hypot(it.x - p.x, it.z - p.z) < 1.5) {
         it.taken = true; p.bag.push(i);
         this.events.push({ t: 'pickup', id: p.id, i: i });
         break;
@@ -1314,7 +1314,7 @@ Sim.prototype.snapshot = function () {
 };
 
 const BASE_STYLES = [{ n: '回收車（預設）', c: 0xffc24a, sh: 0 }, { n: '信號塔', c: 0x6ad8ff, sh: 1 }, { n: '圓頂營地', c: 0x9dff7a, sh: 2 }, { n: '四柱燈', c: 0xff7ad1, sh: 3 }, { n: '藍色回收車', c: 0x4a9cff, sh: 0 }, { n: '紅色信號塔', c: 0xff5a4a, sh: 1 }, { n: '金色圓頂', c: 0xffe066, sh: 2 }, { n: '紫色四柱燈', c: 0xb07aff, sh: 3 }];
-const api = { BAG_TIERS: BAG_TIERS, bagTierOf: bagTierOf, BASE_STYLES: BASE_STYLES, MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
+const api = { RARITY: RARITY, BAG_TIERS: BAG_TIERS, bagTierOf: bagTierOf, BASE_STYLES: BASE_STYLES, MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
   KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, GUNS: GUNS, BASE_R: BASE_R, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, breakWall: breakWall, restoreMap: restoreMap, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
   quotaFor: quotaFor, Sim: Sim, setMap: setMap };
 

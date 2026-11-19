@@ -233,7 +233,7 @@ function litMat(o) {
   Object.keys(o || {}).forEach(function (k) { if (m[k] !== undefined) p[k] = o[k]; });
   m.setValues(p); return m;
 }
-let specId = null, beatT = 0, toastT = 0, fullHintT = 0, lockHintT = 0, loudT = 0, spk = false, hudT = 0, lastL = me, dragging = false;
+let specId = null, beatT = 0, toastT = 0, fullHintT = 0, loudT = 0, spk = false, hudT = 0, lastL = me, dragging = false;
 let itemGeos = null, skinGeos = null;
 
 // 飄字（賣出金額、受傷）
@@ -2240,6 +2240,18 @@ function pollPad(dt) {
 }
 window.addEventListener('gamepadconnected', function (e) { toast('已連接手把：' + String(e.gamepad.id || '').slice(0, 24)); });
 window.addEventListener('gamepaddisconnected', function () { toast('手把已中斷'); pad.x = pad.y = 0; });
+/* 回收物稀有度：地上一圈顏色光圈（灰 普通、綠 優良、藍 稀有、金 傳說），稀有以上加一道光柱，遠遠就看得出哪個值錢 */
+const RAR_COL = [0xd8d2c4, 0x5ee07a, 0x4aa8ff, 0xffc63a];
+const rarGeo = { ring: new THREE.RingGeometry(0.34, 0.5, 28), beam: new THREE.CylinderGeometry(0.05, 0.12, 2.6, 10, 1, true) };
+function rarFx(x, z, kind) {
+  const kd = W.KINDS[kind]; if (!kd) return null;
+  const r = kd.rar | 0, col = RAR_COL[r], g = new THREE.Group();
+  const ring = new THREE.Mesh(rarGeo.ring, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.04; g.add(ring);
+  if (r >= 2) { const bm = new THREE.Mesh(rarGeo.beam, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: r === 3 ? 0.4 : 0.26, blending: THREE.AdditiveBlending, depthWrite: false })); bm.position.y = 1.3; g.add(bm); }
+  g.position.set(x, 0, z); scene.add(g); return g;
+}
+function itemVis(it, v) { it.mesh.visible = v; if (it.fx) it.fx.visible = v; }
 /* ---------- 每幀更新 ---------- */
 function updateMe(dt) {
   pollPad(dt);
@@ -2330,14 +2342,6 @@ function updateMe(dt) {
   camera.rotation.set(me.pitch, me.yaw, 0);
   $('stamBar').style.width = (me.stam * 100).toFixed(0) + '%';
   $('stam').className = me.tired ? 'tired' : '';
-  // 物品等級太高、背包等級不夠的提示
-  lockHintT -= dt;
-  if (lockHintT <= 0) {
-    for (let i = 0; i < view.items.length; i++) {
-      const it = view.items[i], kd = W.KINDS[it.kind];
-      if (!it.taken && kd && (kd.req | 0) > myBt() && Math.hypot(it.x - me.x, it.z - me.z) < 1.5) { toast('需要' + W.BAG_TIERS[kd.req | 0] + '（Lv' + ((kd.req | 0) * 10) + '）才撿得起' + kd.n); lockHintT = 3; break; }
-    }
-  }
   // 背包滿的提示
   fullHintT -= dt;
   if (me.bagN >= myCap() && fullHintT <= 0) {
@@ -2400,6 +2404,7 @@ function interpolate(dt, now) {
     if (it.taken) continue;
     it.mesh.rotation.y += dt * 1.6; it.mesh.rotation.x += dt * 0.5;
     it.mesh.position.set(it.x, 0.75 + Math.sin(now * 2 + i) * 0.08, it.z);
+    if (it.fx) { it.fx.position.set(it.x, 0, it.z); it.fx.children[0].rotation.z += dt * 0.8; const pu = 0.75 + Math.sin(now * 3 + i) * 0.2; it.fx.children[0].material.opacity = pu * 0.8; }
   }
 }
 
@@ -2657,7 +2662,7 @@ RR.Game = {
       try { if (document.exitPointerLock) document.exitPointerLock(); } catch (e) {}
       $('vig').style.opacity = 0; $('flash').style.opacity = 0; $('spec').classList.add('hide');
       view.monsters.forEach(function (m) { m.group.visible = false; });
-      view.items.forEach(function (it) { it.mesh.visible = false; });
+      view.items.forEach(function (it) { itemVis(it, false); });
       view.players.forEach(function (p) { if (p.avatar) p.avatar.visible = false; });
       view.phase = 'lobby';
     }
@@ -2686,7 +2691,7 @@ RR.Game = {
     W.setMap(info.map || 0); W.restoreMap();
     view.base = info.base | 0;
     if (builtMap !== W.mapIndex || builtBase !== view.base || Object.keys(brokenVis).length) buildLevel();   // 前一天炸開的牆恢復原狀
-    view.items.forEach(function (it) { scene.remove(it.mesh); });
+    view.items.forEach(function (it) { scene.remove(it.mesh); if (it.fx) scene.remove(it.fx); });
     view.items = info.items.map(function (a) {
       const isk = RR.Game.settings.itemSkin | 0;   // 回收品造型：0 預設、1 糖果（圓球粉彩）、2 寶石（八面體亮色）
       const icol = isk === 1 ? [0xffb3d1, 0xb3e5ff, 0xfff0a8, 0xd5b8ff, 0xb8ffd9][a[2] % 5] : isk === 2 ? [0xff4a6a, 0x4ac8ff, 0x6aff8a, 0xffd24a, 0xc86aff][a[2] % 5] : [0xffd166, 0x6ecbff, 0xff9f5a, 0xc9a0ff, 0xff7eb6, 0x9be564, 0xffe94a, 0xfff3b0, 0x5affc9, 0xffb86b, 0xbfc7d1][a[2] % 11];
@@ -2697,7 +2702,7 @@ RR.Game = {
       }
       const mesh = new THREE.Mesh(isk === 1 ? skinGeos[0] : isk === 2 ? skinGeos[1] : (function () { const vs = itemGeos[a[2] % itemGeos.length]; return vs[Math.abs(Math.floor(a[0] * 7 + a[1] * 13)) % vs.length]; })(), isk ? new THREE.MeshBasicMaterial({ color: icol }) : salvageMat());
       mesh.position.set(a[0], 0.75, a[1]); scene.add(mesh);
-      return { x: a[0], z: a[1], kind: a[2], value: a[3], taken: false, mesh: mesh };
+      return { x: a[0], z: a[1], kind: a[2], value: a[3], taken: false, mesh: mesh, fx: rarFx(a[0], a[1], a[2]) };
     });
     view.mode = info.mode || 'coop'; document.body.classList.toggle('td', view.mode === 'td'); syncTowers([]); view.td = null;
     document.body.classList.toggle('hunt', view.mode === 'hunt'); document.body.classList.toggle('br', view.mode === 'br');
@@ -2797,7 +2802,7 @@ RR.Game = {
     }
     if (s.it && s.it.length === view.items.length) {
       for (let i = 0; i < view.items.length; i++) {
-        const it = view.items[i]; it.taken = s.it[i] === '1'; it.mesh.visible = !it.taken;
+        const it = view.items[i]; it.taken = s.it[i] === '1'; itemVis(it, !it.taken);
       }
     }
     const sec = Math.ceil(view.time);
@@ -2809,13 +2814,13 @@ RR.Game = {
   onEvent: function (e) {
     if (e.t === 'pickup') {
       const it = view.items[e.i];
-      if (it) { it.taken = true; it.mesh.visible = false; }
-      if (e.id === myId && it) { Sfx.tone(660, 0.09, 'triangle', 0.12, 990); toast('撿到 ' + W.KINDS[it.kind].n + '（$' + it.value + '）'); }
+      if (it) { it.taken = true; itemVis(it, false); }
+      if (e.id === myId && it) { Sfx.tone(660, 0.09, 'triangle', 0.12, 990); toast('撿到' + (W.KINDS[it.kind].rar ? W.RARITY[W.KINDS[it.kind].rar] + '的' : ' ') + W.KINDS[it.kind].n + '（$' + it.value + '）'); }
     } else if (e.t === 'sell') {
       Sfx.tone(523, 0.12, 'triangle', 0.14); setTimeout(function () { Sfx.tone(784, 0.2, 'triangle', 0.14); }, 110);
       toast((e.id === myId ? '賣出' : nameOf(e.id) + ' 賣出') + ' +$' + e.sum); floatText('+$' + e.sum);
     } else if (e.t === 'drop') {
-      e.list.forEach(function (a) { const it = view.items[a[0]]; if (it) { it.x = a[1]; it.z = a[2]; it.taken = false; it.mesh.visible = true; } });
+      e.list.forEach(function (a) { const it = view.items[a[0]]; if (it) { it.x = a[1]; it.z = a[2]; it.taken = false; itemVis(it, true); } });
     } else if (e.t === 'caught') {
       const p = view.players.get(e.id); if (p) p.alive = false;
       if (e.id === myId) {
