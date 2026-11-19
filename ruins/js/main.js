@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v190', items: ['切到近戰武器時手上只拿近戰武器，切回槍時只拿槍，不會兩把一起出現'] };
+const UPD = { v: 'v191', items: ['怪物卡牌加入排行榜（社群的模式分頁，依勝場累計）', '怪物卡牌排在 AR 實境後面', '交易所自己發的【掛單】訊息字看得清楚了', '卡牌離開改用遊戲內的確認視窗，卡牌背面改成遊戲內的卡片樣式'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1511,7 +1511,7 @@ function dailyLogin() {
   say('每日登入獎勵：金幣 +' + gift + '（連續第 ' + streak + ' 天' + (streak < 7 ? '，明天再來會更多' : '') + '）');
 }
 /* ---------- 社群畫面 ---------- */
-const MODE_NAME = { coop: '回收任務', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰' };
+const MODE_NAME = { coop: '回收任務', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', card: '怪物卡牌' };
 let socTab = 'rank', socMode = 'coop', socScope = 'week';
 function mk(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function socNote(text) { const b = $('socBody'); b.appendChild(mk('p', 'note', text)); }
@@ -1530,7 +1530,7 @@ function socRows(rows, unit, emptyText) {
     row.appendChild(mk('span', 'sc', unit(r.score | 0))); b.appendChild(row);
   });
 }
-function scoreUnit(mode) { return function (v) { return mode === 'ar' ? v + ' 隻' : mode === 'br' ? v + ' 勝' : mode === 'coop' ? '第 ' + v + ' 天' : '第 ' + v + ' 關'; }; }
+function scoreUnit(mode) { return function (v) { return mode === 'ar' ? v + ' 隻' : mode === 'br' || mode === 'card' ? v + ' 勝' : mode === 'coop' ? '第 ' + v + ' 天' : '第 ' + v + ' 關'; }; }
 const CLAN_TYPE = { open: '開放加入', approve: '需要批准', invite: '僅限邀請' }, CLAN_REGION = { all: '全球', tw: '台灣', hk: '香港' };
 /** 拾荒團名片：徽章、名稱、描述、類型、最低等級、地區、人數（拾荒團頁上方與拾荒團列表共用） */
 function clanCard(c, extra) {
@@ -1925,6 +1925,7 @@ function bind() {
     award: function (win, opp) {
       const p = prog(), lv0 = levelOf(p.xp), coins = win ? 20 + opp * 10 : 5, xp = coins + 10;
       p.coins += coins; p.xp += xp; p.st.games += 1; if (win) p.st.wins += 1; progSave(p); renderProg();
+      if (win && RR.Cloud && RR.Cloud.ready()) RR.Cloud.submit('card', 1);
       return '金幣 +' + coins + '，經驗 +' + xp + (levelOf(p.xp) > lv0 ? '，升到 Lv.' + levelOf(p.xp) + '（大廳點等級領獎勵）' : '');
     }
   });

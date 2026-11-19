@@ -198,6 +198,7 @@
       '</div>' +
       '<div class="cgPick hide"><div class="panel small"><h2>王者怪物：指定屬性</h2><div class="cgPickRow">' + COL.map(function (c, i) { return '<button type="button" class="cgPickB" data-c="' + i + '" style="--cc:' + COLC[i] + '">' + c + '</button>'; }).join('') + '</div><button class="btn" type="button" data-a="pickNo">取消</button></div></div>' +
       '<div class="cgEnd hide"><div class="panel small"><h2 class="cgEndT"></h2><p class="cgEndS"></p><div class="row"><button class="btn" type="button" data-a="back2">回大廳</button><button class="btn primary" type="button" data-a="again">再來一局</button></div></div></div>' +
+      '<div class="cgAsk hide"><div class="panel small"><h2>離開這局？</h2><p>離開這局卡牌，這局不算。</p><div class="row"><button class="btn" type="button" data-a="askNo">繼續玩</button><button class="btn primary" type="button" data-a="askYes">離開</button></div></div></div>' +
       '<div class="cgHelp hide"><div class="panel small tut"><h2>怪物卡牌規則</h2><ul>' +
       '<li>出跟桌上<b>同屬性</b>（火、冰、毒、電）或<b>同等級／同功能</b>的牌。</li>' +
       '<li>沒牌可出就按牌堆抽一張；抽到能出的可以馬上出，或按「不出」。</li>' +
@@ -210,7 +211,9 @@
       if (pk) { $('.cgPick').classList.add('hide'); if (G.pickIdx != null) { const i = G.pickIdx; G.pickIdx = null; play(0, i, +pk.dataset.c); } return; }
       if (!a) return;
       const act = a.dataset.a;
-      if (act === 'back') { if (G && !G.over && !confirm('離開這局卡牌？這局不算。')) return; close(); }
+      if (act === 'back') { if (G && !G.over) { $('.cgAsk').classList.remove('hide'); return; } close(); }
+      else if (act === 'askNo') $('.cgAsk').classList.add('hide');
+      else if (act === 'askYes') { $('.cgAsk').classList.add('hide'); close(); }
       else if (act === 'back2') close();
       else if (act === 'again') start(G.opts);
       else if (act === 'pickNo') { $('.cgPick').classList.add('hide'); G.pickIdx = null; }

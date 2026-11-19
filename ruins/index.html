@@ -136,10 +136,10 @@
         <button class="mcard" type="button" data-mode="coop" data-go="createBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c0-4 2.5-6 5-6s5 2 5 6M11 20c0-4 2.5-6 5-6s5 2 5 6"/></svg><b>組隊回收</b><span>建房邀 3 位隊友</span></button>
         <button class="mcard" type="button" data-mode="solo" data-go="soloBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-5 3-8 7-8s7 3 7 8"/></svg><b>單人拾荒</b><span>自己練習回收</span></button>
         <button class="mcard" type="button" data-mode="ar" data-go="arOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><circle cx="12" cy="12" r="3.5"/></svg><b>AR 實境</b><span>抓怪・迷宮</span></button>
+        <button class="mcard" type="button" data-mode="card" data-go="cardOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="11" height="15" rx="1.5" transform="rotate(-10 8 13)"/><rect x="10" y="3" width="11" height="15" rx="1.5"/><path d="M13 12l2-3 2 3-2 3z"/></svg><b>怪物卡牌</b><span>出牌對戰電腦</span></button>
         <button class="mcard" type="button" data-mode="hunt" data-go="huntBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><b>清剿行動</b><span>拿槍清剿怪物</span></button>
         <button class="mcard" type="button" data-mode="td" data-go="tdBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V9l6-5 6 5v12z"/><path d="M10 21v-5h4v5M9 11h6"/></svg><b>死守回收車</b><span>守住回收車</span></button>
         <button class="mcard" type="button" data-mode="br" data-go="brBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="3 2.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg><b>廢墟生存戰</b><span>6 人混戰</span></button>
-        <button class="mcard" type="button" data-mode="card" data-go="cardOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="11" height="15" rx="1.5" transform="rotate(-10 8 13)"/><rect x="10" y="3" width="11" height="15" rx="1.5"/><path d="M13 12l2-3 2 3-2 3z"/></svg><b>怪物卡牌</b><span>出牌對戰電腦</span></button>
       </div>
       <div class="startBox">
         <button class="mapChip" id="mapChip" type="button"><span>地圖</span><b id="mapName">廢棄設施</b></button>
@@ -643,7 +643,7 @@
       <button class="btn hide" id="stAva" type="button" style="flex:none;font-size:13px;padding:8px 10px">換頭像</button>
     </header>
     <div class="stHead" id="stHead"></div>
-    <div class="mkTabs stTabs" id="stTabs" role="tablist"><button type="button" class="on" data-m="all">全部</button><button type="button" data-m="coop">回收</button><button type="button" data-m="hunt">清剿</button><button type="button" data-m="td">死守</button><button type="button" data-m="br">廢墟生存戰</button></div>
+    <div class="mkTabs stTabs" id="stTabs" role="tablist"><button type="button" class="on" data-m="all">全部</button><button type="button" data-m="coop">回收</button><button type="button" data-m="hunt">清剿</button><button type="button" data-m="td">死守</button><button type="button" data-m="br">廢墟生存戰</button><button type="button" data-m="card">怪物卡牌</button></div>
     <div class="stSum" id="stSum"></div>
     <div class="ccLog stList" id="stList"></div>
   </div>

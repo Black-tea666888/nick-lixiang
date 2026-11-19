@@ -1202,13 +1202,13 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .cgOpp.on { background: var(--haz); }
 .cgOpp.last small { color: #b8321d; font-weight: 900; }
 .cgBacks { display: flex; height: 26px; }
-.cgBacks i { width: 16px; height: 24px; margin-left: -6px; border: 2px solid var(--ink); border-radius: 2px; background: repeating-linear-gradient(135deg, var(--ink) 0 3px, #3b3329 3px 6px); }
+.cgBacks i { width: 16px; height: 24px; margin-left: -6px; border: 2px solid var(--ink); border-radius: 2px; background: var(--kraft); }
 .cgBacks i:first-child { margin-left: 0; }
 .cgTable { display: flex; align-items: center; justify-content: center; gap: 18px; min-height: 0; }
 .cgDeck { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0; font: inherit; color: var(--chalk); background: none; border: 0; cursor: pointer; }
 .cgDeck:disabled { cursor: default; opacity: .6; }
-.cgBack { display: block; width: 78px; height: 110px; border: 3px solid var(--ink); border-radius: 6px; background: repeating-linear-gradient(135deg, var(--ink) 0 6px, #4a4033 6px 12px); box-shadow: 4px 4px 0 rgba(17,20,23,.6), 2px 2px 0 var(--kraft-d), 4px 4px 0 var(--ink); position: relative; }
-.cgBack::after { content: '回'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 28px; font-weight: 900; color: var(--haz); }
+.cgBack { display: block; width: 78px; height: 110px; border: 3px solid var(--ink); border-radius: 3px; background: var(--kraft); box-shadow: 4px 4px 0 rgba(17,20,23,.6), 2px 2px 0 var(--kraft-d), 4px 4px 0 var(--ink); position: relative; }
+.cgBack::after { content: '回'; position: absolute; inset: 6px; display: grid; place-items: center; font-size: 30px; font-weight: 900; color: var(--ink); border: 2px solid var(--ink); background: var(--haz); }
 .myTurn .cgDeck:not(:disabled) .cgBack { outline: 3px solid var(--haz); outline-offset: 2px; }
 .cgDeck small { font-size: 12px; font-weight: 800; }
 .cgDisc .cgCard { width: 92px; height: 130px; cursor: default; transform: rotate(-4deg); }
@@ -1221,8 +1221,7 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .cgCard { --cc: #6b6258; position: relative; flex: none; width: 70px; height: 100px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: space-between; font: inherit; color: var(--ink); background: #f4ead7; border: 3px solid var(--ink); border-radius: 6px; box-shadow: 3px 3px 0 rgba(17,20,23,.55); cursor: pointer; overflow: hidden; transition: transform .12s; }
 .cgCard::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 26%; background: var(--cc); }
 .cgCard::after { content: ''; position: absolute; inset: auto 0 0 0; height: 18%; background: var(--cc); }
-.cgCard.wild::before, .cgCard.wild::after { background: conic-gradient(#d4472e 0 25%, #3478d1 0 50%, #3a9f47 0 75%, #e2ad19 0); }
-.cgCard.wild[style*="--cc"]::after { background: var(--cc); }
+.cgCard.wild::before, .cgCard.wild::after { background: var(--ink); }
 .cgCor { position: relative; z-index: 1; align-self: flex-start; margin: 2px 0 0 5px; font-size: 18px; font-weight: 900; color: #fff; text-shadow: 1px 1px 0 var(--ink), -1px -1px 0 var(--ink); }
 .cgArt { position: relative; z-index: 1; width: 62%; margin-top: -4px; }
 .cgArt svg { display: block; width: 100%; height: auto; fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
@@ -1251,3 +1250,13 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
   .cgScr { padding-top: max(4px, env(safe-area-inset-top)); padding-bottom: max(4px, env(safe-area-inset-bottom)); }
   .cgHand { padding: 12px 4px 2px; }
 }
+
+/* 自己發的【掛單】訊息是黃底，字要用深色才看得清楚 */
+.wcMsg.me .wcText.deal { background: var(--haz); color: var(--ink); border-color: var(--ink); }
+
+/* 卡牌模式在大廳的卡片條也用遊戲內的色條 */
+.mcard[data-mode=card]::before { background: var(--bin); }
+/* 離開卡牌的確認：遊戲內的小視窗，不用系統的確認框 */
+.cgAsk { position: fixed; inset: 0; z-index: 41; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(17,20,23,.7); }
+.cgAsk.hide { display: none; }
+.cgAsk .panel { background: var(--kraft); text-align: center; }
