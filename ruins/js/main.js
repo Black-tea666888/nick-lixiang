@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v194', items: ['身分卡在直版不再切邊：功能按鈕改到獨立一列，「背包」「最佳」數字完整顯示'] };
+const UPD = { v: 'v195', items: ['回收任務通關（7／14 天）改為關閉房間回到分類畫面，房客不再卡在結算', '通關提示改在回到大廳後顯示'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1988,7 +1988,7 @@ function bind() {
     const fallback = function () { const i = $('shareLink'); i.value = url; i.classList.remove('hide'); i.focus(); i.select(); };
     try { navigator.clipboard.writeText(url).then(function () { Game.toast('已複製'); chatAdd(null, '邀請連結已複製'); }, fallback); } catch (e) { fallback(); }
   });
-  $('resNext').addEventListener('click', function () { if (!S.sim) return; if (S.sim.maxDay && S.sim.day >= S.sim.maxDay) { mtoast('通關！恭喜完成 ' + S.sim.maxDay + ' 天', 'good'); showMenu(); return; } hostStart(S.sim.day + 1); });
+  $('resNext').addEventListener('click', function () { if (!S.sim) return; if (S.sim.maxDay && S.sim.day >= S.sim.maxDay) { const days = S.sim.maxDay; leave(); mtoast('通關！恭喜完成 ' + days + ' 天', 'good'); return; } hostStart(S.sim.day + 1); });
   $('resRetry').addEventListener('click', function () { if (S.sim) hostStart(1); });
   $('resLobby').addEventListener('click', function () { if (S.mode === 'host') { S.sim.toLobby(); hostBroadcast(rosterMsg()); hostBroadcast({ t: 'lobby' }); } });
   $('resLeave').addEventListener('click', leave);
