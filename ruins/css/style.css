@@ -883,6 +883,9 @@ body.touch.playing:not(.lk-near):not(.btnedit) #locker { display: none !importan
 .stWho { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .stWho b { font-size: 18px; }
 .stWho span { font-size: 13px; color: var(--chalk-2, #c9c4b6); }
+.stWho .stId { font-size: 12px; font-weight: 800; letter-spacing: .08em; }
+.stWho .stBioTxt { font-size: 13px; color: var(--chalk); overflow-wrap: anywhere; }
+.stBio { width: 100%; min-width: 0; font-size: 13px; padding: 4px 6px; border: 2px solid var(--ink); background: var(--chalk); color: var(--ink); }
 .stTot { width: 100%; display: flex; gap: 14px; font-size: 13px; font-weight: 700; color: var(--haz); }
 .stTabs button { font-size: 13px; padding: 8px 0; }
 .stSum { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }

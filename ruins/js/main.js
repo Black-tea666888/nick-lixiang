@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v139', items: ['交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v140', items: ['每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1157,7 +1157,7 @@ function statsOpen(uid, name) {
   if (mine) {
     let a = []; try { a = JSON.parse(ls('rr_hist') || '[]'); } catch (e) {}
     const p = prog();
-    stHeadDraw({ name: myName(), lv: levelOf(p.xp), clanTag: C && C.me() ? C.me().clanTag : '', st: p.st }, true);
+    stHeadDraw({ name: myName(), lv: levelOf(p.xp), clanTag: C && C.me() ? C.me().clanTag : '', code: C && C.me() ? C.me().code : '', bio: p.bio, st: p.st }, true);
     stRows = Array.isArray(a) ? a : []; stDraw(); return;
   }
   stHeadDraw({ name: name || '玩家' }, false);
@@ -1176,6 +1176,12 @@ function stHeadDraw(pf, mine) {
   if (img) { av.textContent = ''; av.style.background = 'center / cover no-repeat url(' + img + ')'; } else av.style.background = (mine && ls('rr_avatar')) || '#f0c040';
   const tx = mk('div', 'stWho'); tx.appendChild(mk('b', null, (pf.name || '玩家') + (mine ? '（你）' : '')));
   tx.appendChild(mk('span', null, (pf.lv ? 'Lv.' + pf.lv : '') + (pf.clanTag ? '　戰隊 [' + pf.clanTag + ']' : '') + (pf.region ? '　' + (pf.region === 'hk' ? '香港' : '台灣') : '')));
+  tx.appendChild(mk('span', 'stId', 'ID ' + (pf.code || '—')));
+  if (mine) {
+    const bi = mk('input', 'stBio'); bi.type = 'text'; bi.maxLength = 30; bi.placeholder = '寫一句簡介（30 字內）'; bi.value = pf.bio || '';
+    bi.addEventListener('change', function () { const p = prog(); p.bio = bi.value.replace(/[<>]/g, '').trim().slice(0, 30); progSave(p); RR.Cloud.saveSoon(); });
+    tx.appendChild(bi);
+  } else if (pf.bio) tx.appendChild(mk('span', 'stBioTxt', pf.bio));
   h.appendChild(av); h.appendChild(tx);
   const st = pf.st || {};
   if (st.games) { const t = mk('div', 'stTot'); t.appendChild(mk('span', null, '總場數 ' + (st.games | 0))); t.appendChild(mk('span', null, '勝率 ' + Math.round((st.wins | 0) / Math.max(1, st.games) * 100) + '%')); t.appendChild(mk('span', null, '擊倒 ' + (st.mk | 0))); h.appendChild(t); }
