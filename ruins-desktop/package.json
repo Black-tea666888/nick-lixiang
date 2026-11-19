@@ -1,0 +1,29 @@
+{
+  "name": "ruins-recycle",
+  "productName": "廢墟回收隊",
+  "version": "1.0.0",
+  "description": "廢墟回收隊 桌面版（Steam 用）",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "copy": "node copy-app.js",
+    "start": "npm run copy && electron .",
+    "dist:win": "npm run copy && electron-builder --win --x64",
+    "dist:mac": "npm run copy && electron-builder --mac",
+    "dist:linux": "npm run copy && electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "io.github.blacktea666888.ruins",
+    "productName": "廢墟回收隊",
+    "artifactName": "RuinsRecycle-${version}-${os}-${arch}.${ext}",
+    "files": ["main.js", "serve.js", "app/**/*"],
+    "directories": { "output": "dist" },
+    "win": { "target": "dir" },
+    "mac": { "target": "dir", "category": "public.app-category.games" },
+    "linux": { "target": "dir", "category": "Game" }
+  }
+}
