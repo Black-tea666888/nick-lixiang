@@ -1260,3 +1260,15 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .cgAsk { position: fixed; inset: 0; z-index: 41; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(17,20,23,.7); }
 .cgAsk.hide { display: none; }
 .cgAsk .panel { background: var(--kraft); text-align: center; }
+
+/* 分類畫面（主玩法／休閒模式） */
+#scrHub { align-items: center; justify-content: center; padding: 16px; }
+.hubBox { width: min(92vw, 520px); display: flex; flex-direction: column; gap: 14px; text-align: center; }
+.hubTitle { margin: 0; font-size: 26px; font-weight: 900; color: var(--chalk); text-shadow: 2px 2px 0 var(--ink); }
+.hubCard { height: auto; min-height: 96px; padding: 16px 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; cursor: pointer; }
+.hubCard b { font-size: 22px; }
+.hubCard span { font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.hubCard.casual::before { background: var(--haz); }
+.lbHubB { min-height: 0; padding: 4px 10px; font-size: 13px; }
+#optChip.hide { display: none; }
+@media (orientation: landscape) and (max-height: 520px) { .hubBox { gap: 8px; } .hubTitle { font-size: 20px; } .hubCard { min-height: 72px; padding: 10px 14px; } .hubCard b { font-size: 18px; } }
