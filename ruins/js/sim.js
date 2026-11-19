@@ -570,7 +570,9 @@ Sim.prototype._lockerToggle = function (p, idx) {
   if (Math.hypot(k[0] - p.x, k[1] - p.z) > 1.8) return;
   p.lk = { i: idx, t: 8 }; p.x = k[0]; p.z = k[1];
   p.lw = LOCKER_W[idx];
+  p.shieldT = Math.max(p.shieldT || 0, 4);   // 拿到近戰武器：4 秒護盾（怪物抓不到）
   this.events.push({ t: 'lkw', id: p.id, w: WEAPONS[p.lw] });
+  this.events.push({ t: 'shield', id: p.id });
 };
 Sim.prototype._lockerExit = function (p) {
   p.lk = null; p.lkCd = 10;
