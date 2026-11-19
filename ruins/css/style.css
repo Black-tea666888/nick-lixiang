@@ -420,7 +420,7 @@ summary { color: var(--ink-2); font-size: 13px; cursor: pointer; text-align: cen
 .tabs button { flex: 1; min-width: 62px; padding: 9px 6px; font: inherit; font-size: 14px; font-weight: 700; color: var(--ink); background: var(--kraft-l); border: 0; border-right: 2px solid var(--ink); cursor: pointer; white-space: nowrap; }
 .tabs button:last-child { border-right: 0; }
 .tabs button.on { background: var(--ink); color: var(--haz); font-weight: 900; }
-.srow { display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin-bottom: 0; background: var(--kraft-l); border: 2px solid var(--ink); border-top-width: 0; font-size: 14px; }
+.srow { display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin-bottom: 0; background: var(--kraft-l); color: var(--ink); border: 2px solid var(--ink); border-top-width: 0; font-size: 14px; }
 .srow:first-of-type, .sec + .srow, .soc-row + .srow, .note + .srow, .bigcode + .srow { border-top-width: 2px; }
 .srow.me { background: var(--haz); }
 .srow .rk { flex: none; width: 26px; text-align: center; font-weight: 900; }
