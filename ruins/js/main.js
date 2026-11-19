@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v125', items: ['新增換彈鍵（電腦 H）與換武器鍵（主槍／副槍，電腦 K）；子彈打完要換彈', '設定新增陀螺儀瞄準', '推車可以載 2 位隊友坐後座（可開槍掩護），車子鍵改小', '技能好了或開局時自動提示技能效果'] };
+const UPD = { v: 'v126', items: ['新增個人戰績：點頭像看自己的戰績，點排行榜、好友、戰隊、聊天裡的名字看別人的戰績，可分模式查看'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -441,7 +441,7 @@ function wcDraw() {
   if (!wcRows.length) { log.appendChild(mk('p', 'ccEmpty', '世界頻道還沒有人說話。打個招呼，或喊價買賣。')); return; }
   wcRows.slice().reverse().forEach(function (m) {
     const mine = m.uid === my, r = mk('div', 'ccMsg' + (mine ? ' me' : '') + (m.sys ? ' sys' : '')), head = mk('div', 'ccHead'), av = mk('span', 'ccAv', (m.name || '?').charAt(0));
-    av.style.background = '#f0c040'; head.appendChild(av); head.appendChild(mk('b', null, (mine ? '你' : m.name) + (m.lv ? '　Lv.' + m.lv : '')));
+    av.style.background = '#f0c040'; head.appendChild(av); head.appendChild(mk('b', null, (mine ? '你' : m.name) + (m.lv ? '　Lv.' + m.lv : ''))); statsLink(head, m.uid, m.name);
     r.appendChild(head); r.appendChild(mk('span', null, m.text)); log.appendChild(r);
   });
   log.scrollTop = log.scrollHeight;
@@ -530,7 +530,7 @@ function ccDraw() {
       const r = mk('div', 'ccMsg' + (mine ? ' me' : '')), head = mk('div', 'ccHead'), av = mk('span', 'ccAv', (m.name || '?').charAt(0));
       const myImg = mine ? ls('rr_avatar_img') : '';
       if (myImg) { av.textContent = ''; av.style.background = 'center / cover no-repeat url(' + myImg + ')'; } else { av.style.background = m.av || '#f0c040'; }
-      head.appendChild(av); head.appendChild(mk('b', null, (mine ? '你' : m.name) + (m.lv ? '　Lv.' + m.lv : '')));
+      head.appendChild(av); head.appendChild(mk('b', null, (mine ? '你' : m.name) + (m.lv ? '　Lv.' + m.lv : ''))); statsLink(head, m.uid, m.name);
       r.appendChild(head); r.appendChild(mk('span', null, m.text)); log.appendChild(r); return;
     }
     if (m.k !== 'req') return;
@@ -1044,8 +1044,76 @@ function achProgress(a, p) {
 }
 function dayStr(off) { const d = new Date(Date.now() + (off || 0) * 864e5); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 /** 一局結束：更新統計、解鎖成就、回報排行榜與戰隊。回傳要加在結算畫面的文字。 */
-function afterMatch(mode, win, day, myStat, coins) {
+/* ---------- 歷史戰績 ----------
+ * 每局結束記一筆（本機留最近 60 筆；登入雲端時也存到 users/{uid}/matches，別人點你的頭像看得到） */
+function saveMatch(rec) {
+  let a = []; try { a = JSON.parse(ls('rr_hist') || '[]'); } catch (e) {}
+  if (!Array.isArray(a)) a = []; a.unshift(rec); lsSet('rr_hist', JSON.stringify(a.slice(0, 60)));
+  if (RR.Cloud && RR.Cloud.ready()) RR.Cloud.addMatch(rec);
+}
+let stRows = [], stMode = 'all', stUid = null;
+/** 打開戰績：uid 省略＝自己 */
+function statsOpen(uid, name) {
+  const C = RR.Cloud, mine = !uid || (C && uid === C.uid());
+  stUid = mine ? null : uid; stMode = 'all';
+  $('scrStats').classList.remove('hide'); $('stAva').classList.toggle('hide', !mine);
+  $('stHead').textContent = ''; $('stSum').textContent = ''; $('stList').textContent = '';
+  if (mine) {
+    let a = []; try { a = JSON.parse(ls('rr_hist') || '[]'); } catch (e) {}
+    const p = prog();
+    stHeadDraw({ name: myName(), lv: levelOf(p.xp), clanTag: C && C.me() ? C.me().clanTag : '', st: p.st }, true);
+    stRows = Array.isArray(a) ? a : []; stDraw(); return;
+  }
+  stHeadDraw({ name: name || '玩家' }, false);
+  $('stList').appendChild(mk('p', 'ccEmpty', '讀取中…'));
+  C.playerStats(uid, function (err, d) {
+    if (stUid !== uid) return;
+    if (err) { $('stList').textContent = ''; $('stList').appendChild(mk('p', 'ccEmpty', C.message(err))); return; }
+    stHeadDraw(Object.assign({ name: name || '玩家' }, d.prof || {}), false);
+    stRows = d.rows; stDraw();
+  });
+}
+function stHeadDraw(pf, mine) {
+  const h = $('stHead'); h.textContent = '';
+  const av = mk('span', 'ccAv stAv', (pf.name || '?').charAt(0));
+  const img = mine ? ls('rr_avatar_img') : '';
+  if (img) { av.textContent = ''; av.style.background = 'center / cover no-repeat url(' + img + ')'; } else av.style.background = (mine && ls('rr_avatar')) || '#f0c040';
+  const tx = mk('div', 'stWho'); tx.appendChild(mk('b', null, (pf.name || '玩家') + (mine ? '（你）' : '')));
+  tx.appendChild(mk('span', null, (pf.lv ? 'Lv.' + pf.lv : '') + (pf.clanTag ? '　戰隊 [' + pf.clanTag + ']' : '') + (pf.region ? '　' + (pf.region === 'hk' ? '香港' : '台灣') : '')));
+  h.appendChild(av); h.appendChild(tx);
+  const st = pf.st || {};
+  if (st.games) { const t = mk('div', 'stTot'); t.appendChild(mk('span', null, '總場數 ' + (st.games | 0))); t.appendChild(mk('span', null, '勝率 ' + Math.round((st.wins | 0) / Math.max(1, st.games) * 100) + '%')); t.appendChild(mk('span', null, '擊倒 ' + (st.mk | 0))); h.appendChild(t); }
+}
+function stDraw() {
+  Array.prototype.forEach.call(document.querySelectorAll('#stTabs button'), function (b) { b.classList.toggle('on', b.dataset.m === stMode); });
+  const rows = stRows.filter(function (r) { return stMode === 'all' || r.mode === stMode; }), list = $('stList'), sum = $('stSum');
+  list.textContent = ''; sum.textContent = '';
+  const w = rows.filter(function (r) { return r.win; }).length, k = rows.reduce(function (s, r) { return s + (r.kills | 0); }, 0), mvp = rows.filter(function (r) { return r.mvp; }).length;
+  [['場數', rows.length], ['勝率', rows.length ? Math.round(w / rows.length * 100) + '%' : '—'], ['擊倒', k], ['MVP', mvp]].forEach(function (x) { const c = mk('div'); c.appendChild(mk('b', null, String(x[1]))); c.appendChild(mk('span', null, x[0])); sum.appendChild(c); });
+  if (!rows.length) { list.appendChild(mk('p', 'ccEmpty', stMode === 'all' ? '還沒有戰績。打完一局就會記錄在這裡。' : '這個模式還沒有戰績。')); return; }
+  const head = mk('div', 'stRow stTh'); ['結果', '分數', '擊倒/倒下', '模式'].forEach(function (t) { head.appendChild(mk('span', null, t)); }); list.appendChild(head);
+  rows.forEach(function (r) {
+    const row = mk('div', 'stRow' + (r.win ? ' win' : ''));
+    const res = mk('span', 'stRes'); res.appendChild(mk('b', null, r.mode === 'br' ? '第 ' + (r.rank || '?') + ' 名' : r.win ? '勝利' : '失敗'));
+    if (r.mvp) res.appendChild(mk('i', 'stMvp', 'MVP'));
+    row.appendChild(res);
+    row.appendChild(mk('span', 'stNum', String(r.score | 0)));
+    row.appendChild(mk('span', 'stNum', (r.kills | 0) + ' / ' + (r.deaths | 0)));
+    const md = mk('span', 'stMode'); md.appendChild(mk('b', null, (MODE_NAME[r.mode] || r.mode) + (r.mode !== 'br' ? '・第 ' + (r.day | 0) + (r.mode === 'coop' ? ' 天' : ' 關') : '')));
+    const d = new Date(r.t || 0); md.appendChild(mk('small', null, (r.map ? r.map + '　' : '') + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')));
+    row.appendChild(md); list.appendChild(row);
+  });
+}
+/** 讓名字或頭像可以點：打開那個人的戰績 */
+function statsLink(el, uid, name) {
+  if (!el || !uid) return; el.classList.add('stLink'); el.setAttribute('role', 'button'); el.tabIndex = 0;
+  el.addEventListener('click', function (e) { e.stopPropagation(); statsOpen(uid, name); });
+}
+function afterMatch(mode, win, day, myStat, coins, info) {
   const p = prog(), t = p.st;
+  info = info || {};
+  saveMatch({ mode: mode, win: !!win, day: day | 0, score: Math.max(0, Math.floor(info.score || 0)), kills: (info.kills != null ? info.kills : myStat && myStat.mk) | 0,
+    deaths: info.deaths | 0, rank: info.rank | 0, mvp: !!info.mvp, n: info.n | 0, map: (W.MAPS[myMap()] || {}).name || '', t: Date.now() });
   t.games++; if (win) t.wins++;
   t.mk += (myStat && myStat.mk) | 0;
   if (mode === 'br') { if (win) t.brWins++; }
@@ -1081,6 +1149,7 @@ function socRows(rows, unit, emptyText) {
   if (!rows.length) { socNote(emptyText || '還沒有人上榜，快去拿第一名。'); return; }
   rows.forEach(function (r, i) {
     const row = mk('div', 'srow' + (r.uid === my ? ' me' : ''));
+    statsLink(row, r.uid, r.name);
     row.appendChild(mk('span', 'rk', String(i + 1)));
     const nm = mk('span', 'nm', r.name || '玩家'); if (r.clan) nm.appendChild(mk('small', null, ' [' + r.clan + ']')); row.appendChild(nm);
     row.appendChild(mk('span', 'sc', unit(r.score | 0))); b.appendChild(row);
@@ -1158,7 +1227,7 @@ function renderSocial() {
       if (!rows.length) { socNote('還沒有好友。把上面的代碼傳給朋友，或輸入他的代碼。'); return; }
       rows.forEach(function (f) {
         const r = mk('div', 'srow'); r.appendChild(mk('span', f.online ? 'dotOn' : 'dotOff'));
-        const nm = mk('span', 'nm', f.name); nm.appendChild(mk('small', null, '　Lv.' + f.lv + (f.clan ? ' [' + f.clan + ']' : '') + (f.online ? (f.room ? '，在房間 ' + f.room : '，線上') : '，離線'))); r.appendChild(nm);
+        const nm = mk('span', 'nm', f.name); statsLink(nm, f.uid, f.name); nm.appendChild(mk('small', null, '　Lv.' + f.lv + (f.clan ? ' [' + f.clan + ']' : '') + (f.online ? (f.room ? '，在房間 ' + f.room : '，線上') : '，離線'))); r.appendChild(nm);
         if (f.online && f.room) { const j = mk('button', 'btn primary', '加入'); j.type = 'button'; j.addEventListener('click', function () { $('scrSocial').classList.add('hide'); $('codeInput').value = f.room; joinRoom(); }); r.appendChild(j); }
         const del = mk('button', 'btn', '刪除'); del.type = 'button'; del.addEventListener('click', function () { C.removeFriend(f.uid, function () { renderSocial(); }); }); r.appendChild(del);
         b.appendChild(r);
@@ -1231,7 +1300,7 @@ function showResultBR(e) {
   for (let k = 0; k < 3; k++) { const x = document.createElement(k < stars ? 'span' : 'i'); x.textContent = '★'; sb.appendChild(x); }
   $('resText').textContent = '共 ' + n + ' 人，你淘汰了 ' + (mine.kills || 0) + ' 人。';
   const p = prog(), coins = 15 + (mine.kills || 0) * 15 + (win ? 60 : mine.rank <= 3 ? 20 : 0); p.coins += coins; p.xp += coins + 10; if (win) p.m[0] += 1; progSave(p);
-  $('resGain').textContent = '金幣 +' + coins + '，經驗 +' + (coins + 10) + afterMatch('br', win, 1, null, coins);
+  $('resGain').textContent = '金幣 +' + coins + '，經驗 +' + (coins + 10) + afterMatch('br', win, 1, null, coins, { score: (mine.kills || 0) * 100 + (n - mine.rank + 1) * 50, kills: mine.kills || 0, deaths: win ? 0 : 1, rank: mine.rank, mvp: win, n: n });
   const st = $('resStats'); st.textContent = '';
   (e.stats || []).slice().sort(function (a, b) { return a.rank - b.rank; }).forEach(function (q) {
     const row = document.createElement('div'); row.className = 'prow' + (q.rank === 1 ? '' : ' dead');
@@ -1255,7 +1324,9 @@ function showResult(e) {
   const sb = $('resStars'); sb.textContent = '';
   for (let k = 0; k < 3; k++) { const x = document.createElement(k < stars ? 'span' : 'i'); x.textContent = '★'; sb.appendChild(x); }
   { const c0 = prog().coins, txt = progOnResult(e, stars), mine = (e.stats || []).filter(function (q) { return q.id === S.myId; })[0];
-    $('resGain').textContent = txt + afterMatch(S.gmode === 'hunt' || S.gmode === 'td' ? S.gmode : 'coop', !!e.win, e.day, mine, prog().coins - c0); }
+    let best = null; (e.stats || []).forEach(function (q) { if (q.earned > 0 && (!best || q.earned > best.earned)) best = q; });
+    $('resGain').textContent = txt + afterMatch(S.gmode === 'hunt' || S.gmode === 'td' ? S.gmode : 'coop', !!e.win, e.day, mine, prog().coins - c0,
+      { score: mine ? (mine.earned | 0) : (e.money | 0), kills: mine ? mine.mk | 0 : 0, deaths: mine && !mine.alive ? 1 : 0, mvp: !!(mine && best && best.id === mine.id && (e.stats || []).length > 1), n: (e.stats || []).length }); }
   let top = null; if (e.stats) e.stats.forEach(function (p) { if (p.earned > 0 && (!top || p.earned > top.earned)) top = p; });
   const hunt = S.gmode === 'hunt', td = S.gmode === 'td';
   if (hunt) $('resTitle').textContent = e.win ? '獵殺第 ' + e.day + ' 關完成！' : '獵殺失敗';
@@ -1521,7 +1592,10 @@ function bind() {
   $('tutNext').addEventListener('click', function () { if (tutI < TUT.length - 1) tutShow(tutI + 1); else tutDone(); });
   Array.prototype.forEach.call(document.querySelectorAll('#regionAsk [data-r]'), function (b) { b.addEventListener('click', function () { const q = prog(); q.region = +b.dataset.r; progSave(q); lsSet('rr_region', '1'); $('regionAsk').classList.add('hide'); }); });
   $('tutSkip').addEventListener('click', tutDone);
-  $('avatar').addEventListener('click', function () { avaDraw(); $('avaPick').classList.remove('hide'); });
+  $('avatar').addEventListener('click', function () { statsOpen(); });
+  $('stAva').addEventListener('click', function () { avaDraw(); $('avaPick').classList.remove('hide'); });
+  $('stDone').addEventListener('click', function () { $('scrStats').classList.add('hide'); stUid = null; });
+  Array.prototype.forEach.call(document.querySelectorAll('#stTabs button'), function (b) { b.addEventListener('click', function () { stMode = b.dataset.m; stDraw(); }); });
   $('avaClose').addEventListener('click', function () { $('avaPick').classList.add('hide'); });
   // 本機照片：縮成 64×64 存在這台裝置，不上傳
   $('avaFile').addEventListener('change', function () {
