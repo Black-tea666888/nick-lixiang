@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v188', items: ['新增「等級獎勵」：點大廳的等級打開，Lv.2～100 每一等都有獎勵（金幣、造型、每 10 等新背包），升級後回來領，可以一鍵全部領取', '已經升過的等級獎勵也可以補領'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel'];
+const UPD = { v: 'v189', items: ['新模式「怪物卡牌」：像 UNO 的出牌對戰，火冰毒電四種屬性、Lv1～9 怪物牌和禁止、迴轉、+2、王者牌；開始前可以選對手人數和起手張數', '回收物不再分背包等級，誰都撿得起來；改成用地上的光圈顏色表示稀有度（灰、綠、藍、金），越稀有越值錢', '手機橫式大廳重新排版：左邊名牌和功能、中間角色、右邊模式和開始'] };
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -718,6 +718,19 @@ const LV_MAX = 100, LV_POW = 1.6;
 function xpAt(lv) { return Math.ceil(60 * Math.pow(Math.max(0, lv - 1), LV_POW)); }
 function levelOf(xp) { let lv = Math.min(LV_MAX, 1 + Math.floor(Math.pow(Math.max(0, xp) / 60, 1 / LV_POW) + 1e-9)); while (lv < LV_MAX && xp >= xpAt(lv + 1)) lv++; while (lv > 1 && xp < xpAt(lv)) lv--; return lv; }
 /** 等級說明：怎麼拿經驗、每 10 等解鎖什麼 */
+/* ---------- 怪物卡牌（js/cards.js）：玩法小選單、結算獎勵 ---------- */
+function cardOpts() { let o = null; try { o = JSON.parse(ls('rr_card') || 'null'); } catch (e) {} o = o || {}; return { opp: [1, 2, 3].indexOf(o.opp) >= 0 ? o.opp : 3, hand: o.hand === 5 ? 5 : 7 }; }
+function cardOptsText() { const o = cardOpts(); return '對手 ' + o.opp + ' 人・' + (o.hand === 5 ? '快速' : '標準'); }
+function cardOptsOpen() {
+  const o = cardOpts(), mark = function () {
+    const c = cardOpts();
+    Array.prototype.forEach.call($('coOpp').children, function (b) { b.classList.toggle('primary', +b.dataset.v === c.opp); });
+    Array.prototype.forEach.call($('coHand').children, function (b) { b.classList.toggle('primary', +b.dataset.v === c.hand); });
+  };
+  void o; mark(); $('cardOpts').classList.remove('hide');
+  $('coOpp').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; const c = cardOpts(); c.opp = +b.dataset.v; lsSet('rr_card', JSON.stringify(c)); mark(); };
+  $('coHand').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; const c = cardOpts(); c.hand = +b.dataset.v; lsSet('rr_card', JSON.stringify(c)); mark(); };
+}
 /* ---------- 等級獎勵：Lv.2～100 每一等都有獎勵，升級後到這裡領 ----------
  * 每 10 等：新背包（升到就自動得到）；固定幾等送造型；其他等級送金幣（10 + 等級）。造型已經有了就換 25 金幣。 */
 const LV_ITEM = { 5: ['hat', 1], 15: ['o', 1], 25: ['pet', 1], 35: ['gs', 1], 45: ['fx', 1], 55: ['is', 1], 65: ['ms', 1], 75: ['o', 3], 85: ['gs', 3], 95: ['hat', 5] };
@@ -745,7 +758,7 @@ function lvSelect(lv) {
   Array.prototype.forEach.call($('lvsCards').children, function (c) { const on = +c.dataset.lv === lv; c.classList.toggle('sel', on); if (on) c.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
   $('lvsKind').textContent = 'Lv.' + lv + '　' + (r[0] === 'bag' ? '背包' : r[0] === 'coin' ? '金幣' : CAT_LABEL[r[0]]);
   $('lvsName').textContent = lvRwName(r);
-  $('lvsDesc').textContent = r[0] === 'bag' ? '背包 ' + (W.BAG_MAX + r[1]) + ' 格，可以撿更高等級的回收物。升到 Lv.' + lv + ' 自動得到。' : r[0] === 'coin' ? '直接得到 ' + r[1] + ' 金幣。' : segDesc([r[0], r[1]], p);
+  $('lvsDesc').textContent = r[0] === 'bag' ? '背包 ' + (W.BAG_MAX + r[1]) + ' 格，一趟可以多帶回收物。升到 Lv.' + lv + ' 自動得到。' : r[0] === 'coin' ? '直接得到 ' + r[1] + ' 金幣。' : segDesc([r[0], r[1]], p);
   const got = lvGot(p, lv), can = lvCanClaim(p, lv), btn = $('lvsGet');
   btn.disabled = !can; btn.querySelector('b').textContent = got ? '已獲得' : can ? '領取' : '需要 Lv.' + lv;
   btn.classList.toggle('done', got);
@@ -800,15 +813,15 @@ function lvInfoOpen() {
   sec('每 10 等換一個更好的背包');
   const tbl = document.createElement('div'); tbl.className = 'lvTbl'; body.appendChild(tbl);
   for (let t = 0; t <= 10; t++) {
-    const at = t === 0 ? 1 : t * 10, items = W.KINDS.filter(function (k) { return (k.req | 0) === t; }).map(function (k) { return k.n; });
+    const at = t === 0 ? 1 : t * 10;
     const row = document.createElement('div'); row.className = 'lvRow' + (W.bagTierOf(lv) >= t ? ' ok' : '') + (W.bagTierOf(lv) === t ? ' cur' : '');
     const a = document.createElement('span'); a.className = 'lvAt'; a.textContent = 'Lv.' + at;
     const b = document.createElement('span'); b.className = 'lvBag'; b.textContent = W.BAG_TIERS[t] + '　' + (W.BAG_MAX + t) + ' 格';
-    const c = document.createElement('small'); c.textContent = (items.length ? '可撿：' + items.join('、') : '背包 +1 格') + '　需要 ' + xpAt(at) + ' 經驗';
+    const c = document.createElement('small'); c.textContent = (t ? '背包 +1 格' : '起始背包') + '　需要 ' + xpAt(at) + ' 經驗';
     row.appendChild(a); row.appendChild(b); row.appendChild(c); tbl.appendChild(row);
   }
   sec('其他');
-  ['回收物分等級，背包等級不夠就撿不起來', '有些拾荒團要求最低等級才能加入', '滿級 Lv.100 拿到傳說背包'].forEach(line);
+  ['回收物有稀有度：地上的光圈灰色普通、綠色優良、藍色稀有、金色傳說，越稀有越值錢', '有些拾荒團要求最低等級才能加入', '滿級 Lv.100 拿到傳說背包'].forEach(line);
   $('lvInfo').classList.remove('hide');
 }
 function renderProg() {
@@ -1148,14 +1161,15 @@ function showUpdNote() {
   $('updNote').classList.remove('hide');
 }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境' };
+const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
   Array.prototype.forEach.call($('modeStrip').children, function (b) { const on = b.dataset.mode === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
   $('startMode').textContent = LOBBY_MODE[m] + (m === 'coop' ? '：建立房間' : '');
-  $('mapName').textContent = (W.MAPS[myMap()] || W.MAPS[0]).name;
-  $('mapChip').classList.toggle('dim', m === 'ar');   // AR 不用選地圖
+  $('mapName').textContent = m === 'card' ? cardOptsText() : (W.MAPS[myMap()] || W.MAPS[0]).name;
+  $('mapChip').querySelector('span').textContent = m === 'card' ? '玩法' : '地圖';
+  $('mapChip').classList.toggle('dim', m === 'ar');   // AR 不用選地圖；卡牌模式這格改成選玩法
   const look = myLook();
   $('lbName').textContent = W.CHARS[look.c] + '　' + (W.GUNS[look.gun] || W.GUNS[0]).name;
   { const bd = String(prog().arBuddy || '').split(':'); Game.preview($('lobbyChar'), look.c, look.w, look.h, look.o, look.pet, true, bd.length === 2 ? [bd[0] | 0, bd[1] | 0] : null); }
@@ -1902,7 +1916,18 @@ function bind() {
   // 大廳角色可用滑鼠或手指左右拖曳轉動
   (function () { const cv = $('lobbyChar'); let lastX = null; cv.addEventListener('pointerdown', function (e) { lastX = e.clientX; cv.setPointerCapture(e.pointerId); }); cv.addEventListener('pointermove', function (e) { if (lastX == null) return; Game.previewSpin(cv, e.clientX - lastX); lastX = e.clientX; }); const up = function () { lastX = null; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); })();
   $('goBtn').addEventListener('click', function () { const b = $('modeStrip').querySelector('[data-mode="' + selMode() + '"]'); if (b) $(b.dataset.go).click(); });
-  $('mapChip').addEventListener('click', function () { renderMapGrid(); show('scrMap'); });
+  $('mapChip').addEventListener('click', function () { if (selMode() === 'card') { cardOptsOpen(); return; } renderMapGrid(); show('scrMap'); });
+  $('coOk').addEventListener('click', function () { $('cardOpts').classList.add('hide'); refreshLobby(); });
+  $('cardOpen').addEventListener('click', function () { show('scrCard'); RR.Cards.start(cardOpts()); });
+  RR.Cards.hooks({
+    back: showMenu,
+    sfx: function (k) { try { if (k === 'play') Sfx.tone(520, 0.05, 'square', 0.05, 700); else if (k === 'draw') Sfx.tone(330, 0.05, 'triangle', 0.05); else if (k === 'win') Sfx.tone(660, 0.25, 'triangle', 0.1, 1320); else if (k === 'lose') Sfx.tone(300, 0.3, 'sawtooth', 0.06, 150); else if (k === 'no') Sfx.tone(160, 0.08, 'square', 0.05); } catch (e) {} },
+    award: function (win, opp) {
+      const p = prog(), lv0 = levelOf(p.xp), coins = win ? 20 + opp * 10 : 5, xp = coins + 10;
+      p.coins += coins; p.xp += xp; p.st.games += 1; if (win) p.st.wins += 1; progSave(p); renderProg();
+      return '金幣 +' + coins + '，經驗 +' + xp + (levelOf(p.xp) > lv0 ? '，升到 Lv.' + levelOf(p.xp) + '（大廳點等級領獎勵）' : '');
+    }
+  });
   // 點一下就收起；捕獲階段處理，遊戲畫面攔截點擊也收得掉
   $('banner').addEventListener('pointerdown', bannerHide, true);
   $('banner').addEventListener('click', bannerHide);
