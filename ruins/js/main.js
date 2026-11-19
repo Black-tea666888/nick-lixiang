@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v187', items: ['新增等級說明：點大廳的等級就能看 Lv.1～100 怎麼拿經驗、每 10 等解鎖哪個背包、可以撿哪些回收物', '等級上限 100，升級曲線調順，後面不會卡太久（大家的等級只會變高不會變低）'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
+const UPD = { v: 'v188', items: ['新增「等級獎勵」：點大廳的等級打開，Lv.2～100 每一等都有獎勵（金幣、造型、每 10 等新背包），升級後回來領，可以一鍵全部領取', '已經升過的等級獎勵也可以補領'] };
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -184,6 +184,7 @@ const ICON = {
   ms: '<path d="M5 11a7 7 0 1 1 14 0v3l-2 1v3H7v-3l-2-1z"/><circle cx="9" cy="11" r="1.6"/><circle cx="15" cy="11" r="1.6"/><path d="M10 18v-2M14 18v-2"/>',
   fx: '<path d="M12 2v6M12 16v6M2 12h6M16 12h6M5 5l4 4M15 15l4 4M19 5l-4 4M9 15l-4 4"/>',
   coin: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/>',
+  bag: '<path d="M6 8h12l1 13H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2M8 13h8"/>',
   gs: '<path d="M3 9h15l2-2h1v4h-6l-1 2h-3l-1 5H6l1-5H3z"/><path d="M10 13l-1 2"/>'
 };
 function iconSvg(k) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[k] || ICON.coin) + '</svg>'; }
@@ -717,6 +718,78 @@ const LV_MAX = 100, LV_POW = 1.6;
 function xpAt(lv) { return Math.ceil(60 * Math.pow(Math.max(0, lv - 1), LV_POW)); }
 function levelOf(xp) { let lv = Math.min(LV_MAX, 1 + Math.floor(Math.pow(Math.max(0, xp) / 60, 1 / LV_POW) + 1e-9)); while (lv < LV_MAX && xp >= xpAt(lv + 1)) lv++; while (lv > 1 && xp < xpAt(lv)) lv--; return lv; }
 /** 等級說明：怎麼拿經驗、每 10 等解鎖什麼 */
+/* ---------- 等級獎勵：Lv.2～100 每一等都有獎勵，升級後到這裡領 ----------
+ * 每 10 等：新背包（升到就自動得到）；固定幾等送造型；其他等級送金幣（10 + 等級）。造型已經有了就換 25 金幣。 */
+const LV_ITEM = { 5: ['hat', 1], 15: ['o', 1], 25: ['pet', 1], 35: ['gs', 1], 45: ['fx', 1], 55: ['is', 1], 65: ['ms', 1], 75: ['o', 3], 85: ['gs', 3], 95: ['hat', 5] };
+function lvReward(lv) {
+  if (lv % 10 === 0) return lv === 100 ? ['bag', 10, 1000] : ['bag', lv / 10];
+  if (LV_ITEM[lv]) return LV_ITEM[lv];
+  return ['coin', 10 + lv];
+}
+function lvRwName(r) { return r[0] === 'bag' ? W.BAG_TIERS[r[1]] + (r[2] ? ' + ' + r[2] + ' 金幣' : '') : r[0] === 'coin' ? r[1] + ' 金幣' : catNames(r[0])[r[1]]; }
+function lvGot(p, lv) { const r = lvReward(lv); return r[0] === 'bag' && !r[2] ? levelOf(p.xp) >= lv : (Array.isArray(p.lvc) && p.lvc.indexOf(lv) >= 0); }
+function lvCanClaim(p, lv) { return lv >= 2 && levelOf(p.xp) >= lv && !lvGot(p, lv); }
+function lvClaimable(p) { let n = 0; for (let l = 2; l <= levelOf(p.xp); l++) if (lvCanClaim(p, l)) n++; return n; }
+/** 領一個等級的獎勵（不存檔），回傳文字 */
+function lvGive(p, lv) {
+  const r = lvReward(lv); if (!Array.isArray(p.lvc)) p.lvc = []; p.lvc.push(lv);
+  if (r[0] === 'coin') { p.coins += r[1]; return '+' + r[1] + ' 金幣'; }
+  if (r[0] === 'bag') { p.coins += r[2] | 0; return '+' + (r[2] | 0) + ' 金幣'; }
+  if (owns(p, r[0], r[1])) { p.coins += 25; return '「' + lvRwName(r) + '」已經有了，換成 25 金幣'; }
+  if (r[0] === 'hat') p.hats.push(r[1]); else p.own[r[0]].push(r[1]);
+  return '得到「' + lvRwName(r) + '」';
+}
+let lvSel = 2;
+function lvSelect(lv) {
+  const p = prog(), r = lvReward(lv); lvSel = lv;
+  Array.prototype.forEach.call($('lvsCards').children, function (c) { const on = +c.dataset.lv === lv; c.classList.toggle('sel', on); if (on) c.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
+  $('lvsKind').textContent = 'Lv.' + lv + '　' + (r[0] === 'bag' ? '背包' : r[0] === 'coin' ? '金幣' : CAT_LABEL[r[0]]);
+  $('lvsName').textContent = lvRwName(r);
+  $('lvsDesc').textContent = r[0] === 'bag' ? '背包 ' + (W.BAG_MAX + r[1]) + ' 格，可以撿更高等級的回收物。升到 Lv.' + lv + ' 自動得到。' : r[0] === 'coin' ? '直接得到 ' + r[1] + ' 金幣。' : segDesc([r[0], r[1]], p);
+  const got = lvGot(p, lv), can = lvCanClaim(p, lv), btn = $('lvsGet');
+  btn.disabled = !can; btn.querySelector('b').textContent = got ? '已獲得' : can ? '領取' : '需要 Lv.' + lv;
+  btn.classList.toggle('done', got);
+  const cv = $('lvsCanvas'), ic = $('lvsIcon'), look = myLook(); let three = false;
+  if (r[0] === 'gs') { Game.gunPreview(cv, look.gun, r[1]); three = true; }
+  else if (r[0] === 'o' || r[0] === 'pet' || r[0] === 'hat') { Game.preview(cv, look.c, look.w, r[0] === 'hat' ? r[1] : look.h, r[0] === 'o' ? r[1] : look.o, r[0] === 'pet' ? r[1] : look.pet, true); three = true; }
+  cv.classList.toggle('hide', !three); ic.classList.toggle('hide', three); ic.innerHTML = three ? '' : iconSvg(r[0] === 'bag' ? 'bag' : r[0]);
+}
+function lvsDraw(keepSel) {
+  const p = prog(), me = levelOf(p.xp), box = $('lvsCards'); box.textContent = '';
+  $('lvsLv').textContent = me >= LV_MAX ? 'Lv.100 滿等' : 'Lv.' + me;
+  $('lvsXp').textContent = me >= LV_MAX ? '' : '再 ' + (xpAt(me + 1) - p.xp) + ' 經驗升到 Lv.' + (me + 1);
+  const n = lvClaimable(p); $('lvsAll').disabled = !n; $('lvsAll').textContent = n ? '全部領取（' + n + '）' : '全部領取';
+  for (let l = 2; l <= LV_MAX; l++) {
+    const r = lvReward(l), got = lvGot(p, l), can = lvCanClaim(p, l);
+    const c = document.createElement('button'); c.type = 'button'; c.dataset.lv = l;
+    c.className = 'lvsCard t-' + r[0] + (got ? ' got' : can ? ' can' : ' lock') + (l % 10 === 0 ? ' big' : '');
+    c.innerHTML = '<span class="lvsN">Lv.' + l + '</span><span class="lvsIc">' + iconSvg(r[0] === 'bag' ? 'bag' : r[0]) + '</span><span class="lvsNm"></span><span class="lvsSt">' + (got ? '已獲得' : can ? '領取' : '') + '</span>';
+    c.querySelector('.lvsNm').textContent = lvRwName(r);
+    c.addEventListener('click', function () { if (lvSel === l && lvCanClaim(prog(), l)) lvClaim(l); else lvSelect(l); });
+    box.appendChild(c);
+  }
+  // 進度條：寬度跟卡片列一樣，填到目前等級
+  const cards = box.children, last = cards[Math.min(cards.length - 1, Math.max(0, me - 2))];
+  $('lvsFill').style.width = (me >= LV_MAX ? box.scrollWidth : last ? last.offsetLeft + last.offsetWidth / 2 : 0) + 'px';
+  $('lvsTrack').querySelector('.lvsBar').style.width = box.scrollWidth + 'px';
+  const first = Array.prototype.find.call(cards, function (c) { return c.classList.contains('can'); });
+  const sel = keepSel ? lvSel : first ? +first.dataset.lv : Math.min(LV_MAX, Math.max(2, me + 1));
+  lvSelect(sel);
+  const sc = box.children[sel - 2]; if (sc && !keepSel) $('lvsTrack').scrollLeft = Math.max(0, sc.offsetLeft - $('lvsTrack').clientWidth / 2 + sc.offsetWidth / 2);
+}
+function lvClaim(lv) {
+  const p = prog(); if (!lvCanClaim(p, lv)) return;
+  const t = lvGive(p, lv); progSave(p); renderProg(); Sfx.coin && Sfx.coin(); mtoast('Lv.' + lv + ' 獎勵：' + t, 'good'); lvsDraw(true);
+}
+function lvClaimAll() {
+  const p = prog(); let n = 0, coins0 = p.coins; const items = [];
+  for (let l = 2; l <= levelOf(p.xp); l++) if (lvCanClaim(p, l)) { const t = lvGive(p, l); n++; if (t.indexOf('得到') === 0) items.push(t.slice(2)); }
+  if (!n) return; progSave(p); renderProg(); Sfx.coin && Sfx.coin();
+  mtoast('領了 ' + n + ' 個獎勵：金幣 +' + (p.coins - coins0) + (items.length ? '，' + items.join('、') : ''), 'good'); lvsDraw(true);
+}
+function lvsOpen() { show('scrLevel'); lvsDraw(false); }
+function lvDotDraw() { const d = $('lvDot'); if (d) d.classList.toggle('on', lvClaimable(prog()) > 0); }
+/** 等級說明：怎麼拿經驗、每 10 等解鎖什麼 */
 function lvInfoOpen() {
   const p = prog(), lv = levelOf(p.xp), body = $('lvBody'); body.textContent = '';
   $('lvNow').textContent = lv >= LV_MAX ? '你已經是滿級 Lv.100！' : '你現在 Lv.' + lv + '，經驗 ' + p.xp + '，再 ' + (xpAt(lv + 1) - p.xp) + ' 升到 Lv.' + (lv + 1) + '。';
@@ -740,7 +813,7 @@ function lvInfoOpen() {
 }
 function renderProg() {
   const p = prog(), lv = levelOf(p.xp), lo = xpAt(lv), hi = lv >= LV_MAX ? lo + 1 : xpAt(lv + 1);
-  $('lvTag').textContent = lv; $('coinTag').textContent = p.coins; $('coinTag2').textContent = p.coins;
+  $('lvTag').textContent = lv; lvDotDraw(); $('coinTag').textContent = p.coins; $('coinTag2').textContent = p.coins;
   $('bagTag').textContent = W.BAG_TIERS[W.bagTierOf(lv)].replace('背包', '');
   $('xpFill').style.width = (lv >= LV_MAX ? 100 : Math.min(100, (p.xp - lo) / (hi - lo) * 100)) + '%';
   const box = $('missions'); box.textContent = '';
@@ -764,7 +837,8 @@ function progOnResult(e, stars) {
   let bonus = 0;
   MISSIONS.forEach(function (m, i) { if (!p.done[i] && p.m[i] >= m[1]) { p.done[i] = true; p.coins += m[2]; bonus += m[2]; } });
   progSave(p);
-  return '金幣 +' + coins + '，經驗 +' + xp + (bonus ? '，每日任務完成 +' + bonus : '') + (bagUp ? '，解鎖' + bagUp + '（背包 +1 格）' : '');
+  const lvUp = levelOf(p.xp) > lv0 ? '，升到 Lv.' + levelOf(p.xp) + '（大廳點等級領獎勵）' : '';
+  return '金幣 +' + coins + '，經驗 +' + xp + (bonus ? '，每日任務完成 +' + bonus : '') + (bagUp ? '，解鎖' + bagUp + '（背包 +1 格）' : '') + lvUp;
 }
 function myMap() { const m = parseInt(ls('rr_map') || '0', 10) || 0; return m >= 0 && m < W.MAPS.length ? m : 0; }
 function rosterEntry(id) { for (let i = 0; i < S.roster.length; i++) if (S.roster[i].id === id) return S.roster[i]; return null; }
@@ -1892,7 +1966,11 @@ function bind() {
   };
   drawKeys();
   $('keyReset').addEventListener('click', function () { Game.resetKeys(); drawKeys(); mtoast('按鍵已恢復預設'); });
-  $('lvInfoBtn').addEventListener('click', lvInfoOpen);
+  $('lvInfoBtn').addEventListener('click', lvsOpen);
+  $('lvsDone').addEventListener('click', showMenu);
+  $('lvsHelp').addEventListener('click', lvInfoOpen);
+  $('lvsGet').addEventListener('click', function () { lvClaim(lvSel); });
+  $('lvsAll').addEventListener('click', lvClaimAll);
   $('lvClose').addEventListener('click', function () { $('lvInfo').classList.add('hide'); });
   $('moreBtn').addEventListener('click', function (e) {
     e.stopPropagation(); $('moreMenu').classList.toggle('hide');
