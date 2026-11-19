@@ -2434,7 +2434,7 @@ RR.Game = {
   // 角色預覽：每張畫布各有一個（出戰角色、大廳），大小照畫布的 width／height；sway＝大廳用的輕微左右擺動
   // 拖曳轉動預覽角色（滑鼠或手指左右拖）
   previewSpin: function (canvas, dx) { const pv = pvs.filter(function (q) { return q.canvas === canvas; })[0]; if (pv) pv.spin = (pv.spin || 0) + dx * 0.012; },
-  preview: function (canvas, c, w, h, o, pet, sway) {
+  preview: function (canvas, c, w, h, o, pet, sway, buddy) {
     if (!ready) return;
     let pv = pvs.filter(function (q) { return q.canvas === canvas; })[0];
     if (!pv) {
@@ -2454,6 +2454,8 @@ RR.Game = {
     pv.gun = false; pv.cam.position.set(0, 1.3, 4.7); pv.cam.lookAt(0, 1.08, 0);
     const g = buildChar(c, 0, h || 0, o || 0, pet || 0), wg = buildWeapon(w);
     wg.position.set(0.37, 0.67, 0.3); wg.rotation.x = 0.5; g.add(wg);
+    // 大廳展示：AR 抓到的怪物站在角色旁邊（buddy＝[屬性, 外觀]）
+    if (buddy) { const m = buildMonster(['fire', 'ice', 'poison', 'shadow'][buddy[0] | 0], buddy[1] | 0); m.group.visible = true; m.group.scale.multiplyScalar(0.33); m.group.position.set(-0.85, 0, -0.2); m.group.rotation.y = 0.5; if (m.bar) m.bar.visible = false; g.add(m.group); }
     pv.model = g; pv.sc.add(g);
   },
   // 槍的 3D 預覽（抽獎機看槍枝造型用）：同一張畫布可以在角色和槍之間切換

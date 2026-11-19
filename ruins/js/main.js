@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v163', items: ['AR 抓怪升級：稀有度（普通／稀有／傳說）、時機圈加成、往上滑丟網、掙脫 3 次會逃走、怪物圖鑑（集滿 32 種送 300 金幣）', '新模式 AR 抓怪：更多 → AR 抓怪，用相機找怪物、丟網抓起來，每天前 10 隻有金幣', '加好友：可以搜尋玩家名字，或用 QR code 掃描加好友', '新怪物外觀：枯瘦長臂、巨獸（體型大一倍半），每天輪替', '跑步鍵點一下可以切換自動連續跑；近戰模式時攻擊鍵隱藏（槍鍵已經是近戰）', '回收物分等級：越值錢的東西要背包等級夠高才撿得起', '關閉交易站時黃色橫幅會立即收起', '房間代碼輸入框清空提示字', '更多選單改成和其他按鈕一樣的牛皮紙風格，戰隊聊天從選單移除（用聊天與社群進入）', '背包等級：每 10 等解鎖一個背包（帆布、皮革、…、黃金、白金、…傳說），共 10 級，每級多 1 格', '交易紀錄與最高紀錄也跟著帳號同步，換裝置會合併', '裝備與造型跟著帳號同步：換裝置也一樣（按鍵、音效等設定仍留在本機）', '戰績與頭像同步雲端：換裝置也看得到，戰績保留最近 30 場', '怪物外觀增加：長顎、背刺、駝背長臂、肋骨、三眼，全部黑色系', '怪物碰到玩家不再直接死：一次扣一半血，碰兩下才會倒', '設定裡的手機按鈕勾選改用新圖示（不再是舊文字）', '特效機與槍枝造型機：第一輪全部抽到後進入第二輪（新造型）', '好友頁先顯示上次的列表，不用每次等很久', '修正交易成功的黃色橫幅收不掉（切換畫面、點一下、切到背景都會收起）', '大廳新增獨立的「交易所」按鈕', '修正大廳換槍、換造型後，進局內沒有跟著換', '週排行榜每週日 24:00 重新計算；上週各模式全區前 3 名獲得限定頭飾「冠軍王冠」', '拿到櫃子裡的近戰武器會得到 4 秒護盾', '每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v164', items: ['AR 抓怪新增每日任務（3 個，完成送金幣）', '圖鑑裡點抓過的怪物，可以讓牠站在大廳角色旁邊展示', '社群排行榜新增「AR 抓怪」：比累計抓到的隻數', '更新說明只顯示這一版的內容'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1017,7 +1017,7 @@ function refreshLobby() {
   $('mapName').textContent = (W.MAPS[myMap()] || W.MAPS[0]).name;
   const look = myLook();
   $('lbName').textContent = W.CHARS[look.c] + '　' + (W.GUNS[look.gun] || W.GUNS[0]).name;
-  Game.preview($('lobbyChar'), look.c, look.w, look.h, look.o, look.pet, true);
+  { const bd = String(prog().arBuddy || '').split(':'); Game.preview($('lobbyChar'), look.c, look.w, look.h, look.o, look.pet, true, bd.length === 2 ? [bd[0] | 0, bd[1] | 0] : null); }
 }
 /* ---------- 段位與地圖輪換 ---------- */
 const PTIERS = [
@@ -1345,7 +1345,7 @@ function socRows(rows, unit, emptyText) {
     row.appendChild(mk('span', 'sc', unit(r.score | 0))); b.appendChild(row);
   });
 }
-function scoreUnit(mode) { return function (v) { return mode === 'br' ? v + ' 勝' : mode === 'coop' ? '第 ' + v + ' 天' : '第 ' + v + ' 關'; }; }
+function scoreUnit(mode) { return function (v) { return mode === 'ar' ? v + ' 隻' : mode === 'br' ? v + ' 勝' : mode === 'coop' ? '第 ' + v + ' 天' : '第 ' + v + ' 關'; }; }
 function renderSocial() {
   const b = $('socBody'), C = RR.Cloud; b.textContent = '';
   Array.prototype.forEach.call(document.querySelectorAll('#socTabs button'), function (x) { x.classList.toggle('on', x.dataset.tab === socTab); });
@@ -1371,7 +1371,7 @@ function renderSocial() {
     b.appendChild(mk('p', 'note', '排行榜每週日 24:00（台灣時間）重新計算。上週各模式全區前 3 名，會獲得限定造型「冠軍王冠」。'));
     const tbtn = mk('button', 'btn', '段位與輪換說明'); tbtn.type = 'button'; tbtn.style.margin = '6px 0 10px';
     tbtn.addEventListener('click', openTierInfo); b.appendChild(tr); b.appendChild(tbtn);
-    const rankSel = socSelect(C.MODES.map(function (m) { return [m, MODE_NAME[m] + '模式']; }).concat([['mix', '全部模式']]), socMode, function (v) { socMode = v; renderSocial(); });
+    const rankSel = socSelect(C.MODES.map(function (m) { return [m, MODE_NAME[m] + '模式']; }).concat([['mix', '全部模式'], ['ar', 'AR 抓怪（隻數）']]), socMode, function (v) { socMode = v; renderSocial(); });
     const row = mk('div', 'soc-row'); row.appendChild(rankSel);
     row.appendChild(socSelect([['week', '本週'], ['all', '總榜']], socScope, function (v) { socScope = v; renderSocial(); })); b.appendChild(row);
     b.appendChild(mk('p', 'note wait', '讀取中…'));
@@ -1703,12 +1703,18 @@ function bind() {
   $('qrClose').addEventListener('click', function () { $('qrBox').classList.add('hide'); });
   // AR 抓怪：每天前 10 隻有獎勵（普通 5、稀有 15、傳說 40 金幣）；第一次抓到的外觀記進圖鑑，集滿 32 種送 300 金幣
   const AR_MAX = 10, AR_COIN = [5, 15, 40], AR_XP = [3, 8, 20];
+  // 每日 AR 任務：[說明, 統計欄位, 目標, 金幣]
+  const AR_MIS = [['抓到 3 隻怪物', 'n', 3, 20], ['抓到 1 隻稀有以上', 'rare', 1, 30], ['Excellent 抓到 1 次', 'ex', 1, 30]];
+  const arMisState = function (p) { if (!p.arMis || p.arMis.day !== today()) p.arMis = { day: today(), n: 0, rare: 0, ex: 0, done: [0, 0, 0] }; return p.arMis; };
   const arDex = function () { const p = prog(); return Array.isArray(p.arDex) ? p.arDex : []; };
   const arCounts = function () { const p = prog(); return { today: p.arDay === today() ? p.arToday | 0 : 0, max: AR_MAX, dex: arDex().length }; };
   $('arOpen').addEventListener('click', function () {
     if (!RR.AR) return;
     RR.AR.open({
       counts: arCounts, dex: arDex,
+      buddy: function () { return prog().arBuddy || ''; },
+      pick: function (k, v) { const p = prog(); p.arBuddy = k + ':' + v; progSave(p); },
+      missions: function () { const p = prog(), m = arMisState(p); return AR_MIS.map(function (x, i) { return [x[0], m[x[1]] | 0, x[2], !!m.done[i], x[3]]; }); },
       isNew: function (k, v) { return arDex().indexOf(k + ':' + v) < 0; },
       onCatch: function (c) {
         const p = prog(); if (p.arDay !== today()) { p.arDay = today(); p.arToday = 0; }
@@ -1719,6 +1725,9 @@ function bind() {
           p.arDex.push(c.k + ':' + c.v); parts.push('圖鑑新增');
           if (p.arDex.length >= RR.AR.TOTAL && !p.arDexDone) { p.arDexDone = 1; p.coins += 300; parts.push('圖鑑集滿 +300 金幣'); }
         }
+        const ms = arMisState(p); ms.n++; if (c.rar >= 1) ms.rare++; if (c.g === 2) ms.ex++;
+        AR_MIS.forEach(function (x, i) { if (!ms.done[i] && (ms[x[1]] | 0) >= x[2]) { ms.done[i] = 1; p.coins += x[3]; parts.push('任務完成 +' + x[3]); } });
+        if (RR.Cloud && RR.Cloud.ready()) RR.Cloud.submit('ar', 1);
         if ((p.arToday | 0) < AR_MAX) { p.arToday = (p.arToday | 0) + 1; p.coins += AR_COIN[c.rar] || 5; p.xp += AR_XP[c.rar] || 3; parts.push('+' + (AR_COIN[c.rar] || 5) + ' 金幣'); }
         else parts.push('今天的金幣已領完');
         progSave(p); renderProg(); return parts.join('，');
@@ -1727,7 +1736,7 @@ function bind() {
   });
   $('arDexBtn').addEventListener('click', function () { RR.AR.dexToggle(); });
   $('arDexClose').addEventListener('click', function () { RR.AR.dexToggle(); });
-  $('arClose').addEventListener('click', function () { RR.AR.close(); });
+  $('arClose').addEventListener('click', function () { RR.AR.close(); refreshLobby(); });
   $('arThrow').addEventListener('click', function (e) { e.stopPropagation(); RR.AR.throwNet(); });
   $('chatBtn').addEventListener('click', function () { chatOpen(!document.body.classList.contains('chatting')); });
   $('chatForm').addEventListener('submit', function (e) { e.preventDefault(); chatSend(); });

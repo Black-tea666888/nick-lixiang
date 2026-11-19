@@ -278,13 +278,13 @@ const Cloud = {
   board: function (mode, scope) { return 'lb_' + mode + '_' + scope; },
   /** 回報成績：總榜、本週榜、本週地區榜各留最高分 */
   submit: function (mode, score) {
-    if (!Cloud.ready() || MODES.indexOf(mode) < 0 || !(score > 0)) return;
+    if (!Cloud.ready() || (MODES.indexOf(mode) < 0 && mode !== 'ar') || !(score > 0)) return;
     const p = profile(), w = weekId(), row = { name: p.name, lv: p.lv, score: Math.floor(score), region: p.region, clan: (me && me.clanTag) || '', t: Date.now() };
     ['all', 'w' + w, p.region + '_w' + w].forEach(function (scope) {
       const ref = db.collection(Cloud.board(mode, scope)).doc(uid);
       ref.get().then(function (s) {
         // 大逃殺是累計勝場，其餘取最高紀錄
-        if (mode === 'br') row.score = ((s.exists && s.data().score) | 0) + Math.floor(score);
+        if (mode === 'br' || mode === 'ar') row.score = ((s.exists && s.data().score) | 0) + Math.floor(score);   // AR 是累計抓到的隻數
         else if (s.exists && (s.data().score | 0) >= row.score) return;
         return ref.set(Object.assign({}, row));
       }).catch(fail());
