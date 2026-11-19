@@ -1288,3 +1288,11 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 @media (max-height: 700px) and (orientation: portrait) { .modeStrip { overflow: visible !important; max-height: none !important; } }
 @media (max-height: 400px) and (orientation: landscape) { .lb { height: auto !important; min-height: 0 !important; grid-template-rows: auto auto auto; } .lbStage { min-height: 160px; } .modeStrip { height: max-content; } }
 #raceHud { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, .62); color: #ffd84a; padding: 6px 14px; border-radius: 8px; font-weight: 700; z-index: 5; pointer-events: none; }
+
+/* 信箱 */
+.mailFab { position: fixed; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 10px); z-index: 40; min-width: 52px; }
+.mailDot { position: absolute; top: -6px; right: -6px; min-width: 20px; padding: 0 5px; border-radius: 10px; background: #d9573a; color: #fff; font-size: 12px; font-weight: 900; text-align: center; line-height: 20px; }
+.mailList { list-style: none; padding: 0; margin: 8px 0; max-height: 52vh; overflow-y: auto; text-align: left; }
+.mailItem { padding: 8px 4px; border-bottom: 1px solid rgba(0,0,0,.12); }
+.mailItem.unread > b::before { content: '● '; color: #d9573a; }
+.mailBody { margin: 4px 0 0 16px; padding: 0; font-size: 14px; }

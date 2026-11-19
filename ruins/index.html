@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=214" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=218" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -665,6 +665,8 @@
 <div class="modal hide" id="avaPick"><div class="panel small tut"><h2>選擇頭像</h2><div class="avaGrid" id="avaGrid"></div><div class="row"><label class="btn" for="avaFile" style="cursor:pointer">用我的照片</label><input id="avaFile" type="file" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0"><button class="btn" id="avaReset" type="button">恢復底色</button></div><div class="row"><button class="btn" id="avaClose" type="button">關閉</button></div></div></div>
 <div class="modal hide" id="cardOpts"><div class="panel small tut"><h2>怪物卡牌：玩法</h2><p>對手人數</p><div class="row optRow" id="coOpp"><button class="btn" type="button" data-v="1">1 人</button><button class="btn" type="button" data-v="2">2 人</button><button class="btn" type="button" data-v="3">3 人</button></div><p>起手張數</p><div class="row optRow" id="coHand"><button class="btn" type="button" data-v="7">標準 7 張</button><button class="btn" type="button" data-v="5">快速 5 張</button></div><div class="row"><button class="btn primary" id="coOk" type="button">確定</button></div></div></div>
 <div class="modal hide" id="lvInfo"><div class="panel small tut lvPanel"><h2>玩家等級 Lv.1～100</h2><p id="lvNow"></p><div class="lvBody" id="lvBody"></div><div class="row"><button class="btn primary" id="lvClose" type="button">關閉</button></div></div></div>
+<button class="btn mailFab hide" id="mailBtn" type="button" aria-label="信箱">📬<b class="mailDot hide" id="mailDot"></b></button>
+<div class="modal hide" id="mailBox"><div class="panel small tut"><h2>信箱</h2><p class="ccEmpty">最多保留 30 封，超過會自動刪掉最舊的。</p><ul class="mailList" id="mailList"></ul><div class="row"><button class="btn" id="mailClear" type="button">清空信箱</button><button class="btn primary" id="mailClose" type="button">關閉</button></div></div></div>
 <div class="modal hide" id="updNote"><div class="panel small tut"><h2>更新了 <span id="updVer"></span></h2><ul id="updList"></ul><div class="row"><button class="btn primary" id="updOk" type="button">知道了</button></div></div></div>
 <div class="modal hide" id="regionAsk"><div class="panel small tut"><h2>選擇你的地區</h2><p>排行榜會依地區分開，你只會出現在自己的賽區。每週日 24:00 後可以在社群的賽季分頁換一次。</p><div class="row"><button class="btn primary" data-r="0" type="button">台灣</button><button class="btn primary" data-r="1" type="button">香港</button></div></div></div>
 <div class="modal hide" id="tut"><div class="panel small tut">
@@ -686,18 +688,18 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=214"></script>
-<script src="js/race_tracks.js?v=214"></script>
-<script src="js/sim.js?v=214"></script>
-<script src="js/audio.js?v=214"></script>
-<script src="js/auth.js?v=214"></script>
-<script src="js/cloud.js?v=214"></script>
-<script src="js/net.js?v=214"></script>
-<script src="js/game.js?v=214"></script>
-<script src="js/minigames.js?v=214"></script>
-<script src="js/ar.js?v=214"></script>
-<script src="js/padnav.js?v=214"></script>
-<script src="js/cards.js?v=214"></script>
-<script src="js/main.js?v=214"></script>
+<script src="js/config.js?v=218"></script>
+<script src="js/race_tracks.js?v=218"></script>
+<script src="js/sim.js?v=218"></script>
+<script src="js/audio.js?v=218"></script>
+<script src="js/auth.js?v=218"></script>
+<script src="js/cloud.js?v=218"></script>
+<script src="js/net.js?v=218"></script>
+<script src="js/game.js?v=218"></script>
+<script src="js/minigames.js?v=218"></script>
+<script src="js/ar.js?v=218"></script>
+<script src="js/padnav.js?v=218"></script>
+<script src="js/cards.js?v=218"></script>
+<script src="js/main.js?v=218"></script>
 </body>
 </html>
