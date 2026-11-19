@@ -1219,7 +1219,71 @@ function part(geo, m, x, y, z) { const o = new THREE.Mesh(geo, m); o.position.se
  * 每個角色都是真人，用頭盔、面罩、塗裝表現主題；以後新增角色也照這個身體做，只換 THEME 裡的裝備。
  * 隊伍色（或服裝顏色）用在防彈背心上。 */
 const SKIN = [0xc68e64, 0xe0b48e, 0x8d5a3b, 0xf0c8a8];   // 依隊伍位置換膚色
-function buildChar(c, slot, h, o, pet) {
+/* ---------- 寫實士兵模型（models/Soldier.glb，three.js 範例裡的 Mixamo 角色，有待機／走路／跑步動畫） ----------
+ * 模型載入前先用程式畫的士兵（buildCharCode）；載好之後所有角色與預覽自動換成模型。
+ * 每個角色用不同的塗裝顏色分辨，服裝（金色、霓虹…）會蓋過角色顏色。 */
+let SOLDIER = null, SOLDIER_K = 1, soldierLoading = false;
+const CHAR_TINT = [0x8a9a6a, 0x9aa6ae, 0xf0f2f4, 0x4a4a52, 0xe0782a, 0xb8915c, 0x5f8f45, 0x5fb8a0];   // 回收員、機器人、太空人、貓貓、南瓜頭、紙箱人、恐龍、外星人
+function loadSoldier() {
+  if (SOLDIER || soldierLoading || !THREE.GLTFLoader || !THREE.SkeletonUtils) return;
+  soldierLoading = true;
+  new THREE.GLTFLoader().load('models/Soldier.glb', function (gl) {
+    gl.scene.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(gl.scene), h = box.max.y - box.min.y;
+    SOLDIER_K = h > 0.1 ? 1.8 / h : 1;
+    gl.scene.traverse(function (o) { if (o.isMesh && o.material && o.material.map) { o.material.map.encoding = THREE.LinearEncoding; o.material.needsUpdate = true; } });
+    SOLDIER = gl;
+    // 已經在畫面上的角色與預覽換成模型
+    view.players.forEach(function (p) {
+      if (!p.avatar) return; const vis = p.avatar.visible, pos = p.avatar.position.clone(), rot = p.avatar.rotation.y;
+      scene.remove(p.avatar); p.avatar = buildAvatar(p); p.avatar.visible = vis; p.avatar.position.copy(pos); p.avatar.rotation.y = rot;
+    });
+    pvs.forEach(function (pv) { if (!pv.gun && pv.args) RR.Game.preview.apply(null, [pv.canvas].concat(pv.args)); });
+  }, undefined, function () { soldierLoading = false; });
+}
+function buildSoldier(c, slot, h, o, pet) {
+  const g = new THREE.Group(), m = THREE.SkeletonUtils.clone(SOLDIER.scene);
+  m.scale.multiplyScalar(SOLDIER_K); m.rotation.y = Math.PI;   // 模型原本面向 -z，轉成面向 +z
+  const tint = new THREE.Color(o && COSTUME_COL[o] ? COSTUME_COL[o] : CHAR_TINT[c] || CHAR_TINT[0]), glowO = o === 2 || o === 3;
+  m.traverse(function (x) {
+    if (!x.isMesh) return;
+    x.frustumCulled = false; x.castShadow = true;
+    x.material = x.material.clone();
+    if (/visor/i.test(x.name)) { x.material.emissive = new THREE.Color(c === 1 || c === 7 ? 0x6ad8ff : 0x223344); x.material.emissiveIntensity = c === 1 || c === 7 ? 0.8 : 0.3; }
+    else { x.material.color = tint.clone().lerp(new THREE.Color(0xffffff), 0.18); if (glowO) { x.material.emissive = tint.clone().multiplyScalar(0.25); } }
+  });
+  g.add(m);
+  const mixer = new THREE.AnimationMixer(m), acts = {};
+  SOLDIER.animations.forEach(function (a) { acts[a.name] = mixer.clipAction(a); });
+  if (acts.Idle) { acts.Idle.play(); acts.Idle.time = Math.random() * 2; }
+  mixer.update(0.01);
+  g.userData.mixer = mixer; g.userData.acts = acts; g.userData.cur = 'Idle';
+  g.updateMatrixWorld(true);
+  const bone = function (n) { return m.getObjectByName('mixamorig' + n); };
+  const head = bone('Head'), hand = bone('RightHand');
+  g.userData.handBone = hand;
+  if (hand) { const v = new THREE.Vector3(); hand.getWorldPosition(v); g.worldToLocal(v); g.userData.hand = [v.x, v.y, v.z]; }
+  // 頭飾掛在頭的骨頭上（骨頭有 0.01 的縮放，要放大回來）
+  const hat = buildHat(h || 0);
+  if (hat && head) { const ws = new THREE.Vector3(); head.getWorldScale(ws); hat.scale.setScalar(0.62 / ws.x); hat.position.set(0, 0.2 / ws.x, 0.01 / ws.x); head.add(hat); }
+  addShadow(g, 0.36);
+  const pm = buildPet(pet || 0); if (pm) { pm.position.set(-0.75, 0, -0.25); g.add(pm); g.userData.pet = pm; }
+  return g;
+}
+/** 換動畫：待機／走路／跑步之間淡入淡出 */
+function soldierAnim(g, name) {
+  const a = g.userData.acts; if (!a || g.userData.cur === name || !a[name]) return;
+  const from = a[g.userData.cur]; a[name].reset().play(); if (from) a[name].crossFadeFrom(from, 0.25, false);
+  g.userData.cur = name;
+}
+/** 武器跟著模型的右手走（模型有動畫，手的位置每格都會變） */
+const _hv = new THREE.Vector3();
+function followHand(g) {
+  const hb = g.userData.handBone, w = g.userData.weapon; if (!hb || !w) return;
+  hb.getWorldPosition(_hv); g.worldToLocal(_hv); w.position.set(_hv.x - 0.04, _hv.y - 0.02, _hv.z + 0.16); w.rotation.z = 0.35;   // 握在手前面、往外斜，不會被身體擋住
+}
+function buildChar(c, slot, h, o, pet) { return SOLDIER ? buildSoldier(c, slot, h, o, pet) : buildCharCode(c, slot, h, o, pet); }
+function buildCharCode(c, slot, h, o, pet) {
   const g = new THREE.Group();
   const vest = o && COSTUME_COL[o] ? litMat({ color: COSTUME_COL[o], emissive: new THREE.Color(COSTUME_COL[o]).multiplyScalar(o === 2 ? 0.45 : o === 3 ? 0.25 : 0.08), shininess: o === 3 ? 90 : 18 })
     : pmat(new THREE.Color(COLORS[slot % 4]).lerp(new THREE.Color(0x3a4032), 0.55).getHex(), 0.08);   // 隊伍色混軍綠，比較像真的裝備
@@ -2254,6 +2318,7 @@ function interpolate(dt, now) {
       p.avatar.userData.weapon.rotation.x = 0.5 + (p.swingT > 0 ? Math.sin((1 - p.swingT / 0.28) * Math.PI) * 1.5 : 0);
       const sp = Math.min(1, Math.hypot(p.tx - p.x, p.tz - p.z) * 2.2); p.walk = (p.walk || 0) + dt * (5 + sp * 9) * (sp > 0.05 ? 1 : 0);
       const L = p.avatar.userData.limbs, sw = Math.sin(p.walk) * sp;
+      if (p.avatar.userData.mixer) { soldierAnim(p.avatar, sp > 0.6 ? 'Run' : sp > 0.05 ? 'Walk' : 'Idle'); p.avatar.userData.mixer.update(dt); followHand(p.avatar); }
       if (L) { L[0].rotation.x = sw * 0.9; L[1].rotation.x = -0.45 - sw * 0.25 - (p.swingT > 0 ? Math.sin((1 - p.swingT / 0.28) * Math.PI) * 1.1 : 0); L[2].rotation.x = -sw * 0.7; L[3].rotation.x = sw * 0.7; }
       p.airY = (p.airY || 0) + (((p.flags & 8) ? 0.75 : 0) - (p.airY || 0)) * Math.min(1, dt * 10);
       p.avatar.position.y = Math.abs(Math.sin(p.walk)) * 0.04 * sp + p.airY;
@@ -2407,6 +2472,7 @@ function frame(nowMs) {
   voiceSpatial(playing, lastL);
   hudT -= dt; if (hudT <= 0) { hudT = 0.15; tickHud(); }
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('show'); }
+  pvs.forEach(function (pv) { if (pv.model && pv.model.userData.mixer && pv.canvas.offsetParent) { pv.model.userData.mixer.update(dt); followHand(pv.model); } });
   pvs.forEach(function (pv) { if (pv.model && pv.canvas.offsetParent) { pv.model.rotation.y = (pv.gun ? Math.PI / 2 + Math.sin(now * 0.7) * 0.6 : pv.sway ? -0.35 + Math.sin(now * 0.6) * 0.3 : now * 0.9) + (pv.spin || 0); pv.model.rotation.x = pv.gun ? 0.15 : 0; pv.r.render(pv.sc, pv.cam); } });
   tickFx(dt);
   renderer.render(scene, camera);
@@ -2415,7 +2481,7 @@ function frame(nowMs) {
 /* ---------- 對外介面 ---------- */
 RR.Game = {
   buildMonster: buildMonster,   // AR 抓怪借用怪物模型
-  dbg: function () { return { scene: scene, renderer: renderer, camera: camera, cloud: showCloud, me: me, solids: solids, groundAt: groundAt }; },
+  dbg: function () { return { pvs: pvs, scene: scene, renderer: renderer, camera: camera, cloud: showCloud, me: me, solids: solids, groundAt: groundAt }; },
   stats: function () { const i = renderer.info; let n = 0, lights = 0, outl = 0; scene.traverse(function (o) { if (o.isMesh && o.visible) n++; if (o.isLight) lights++; if (o.userData && o.userData.outline) outl++; }); return { calls: i.render.calls, tris: i.render.triangles, geo: i.memory.geometries, tex: i.memory.textures, progs: i.programs ? i.programs.length : 0, meshes: n, lights: lights, outl: outl, pr: renderer.getPixelRatio() }; },
   openMini: openMini,
   init: function () {
@@ -2439,6 +2505,7 @@ RR.Game = {
     { const sc = sun.shadow.camera; sc.left = -30; sc.right = 30; sc.top = 30; sc.bottom = -30; sc.near = 1; sc.far = 120; }
     sunTgt = new THREE.Object3D(); scene.add(sunTgt); sun.target = sunTgt;
     dust = buildDust(); scene.add(dust);
+    loadSoldier();
     buildGunView(settings.gun | 0);
     cartView = new THREE.Group(); cartView.add(part(new THREE.BoxGeometry(0.9, 0.3, 0.6), pmat(0xd9902f, 0.25), 0, -0.78, -1.05), part(new THREE.CylinderGeometry(0.02, 0.02, 0.8, 8), pmat(0x9aa3a8, 0.15), 0, -0.5, -0.62)); cartView.children[1].rotation.z = Math.PI / 2; cartView.visible = false; camera.add(cartView);
     torch.position.set(0.25, -0.2, 0); camera.add(torch); camera.add(torch.target); torch.target.position.set(0, -0.05, -1);
@@ -2464,6 +2531,7 @@ RR.Game = {
   previewSpin: function (canvas, dx) { const pv = pvs.filter(function (q) { return q.canvas === canvas; })[0]; if (pv) pv.spin = (pv.spin || 0) + dx * 0.012; },
   preview: function (canvas, c, w, h, o, pet, sway, buddy) {
     if (!ready) return;
+    loadSoldier();
     let pv = pvs.filter(function (q) { return q.canvas === canvas; })[0];
     if (!pv) {
       try {
@@ -2479,12 +2547,12 @@ RR.Game = {
       } catch (e) { return; }
     }
     if (pv.model) pv.sc.remove(pv.model);
-    pv.gun = false; pv.cam.position.set(0, 1.3, 4.7); pv.cam.lookAt(0, 1.08, 0);
+    pv.gun = false; pv.args = [c, w, h, o, pet, sway, buddy]; pv.cam.position.set(0, 1.3, 4.7); pv.cam.lookAt(0, 1.08, 0);
     const g = buildChar(c, 0, h || 0, o || 0, pet || 0), wg = buildWeapon(w);
     const hd = g.userData.hand || [0.37, 0.67, 0.3]; wg.position.set(hd[0], hd[1], hd[2]); wg.rotation.x = 0.5; wg.rotation.z = -0.4; g.add(wg);
     // 大廳展示：AR 抓到的怪物站在角色旁邊（buddy＝[屬性, 外觀]）
     if (buddy) { const m = buildMonster(['fire', 'ice', 'poison', 'shadow'][buddy[0] | 0], buddy[1] | 0); m.group.visible = true; m.group.scale.multiplyScalar(0.33); m.group.position.set(-0.85, 0, -0.2); m.group.rotation.y = 0.5; if (m.bar) m.bar.visible = false; g.add(m.group); }
-    pv.model = g; pv.sc.add(g);
+    g.userData.weapon = wg; pv.model = g; pv.sc.add(g);
   },
   // 槍的 3D 預覽（抽獎機看槍枝造型用）：同一張畫布可以在角色和槍之間切換
   gunPreview: function (canvas, gi, skin) {
