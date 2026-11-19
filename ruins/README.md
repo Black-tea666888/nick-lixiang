@@ -263,3 +263,4 @@ Firebase 沒有內建 LINE，走 OpenID Connect：
 - 個人頁：遊玩天數（prog.pdays，每天第一次打開 +1，舊玩家用戰績日期補算）、加入日期、上次上線；好友顯示多久前在線；戰隊請求卡加頭像可點（v178）。
 - 角色換成寫實士兵模型（models/Soldier.glb，來自 three.js r128 範例，原始角色出自 Adobe Mixamo；vendor/GLTFLoader.js、SkeletonUtils.js 來自 three@0.128.0，MIT）。待機／走路／跑步動畫，武器跟著右手，頭飾掛在頭骨，角色用塗裝顏色分辨（CHAR_TINT），服裝顏色優先。模型載入前用程式畫的士兵（v179）。
 - 遊戲手把（pollPad，標準配置）：左搖桿移動、右搖桿視角、RT 開槍、LT 開鏡、A 跳、B 衝刺、X 切近戰／救人、Y 換槍、LB 煙霧、RB 技能、L3 跑步、R3 近戰、十字鍵 UAV／櫃子／炸藥／空襲、Back 上車、Start 選單（v180）。
+- 槍名原創化：巴雷特→破甲重狙、M4A1→遊騎兵步槍、火麒麟→赤焰雙管、阿姆斯特旋風炮→旋風巨炮（v181）。
