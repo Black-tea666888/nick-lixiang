@@ -31,10 +31,19 @@ function clean(s, n) { return String(s || '').replace(/[<>]/g, '').replace(/\s+/
 function saveRef(id) { return userRef(id).collection('save').doc('main'); }
 /** 裝備與造型跟著帳號走，換裝置也一樣；按鍵位置、音效、靈敏度等仍留在每台裝置 */
 const LOADOUT_KEYS = ['rr_c', 'rr_w', 'rr_h', 'rr_o', 'rr_pet', 'rr_gun', 'rr_gs', 'rr_is', 'rr_ms', 'rr_fx', 'rr_eq', 'rr_map'];
+const SYNC_KEYS = ['rr_trades', 'rr_best'];   // 交易紀錄、最高紀錄：跟著帳號合併
 function loadoutSnap() {
   const v = {}; let t = 0;
   try { LOADOUT_KEYS.forEach(function (k) { const x = localStorage.getItem(k); if (x !== null) v[k] = x; }); t = +localStorage.getItem('rr_lo_t') || 0; } catch (e) {}
   return { t: t, v: v };
+}
+/** 交易紀錄與最高紀錄：合併雙方的內容（交易按時間合併，最高紀錄取較大的） */
+function localJson(k, dflt) { try { const x = JSON.parse(localStorage.getItem(k) || 'null'); return x == null ? dflt : x; } catch (e) { return dflt; } }
+function tradesMerge(a, b) {
+  const seen = {}, out = [];
+  (Array.isArray(a) ? a : []).concat(Array.isArray(b) ? b : []).forEach(function (r) { if (r && !seen[r.t + ':' + r.k]) { seen[r.t + ':' + r.k] = 1; out.push(r); } });
+  out.sort(function (x, y) { return (y.t || 0) - (x.t || 0); });
+  return out.slice(0, 50);
 }
 /** 雲端的裝備比較新（時間較晚）才採用，否則保留本機的 */
 function loadoutAdopt(remote) {
@@ -63,16 +72,16 @@ function push() {
   if (me && me.code) d.code = me.code;
   if (me && me.prog) d.prog = FV.delete();
   userRef().set(d, { merge: true }).catch(fail());
-  saveRef().set({ prog: JSON.stringify(H.prog()), seen: Date.now(), loadout: loadoutSnap() }).catch(fail());
+  saveRef().set({ prog: JSON.stringify(H.prog()), seen: Date.now(), loadout: loadoutSnap(), trades: localJson('rr_trades', []), best: parseInt(localStorage.getItem('rr_best') || '0', 10) || 0 }).catch(fail());
 }
 
 const Cloud = {
   REGIONS: REGIONS, MODES: MODES, weekId: weekId, TIERS: TIERS, tierOf: tierOf,
   ready: function () { return !!(db && uid); },
-  /** 本機的裝備設定改了：記下時間並存雲端（main.js 的 lsSet 會呼叫） */
-  loadoutKey: function (k) {
-    if (LOADOUT_KEYS.indexOf(k) < 0) return;
-    try { localStorage.setItem('rr_lo_t', String(Date.now())); } catch (e) {}
+  /** 本機的同步資料改了（裝備、交易紀錄、最高紀錄）：記下時間並存雲端（main.js 的 lsSet 會呼叫） */
+  localChanged: function (k) {
+    if (LOADOUT_KEYS.indexOf(k) >= 0) { try { localStorage.setItem('rr_lo_t', String(Date.now())); } catch (e) {} }
+    else if (SYNC_KEYS.indexOf(k) < 0) return;
     Cloud.saveSoon();
   },
   uid: function () { return uid; },
@@ -106,6 +115,13 @@ const Cloud = {
       // 進度以經驗值高的為準（換手機、清資料後能拿回來）
       if (remote && (remote.xp | 0) > (local.xp | 0)) H.adopt(remote);
       loadoutAdopt(sv && sv.exists ? sv.data().loadout : null);
+      if (sv && sv.exists) {
+        const sd = sv.data(), bestHere = parseInt(localStorage.getItem('rr_best') || '0', 10) || 0;
+        try {
+          localStorage.setItem('rr_trades', JSON.stringify(tradesMerge(localJson('rr_trades', []), sd.trades)));
+          if ((sd.best | 0) > bestHere) localStorage.setItem('rr_best', String(sd.best | 0));
+        } catch (e) {}
+      }
       if (!me.code) me.code = rcode(6);
       push();
       beatT = setInterval(function () { if (!document.hidden) userRef().set({ seen: Date.now(), room: room || '' }, { merge: true }).catch(fail()); }, 90000);
