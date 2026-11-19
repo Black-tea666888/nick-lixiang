@@ -2994,7 +2994,7 @@ RR.Game = {
     const vh = vhQ; vhQ = false;
     const sm = smQ; smQ = false; const sk = skQ; skQ = false; const tt = ttQ; ttQ = null;
     return { t: 'i', x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100,
-      vh: vh || undefined, run: me.running && me.alive, air: me.y - (me.gnd || 0) > 0.25 && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!(keys.KeyE || keys.PadRescue) && me.alive, lk: takeLk(), sm: sm, sk: sk, tt: tt === null ? undefined : tt };
+      vh: vh || undefined, run: me.running && me.alive, air: me.y - (me.gnd || 0) > 0.25 && me.alive, wt: me.alive && me.y >= WH - 0.25 && W.isWall(Math.floor(me.x / CS), Math.floor(me.z / CS)), loud: loudT > 0 && me.alive, spk: spk, rs: !!(keys.KeyE || keys.PadRescue) && me.alive, lk: takeLk(), sm: sm, sk: sk, tt: tt === null ? undefined : tt };
   },
   setMonSkin: function (v) {
     RR.Game.settings.monSkin = v | 0;
