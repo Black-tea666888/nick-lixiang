@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v150', items: ['怪物外觀增加：長顎、背刺、駝背長臂、肋骨、三眼，全部黑色系', '怪物碰到玩家不再直接死：一次扣一半血，碰兩下才會倒', '設定裡的手機按鈕勾選改用新圖示（不再是舊文字）', '特效機與槍枝造型機：第一輪全部抽到後進入第二輪（新造型）', '好友頁先顯示上次的列表，不用每次等很久', '修正交易成功的黃色橫幅收不掉（切換畫面、點一下、切到背景都會收起）', '大廳新增獨立的「交易所」按鈕', '修正大廳換槍、換造型後，進局內沒有跟著換', '週排行榜每週日 24:00 重新計算；上週各模式全區前 3 名獲得限定頭飾「冠軍王冠」', '拿到櫃子裡的近戰武器會得到 4 秒護盾', '每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v151', items: ['戰績與頭像同步雲端：換裝置也看得到，戰績保留最近 30 場', '怪物外觀增加：長顎、背刺、駝背長臂、肋骨、三眼，全部黑色系', '怪物碰到玩家不再直接死：一次扣一半血，碰兩下才會倒', '設定裡的手機按鈕勾選改用新圖示（不再是舊文字）', '特效機與槍枝造型機：第一輪全部抽到後進入第二輪（新造型）', '好友頁先顯示上次的列表，不用每次等很久', '修正交易成功的黃色橫幅收不掉（切換畫面、點一下、切到背景都會收起）', '大廳新增獨立的「交易所」按鈕', '修正大廳換槍、換造型後，進局內沒有跟著換', '週排行榜每週日 24:00 重新計算；上週各模式全區前 3 名獲得限定頭飾「冠軍王冠」', '拿到櫃子裡的近戰武器會得到 4 秒護盾', '每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -982,7 +982,7 @@ function avaDraw() {
   $('avaGrid').innerHTML = '';
   AVA_COLORS.forEach(function (col) {
     const b = mk('button', col === cur ? 'on' : ''); b.type = 'button'; b.style.background = col;
-    b.addEventListener('click', function () { lsSet('rr_avatar', col); try { localStorage.removeItem('rr_avatar_img'); } catch (e) {} refreshPickSummary(); $('avaPick').classList.add('hide'); });
+    b.addEventListener('click', function () { lsSet('rr_avatar', col); try { localStorage.removeItem('rr_avatar_img'); } catch (e) {} refreshPickSummary(); $('avaPick').classList.add('hide'); if (RR.Cloud) RR.Cloud.saveSoon(); });
     $('avaGrid').appendChild(b);
   });
 }
@@ -1159,16 +1159,23 @@ function achProgress(a, p) {
 function dayStr(off) { const d = new Date(Date.now() + (off || 0) * 864e5); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 /** 一局結束：更新統計、解鎖成就、回報排行榜與戰隊。回傳要加在結算畫面的文字。 */
 /* ---------- 歷史戰績 ----------
- * 每局結束記一筆（本機留最近 60 筆；登入雲端時也存到 users/{uid}/matches，別人點你的頭像看得到） */
+ * 每局結束記一筆（本機與雲端都只留最近 30 場；登入雲端時存到 users/{uid}/matches，換裝置也看得到，別人點你的頭像也看得到） */
 function saveMatch(rec) {
   let a = []; try { a = JSON.parse(ls('rr_hist') || '[]'); } catch (e) {}
-  if (!Array.isArray(a)) a = []; a.unshift(rec); lsSet('rr_hist', JSON.stringify(a.slice(0, 60)));
+  if (!Array.isArray(a)) a = []; a.unshift(rec); lsSet('rr_hist', JSON.stringify(a.slice(0, 30)));
   if (RR.Cloud && RR.Cloud.ready()) RR.Cloud.addMatch(rec);
 }
-let stRows = [], stMode = 'all', stUid = null;
+let stRows = [], stMode = 'all', stUid = null, stSeq = 0;
+/** 本機與雲端戰績合併，依時間排序，只留 30 場 */
+function mergeRows(a, b) {
+  const seen = {}, out = [];
+  a.concat(b).forEach(function (r) { if (r && !seen[r.t]) { seen[r.t] = 1; out.push(r); } });
+  out.sort(function (x, y) { return (y.t || 0) - (x.t || 0); });
+  return out.slice(0, 30);
+}
 /** 打開戰績：uid 省略＝自己 */
 function statsOpen(uid, name) {
-  const C = RR.Cloud, mine = !uid || (C && uid === C.uid());
+  const C = RR.Cloud, mine = !uid || (C && uid === C.uid()), seq = ++stSeq;
   stUid = mine ? null : uid; stMode = 'all';
   $('scrStats').classList.remove('hide'); $('stAva').classList.toggle('hide', !mine);
   $('stHead').textContent = ''; $('stSum').textContent = ''; $('stList').textContent = '';
@@ -1176,12 +1183,19 @@ function statsOpen(uid, name) {
     let a = []; try { a = JSON.parse(ls('rr_hist') || '[]'); } catch (e) {}
     const p = prog();
     stHeadDraw({ name: myName(), lv: levelOf(p.xp), clanTag: C && C.me() ? C.me().clanTag : '', code: C && C.me() ? C.me().code : '', bio: p.bio, st: p.st }, true);
-    stRows = Array.isArray(a) ? a : []; stDraw(); return;
+    const local = Array.isArray(a) ? a : [];
+    stRows = local; stDraw();
+    // 先顯示本機，再拿雲端的戰績合併（換裝置玩的場次也會出現）
+    if (C && C.ready()) C.playerStats(C.uid(), function (err, d) {
+      if (seq !== stSeq || err) return;
+      stRows = mergeRows(d.rows, local); stDraw();
+    });
+    return;
   }
   stHeadDraw({ name: name || '玩家' }, false);
   $('stList').appendChild(mk('p', 'ccEmpty', '讀取中…'));
   C.playerStats(uid, function (err, d) {
-    if (stUid !== uid) return;
+    if (seq !== stSeq) return;
     if (err) { $('stList').textContent = ''; $('stList').appendChild(mk('p', 'ccEmpty', C.message(err))); return; }
     stHeadDraw(Object.assign({ name: name || '玩家' }, d.prof || {}), false);
     stRows = d.rows; stDraw();
@@ -1190,8 +1204,8 @@ function statsOpen(uid, name) {
 function stHeadDraw(pf, mine) {
   const h = $('stHead'); h.textContent = '';
   const av = mk('span', 'ccAv stAv', (pf.name || '?').charAt(0));
-  const img = mine ? ls('rr_avatar_img') : '';
-  if (img) { av.textContent = ''; av.style.background = 'center / cover no-repeat url(' + img + ')'; } else av.style.background = (mine && ls('rr_avatar')) || '#f0c040';
+  const img = mine ? ls('rr_avatar_img') : (pf.avImg || '');
+  if (img) { av.textContent = ''; av.style.background = 'center / cover no-repeat url(' + img + ')'; } else av.style.background = (mine ? ls('rr_avatar') : pf.av) || '#f0c040';
   const tx = mk('div', 'stWho'); tx.appendChild(mk('b', null, (pf.name || '玩家') + (mine ? '（你）' : '')));
   tx.appendChild(mk('span', null, (pf.lv ? 'Lv.' + pf.lv : '') + (pf.clanTag ? '　戰隊 [' + pf.clanTag + ']' : '') + (pf.region ? '　' + (pf.region === 'hk' ? '香港' : '台灣') : '')));
   tx.appendChild(mk('span', 'stId', 'ID ' + (pf.code || '—')));
@@ -1794,13 +1808,13 @@ function bind() {
         const cv = document.createElement('canvas'); cv.width = cv.height = 64; const x = cv.getContext('2d');
         const sz = Math.min(im.width, im.height); x.drawImage(im, (im.width - sz) / 2, (im.height - sz) / 2, sz, sz, 0, 0, 64, 64);
         try { lsSet('rr_avatar_img', cv.toDataURL('image/jpeg', 0.8)); } catch (e) {}
-        refreshPickSummary(); $('avaPick').classList.add('hide');
+        refreshPickSummary(); $('avaPick').classList.add('hide'); if (RR.Cloud) RR.Cloud.saveSoon();
       };
       im.src = rd.result;
     };
     rd.readAsDataURL(f); this.value = '';
   });
-  $('avaReset').addEventListener('click', function () { try { localStorage.removeItem('rr_avatar_img'); } catch (e) {} lsSet('rr_avatar', ''); refreshPickSummary(); $('avaPick').classList.add('hide'); });
+  $('avaReset').addEventListener('click', function () { try { localStorage.removeItem('rr_avatar_img'); } catch (e) {} lsSet('rr_avatar', ''); refreshPickSummary(); $('avaPick').classList.add('hide'); if (RR.Cloud) RR.Cloud.saveSoon(); });
   $('updOk').addEventListener('click', function () { lsSet('rr_upd_seen', UPD.v); $('updNote').classList.add('hide'); });
   $('tutAgain').addEventListener('click', function () { tutShow(0); });
   $('miniInfoBtn').addEventListener('click', function () { Game.openMini(); });
