@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v191', items: ['怪物卡牌加入排行榜（社群的模式分頁，依勝場累計）', '怪物卡牌排在 AR 實境後面', '交易所自己發的【掛單】訊息字看得清楚了', '卡牌離開改用遊戲內的確認視窗，卡牌背面改成遊戲內的卡片樣式'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard'];
+const UPD = { v: 'v192', items: ['大廳分成兩大類：「主玩法」（多人回收、清剿、死守、廢墟生存戰、單人拾荒）與「休閒模式」（AR、怪物卡牌），先選分類再進大廳', '回收任務可以選難度（簡單、標準、困難）與天數（無限天、7 天、14 天）；標準・無限天跟以前一樣', '回收任務最後一天通關後可以回大廳'] };
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -1000,7 +1000,7 @@ function startHostLoop() {
   S.timers.push(setInterval(hostTick, 33));
 }
 function rosterAny() { return S.mode === 'solo' ? { t: 'roster', code: null, hostId: 'me', mode: S.sim.mode, base: S.base | 0, players: S.sim.roster() } : rosterMsg(); }
-function hostStart(day) { const info = S.sim.startDay(day || 1); hostBroadcast(rosterAny()); hostBroadcast(info); }   // 先送名單（廢墟生存戰會加入電腦玩家），再送開局資料
+function hostStart(day) { if ((day || 1) === 1) recApply(); const info = S.sim.startDay(day || 1); hostBroadcast(rosterAny()); hostBroadcast(info); }   // 先送名單（廢墟生存戰會加入電腦玩家），再送開局資料
 
 /* ---------- 進入各種模式 ---------- */
 function startSolo(gmode) {
@@ -1151,7 +1151,7 @@ function showMenu() {
   if (document.activeElement !== $('nick')) $('nick').value = u.name;
   $('nickPen').classList.toggle('pulse', !ls('rr_named') && /^訪客/.test(u.name || ''));
   $('best').textContent = ls('rr_best') || '0';
-  show('scrMenu');
+  show(hubCat ? 'scrMenu' : 'scrHub');
   refreshPickSummary(); renderProg(); refreshLobby();
   if (ls('rr_upd_seen') !== UPD.v) showUpdNote();
 }
@@ -1160,12 +1160,31 @@ function showUpdNote() {
   $('updList').innerHTML = UPD.items.map(function (t) { return '<li>' + t + '</li>'; }).join('');
   $('updNote').classList.remove('hide');
 }
+/* ---------- 回收任務的難度與天數（本機設定，房主開局時套用） ---------- */
+const REC_DIFF = { easy: '簡單', normal: '標準', hard: '困難' }, REC_DAYS = [0, 7, 14];
+function recCfg() { const d = ls('rr_diff'), n = +ls('rr_days'); return { diff: REC_DIFF[d] ? d : 'normal', days: REC_DAYS.indexOf(n) >= 0 ? n : 0 }; }
+function recText() { const c = recCfg(); return REC_DIFF[c.diff] + '・' + (c.days ? c.days + ' 天' : '無限天'); }
+function recApply() { if (!S.sim) return; const c = recCfg(); S.sim.diff = c.diff; S.sim.maxDay = S.sim.mode === 'coop' ? c.days : 0; }
+function recOptsOpen() {
+  const mark = function () { const c = recCfg();
+    Array.prototype.forEach.call($('roDiff').children, function (b) { b.classList.toggle('primary', b.dataset.v === c.diff); });
+    Array.prototype.forEach.call($('roDays').children, function (b) { b.classList.toggle('primary', +b.dataset.v === c.days); }); };
+  mark(); $('recOpts').classList.remove('hide');
+  $('roDiff').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_diff', b.dataset.v); mark(); refreshLobby(); };
+  $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
+}
+/* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card'] };
+let hubCat = null;
+function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
 const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
   Array.prototype.forEach.call($('modeStrip').children, function (b) { const on = b.dataset.mode === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+  Array.prototype.forEach.call($('modeStrip').children, function (b) { b.classList.toggle('hide', !!hubCat && HUB_CATS[hubCat].indexOf(b.dataset.mode) < 0); });
+  $('optChip').classList.toggle('hide', m !== 'coop'); $('optName').textContent = recText();
   $('startMode').textContent = LOBBY_MODE[m] + (m === 'coop' ? '：建立房間' : '');
   $('mapName').textContent = m === 'card' ? cardOptsText() : (W.MAPS[myMap()] || W.MAPS[0]).name;
   $('mapChip').querySelector('span').textContent = m === 'card' ? '玩法' : '地圖';
@@ -1851,6 +1870,7 @@ function showResult(e) {
   });
   st.classList.toggle('hide', solo || !e.stats);
   $('resNext').classList.toggle('hide', !(e.win && (host || solo)));
+  $('resNext').textContent = S.sim && S.sim.maxDay && S.sim.day >= S.sim.maxDay ? '通關，回大廳' : '下一天';
   $('resRetry').classList.toggle('hide', !(!e.win && solo));
   $('resLobby').classList.toggle('hide', !(!e.win && host));
   $('resWait').classList.toggle('hide', host || solo);
@@ -1915,6 +1935,11 @@ function bind() {
   }, { passive: false });
   // 大廳角色可用滑鼠或手指左右拖曳轉動
   (function () { const cv = $('lobbyChar'); let lastX = null; cv.addEventListener('pointerdown', function (e) { lastX = e.clientX; cv.setPointerCapture(e.pointerId); }); cv.addEventListener('pointermove', function (e) { if (lastX == null) return; Game.previewSpin(cv, e.clientX - lastX); lastX = e.clientX; }); const up = function () { lastX = null; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); })();
+  $('optChip').addEventListener('click', recOptsOpen);
+  $('roOk').addEventListener('click', function () { $('recOpts').classList.add('hide'); refreshLobby(); });
+  $('hubMain').addEventListener('click', function () { hubEnter('main'); });
+  $('hubCas').addEventListener('click', function () { hubEnter('casual'); });
+  $('lbHub').addEventListener('click', function () { show('scrHub'); });
   $('goBtn').addEventListener('click', function () { const b = $('modeStrip').querySelector('[data-mode="' + selMode() + '"]'); if (b) $(b.dataset.go).click(); });
   $('mapChip').addEventListener('click', function () { if (selMode() === 'card') { cardOptsOpen(); return; } renderMapGrid(); show('scrMap'); });
   $('coOk').addEventListener('click', function () { $('cardOpts').classList.add('hide'); refreshLobby(); });
@@ -1962,7 +1987,7 @@ function bind() {
     const fallback = function () { const i = $('shareLink'); i.value = url; i.classList.remove('hide'); i.focus(); i.select(); };
     try { navigator.clipboard.writeText(url).then(function () { Game.toast('已複製'); chatAdd(null, '邀請連結已複製'); }, fallback); } catch (e) { fallback(); }
   });
-  $('resNext').addEventListener('click', function () { if (S.sim) hostStart(S.sim.day + 1); });
+  $('resNext').addEventListener('click', function () { if (!S.sim) return; if (S.sim.maxDay && S.sim.day >= S.sim.maxDay) { mtoast('通關！恭喜完成 ' + S.sim.maxDay + ' 天', 'good'); showMenu(); return; } hostStart(S.sim.day + 1); });
   $('resRetry').addEventListener('click', function () { if (S.sim) hostStart(1); });
   $('resLobby').addEventListener('click', function () { if (S.mode === 'host') { S.sim.toLobby(); hostBroadcast(rosterMsg()); hostBroadcast({ t: 'lobby' }); } });
   $('resLeave').addEventListener('click', leave);

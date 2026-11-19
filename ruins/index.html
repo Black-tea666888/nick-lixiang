@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=190" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=192" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -103,9 +103,18 @@
 </div>
 
 <!-- 主選單（大廳） -->
+<div class="screen hide" id="scrHub">
+  <div class="hubBox">
+    <h2 class="hubTitle">選擇玩法</h2>
+    <button class="mcard hubCard" id="hubMain" type="button"><b>主玩法</b><span>多人回收：回收任務、清剿行動、死守回收車、廢墟生存戰，另有單人拾荒。回收任務可選難度與天數。</span></button>
+    <button class="mcard hubCard casual" id="hubCas" type="button"><b>休閒模式</b><span>AR 實境抓怪與迷宮、怪物卡牌（對電腦出牌）。</span></button>
+  </div>
+</div>
+<div class="modal hide" id="recOpts"><div class="panel small tut"><h2>回收任務：難度與天數</h2><p>難度（目標金額與怪物速度）</p><div class="row optRow" id="roDiff"><button class="btn" type="button" data-v="easy">簡單</button><button class="btn" type="button" data-v="normal">標準</button><button class="btn" type="button" data-v="hard">困難</button></div><p>天數（0＝無限天）</p><div class="row optRow" id="roDays"><button class="btn" type="button" data-v="0">無限天</button><button class="btn" type="button" data-v="7">7 天</button><button class="btn" type="button" data-v="14">14 天</button></div><div class="row"><button class="btn primary" id="roOk" type="button">確定</button></div></div></div>
 <div class="screen hide" id="scrMenu">
   <div class="lb">
     <header class="lbTop">
+      <button class="btn lbHubB" id="lbHub" type="button">‹ 分類</button>
       <div class="topbar lbId">
         <button class="avatar" id="avatar" type="button" aria-label="更換頭像顏色"></button>
         <div class="who">
@@ -143,6 +152,7 @@
       </div>
       <div class="startBox">
         <button class="mapChip" id="mapChip" type="button"><span>地圖</span><b id="mapName">廢棄設施</b></button>
+        <button class="mapChip hide" id="optChip" type="button"><span>難度</span><b id="optName">標準・無限天</b></button>
         <button class="startBtn" id="goBtn" type="button"><small id="startMode">組隊回收</small><b>開始</b></button>
       </div>
     </footer>
@@ -673,17 +683,17 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=190"></script>
-<script src="js/sim.js?v=190"></script>
-<script src="js/audio.js?v=190"></script>
-<script src="js/auth.js?v=190"></script>
-<script src="js/cloud.js?v=190"></script>
-<script src="js/net.js?v=190"></script>
-<script src="js/game.js?v=190"></script>
-<script src="js/minigames.js?v=190"></script>
-<script src="js/ar.js?v=190"></script>
-<script src="js/padnav.js?v=190"></script>
-<script src="js/cards.js?v=190"></script>
-<script src="js/main.js?v=190"></script>
+<script src="js/config.js?v=192"></script>
+<script src="js/sim.js?v=192"></script>
+<script src="js/audio.js?v=192"></script>
+<script src="js/auth.js?v=192"></script>
+<script src="js/cloud.js?v=192"></script>
+<script src="js/net.js?v=192"></script>
+<script src="js/game.js?v=192"></script>
+<script src="js/minigames.js?v=192"></script>
+<script src="js/ar.js?v=192"></script>
+<script src="js/padnav.js?v=192"></script>
+<script src="js/cards.js?v=192"></script>
+<script src="js/main.js?v=192"></script>
 </body>
 </html>

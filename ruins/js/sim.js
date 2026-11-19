@@ -426,6 +426,7 @@ const r2 = (v) => Math.round(v * 100) / 100;
 const KIND_CHASE = [1.15, 1, 1, 1.08];
 const TT_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
 function newTT() { return { cells: ['', '', '', '', '', '', '', '', ''], x: null, o: null, turn: 'X', over: null, winner: null, timer: 0 }; }
+const DIFF_MUL = { easy: 0.75, normal: 1, hard: 1.3 }, DIFF_SPD = { easy: 0.92, normal: 1, hard: 1.12 };
 function quotaFor(day, n) { return 200 + 100 * day + 120 * (n - 1); }
 
 function Sim(rng) {
@@ -433,6 +434,7 @@ function Sim(rng) {
   this.players = [];
   this.phase = 'lobby'; this.smokes = [];
   this.day = 1; this.money = 0; this.quota = 0; this.time = 0;
+  this.diff = 'normal'; this.maxDay = 0;   // 回收任務的難度與天數上限（0＝無限天）
   this.items = []; this.monsters = []; this.events = [];
   this.pvp = true;   // 互相傷害（房主可在大廳開關）
   this.map = 0;      // 地圖編號（房主可在大廳選）
@@ -487,7 +489,8 @@ Sim.prototype.startDay = function (day) {
   this.trophy = this._spotAt(VAN[0], VAN[1], 12, 25);   // 搶獎盃：地圖上一座獎盃，按住 E 3 秒的人拿走
   const td = this.mode === 'td', hunt = this.mode === 'hunt' || td, br = this.mode === 'br';   // 死守沿用清剿的槍與彈匣
   this.players = this.players.filter(function (p) { return !p.ai; });   // 上一局的機器人先清掉
-  this.quota = br ? 0 : hunt ? 50 * (5 + 2 * (day - 1) + 2 * (n - 1)) : quotaFor(day, n); this.events = [];   // 清剿：每擊倒一隻 $50
+  const dm = this.mode === 'coop' ? DIFF_MUL[this.diff] || 1 : 1;   // 回收任務：難度影響目標金額
+  this.quota = br ? 0 : hunt ? 50 * (5 + 2 * (day - 1) + 2 * (n - 1)) : Math.round(quotaFor(day, n) * dm); this.events = [];   // 清剿：每擊倒一隻 $50
   this.smokes = [];
   this.players.forEach(function (p) { p.skCd = 0; p.smCd = 0; p.shieldT = 0; p.hideT = 0; p.stealthT = 0; p.rallyT = 0; });   // 每天開始技能冷卻歸零
   // 物品：隨機放在離起點有段距離的格子
@@ -517,6 +520,7 @@ Sim.prototype.startDay = function (day) {
   if (hunt || br) this.trophy = null;
   this.chaseSpeed = Math.min(3.9 + 0.1 * (day - 1), 4.9);   // 跑步（9）一定甩得掉；走路（4.2）在後期甩不掉
   this.wanderSpeed = Math.min(2.1 + 0.05 * (day - 1), 2.8);
+  if (this.mode === 'coop') { const sp = DIFF_SPD[this.diff] || 1; this.chaseSpeed *= sp; this.wanderSpeed *= sp; }   // 困難怪物跑得快一點
   this.players.forEach(function (p) {
     const o = SPAWN_OFF[p.slot % 4];
     p.lk = null; p.lkCd = 0; p.lw = null;
