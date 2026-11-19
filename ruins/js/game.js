@@ -1521,6 +1521,12 @@ let wpnMode = 'gun';
 function gunPress() {
   if (wpnMode === 'melee') attack(); else shoot();
 }
+/* 射擊鍵（電腦 X、右鍵、手把 RT）：近戰狀態下會先自動切回槍再開槍，不用多按一次切槍 */
+function fireInput() {
+  if (!canControl()) return;
+  if (wpnMode === 'melee') weaponPress();
+  shoot();
+}
 // 連殺：自己擊倒怪物或玩家就 +1；15 秒沒有擊倒或死亡就歸零
 function addKill() {
   ksN++; ksT = Date.now();
@@ -2084,7 +2090,7 @@ function bindInput() {
     if (kc === 'KeyF') { if (canControl()) { e.preventDefault(); attack(); } }
     if (kc === 'Space') { if (canControl()) { e.preventDefault(); if (!e.repeat) jumpQ = true; } }
     if (kc === 'KeyC' && !e.repeat && canControl()) dashQ = true;
-    if (kc === 'KeyX' && canControl()) { gunHeld = true; if (!e.repeat) shoot(); }
+    if (kc === 'KeyX' && canControl()) { gunHeld = true; if (!e.repeat) fireInput(); }
     if (kc === 'KeyB' && !e.repeat && canControl() && RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100);
     if (kc === 'KeyZ' && !e.repeat && canControl()) scopeOn = !scopeOn;
     if (kc === 'KeyT' && !e.repeat && canControl() && view.mode === 'td' && RR.Game.onTower) RR.Game.onTower();
@@ -2096,7 +2102,7 @@ function bindInput() {
   canvas.addEventListener('mousedown', function (ev) {
     if (active && view.phase === 'play' && !me.alive) { nextSpec(); return; }
     if (!canControl()) return;
-    if (ev.button === 2) { gunHeld = true; shoot(); return; }
+    if (ev.button === 2) { gunHeld = true; fireInput(); return; }
     dragging = true;
     if (document.pointerLockElement !== canvas) lockPointer(); else attack();   // 鎖定滑鼠後，左鍵 = 揮擊
   });
@@ -2230,7 +2236,7 @@ function pollPad(dt) {
   if (down(4)) trySmoke();
   if (down(5)) trySkill();
   const lt = bt(6); if (lt !== pad.scope) { pad.scope = lt; scopeOn = lt; }
-  const rt = bt(7); if (rt && !pad.shoot) { pad.shoot = true; gunHeld = true; shoot(); } else if (!rt && pad.shoot) { pad.shoot = false; gunHeld = false; }
+  const rt = bt(7); if (rt && !pad.shoot) { pad.shoot = true; gunHeld = true; fireInput(); } else if (!rt && pad.shoot) { pad.shoot = false; gunHeld = false; }
   if (down(8)) vhQ = true;
   if (down(9)) { const mb = document.getElementById('hudMore'); if (mb) mb.click(); }
   if (down(10)) { pad.run = !pad.run; toast(pad.run ? '跑步：開' : '跑步：關'); }
