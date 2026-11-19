@@ -68,6 +68,16 @@ service cloud.firestore {
       }
     }
 
+    // 快速組隊：房主公開自己的房間（代碼、模式、人數），大家都能看到並加入；只有房主能改、刪
+    match /rooms/{code} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.host == request.auth.uid
+        && request.resource.data.code is string && request.resource.data.code.size() == 5
+        && request.resource.data.n is int && request.resource.data.n >= 0 && request.resource.data.n <= 8;
+      allow update: if signedIn() && resource.data.host == request.auth.uid && request.resource.data.host == request.auth.uid;
+      allow delete: if signedIn() && resource.data.host == request.auth.uid;
+    }
+
     // 世界頻道：登入的人都能讀；只能用自己的名義發言，80 字以內；本人可刪
     match /world/{mid} {
       allow read: if signedIn();

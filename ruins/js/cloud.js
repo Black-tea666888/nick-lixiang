@@ -133,6 +133,22 @@ const Cloud = {
     }).catch(fail(cb));
   },
 
+  /* ---------- 快速組隊：公開房間 ---------- */
+  roomPublish: function (code, info) {
+    if (!Cloud.ready() || !code) return;
+    db.collection('rooms').doc(code).set({ code: code, host: uid, hostName: profile().name, lv: profile().lv | 0, mode: info.mode || 'coop', map: info.map || '', n: info.n | 0, max: info.max || 4, play: !!info.play, t: Date.now() }).catch(fail());
+  },
+  roomClose: function (code) { if (Cloud.ready() && code) db.collection('rooms').doc(code).delete().catch(function () {}); },
+  /** 即時訂閱公開房間：只留 2.5 分鐘內有更新、還沒滿的房間 */
+  roomsWatch: function (onRows) {
+    if (!Cloud.ready()) { onRows({ code: 'offline' }); return function () {}; }
+    return db.collection('rooms').orderBy('t', 'desc').limit(40).onSnapshot(function (q) {
+      const now = Date.now(), rows = [];
+      q.forEach(function (d) { const x = d.data(); if (now - (x.t || 0) < 150000 && (x.n | 0) < (x.max || 4) && x.host !== uid) rows.push(x); });
+      onRows(null, rows);
+    }, fail(onRows));
+  },
+
   /* ---------- 世界頻道與交易所 ---------- */
   /** 即時訂閱世界頻道最新 50 則；回傳取消函式。onRows(err, rows)（新到舊） */
   worldChat: function (onRows) {

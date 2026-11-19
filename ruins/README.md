@@ -201,3 +201,4 @@ Firebase 沒有內建 LINE，走 OpenID Connect：
 - 推車乘客：`veh.pass`（最多 2 人），快照 `veh[3]`，用戶端 `me.passenger` 時鎖在車旁。
 - 技能提示：`skillHint()`，開局與冷卻結束時呼叫，文字來自 `Game.skillText()`（main.js 的 `CINFO`）。
 - 個人戰績（`#scrStats`）：每局結束 `saveMatch()` 存本機 `rr_hist`（最近 60 筆）並寫入 `users/{uid}/matches`；`statsOpen(uid, name)` 開啟，`statsLink()` 讓排行榜、好友、戰隊、聊天的名字可點。需要重新發布 `firestore.rules`。
+- 快速組隊：房主在房間計時器裡 `tmPublish()` 寫入 `rooms/{code}`（每 30 秒或人數改變），離開時 `roomClose()`；`roomsWatch()` 只列 2.5 分鐘內更新、未滿的房間。需要重新發布 `firestore.rules`。
