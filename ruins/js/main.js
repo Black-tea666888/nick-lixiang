@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v211', items: ['新增休閒模式「賽車」：廢墟固定賽道跑 3 圈計時，成績上傳圈數榜與完賽時間榜'] };
+const UPD = { v: 'v212', items: ['櫃子碰撞範圍縮小，不會再卡在櫃子旁邊走不動'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
