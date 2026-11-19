@@ -578,8 +578,8 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
 .tile:active, .mcard:active, .lbCoin:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(17,20,23,.5); }
 #lobbyChar { touch-action: none; cursor: grab; }
 .lbStage { grid-area: stage; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-height: 200px; }
-#lobbyChar { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); height: calc(100% - 26px); max-height: 320px; max-width: 100%; width: auto; aspect-ratio: 300 / 380; }
-.lbName { position: relative; z-index: 1; margin-top: 0; padding: 4px 12px; font-size: 14px; font-weight: 800; color: var(--chalk); background: rgba(28,32,36,.9); border-radius: 2px; }
+#lobbyChar { height: min(34vh, 320px); width: auto; aspect-ratio: 300 / 380; }
+.lbName { margin-top: -6px; padding: 4px 12px; font-size: 14px; font-weight: 800; color: var(--chalk); background: rgba(28,32,36,.9); border-radius: 2px; }
 .lbBottom { grid-area: bottom; display: flex; flex-direction: column; gap: 8px; }
 .modeStrip { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
 .modeStrip::-webkit-scrollbar { display: none; }
@@ -621,7 +621,7 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
   .lbSide { flex-direction: column; overflow-x: visible; overflow-y: auto; }
   .tile, .tile.big { width: 100%; min-height: 0; padding: 6px 10px; }
   .lbStage { min-height: 0; }
-  #lobbyChar { max-height: 240px; }
+  #lobbyChar { height: min(38vh, 240px); }
   .lbBottom { flex-direction: row; align-items: flex-end; }
   .modeStrip { flex: 1; min-width: 0; }
   .mcard { height: 84px; width: 104px; }
@@ -1177,7 +1177,7 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
   .moreMenu { top: 50px; }
   .lbSide { grid-area: side; flex-direction: column; overflow-x: hidden; overflow-y: auto; min-height: 0; padding: 0 2px 2px 0; }
   .lbStage { grid-area: stage; min-height: 0; justify-content: flex-end; }
-  #lobbyChar { max-height: 300px; }
+  #lobbyChar { height: min(70vh, 300px); }
   .modeStrip { grid-area: modes; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 6px; overflow-x: hidden; overflow-y: auto; min-height: 0; padding: 4px 2px 2px; }
   .mcard { width: auto; height: 52px; padding: 5px 34px 5px 12px; justify-content: center; }
   .mcard.on { transform: none; }
@@ -1271,17 +1271,19 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .hubCard.casual::before { background: var(--haz); }
 .lbHubB { flex: 0 0 auto; align-self: stretch; width: 46px; min-height: 0; padding: 4px 0; font-size: 18px; line-height: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
 .lbHubB small { font-size: 12px; font-weight: 800; }
-@media (orientation: portrait) { .lbSide { min-height: 104px; flex: none; } .lbStage { min-height: 150px; } .modeStrip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; overflow-x: hidden; overflow-y: auto; max-height: 340px; } .modeStrip .mcard { width: auto; min-width: 0; } .modeStrip .mcard:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+@media (orientation: portrait) { .lbSide { min-height: 104px; flex: none; } .lbStage { min-height: 110px; } .modeStrip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; overflow-x: hidden; overflow-y: auto; max-height: 340px; } .modeStrip .mcard { width: auto; min-width: 0; } .modeStrip .mcard:last-child:nth-child(odd) { grid-column: 1 / -1; } }
 #optChip.hide { display: none; }
 #optChip b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (orientation: portrait) { .lbId .avatar { width: 46px; height: 46px; font-size: 22px; } .lbId .stats { font-size: 12px; } #optChip b { font-size: 15px; } }
 /* 直版：功能按鈕換到獨立一列，身分卡才有寬度顯示「背包 普通」「最佳 0天」 */
 @media (orientation: portrait) { .lbTop { flex-wrap: wrap; } .lbIcons { order: 1; width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); } .lbIcons .icon { min-height: 34px; } }
 @media (orientation: landscape) and (max-height: 520px) { .hubBox { gap: 8px; } .hubTitle { font-size: 20px; } .hubCard { min-height: 72px; padding: 10px 14px; } .hubCard b { font-size: 18px; } }
-
-#pickSum, #mapName, #optName { white-space: normal; overflow-wrap: anywhere; }
-.lvsNm { flex: none; }
-@media (orientation: landscape) and (max-height: 520px) { .mapChip b::after { content: ""; } .mapChip b { font-size: 14px; } }
-.lvsNm { overflow: visible; max-height: none; }
-@media (max-height: 520px) { .dwCell b { font-size: 11px; } .dwCell { padding: 4px 2px; } }
-.cgNm { white-space: normal; overflow-wrap: anywhere; line-height: 1.15; }
+/* 矮螢幕（直向 ≤700px 高、橫向 ≤400px 高）：整個大廳可捲動，開始列不被擠出畫面、不互相蓋住 */
+@media (max-height: 700px) and (orientation: portrait) { #scrMenu { overflow-y: auto; } .lb { min-height: 0; } .lbStage { min-height: 150px; flex: none; } }
+@media (max-height: 400px) and (orientation: landscape) { #scrMenu { overflow-y: auto; } .lb { min-height: 0; } .lbBottom, .startBox { position: relative; z-index: 2; } .modeStrip { position: relative; z-index: 1; } }
+/* 角色畫布不可超出舞台（否則會蓋住上方按鈕、擋住點擊） */
+.lbStage { overflow: hidden; }
+#lobbyChar { max-height: calc(100% - 26px); }
+/* 矮螢幕：模式列不再固定高度裁切，改由整個大廳捲動，最下面的開始列才不會疊在模式卡上 */
+@media (max-height: 700px) { .modeStrip { overflow: visible !important; max-height: none !important; } }
+@media (max-height: 400px) and (orientation: landscape) { .modeStrip { overflow: visible !important; max-height: none !important; } }
