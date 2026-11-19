@@ -202,3 +202,7 @@ Firebase 沒有內建 LINE，走 OpenID Connect：
 - 技能提示：`skillHint()`，開局與冷卻結束時呼叫，文字來自 `Game.skillText()`（main.js 的 `CINFO`）。
 - 個人戰績（`#scrStats`）：每局結束 `saveMatch()` 存本機 `rr_hist`（最近 60 筆）並寫入 `users/{uid}/matches`；`statsOpen(uid, name)` 開啟，`statsLink()` 讓排行榜、好友、戰隊、聊天的名字可點。需要重新發布 `firestore.rules`。
 - 快速組隊：房主在房間計時器裡 `tmPublish()` 寫入 `rooms/{code}`（每 30 秒或人數改變），離開時 `roomClose()`；`roomsWatch()` 只列 2.5 分鐘內更新、未滿的房間。需要重新發布 `firestore.rules`。
+
+## 介面整理（v128）
+- 大廳右上角：聊天、社群、設定、更多。「更多」內含每日任務、戰隊聊天、小遊戲、用房間代碼加入、登出。
+- 遊戲內：「≡」收合小遊戲、背包、說明、離開。麥克風與聊天維持在外。

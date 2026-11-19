@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v127', items: ['「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v128', items: ['介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1490,6 +1490,19 @@ function bind() {
   $('resLobby').addEventListener('click', function () { if (S.mode === 'host') { S.sim.toLobby(); hostBroadcast(rosterMsg()); hostBroadcast({ t: 'lobby' }); } });
   $('resLeave').addEventListener('click', leave);
   $('leaveBtn').addEventListener('click', function () { $('confirm').classList.remove('hide'); });
+  $('hudMore').addEventListener('click', function () {
+    const m = $('hudMenu'), open = m.classList.contains('hide');
+    m.classList.toggle('hide', !open); this.setAttribute('aria-expanded', String(open));
+  });
+  $('moreBtn').addEventListener('click', function (e) {
+    e.stopPropagation(); $('moreMenu').classList.toggle('hide');
+  });
+  $('moreMenu').addEventListener('click', function (e) {
+    if (e.target.closest('.mItem')) $('moreMenu').classList.add('hide');
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#moreMenu') && !e.target.closest('#moreBtn')) $('moreMenu').classList.add('hide');
+  });
   $('confirmNo').addEventListener('click', function () { $('confirm').classList.add('hide'); });
   $('confirmYes').addEventListener('click', leave);
   $('msgOk').addEventListener('click', function () { $('msg').classList.add('hide'); });
