@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v192', items: ['大廳分成兩大類：「主玩法」（多人回收、清剿、死守、廢墟生存戰、單人拾荒）與「休閒模式」（AR、怪物卡牌），先選分類再進大廳', '回收任務可以選難度（簡單、標準、困難）與天數（無限天、7 天、14 天）；標準・無限天跟以前一樣', '回收任務最後一天通關後可以回大廳'] };
+const UPD = { v: 'v193', items: ['離開對戰回大廳時先進分類畫面（主玩法／休閒模式）', '分類按鈕縮成一欄，不再擠壓身分卡', '直版模式列改成兩欄可上下滑，所有模式都看得到', '回收任務難度鈕文字縮短，不再被切掉'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1120,6 +1120,7 @@ function leave() {
   $('chat').classList.add('hide'); chatOpen(false);
   $('confirm').classList.add('hide'); $('scrHelp').classList.add('hide'); $('scrGear').classList.add('hide');
   Game.showMap(myMap());
+  hubCat = null;   // 離開對戰後回到大廳，先進分類畫面
   if (Auth.user()) showMenu(); else show('scrLogin');
 }
 
@@ -1163,7 +1164,7 @@ function showUpdNote() {
 /* ---------- 回收任務的難度與天數（本機設定，房主開局時套用） ---------- */
 const REC_DIFF = { easy: '簡單', normal: '標準', hard: '困難' }, REC_DAYS = [0, 7, 14];
 function recCfg() { const d = ls('rr_diff'), n = +ls('rr_days'); return { diff: REC_DIFF[d] ? d : 'normal', days: REC_DAYS.indexOf(n) >= 0 ? n : 0 }; }
-function recText() { const c = recCfg(); return REC_DIFF[c.diff] + '・' + (c.days ? c.days + ' 天' : '無限天'); }
+function recText() { const c = recCfg(); return REC_DIFF[c.diff] + ' · ' + (c.days ? c.days + '天' : '無限'); }
 function recApply() { if (!S.sim) return; const c = recCfg(); S.sim.diff = c.diff; S.sim.maxDay = S.sim.mode === 'coop' ? c.days : 0; }
 function recOptsOpen() {
   const mark = function () { const c = recCfg();
