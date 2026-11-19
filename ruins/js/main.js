@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v164', items: ['AR 抓怪新增每日任務（3 個，完成送金幣）', '圖鑑裡點抓過的怪物，可以讓牠站在大廳角色旁邊展示', '社群排行榜新增「AR 抓怪」：比累計抓到的隻數', '更新說明只顯示這一版的內容'] };
+const UPD = { v: 'v165', items: ['拿掉換彈鍵：子彈打完會自動換彈，槍鍵上會顯示換彈中'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [

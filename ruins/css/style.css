@@ -985,3 +985,6 @@ body.touch.playing:not(.lk-near):not(.btnedit) #locker { display: none !importan
 .arMis small { color: var(--ink-2); font-size: 12px; }
 .arDexGrid i { font-style: normal; text-align: center; font-size: 12px; font-weight: 900; }
 .arDex small { font-size: 12px; color: var(--ink-2); }
+
+/* 換彈鍵拿掉：子彈打完會自動換彈，槍鍵上會顯示換彈中，不需要另一顆按鈕 */
+#reload { display: none !important; }
