@@ -977,5 +977,11 @@ body.touch.playing:not(.lk-near):not(.btnedit) #locker { display: none !importan
 .arDexGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .arDexGrid span { padding: 8px 2px; text-align: center; font-size: 12px; font-weight: 800; color: var(--ink-2); background: var(--kraft); border: 2px solid var(--ink); }
 .arDexGrid span.on { color: var(--ink); background: var(--haz); }
+.arDexGrid button { font: inherit; padding: 8px 2px; font-size: 12px; font-weight: 800; color: var(--ink); background: var(--haz); border: 2px solid var(--ink); cursor: pointer; }
+.arDexGrid .pick { outline: 3px solid var(--ink); outline-offset: -6px; }
+.arMis div { display: flex; justify-content: space-between; gap: 8px; padding: 7px 10px; background: var(--kraft); border: 2px solid var(--ink); border-top-width: 0; font-size: 13px; font-weight: 700; }
+.arMis div:first-child { border-top-width: 2px; }
+.arMis div.on { background: var(--haz); }
+.arMis small { color: var(--ink-2); font-size: 12px; }
 .arDexGrid i { font-style: normal; text-align: center; font-size: 12px; font-weight: 900; }
 .arDex small { font-size: 12px; color: var(--ink-2); }

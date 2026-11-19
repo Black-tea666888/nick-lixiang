@@ -84,11 +84,11 @@
   function netLand() {
     const hit = net.userData.hit, rs = net.userData.ring; scene.remove(net); net.geometry.dispose(); net = null;
     if (!hit) { hud('沒丟中，再對準一點'); sfx(180, 0.15, 'square', 0.06, 120); return; }
-    const grade = rs < 0.45 ? ['Excellent！', 0.25] : rs < 0.7 ? ['Great！', 0.15] : ['Nice', 0.05];
+    const grade = rs < 0.45 ? ['Excellent！', 0.25, 2] : rs < 0.7 ? ['Great！', 0.15, 1] : ['Nice', 0.05, 0];
     const rate = Math.min(0.95, RARITY[mon.rar][2] + grade[1]);
     if (Math.random() < rate) {
       gone = 1;
-      const msg = opts.onCatch ? opts.onCatch({ k: mon.k, v: mon.v, rar: mon.rar }) : '';
+      const msg = opts.onCatch ? opts.onCatch({ k: mon.k, v: mon.v, rar: mon.rar, g: grade[2] }) : '';
       hud(grade[0] + '　抓到了！' + (msg ? '　' + msg : '')); counts();
       if (navigator.vibrate) navigator.vibrate(60);
       sfx(660, 0.1, 'triangle', 0.12, 990); setTimeout(function () { sfx(990, 0.18, 'triangle', 0.12, 1320); }, 110);
@@ -180,15 +180,23 @@
     }).catch(function () { box.classList.add('noCam'); hud('相機沒有開啟（沒有允許權限），改用一般背景'); });
   }
 
-  // 圖鑑：4 種屬性 × 8 種外觀
+  // 圖鑑：4 種屬性 × 8 種外觀；點抓過的格子可以設成大廳展示的怪物。上方是今日 AR 任務
   function dexDraw() {
-    const g = $('arDexGrid'), got = opts.dex ? opts.dex() : [];
+    const g = $('arDexGrid'), got = opts.dex ? opts.dex() : [], buddy = opts.buddy ? opts.buddy() : '';
+    const mis = $('arMis'); mis.textContent = '';
+    (opts.missions ? opts.missions() : []).forEach(function (m) {
+      const r = document.createElement('div'); r.className = m[3] ? 'on' : '';
+      const a = document.createElement('span'); a.textContent = (m[3] ? '✓ ' : '') + m[0];
+      const b = document.createElement('small'); b.textContent = m[3] ? '已領 +' + m[4] : Math.min(m[1], m[2]) + ' / ' + m[2] + '，+' + m[4] + ' 金幣';
+      r.appendChild(a); r.appendChild(b); mis.appendChild(r);
+    });
     g.textContent = '';
     KIND_NAMES.forEach(function (kn) { const h = document.createElement('i'); h.textContent = kn; g.appendChild(h); });   // 每一欄是一種屬性
     VAR_NAMES.forEach(function (vn, v) {
       KINDS.forEach(function (_, k) {
-        const has = got.indexOf(k + ':' + v) >= 0, c = document.createElement('span');
-        c.className = has ? 'on' : ''; c.textContent = has ? KIND_NAMES[k] + vn : '？';
+        const key = k + ':' + v, has = got.indexOf(key) >= 0, c = document.createElement(has ? 'button' : 'span');
+        c.className = (has ? 'on' : '') + (key === buddy ? ' pick' : ''); c.textContent = has ? KIND_NAMES[k] + vn : '？';
+        if (has) { c.type = 'button'; c.addEventListener('click', function () { if (opts.pick) opts.pick(k, v); dexDraw(); }); }
         g.appendChild(c);
       });
     });
