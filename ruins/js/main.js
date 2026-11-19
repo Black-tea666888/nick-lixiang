@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v183', items: ['模式改名：組隊回收、單人拾荒、AR 實境、清剿行動、死守回收車、廢墟生存戰', '「戰隊」改名為「拾荒團」（團長、副團長、團員）'] };
+const UPD = { v: 'v184', items: ['模式選單、主頁按鈕、社群和拾荒團等選單改成半透明毛玻璃，字一樣清楚'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
