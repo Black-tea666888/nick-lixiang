@@ -15,7 +15,7 @@ const view = { phase: 'lobby', day: 1, money: 0, quota: 0, time: 0, players: new
 // 角色屬性：0 回收員 1 機器人 2 太空人 3 貓貓 4 南瓜頭 5 紙箱人
 const CHAR_SPEED = [1, 1, 1.05, 1.10, 1, 1, 0.97, 1];
 const COSTUME_COL = [null, 0x566b3a, 0x39e8ff, 0xffd24a, 0x1d2027, 0xf2f4f8];   // 服裝顏色（0 = 隊伍色）
-const FX_COL = [0xfff1b0, 0x6ad8ff, 0xff7eb6, 0xb98cff];                          // 彈道特效顏色
+const FX_COL = [0xfff1b0, 0x6ad8ff, 0xff7eb6, 0xb98cff, 0xff5a2a, 0xdfe8ff, 0x7dffb0, 0x4fa8ff];                          // 彈道特效顏色
 function myEq(k) { const pm = view.players.get(myId); return !!(pm && pm.eq && pm.eq.indexOf(k) >= 0); }
 function myGem(i) { const pm = view.players.get(myId); return pm && pm.gems ? pm.gems[i] | 0 : 0; }
 function hpPct() { return Math.max(0, Math.min(100, me.hp / (myEq(4) ? 130 : 100) * 100)) + '%'; }
@@ -1691,7 +1691,13 @@ const GUN_SKIN = [null,
   { dark: 0xd4ad52, poly: 0xb38a2e, steel: 0xf0d27a, green: 0xb38a2e, wood: 0x8a5a20, shine: 1 },
   { dark: 0x111214, poly: 0x18191c, steel: 0xc9a24a, green: 0x111214, wood: 0x1e1a16, shine: 1 },
   { dark: 0xe0559f, poly: 0x2a1630, steel: 0x7ad8ff, green: 0xe0559f, wood: 0x6a2a5a, glow: 0x3a0a28 },
-  { dark: 0xc4e6f4, poly: 0x7fb6d6, steel: 0xffffff, green: 0x9fd0e8, wood: 0x9fd0e8, shine: 1 }];
+  { dark: 0xc4e6f4, poly: 0x7fb6d6, steel: 0xffffff, green: 0x9fd0e8, wood: 0x9fd0e8, shine: 1 },
+  // 第二輪槍枝：極地迷彩、熔岩裂紋、全息、鈦合金、暗夜霓虹
+  { dark: 0xc9d3d8, poly: 0xe8eef2, steel: 0x9aa6ad, green: 0xbfcbd1, wood: 0x7d8c94 },
+  { dark: 0x1a1412, poly: 0x2e1a14, steel: 0x3b2a22, green: 0xff5a2a, wood: 0x4a1e10, glow: 0x3a0a08 },
+  { dark: 0x7fd6ff, poly: 0xc89cff, steel: 0xe8f7ff, green: 0x9dffe1, wood: 0xffc6f0, shine: 1 },
+  { dark: 0x4a5058, poly: 0x6a7078, steel: 0xb8c0c8, green: 0x8a9099, wood: 0x2c3036, shine: 1 },
+  { dark: 0x0c0f16, poly: 0x151b26, steel: 0x1f2736, green: 0x2de0ff, wood: 0x0a0d12, glow: 0x0a2a3a }];
 // 槍身立體感：不用貼圖，改依法線調整頂點色——頂面較亮、底面較暗、側面有反光，避免像貼紙一樣平
 function bevelGun(geo) {
   const nor = geo.attributes.normal.array, col = geo.attributes.color.array;
