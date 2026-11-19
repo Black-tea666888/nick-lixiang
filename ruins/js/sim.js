@@ -1307,6 +1307,14 @@ Sim.prototype._raceInit = function () {
   this.race = { t: 0, laps: 3, cps: tr.map(function (q) { return center(q[1], q[0]); }) };
   this.raceRes = null;
   this.players.forEach(function (p) { p.rc = { lap: 0, next: 1, fin: 0 }; });   // 起點就是第 0 個路線點，所以從第 1 點開始計
+  // AI 賽車：沿著走廊的路線（相鄰路線點之間用 BFS 找格子路徑，避免穿牆）
+  const cells = tr.map(function (q) { return [q[1], q[0]]; }), route = [];
+  for (let i = 0; i < cells.length; i++) {
+    const a = cells[i], b = cells[(i + 1) % cells.length], path = bfs(a[0], a[1], b[0], b[1]) || [a];
+    path.slice(0, -1).forEach(function (c) { route.push(center(c[0], c[1])); });
+  }
+  this.race.route = route;
+  this.race.ai = [0, 1, 2].map(function (i) { const w = route[0] || [0, 0]; return { id: 'ai' + i, x: w[0] + i * 0.9, z: w[1], yaw: 0, k: 1, lap: 0, fin: 0, sp: 8.4 + i * 0.6 }; });
 };
 Sim.prototype._stepRace = function (dt, alive) {
   const R = this.race, self = this;
@@ -1322,6 +1330,18 @@ Sim.prototype._stepRace = function (dt, alive) {
         if (rc.lap >= R.laps) { rc.fin = R.t; self.raceRes = { time: R.t, laps: R.laps }; self._end(true, 'race'); return; }
       }
       rc.next = (rc.next + 1) % N;
+    }
+  });
+  // AI 車沿路線跑；跑完一圈（回到第 0 點）才算一圈
+  const route = R.route || [], M = route.length;
+  (R.ai || []).forEach(function (a) {
+    if (a.fin || !M) return;
+    const w = route[a.k], dx = w[0] - a.x, dz = w[1] - a.z, d = Math.hypot(dx, dz);
+    const st = Math.min(a.sp * dt, d);
+    if (d > 1e-6) { a.x += dx / d * st; a.z += dz / d * st; a.yaw = Math.atan2(-dx, -dz); }
+    if (d < 0.4) {
+      a.k = (a.k + 1) % M;
+      if (a.k === 0) { a.lap++; if (a.lap >= R.laps) { a.fin = R.t; } }
     }
   });
   if (this.phase === 'play' && !alive.length) this._end(false, 'race');
@@ -1343,7 +1363,7 @@ Sim.prototype.snapshot = function () {
     bp: this.boardPos ? [r2(this.boardPos[0]), r2(this.boardPos[1])] : null,
     tt: this.tt ? [this.tt.cells.map(function (c) { return c || '.'; }).join(''), this.tt.turn, this.tt.x, this.tt.o, this.tt.over, this.tt.winner] : null,
     m: this.monsters.map(function (m) { return [r2(m.x), r2(m.z), r2(m.rot), m.state === 'chase' ? 1 : 0, m.dead > 0 ? 0 : Math.max(1, Math.round(m.hp)), Math.round(m.sh || 0), m.maxHp || 100, m.shMax || MON_SH]; }),
-    race: this.race ? [Math.round(this.race.t * 10) / 10, this.race.laps, this.players.map(function (p) { return p.rc ? [p.id, p.rc.lap, p.rc.fin ? Math.round(p.rc.fin * 10) / 10 : 0] : [p.id, 0, 0]; })] : undefined,
+    race: this.race ? [Math.round(this.race.t * 10) / 10, this.race.laps, this.players.map(function (p) { return p.rc ? [p.id, p.rc.lap, p.rc.fin ? Math.round(p.rc.fin * 10) / 10 : 0] : [p.id, 0, 0]; }), this.race.ai.map(function (a) { return [a.id, r2(a.x), r2(a.z), r2(a.yaw), a.lap]; })] : undefined,
     it: it };
 };
 
