@@ -2512,7 +2512,10 @@ function frame(nowMs) {
   if (pipe) {
     const k = Math.sin((1 - swingT / 0.28) * Math.PI) * (swingT > 0 ? 1 : 0);
     pipe.rotation.x = -0.5 - k * 1.5; pipe.rotation.z = -0.25 + k * 0.5;
-    pipe.visible = active && me.alive;
+    // 一次只拿一把：近戰模式（或用槍時按「打」揮一下）只顯示近戰武器，用槍時只顯示槍
+    const meleeUp = wpnMode === 'melee' || !gunMesh || swingT > 0;
+    pipe.visible = active && me.alive && meleeUp;
+    if (gunMesh) gunMesh.visible = active && me.alive && !meleeUp;
   }
   if (hurtFlash > 0) { hurtFlash = Math.max(0, hurtFlash - dt * 1.6); if (me.alive) $('flash').style.opacity = (hurtFlash * 0.5).toFixed(2); }
   if (playing) {
