@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v121', items: ['「櫃」鍵只在靠近櫃子時出現，躲進去會面向櫃門、從通風縫往外看，再按「出」離開'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan'];
+const UPD = { v: 'v122', items: ['新增交易所：世界頻道聊天、用金幣買賣造型、頭飾、配件與寶石等級'] };
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -372,6 +372,137 @@ function ccWatchStart() {
     ccUnread = rows.filter(function (r) { return (r.t || 0) > ccSeen() && r.uid !== C.uid(); }).length; ccBadgeDraw();
   });
 }
+/* ---------- 交易所：世界頻道與玩家掛單 ----------
+ * 用金幣買賣造型、頭飾、配件、寶石等級。掛單時先從自己身上扣掉（下架才退回），
+ * 有人買下後，買家當場拿到東西，賣家下次打開交易所時收到金幣。 */
+let wcOff = null, mkOff = null, wcRows = [], mkRows = [], mkTab = 'chat';
+const TRADE_CATS = ['o', 'pet', 'hat', 'is', 'ms', 'fx', 'gs'];
+function tradeLabel(kind, it) {
+  if (kind === 'skin') return CAT_LABEL[it.cat] + '「' + ((catNames(it.cat) || [])[it.i] || '?') + '」';
+  if (kind === 'acc') return '配件「' + (W.ACCS[it.i] || '?') + '」';
+  return (W.GEMS[it.i] || '寶石') + ' 1 級';
+}
+/** 身上可以賣的東西（預設款不能賣） */
+function tradeables(p) {
+  const out = [];
+  TRADE_CATS.forEach(function (cat) { (cat === 'hat' ? p.hats : p.own[cat]).forEach(function (i) { if (i > 0) out.push({ kind: 'skin', item: { cat: cat, i: i } }); }); });
+  p.acc.forEach(function (i) { out.push({ kind: 'acc', item: { i: i } }); });
+  p.gems.forEach(function (lv, i) { if (lv > 0) out.push({ kind: 'gem', item: { i: i } }); });
+  return out;
+}
+function tradeHas(p, kind, it) {
+  if (kind === 'skin') return (it.cat === 'hat' ? p.hats : p.own[it.cat] || []).indexOf(it.i) >= 0;
+  if (kind === 'acc') return p.acc.indexOf(it.i) >= 0;
+  return p.gems[it.i] > 0;
+}
+/** 買家能不能收：已經有的造型、配件不能再買；寶石最多 5 級 */
+function tradeCanGet(p, kind, it) {
+  if (kind === 'skin') return TRADE_CATS.indexOf(it.cat) >= 0 && !tradeHas(p, kind, it);
+  if (kind === 'acc') return it.i > 0 && it.i < W.ACCS.length && p.acc.indexOf(it.i) < 0;
+  return it.i >= 0 && it.i < 3 && p.gems[it.i] < 5;
+}
+function tradeTake(p, kind, it) {
+  if (kind === 'skin') { const a = it.cat === 'hat' ? p.hats : p.own[it.cat]; a.splice(a.indexOf(it.i), 1); }
+  else if (kind === 'acc') p.acc.splice(p.acc.indexOf(it.i), 1);
+  else p.gems[it.i]--;
+}
+function tradeGive(p, kind, it) {
+  if (kind === 'skin') (it.cat === 'hat' ? p.hats : p.own[it.cat]).push(it.i);
+  else if (kind === 'acc') p.acc.push(it.i);
+  else p.gems[it.i] = Math.min(5, p.gems[it.i] + 1);
+}
+function mkCoins() { const c = prog().coins; $('coinTag6').textContent = c; renderProg(); }
+function marketOpen() {
+  show('scrMarket'); mkCoins(); mkSetTab(mkTab);
+  mkFillSelect();
+  const C = RR.Cloud;
+  if (!C || !C.ready()) { $('wcLog').textContent = ''; $('wcLog').appendChild(mk('p', 'ccEmpty', '交易所要先登入（Google、Apple、LINE、Facebook 或訪客）並連上網路。')); $('mkList').textContent = ''; $('mkList').appendChild(mk('p', 'ccEmpty', '交易所要先登入並連上網路才能看掛單。')); return; }
+  if (wcOff) wcOff(); if (mkOff) mkOff();
+  wcOff = C.worldChat(function (err, rows) { if (err) { mtoast(C.message(err), 'warn'); return; } wcRows = rows; wcDraw(); });
+  mkOff = C.marketWatch(function (err, rows) { if (err) { mtoast(C.message(err), 'warn'); return; } mkRows = rows; mkDraw(); });
+  // 收款：自己賣出去的東西
+  C.marketPayouts(function (err, rows) {
+    if (err || !rows.length) return;
+    const q = prog(); let sum = 0; rows.forEach(function (r) { sum += r.price; }); q.coins += sum; progSave(q); mkCoins();
+    say('交易所收款：' + rows.map(function (r) { return r.buyerName + ' 買了你的' + r.label + '（' + r.price + ' 金幣）'; }).join('、') + '。共收到 ' + sum + ' 金幣。');
+  });
+  mkFillSelect();
+}
+function marketClose() { if (wcOff) wcOff(); if (mkOff) mkOff(); wcOff = mkOff = null; showMenu(); }
+function mkSetTab(t) {
+  mkTab = t;
+  Array.prototype.forEach.call(document.querySelectorAll('.mkTabs button'), function (b) { b.classList.toggle('on', b.dataset.tab === t); b.setAttribute('aria-selected', b.dataset.tab === t); });
+  $('wcLog').classList.toggle('hide', t !== 'chat'); $('wcForm').classList.toggle('hide', t !== 'chat');
+  $('mkList').classList.toggle('hide', t !== 'shop'); $('mkForm').classList.toggle('hide', t !== 'shop');
+}
+function wcDraw() {
+  const my = RR.Cloud.uid(), log = $('wcLog');
+  log.textContent = '';
+  if (!wcRows.length) { log.appendChild(mk('p', 'ccEmpty', '世界頻道還沒有人說話。打個招呼，或喊價買賣。')); return; }
+  wcRows.slice().reverse().forEach(function (m) {
+    const mine = m.uid === my, r = mk('div', 'ccMsg' + (mine ? ' me' : '') + (m.sys ? ' sys' : '')), head = mk('div', 'ccHead'), av = mk('span', 'ccAv', (m.name || '?').charAt(0));
+    av.style.background = '#f0c040'; head.appendChild(av); head.appendChild(mk('b', null, (mine ? '你' : m.name) + (m.lv ? '　Lv.' + m.lv : '')));
+    r.appendChild(head); r.appendChild(mk('span', null, m.text)); log.appendChild(r);
+  });
+  log.scrollTop = log.scrollHeight;
+}
+function mkDraw() {
+  const my = RR.Cloud.uid(), list = $('mkList'), p = prog();
+  list.textContent = '';
+  if (!mkRows.length) { list.appendChild(mk('p', 'ccEmpty', '目前沒有人掛單。用下面的欄位把你多的造型、配件或寶石賣掉。')); return; }
+  mkRows.forEach(function (o) {
+    const mine = o.seller === my, card = mk('div', 'ccReq' + (mine ? ' me' : ''));
+    card.appendChild(mk('div', 'ccWho', (mine ? '你' : o.sellerName) + ' 在賣'));
+    const body = mk('div', 'ccBody'), info = mk('div', 'mkInfo');
+    info.appendChild(mk('b', null, o.label)); info.appendChild(mk('span', null, o.price + ' 金幣')); body.appendChild(info);
+    let btn;
+    if (mine) {
+      btn = mk('button', 'btn', '下架');
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        RR.Cloud.marketCancel(o.id, function (err, d) {
+          if (err) { mtoast(err.code === 'sold' ? '已經有人買走了' : RR.Cloud.message(err), 'warn'); btn.disabled = false; return; }
+          const q = prog(); tradeGive(q, d.kind, d.item); progSave(q); pushEquip(myEquip(q)); mkFillSelect(); mtoast('已下架，' + d.label + '還給你了', 'good');
+        });
+      });
+    } else {
+      const ok = tradeCanGet(p, o.kind, o.item || {}), rich = p.coins >= o.price;
+      btn = mk('button', 'btn' + (ok && rich ? ' primary' : ''), !ok ? (o.kind === 'gem' ? '已滿級' : '已擁有') : rich ? '買' : '金幣不夠');
+      btn.disabled = !ok || !rich;
+      btn.addEventListener('click', function () {
+        if (!confirm('用 ' + o.price + ' 金幣買' + o.label + '？')) return;
+        btn.disabled = true;
+        RR.Cloud.marketBuy(o.id, function (err, d) {
+          if (err) { mtoast(err.code === 'sold' || err.code === 'gone' ? '慢了一步，已經被買走了' : RR.Cloud.message(err), 'warn'); btn.disabled = false; return; }
+          const q = prog(); q.coins = Math.max(0, q.coins - (d.price | 0)); if (tradeCanGet(q, d.kind, d.item)) tradeGive(q, d.kind, d.item); progSave(q);
+          RR.Cloud.marketGot(o.id); mkCoins(); mkFillSelect(); mtoast('買到' + d.label + '！', 'good');
+        });
+      });
+    }
+    body.appendChild(btn); card.appendChild(body); list.appendChild(card);
+  });
+}
+function mkFillSelect() {
+  const sel = $('mkItem'), list = tradeables(prog());
+  sel.textContent = '';
+  if (!list.length) { const op = mk('option', null, '沒有可以賣的東西'); op.value = ''; sel.appendChild(op); return; }
+  list.forEach(function (t, k) { const op = mk('option', null, tradeLabel(t.kind, t.item)); op.value = String(k); sel.appendChild(op); });
+}
+function mkPost() {
+  const C = RR.Cloud; if (!C || !C.ready()) { mtoast('要先登入並連上網路', 'warn'); return; }
+  const list = tradeables(prog()), t = list[+$('mkItem').value], price = Math.floor(+$('mkPrice').value);
+  if (!t) { mtoast('先選要賣的東西', 'warn'); return; }
+  if (!(price >= 1 && price <= 99999)) { mtoast('價格要在 1～99999 金幣之間', 'warn'); return; }
+  const label = tradeLabel(t.kind, t.item), q = prog();
+  if (!tradeHas(q, t.kind, t.item)) return;
+  tradeTake(q, t.kind, t.item); progSave(q); pushEquip(myEquip(q));   // 先扣掉，失敗再還
+  C.marketPost(t.kind, t.item, label, price, function (err) {
+    if (err) { const q2 = prog(); tradeGive(q2, t.kind, t.item); progSave(q2); mtoast(C.message(err), 'warn'); mkFillSelect(); return; }
+    $('mkPrice').value = ''; mkFillSelect(); mtoast('已掛單：' + label + '，' + price + ' 金幣', 'good');
+    C.worldSay('【掛單】' + label + '，' + price + ' 金幣，到交易所的「掛單」買', function () {});
+  });
+}
+
 function clanOpen() {
   lsSet('rr_cc_seen', String(Date.now())); ccUnread = 0; ccBadgeDraw();
   show('scrClan'); $('coinTag5').textContent = prog().coins; ccAskDraw();
@@ -1355,6 +1486,14 @@ function bind() {
   $('spOk').addEventListener('click', shopBuy);
   setInterval(function () { if (!$('scrShop').classList.contains('hide')) shopDraw(); }, 30000);
   $('clanChatOpen').addEventListener('click', clanOpen);
+  $('marketOpen').addEventListener('click', marketOpen);
+  $('mkDone').addEventListener('click', marketClose);
+  Array.prototype.forEach.call(document.querySelectorAll('.mkTabs button'), function (b) { b.addEventListener('click', function () { mkSetTab(b.dataset.tab); }); });
+  $('wcForm').addEventListener('submit', function (e) {
+    e.preventDefault(); const v = $('wcInput').value; if (!v.trim()) return;
+    RR.Cloud.worldSay(v, function (err) { if (err) mtoast(RR.Cloud.message(err), 'warn'); else $('wcInput').value = ''; });
+  });
+  $('mkForm').addEventListener('submit', function (e) { e.preventDefault(); mkPost(); });
   $('clanDone').addEventListener('click', clanClose);
   $('ccAsk').addEventListener('click', ccAsk);
   $('ccForm').addEventListener('submit', function (e) { e.preventDefault(); ccSend(); });

@@ -59,6 +59,40 @@ service cloud.firestore {
       }
     }
 
+    // 世界頻道：登入的人都能讀；只能用自己的名義發言，80 字以內；本人可刪
+    match /world/{mid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 80
+        && request.resource.data.name is string && request.resource.data.name.size() <= 20
+        && request.resource.data.t is number;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // 交易所掛單：賣家掛出（status=open），別人買下（sold），賣家可下架（cancel），賣家收款（paid）、買家收貨（got）
+    match /market/{oid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.seller == request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.kind in ['skin', 'acc', 'gem']
+        && request.resource.data.price is int && request.resource.data.price >= 1 && request.resource.data.price <= 99999
+        && request.resource.data.label is string && request.resource.data.label.size() <= 30
+        && request.resource.data.sellerName is string && request.resource.data.sellerName.size() <= 20
+        && !('buyer' in request.resource.data) && !('paid' in request.resource.data) && !('got' in request.resource.data);
+      allow update: if signedIn() && (
+        (resource.data.status == 'open' && resource.data.seller != request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'buyer', 'buyerName', 'tb'])
+          && request.resource.data.status == 'sold' && request.resource.data.buyer == request.auth.uid)
+        || (resource.data.status == 'open' && resource.data.seller == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) && request.resource.data.status == 'cancel')
+        || (resource.data.status == 'sold' && resource.data.seller == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid']) && request.resource.data.paid == true)
+        || (resource.data.status == 'sold' && resource.data.buyer == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['got']) && request.resource.data.got == true));
+      allow delete: if signedIn() && resource.data.seller == request.auth.uid
+        && (resource.data.status == 'cancel' || (resource.data.status == 'open') || (resource.data.get('paid', false) == true && resource.data.get('got', false) == true));
+    }
+
     // 排行榜（集合名稱以 lb_ 開頭）：只能寫自己的那一筆，分數要是合理的數字
     match /{board}/{uid} {
       allow read: if signedIn() && board.matches('lb_.*');

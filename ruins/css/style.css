@@ -831,3 +831,14 @@ body.touch.playing:not(.lk-near):not(.btnedit) #locker { display: none !importan
 }
 #lkView::before, #lkView::after { content: ''; position: absolute; top: 0; bottom: 0; width: 16%; background: linear-gradient(90deg, #0b1218, #1a2a36); }
 #lkView::before { left: 0; } #lkView::after { right: 0; transform: scaleX(-1); }
+/* 交易所 */
+#scrMarket .cc { gap: 8px; }
+.mkTabs { display: flex; gap: 6px; }
+.mkTabs button { flex: 1; padding: 9px 0; font: inherit; font-size: 15px; font-weight: 900; color: var(--chalk); background: var(--steel); border: 2px solid var(--ink); border-radius: 3px; cursor: pointer; }
+.mkTabs button.on { color: var(--ink); background: var(--haz); }
+.mkInfo { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mkInfo b { font-size: 15px; }
+.mkInfo span { font-size: 13px; font-weight: 700; }
+#mkForm select, #mkForm input { min-width: 0; padding: 8px; font: inherit; font-size: 15px; color: var(--ink); background: var(--kraft-l); border: 2px solid var(--ink); border-radius: 3px; }
+#mkForm select { flex: 1.6; }
+#mkForm input { flex: 1; }

@@ -194,3 +194,4 @@ Firebase 沒有內建 LINE，走 OpenID Connect：
 排行榜（Firestore）、更多地圖與怪物種類、道具商店、自架伺服器改成伺服器權威。
 - 連殺：自己擊倒（槍或空襲）累積，15 秒內無擊倒或死亡歸零；3 次解鎖無人機（`U`，15 秒全圖敵人，`drawMini`），6 次解鎖空中掃射（`J`，`S.sim.airStrike()` 在前方 12 公尺、半徑 7 公尺傷害 120，消耗 6 連殺、冷卻 25 秒）。
 - 畫面效果：高畫質（電腦的標準畫質也開）會開即時陰影（`applyShadows()`：室內手電筒、戶外陽光跟著玩家），角色與怪物用 `castAll()` 投影；室內燈下有加色光柱、鏡頭周圍有飄浮灰塵（`buildDust()`、`tickFx()`）；怪物眼睛加光暈（`glowSprite()`）；`#vig` 畫面暗角。
+- 交易所（`scrMarket`）：世界頻道存在 `world` 集合，掛單存在 `market` 集合（open → sold／cancel，賣家 `paid`、買家 `got`）。相關函式在 `cloud.js` 的 `worldChat`、`marketPost`、`marketBuy`、`marketCancel`、`marketPayouts`，畫面邏輯在 `main.js` 的 `marketOpen()`。需要重新發布 `firestore.rules`。注意：進度在玩家裝置上，交易無法防止改檔作弊。
