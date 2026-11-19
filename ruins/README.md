@@ -261,3 +261,4 @@ Firebase 沒有內建 LINE，走 OpenID Connect：
 - 戰隊設定（徽章、描述、類型 open/approve/invite、最低等級、地區）、尋找戰隊、申請與批准（clans/{id}/reqs）；需要重新發佈 firestore.rules（v176）。
 - 自製下拉選單 fancySelect：所有 <select> 自動換成遊戲風格按鈕＋面板，原生 select 隱藏保留存值與 change（v177）。以後新增下拉也會自動套用。
 - 個人頁：遊玩天數（prog.pdays，每天第一次打開 +1，舊玩家用戰績日期補算）、加入日期、上次上線；好友顯示多久前在線；戰隊請求卡加頭像可點（v178）。
+- 角色換成寫實士兵模型（models/Soldier.glb，來自 three.js r128 範例，原始角色出自 Adobe Mixamo；vendor/GLTFLoader.js、SkeletonUtils.js 來自 three@0.128.0，MIT）。待機／走路／跑步動畫，武器跟著右手，頭飾掛在頭骨，角色用塗裝顏色分辨（CHAR_TINT），服裝顏色優先。模型載入前用程式畫的士兵（v179）。
