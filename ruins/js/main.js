@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v126', items: ['新增個人戰績：點頭像看自己的戰績，點排行榜、好友、戰隊、聊天裡的名字看別人的戰績，可分模式查看'] };
+const UPD = { v: 'v127', items: ['「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -416,10 +416,11 @@ function marketOpen() {
   show('scrMarket'); mkCoins(); mkSetTab(mkTab);
   mkFillSelect();
   const C = RR.Cloud;
-  if (!C || !C.ready()) { $('wcLog').textContent = ''; $('wcLog').appendChild(mk('p', 'ccEmpty', '交易所要先登入（Google、Apple、LINE、Facebook 或訪客）並連上網路。')); $('mkList').textContent = ''; $('mkList').appendChild(mk('p', 'ccEmpty', '交易所要先登入並連上網路才能看掛單。')); return; }
+  if (!C || !C.ready()) { $('wcLog').textContent = ''; $('wcLog').appendChild(mk('p', 'ccEmpty', '交易所要先登入（Google、Apple、LINE、Facebook 或訪客）並連上網路。')); $('mkList').textContent = ''; $('mkList').appendChild(mk('p', 'ccEmpty', '交易所要先登入並連上網路才能看掛單。')); tmNote('快速組隊要先登入並連上網路。'); return; }
   if (wcOff) wcOff(); if (mkOff) mkOff();
   wcOff = C.worldChat(function (err, rows) { if (err) { mtoast(C.message(err), 'warn'); return; } wcRows = rows; wcDraw(); });
   mkOff = C.marketWatch(function (err, rows) { if (err) { mtoast(C.message(err), 'warn'); return; } mkRows = rows; mkDraw(); });
+  if (tmOff) tmOff(); tmOff = C.roomsWatch(function (err, rows) { if (err) { tmNote(C.message(err)); return; } tmRows = rows; tmDraw(); });
   // 收款：自己賣出去的東西
   C.marketPayouts(function (err, rows) {
     if (err || !rows.length) return;
@@ -428,21 +429,56 @@ function marketOpen() {
   });
   mkFillSelect();
 }
-function marketClose() { if (wcOff) wcOff(); if (mkOff) mkOff(); wcOff = mkOff = null; showMenu(); }
+function marketClose() { if (wcOff) wcOff(); if (mkOff) mkOff(); if (tmOff) tmOff(); wcOff = mkOff = tmOff = null; showMenu(); }
+/* 快速組隊：列出別人公開的房間，點「加入」或「快速加入」直接進房 */
+let tmOff = null, tmRows = [];
+function tmNote(t) { const l = $('tmList'); l.textContent = ''; l.appendChild(mk('p', 'ccEmpty', t)); }
+function tmJoin(code) { if (wcOff) wcOff(); if (mkOff) mkOff(); if (tmOff) tmOff(); wcOff = mkOff = tmOff = null; $('scrMarket').classList.add('hide'); $('codeInput').value = code; joinRoom(); }
+function tmDraw() {
+  const l = $('tmList'); l.textContent = '';
+  if (!tmRows.length) { tmNote('目前沒有公開的房間。按「建立房間」開一個，別人就能快速加入。'); return; }
+  tmRows.forEach(function (r) {
+    const row = mk('div', 'tmRow'), av = mk('span', 'ccAv', (r.hostName || '?').charAt(0)); av.style.background = '#f0c040';
+    const info = mk('div', 'tmInfo'); info.appendChild(mk('b', null, (r.hostName || '玩家') + ' 的房間'));
+    info.appendChild(mk('span', null, (MODE_NAME[r.mode] || '多人合作') + (r.map ? '・' + r.map : '') + (r.play ? '・遊戲中' : '・等待中')));
+    statsLink(av, r.host, r.hostName);
+    const n = mk('span', 'tmN', (r.n | 0) + '/' + (r.max || 4));
+    const bt = mk('button', 'btn primary', '加入'); bt.type = 'button'; bt.addEventListener('click', function () { tmJoin(r.code); });
+    row.appendChild(av); row.appendChild(info); row.appendChild(n); row.appendChild(bt); l.appendChild(row);
+  });
+}
+/** 房主：每 30 秒或人數改變時更新公開房間資料 */
+let tmPubT = 0, tmPubKey = '';
+function tmPublish() {
+  if (S.mode !== 'host' || !S.sim || !RR.Cloud || !RR.Cloud.ready()) return;
+  const n = S.sim.players.filter(function (p) { return !p.ai; }).length, play = S.sim.phase === 'play', key = n + '|' + play + '|' + S.sim.mode;
+  if (key === tmPubKey && Date.now() - tmPubT < 30000) return;
+  tmPubKey = key; tmPubT = Date.now();
+  RR.Cloud.roomPublish(Net.code(), { mode: S.sim.mode, map: (W.MAPS[S.sim.map | 0] || {}).name || '', n: n, max: S.sim.mode === 'br' ? 6 : 4, play: play });
+}
 function mkSetTab(t) {
+  if (t === 'clan') { marketClose(); clanOpen(); return; }
   mkTab = t;
+  document.getElementById('scrMarket').classList.toggle('tmOn', t === 'team');
   Array.prototype.forEach.call(document.querySelectorAll('.mkTabs button'), function (b) { b.classList.toggle('on', b.dataset.tab === t); b.setAttribute('aria-selected', b.dataset.tab === t); });
-  $('wcLog').classList.toggle('hide', t !== 'chat'); $('wcForm').classList.toggle('hide', t !== 'chat');
+  $('wcLog').classList.toggle('hide', t !== 'chat' && t !== 'team'); $('wcForm').classList.toggle('hide', t !== 'chat' && t !== 'team');
   $('mkList').classList.toggle('hide', t !== 'shop'); $('mkForm').classList.toggle('hide', t !== 'shop');
 }
 function wcDraw() {
   const my = RR.Cloud.uid(), log = $('wcLog');
   log.textContent = '';
   if (!wcRows.length) { log.appendChild(mk('p', 'ccEmpty', '世界頻道還沒有人說話。打個招呼，或喊價買賣。')); return; }
+  let lastT = 0;
   wcRows.slice().reverse().forEach(function (m) {
-    const mine = m.uid === my, r = mk('div', 'ccMsg' + (mine ? ' me' : '') + (m.sys ? ' sys' : '')), head = mk('div', 'ccHead'), av = mk('span', 'ccAv', (m.name || '?').charAt(0));
-    av.style.background = '#f0c040'; head.appendChild(av); head.appendChild(mk('b', null, (mine ? '你' : m.name) + (m.lv ? '　Lv.' + m.lv : ''))); statsLink(head, m.uid, m.name);
-    r.appendChild(head); r.appendChild(mk('span', null, m.text)); log.appendChild(r);
+    if ((m.t || 0) - lastT > 300000) { const d = new Date(m.t || 0); log.appendChild(mk('div', 'wcTime', String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'))); }
+    lastT = m.t || 0;
+    const mine = m.uid === my, r = mk('div', 'wcMsg' + (mine ? ' me' : '')), av = mk('span', 'wcAv', (m.name || '?').charAt(0)), body = mk('div', 'wcBody'), head = mk('div', 'wcHead');
+    const img = mine ? ls('rr_avatar_img') : '';
+    if (img) { av.textContent = ''; av.style.background = 'center / cover no-repeat url(' + img + ')'; } else av.style.background = (mine && ls('rr_avatar')) || ['#f0c040', '#6ad8ff', '#ff8a6a', '#9be564', '#c9a0ff'][((m.name || '').charCodeAt(0) || 0) % 5];
+    head.appendChild(mk('b', null, mine ? '你' : (m.name || '玩家'))); if (m.lv) head.appendChild(mk('i', 'wcLv', 'Lv.' + m.lv));
+    body.appendChild(head); body.appendChild(mk('div', 'wcText' + (/^【掛單】/.test(m.text) ? ' deal' : ''), m.text));
+    statsLink(av, m.uid, m.name); statsLink(head, m.uid, m.name);
+    r.appendChild(av); r.appendChild(body); log.appendChild(r);
   });
   log.scrollTop = log.scrollHeight;
 }
@@ -867,11 +903,12 @@ async function joinRoom() {
 function enterRoom() {
   $('chatLog').textContent = '';
   $('chat').classList.remove('hide');
-  S.timers.push(setInterval(function () { voiceSync(); if (!$('scrLobby').classList.contains('hide')) tickLobby(); }, 400));
+  tmPubKey = ''; S.timers.push(setInterval(function () { voiceSync(); tmPublish(); if (!$('scrLobby').classList.contains('hide')) tickLobby(); }, 400));
 }
 function leave() {
   S.timers.forEach(clearInterval); S.timers = [];
   if (S.mode === 'client') Net.send({ t: 'bye' });   // 主動告訴房主我走了，不用等逾時
+  if (S.mode === 'host') RR.Cloud.roomClose(Net.code());
   Voice.closeAll(); Net.leave(); RR.Cloud.setRoom(null);
   S.mode = null; S.sim = null; S.myId = null; S.roster = []; S.seen = {}; S.chatRate = {}; S.flags = {};
   Game.setActive(false); Game.setRoster([]);
@@ -1567,6 +1604,12 @@ function bind() {
     RR.Cloud.worldSay(v, function (err) { if (err) mtoast(RR.Cloud.message(err), 'warn'); else $('wcInput').value = ''; });
   });
   $('mkForm').addEventListener('submit', function (e) { e.preventDefault(); mkPost(); });
+  $('tmCreate').addEventListener('click', function () { marketClose(); lsSet('rr_mode', 'coop'); createRoom(); });
+  $('tmQuick').addEventListener('click', function () {
+    const r = tmRows.filter(function (x) { return !x.play; })[0] || tmRows[0];
+    if (r) tmJoin(r.code); else mtoast('目前沒有可以加入的房間，先建立一個吧', 'warn');
+  });
+  $('tmRefresh').addEventListener('click', function () { const C = RR.Cloud; if (!C || !C.ready()) return; if (tmOff) tmOff(); tmOff = C.roomsWatch(function (err, rows) { if (err) { tmNote(C.message(err)); return; } tmRows = rows; tmDraw(); }); });
   $('clanDone').addEventListener('click', clanClose);
   $('ccAsk').addEventListener('click', ccAsk);
   $('ccForm').addEventListener('submit', function (e) { e.preventDefault(); ccSend(); });
