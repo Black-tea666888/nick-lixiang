@@ -62,7 +62,7 @@ function avatarData() {
 }
 function profile() {
   const p = H.prog(), st = p.st || {};
-  return Object.assign({ name: clean(H.name(), 12), bio: clean(p.bio, 30), lv: H.level(), coins: p.coins | 0, xp: p.xp | 0, region: REGION_KEY[p.region | 0] || 'tw',
+  return Object.assign({ name: clean(H.name(), 12), bio: clean(p.bio, 30), ach: (Array.isArray(p.ach) ? p.ach : []).slice(0, 80).map(function (a) { return clean(a, 16); }), lv: H.level(), coins: p.coins | 0, xp: p.xp | 0, region: REGION_KEY[p.region | 0] || 'tw',
     st: { games: st.games | 0, wins: st.wins | 0, mk: st.mk | 0, brWins: st.brWins | 0 }, seen: Date.now(), room: room || '', v: 1 }, avatarData());
 }
 /** 公開資料寫在 users 文件；進度寫在只有本人能讀的 save/main（舊版進度欄位會順便清掉） */

@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v171', items: ['修正同一個人同時出現在台灣區和香港區：賽季頁的地區選單只用來切換查看，不會改你的地區', '賽季新增「全區」排名', '槍的標題拿掉「全部免費」'] };
+const UPD = { v: 'v172', items: ['點玩家頭像進個人頁，可以看到他的成就完成度', '修正社群切換分頁時，上一頁的內容（例如戰隊、排行榜）跑到別的分頁'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1186,7 +1186,7 @@ function statsOpen(uid, name) {
   if (mine) {
     let a = []; try { a = JSON.parse(ls('rr_hist') || '[]'); } catch (e) {}
     const p = prog();
-    stHeadDraw({ name: myName(), lv: levelOf(p.xp), clanTag: C && C.me() ? C.me().clanTag : '', code: C && C.me() ? C.me().code : '', bio: p.bio, st: p.st }, true);
+    stHeadDraw({ name: myName(), lv: levelOf(p.xp), clanTag: C && C.me() ? C.me().clanTag : '', code: C && C.me() ? C.me().code : '', bio: p.bio, st: p.st, ach: p.ach }, true);
     const local = Array.isArray(a) ? a : [];
     stRows = local; stDraw();
     // 先顯示本機，再拿雲端的戰績合併（換裝置玩的場次也會出現）
@@ -1219,6 +1219,14 @@ function stHeadDraw(pf, mine) {
     tx.appendChild(bi);
   } else if (pf.bio) tx.appendChild(mk('span', 'stBioTxt', pf.bio));
   h.appendChild(av); h.appendChild(tx);
+  // 成就：點開可以看到這個人完成了哪些（自己和朋友都看得到）
+  { const got = Array.isArray(pf.ach) ? pf.ach : [], names = ACH.filter(function (a) { return got.indexOf(a[0]) >= 0; });
+    if (pf.ach || mine) {
+      const d = mk('details', 'stAch'), s = mk('summary', null, '成就 ' + names.length + ' / ' + ACH.length); d.appendChild(s);
+      const box = mk('div', 'stAchList');
+      ACH.forEach(function (a) { const ok = got.indexOf(a[0]) >= 0, c = mk('span', ok ? 'on' : '', (ok ? '✓ ' : '') + a[1]); c.title = a[2]; box.appendChild(c); });
+      d.appendChild(box); h.appendChild(d);
+    } }
   const st = pf.st || {};
   if (st.games) { const t = mk('div', 'stTot'); t.appendChild(mk('span', null, '總場數 ' + (st.games | 0))); t.appendChild(mk('span', null, '勝率 ' + Math.round((st.wins | 0) / Math.max(1, st.games) * 100) + '%')); t.appendChild(mk('span', null, '擊倒 ' + (st.mk | 0))); h.appendChild(t); }
 }
@@ -1350,6 +1358,7 @@ function scoreUnit(mode) { return function (v) { return mode === 'ar' ? v + ' �
 let socRegion = null;   // 賽季頁正在看的地區（all／tw／hk），null＝自己的地區
 function renderSocial() {
   const b = $('socBody'), C = RR.Cloud; b.textContent = '';
+  renderSocial.token = {};   // 先換掉，上一個分頁還在讀取的資料回來時就不會塞進這一頁
   Array.prototype.forEach.call(document.querySelectorAll('#socTabs button'), function (x) { x.classList.toggle('on', x.dataset.tab === socTab); });
   if (socTab === 'ach') {
     const p = prog();
