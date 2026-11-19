@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v133', items: ['段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v134', items: ['交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -424,7 +424,8 @@ function marketOpen() {
   // 收款：自己賣出去的東西
   C.marketPayouts(function (err, rows) {
     if (err || !rows.length) return;
-    const q = prog(); let sum = 0; rows.forEach(function (r) { sum += r.price; }); q.coins += sum; progSave(q); mkCoins();
+    const q = prog(); let sum = 0; rows.forEach(function (r) { sum += r.price; tradeLogAdd('sell', r.label, r.price, r.buyerName); }); q.coins += sum; progSave(q); mkCoins();
+    bannerShow('交易成功：賣出 ' + (rows.length > 1 ? rows.length + ' 件' : rows[0].label), '收到 ' + sum + ' 金幣');
     say('交易所收款：' + rows.map(function (r) { return r.buyerName + ' 買了你的' + r.label + '（' + r.price + ' 金幣）'; }).join('、') + '。共收到 ' + sum + ' 金幣。');
   });
   mkFillSelect();
@@ -485,7 +486,7 @@ function wcDraw() {
 function mkDraw() {
   const my = RR.Cloud.uid(), list = $('mkList'), p = prog();
   list.textContent = '';
-  if (!mkRows.length) { list.appendChild(mk('p', 'ccEmpty', '目前沒有人掛單。用下面的欄位把你多的造型、配件或寶石賣掉。')); return; }
+  if (!mkRows.length) { list.appendChild(mk('p', 'ccEmpty', '目前沒有人掛單。用下面的欄位把你多的造型、配件或寶石賣掉。')); tradeLogDraw(list); return; }
   mkRows.forEach(function (o) {
     const mine = o.seller === my, card = mk('div', 'ccReq' + (mine ? ' me' : ''));
     card.appendChild(mk('div', 'ccWho', (mine ? '你' : o.sellerName) + ' 在賣'));
@@ -498,7 +499,8 @@ function mkDraw() {
         btn.disabled = true;
         RR.Cloud.marketCancel(o.id, function (err, d) {
           if (err) { mtoast(err.code === 'sold' ? '已經有人買走了' : RR.Cloud.message(err), 'warn'); btn.disabled = false; return; }
-          const q = prog(); tradeGive(q, d.kind, d.item); progSave(q); pushEquip(myEquip(q)); mkFillSelect(); mtoast('已下架，' + d.label + '還給你了', 'good');
+          const q = prog(); tradeGive(q, d.kind, d.item); progSave(q); pushEquip(myEquip(q)); mkFillSelect();
+          tradeLogAdd('cancel', d.label, 0); bannerShow('已下架：' + d.label, '物品已還給你'); mkDraw();
         });
       });
     } else {
@@ -511,13 +513,39 @@ function mkDraw() {
         RR.Cloud.marketBuy(o.id, function (err, d) {
           if (err) { mtoast(err.code === 'sold' || err.code === 'gone' ? '慢了一步，已經被買走了' : RR.Cloud.message(err), 'warn'); btn.disabled = false; return; }
           const q = prog(); q.coins = Math.max(0, q.coins - (d.price | 0)); if (tradeCanGet(q, d.kind, d.item)) tradeGive(q, d.kind, d.item); progSave(q);
-          RR.Cloud.marketGot(o.id); mkCoins(); mkFillSelect(); mtoast('買到' + d.label + '！', 'good');
+          RR.Cloud.marketGot(o.id); mkCoins(); mkFillSelect();
+          tradeLogAdd('buy', d.label, d.price, o.sellerName); bannerShow('交易成功：買到 ' + d.label, '花費 ' + (d.price | 0) + ' 金幣，已放進你的收藏');
         });
       });
     }
     body.appendChild(btn); card.appendChild(body); list.appendChild(card);
   });
+  tradeLogDraw(list);
 }
+/* 交易紀錄（存在本機，最近 50 筆）與成功橫幅 */
+const TRADE_TXT = { buy: '買入', sell: '賣出', post: '掛單', cancel: '下架' };
+function tradeLogList() { try { return JSON.parse(localStorage.getItem('rr_trades') || '[]'); } catch (e) { return []; } }
+function tradeLogAdd(k, label, price, who) {
+  lsSet('rr_trades', JSON.stringify([{ t: Date.now(), k: k, label: label || '', price: price | 0, who: who || '' }].concat(tradeLogList()).slice(0, 50)));
+}
+function tradeLogDraw(list) {
+  list.appendChild(mk('div', 'sec', '交易紀錄'));
+  const logs = tradeLogList();
+  if (!logs.length) { list.appendChild(mk('p', 'ccEmpty', '還沒有交易紀錄。')); return; }
+  logs.forEach(function (x) {
+    const d = new Date(x.t), tm = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    const r = mk('div', 'srow'), nm = mk('span', 'nm', TRADE_TXT[x.k] + ' ' + x.label + (x.who ? '（' + x.who + '）' : ''));
+    nm.appendChild(mk('small', null, '　' + tm)); r.appendChild(nm);
+    r.appendChild(mk('span', 'sc', x.k === 'sell' ? '+' + x.price : x.k === 'buy' ? '-' + x.price : x.k === 'post' ? x.price + ' 金幣' : ''));
+    list.appendChild(r);
+  });
+}
+let bannerT = null;
+function bannerShow(title, sub) {
+  const el = $('banner'); el.querySelector('b').textContent = title; el.querySelector('span').textContent = sub || '';
+  el.classList.add('show'); clearTimeout(bannerT); bannerT = setTimeout(bannerHide, 4000);
+}
+function bannerHide() { $('banner').classList.remove('show'); }
 function mkFillSelect() {
   const sel = $('mkItem'), list = tradeables(prog());
   sel.textContent = '';
@@ -534,7 +562,7 @@ function mkPost() {
   tradeTake(q, t.kind, t.item); progSave(q); pushEquip(myEquip(q));   // 先扣掉，失敗再還
   C.marketPost(t.kind, t.item, label, price, function (err) {
     if (err) { const q2 = prog(); tradeGive(q2, t.kind, t.item); progSave(q2); mtoast(C.message(err), 'warn'); mkFillSelect(); return; }
-    $('mkPrice').value = ''; mkFillSelect(); mtoast('已掛單：' + label + '，' + price + ' 金幣', 'good');
+    $('mkPrice').value = ''; mkFillSelect(); tradeLogAdd('post', label, price); bannerShow('掛單成功：' + label, price + ' 金幣，等待買家'); mkDraw();
     C.worldSay('【掛單】' + label + '，' + price + ' 金幣，到交易所的「掛單」買', function () {});
   });
 }
@@ -1496,6 +1524,7 @@ function bind() {
   (function () { const cv = $('lobbyChar'); let lastX = null; cv.addEventListener('pointerdown', function (e) { lastX = e.clientX; cv.setPointerCapture(e.pointerId); }); cv.addEventListener('pointermove', function (e) { if (lastX == null) return; Game.previewSpin(cv, e.clientX - lastX); lastX = e.clientX; }); const up = function () { lastX = null; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); })();
   $('goBtn').addEventListener('click', function () { const b = $('modeStrip').querySelector('[data-mode="' + selMode() + '"]'); if (b) $(b.dataset.go).click(); });
   $('mapChip').addEventListener('click', function () { renderMapGrid(); show('scrMap'); });
+  $('banner').addEventListener('click', bannerHide);
   $('tierInfoMap').addEventListener('click', openTierInfo); $('tierDone').addEventListener('click', function () { $('scrTier').classList.add('hide'); });
   $('mapOk').addEventListener('click', function () { showMenu(); }); $('mapDone').addEventListener('click', function () { showMenu(); });
   $('joinOpen').addEventListener('click', function () { $('joinModal').classList.remove('hide'); setTimeout(function () { $('codeInput').focus(); }, 50); });
