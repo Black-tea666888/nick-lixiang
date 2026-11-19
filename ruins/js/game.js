@@ -2386,6 +2386,7 @@ function frame(nowMs) {
 
 /* ---------- 對外介面 ---------- */
 RR.Game = {
+  buildMonster: buildMonster,   // AR 抓怪借用怪物模型
   dbg: function () { return { scene: scene, renderer: renderer, camera: camera, cloud: showCloud, me: me, solids: solids, groundAt: groundAt }; },
   stats: function () { const i = renderer.info; let n = 0, lights = 0, outl = 0; scene.traverse(function (o) { if (o.isMesh && o.visible) n++; if (o.isLight) lights++; if (o.userData && o.userData.outline) outl++; }); return { calls: i.render.calls, tris: i.render.triangles, geo: i.memory.geometries, tex: i.memory.textures, progs: i.programs ? i.programs.length : 0, meshes: n, lights: lights, outl: outl, pr: renderer.getPixelRatio() }; },
   openMini: openMini,
