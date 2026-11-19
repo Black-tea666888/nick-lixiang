@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=187" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=188" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -110,7 +110,7 @@
         <button class="avatar" id="avatar" type="button" aria-label="更換頭像顏色"></button>
         <div class="who">
           <label class="nickRow"><input id="nick" type="text" maxlength="12" aria-label="暱稱（點一下改名）" placeholder="輸入你的名字" enterkeyhint="done"><span class="pen" id="nickPen" aria-hidden="true">改名</span></label>
-          <button class="lvBtn" id="lvInfoBtn" type="button" aria-label="等級說明"><span class="stats"><span>等級<b id="lvTag">Lv.1</b></span><span>背包<b id="bagTag">普通</b></span><span>最佳<b id="best">0</b>天</span><i class="lvQ">?</i></span>
+          <button class="lvBtn" id="lvInfoBtn" type="button" aria-label="等級獎勵"><span class="stats"><span>等級<b id="lvTag">Lv.1</b></span><span>背包<b id="bagTag">普通</b></span><span>最佳<b id="best">0</b>天</span><i class="lvQ" id="lvDot">›</i></span>
           <span id="xpBar"><i id="xpFill"></i></span></button>
         </div>
       </div>
@@ -254,6 +254,21 @@
   </div>
 </div>
 
+<div class="screen hide" id="scrLevel">
+  <div class="lvs">
+    <header class="dwTop">
+      <button class="icon" id="lvsDone" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">等級獎勵</b>
+      <button class="btn lvsHelp" id="lvsHelp" type="button">怎麼升級</button>
+    </header>
+    <section class="lvsView" aria-live="polite">
+      <div class="lvsArt"><canvas id="lvsCanvas" width="320" height="220" aria-hidden="true"></canvas><div class="dwIcon lvsIcon" id="lvsIcon"></div></div>
+      <div class="lvsInfo"><span class="dwKind" id="lvsKind"></span><b id="lvsName"></b><p id="lvsDesc"></p><button class="startBtn lvsGet" id="lvsGet" type="button"><b>領取</b></button></div>
+    </section>
+    <div class="lvsMe"><b id="lvsLv">Lv.1</b><span id="lvsXp"></span><button class="btn primary" id="lvsAll" type="button">全部領取</button></div>
+    <div class="lvsTrack" id="lvsTrack"><div class="lvsBar"><i id="lvsFill"></i></div><div class="lvsCards" id="lvsCards"></div></div>
+  </div>
+</div>
 <div id="scopeFx" aria-hidden="true"></div>
 <div id="aim" class="hide" aria-hidden="true"><i></i><b></b></div>
 <div id="mtoast" role="status"></div>
@@ -656,16 +671,16 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=187"></script>
-<script src="js/sim.js?v=187"></script>
-<script src="js/audio.js?v=187"></script>
-<script src="js/auth.js?v=187"></script>
-<script src="js/cloud.js?v=187"></script>
-<script src="js/net.js?v=187"></script>
-<script src="js/game.js?v=187"></script>
-<script src="js/minigames.js?v=187"></script>
-<script src="js/ar.js?v=187"></script>
-<script src="js/padnav.js?v=187"></script>
-<script src="js/main.js?v=187"></script>
+<script src="js/config.js?v=188"></script>
+<script src="js/sim.js?v=188"></script>
+<script src="js/audio.js?v=188"></script>
+<script src="js/auth.js?v=188"></script>
+<script src="js/cloud.js?v=188"></script>
+<script src="js/net.js?v=188"></script>
+<script src="js/game.js?v=188"></script>
+<script src="js/minigames.js?v=188"></script>
+<script src="js/ar.js?v=188"></script>
+<script src="js/padnav.js?v=188"></script>
+<script src="js/main.js?v=188"></script>
 </body>
 </html>

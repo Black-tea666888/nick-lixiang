@@ -1120,3 +1120,47 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .lvAt { grid-row: span 2; align-self: center; font-weight: 900; }
 .lvBag { font-weight: 800; }
 .lvRow small { color: var(--ink-2); }
+
+/* 等級獎勵畫面：上面大預覽，下面一整排可以橫向滑的等級卡＋進度條 */
+.lvs { width: 100%; max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+.lvsHelp { margin-left: auto; }
+.lvsView { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--kraft-a); border: 2px solid var(--ink); box-shadow: 4px 4px 0 rgba(17,20,23,.5); -webkit-backdrop-filter: var(--frost); backdrop-filter: var(--frost); }
+.lvsArt { flex: none; width: min(44%, 320px); aspect-ratio: 320 / 220; background: var(--kraft-l); border: 2px solid var(--ink); display: flex; align-items: center; justify-content: center; }
+.lvsArt canvas { width: 100%; height: 100%; display: block; }
+.lvsIcon { width: 100%; height: 100%; border: 0; background: none; }
+.lvsIcon svg { width: 40%; height: auto; }
+.lvsInfo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; color: var(--ink); text-align: left; }
+.lvsInfo b { font-size: 20px; font-weight: 900; }
+.lvsInfo p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-2); }
+.lvsGet { margin-top: 6px; align-self: flex-start; min-width: 140px; padding: 8px 18px; }
+.lvsGet b { font-size: 18px; }
+.lvsGet:disabled { filter: grayscale(.8); opacity: .65; cursor: default; }
+.lvsGet.done { filter: none; opacity: 1; background: var(--steel); color: var(--chalk); }
+.lvsMe { display: flex; align-items: center; gap: 10px; color: var(--chalk); }
+.lvsMe b { font-size: 22px; font-weight: 900; color: var(--haz); text-shadow: 2px 2px 0 var(--ink); }
+.lvsMe span { font-size: 13px; font-weight: 700; }
+.lvsMe .btn { margin-left: auto; }
+.lvsMe .btn:disabled { opacity: .5; }
+.lvsTrack { overflow-x: auto; overflow-y: hidden; padding: 0 2px 8px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+.lvsBar { height: 8px; margin-bottom: 8px; background: rgba(30,26,22,.55); border: 2px solid var(--ink); }
+.lvsBar i { display: block; height: 100%; background: var(--haz); }
+.lvsCards { display: flex; gap: 6px; width: max-content; }
+.lvsCard { position: relative; flex: none; width: 92px; height: 118px; padding: 0; display: flex; flex-direction: column; align-items: center; font: inherit; color: var(--ink); background: var(--kraft-la); border: 2px solid var(--ink); cursor: pointer; overflow: hidden; }
+.lvsCard.big { width: 112px; }
+.lvsN { align-self: stretch; padding: 3px 0; font-size: 12px; font-weight: 900; background: var(--kraft-d); }
+.lvsCard.t-bag .lvsN { background: var(--ink); color: var(--haz); }
+.lvsIc svg { width: 34px; height: 34px; margin-top: 8px; fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.lvsNm { padding: 2px 4px; font-size: 11px; font-weight: 800; line-height: 1.25; max-height: 2.5em; overflow: hidden; }
+.lvsSt { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 0; font-size: 12px; font-weight: 900; }
+.lvsCard.got .lvsSt { background: var(--ink); color: var(--haz); }
+.lvsCard.can .lvsSt { background: var(--haz); color: var(--ink); animation: lvPulse 1.2s ease-in-out infinite; }
+.lvsCard.lock { opacity: .55; }
+.lvsCard.lock::after { content: ''; position: absolute; right: 5px; top: 24px; width: 10px; height: 8px; border: 2px solid var(--ink); border-top: 0; }
+.lvsCard.sel { outline: 3px solid var(--haz); outline-offset: -1px; box-shadow: inset 0 0 0 2px var(--ink); opacity: 1; }
+@keyframes lvPulse { 50% { filter: brightness(1.15); } }
+@media (prefers-reduced-motion: reduce) { .lvsCard.can .lvsSt { animation: none; } }
+#lvDot { font-size: 12px; }
+#lvDot.on { background: #c8361b; color: #fff; }
+#lvDot.on::after { content: ''; }
+@media (orientation: landscape) and (max-height: 500px) { .lvs { gap: 5px; } .lvsView { padding: 6px 10px; } .lvsArt { width: auto; height: 30vh; } .lvsInfo b { font-size: 17px; } .lvsGet { padding: 4px 16px; margin-top: 2px; } .lvsMe b { font-size: 18px; } .lvsMe .btn { padding: 4px 12px; } .lvsBar { margin-bottom: 5px; height: 6px; } .lvsCard { height: 100px; width: 84px; } .lvsNm { max-height: 1.3em; } .lvsCard.big { width: 100px; } .lvsIc svg { width: 26px; height: 26px; margin-top: 4px; } }
+.lvsCard { padding-bottom: 20px; }
