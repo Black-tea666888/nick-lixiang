@@ -1011,3 +1011,18 @@ body.touch.playing:not(.lk-near):not(.btnedit) #locker { display: none !importan
 .stAchList { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 6px; }
 .stAchList span { padding: 4px 8px; font-size: 12px; font-weight: 700; color: var(--ink-2); background: var(--kraft); border: 2px solid var(--ink); }
 .stAchList span.on { color: var(--ink); background: var(--haz); }
+
+/* 槍分類（像 CoD 的主武器頁）：左邊分類可展開，右邊屬性；手機直式時屬性在下面 */
+.gunPick { display: grid; grid-template-columns: 1fr; gap: 8px; }
+@media (min-width: 700px) { .gunPick { grid-template-columns: 1.4fr 1fr; align-items: start; } .gunPick #gStats { position: sticky; top: 8px; margin-top: 0; } }
+.gCat { border: 2px solid var(--ink); background: var(--kraft); margin-bottom: -2px; }
+.gCat summary { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; list-style: none; }
+.gCat summary::-webkit-details-marker { display: none; }
+.gCat summary b { font-size: 15px; font-weight: 900; }
+.gCat summary b::before { content: '▸ '; }
+.gCat[open] summary b::before { content: '▾ '; }
+.gCat summary em { font-style: normal; font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.gCat.has summary { background: var(--haz); }
+.gCat.has summary em { color: var(--ink); }
+.gCat > .cards { padding: 8px; background: var(--kraft-l); border-top: 2px solid var(--ink); margin: 0; }
+.gCatTag { display: inline-block; margin: 0 0 6px !important; padding: 2px 8px; font-size: 12px !important; font-weight: 900; color: var(--kraft-l); background: var(--ink); }

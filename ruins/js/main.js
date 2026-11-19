@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v172', items: ['點玩家頭像進個人頁，可以看到他的成就完成度', '修正社群切換分頁時，上一頁的內容（例如戰隊、排行榜）跑到別的分頁'] };
+const UPD = { v: 'v173', items: ['選槍改成分類：手槍、突擊步槍、衝鋒槍、霰彈槍、狙擊槍、機槍、特殊武器，點開分類再選', '槍的屬性多了命中和換彈速度，並顯示分類'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -721,13 +721,18 @@ function miniReward(n, why, el, add) {
 }
 RR.UI = { say: say, miniReward: miniReward };
 // 槍的數值條：傷害（單發×顆數）、射速、射程、彈量，用最強的那把當 100%
+// 槍的分類（依 W.GUNS 的順序）；之後新增的槍沒寫分類就放「特殊武器」
+const GUN_CATS = ['手槍', '突擊步槍', '衝鋒槍', '霰彈槍', '狙擊槍', '機槍', '特殊武器'];
+const GUN_CAT = [0, 3, 1, 2, 4, 4, 5, 4, 1, 3, 2, 5, 6, 6, 6, 6, 5, 1, 3, 6, 4, 6, 6, 6];
+function gunCat(i) { const c = GUN_CAT[i]; return c == null ? 6 : c; }
 function renderGunStats(i) {
   const box = $('gStats'); if (!box) return;
   const G = W.GUNS[i], all = W.GUNS;
-  const v = function (g) { return [g.dmg * g.n, 1 / g.cd, g.range, g.clip[1]]; }, mx = [0, 0, 0, 0];
+  const v = function (g) { return [g.dmg * g.n, 1 / g.cd, g.range, g.clip[1], 1 - Math.min(0.25, g.spread) * 3, 1 / g.reload]; }, mx = [0, 0, 0, 0, 0, 0];
   all.forEach(function (g) { v(g).forEach(function (x, k) { mx[k] = Math.max(mx[k], x); }); });
-  const vals = v(G), names = ['傷害', '射速', '射程', '彈量'];
+  const vals = v(G), names = ['傷害', '射速', '射程', '彈量', '命中', '換彈'];
   box.textContent = '';
+  const cat = document.createElement('p'); cat.className = 'gCatTag'; cat.textContent = GUN_CATS[gunCat(i)]; box.appendChild(cat);
   const title = document.createElement('p'); title.className = 'gNote';
   title.textContent = G.name + (G.n > 1 ? '：一次 ' + G.n + ' 顆，近距離很強' : G.auto ? '：按住連發' : G.range >= 70 ? '：一發入魂，射得最遠' : '：穩定好用') + '。回收模式每天 ' + G.clip[0] + ' 發，命中讓怪物暈 ' + G.stun + ' 秒。';
   box.appendChild(title);
@@ -1795,6 +1800,21 @@ function bind() {
   const gBtns = cards($('gGrid'), W.GUNS.map(function (g) { return g.name; }), function () { return ''; }, function (i) {
     look.gun = i; lsSet('rr_gun', String(i)); showLook();
   });
+  // 槍分類：每一類可以展開選擇，一次只開一類；旁邊（手機是下面）顯示選到的槍的屬性
+  const gCatEls = GUN_CATS.map(function (name, ci) {
+    const d = document.createElement('details'); d.className = 'gCat';
+    const s = document.createElement('summary'); const nb = document.createElement('b'); nb.textContent = name; const em = document.createElement('em'); s.appendChild(nb); s.appendChild(em); d.appendChild(s);
+    const grid = document.createElement('div'); grid.className = 'cards c3'; d.appendChild(grid);
+    let n = 0; gBtns.forEach(function (b, i) { if (gunCat(i) === ci) { grid.appendChild(b); n++; } });
+    d.addEventListener('toggle', function () { if (d.open) gCatEls.forEach(function (o) { if (o.el !== d) o.el.open = false; }); });
+    if (n) $('gCats').appendChild(d);
+    return { el: d, em: em, n: n };
+  });
+  const gCatMark = function () {
+    const cur = gunCat(look.gun | 0);
+    gCatEls.forEach(function (o, ci) { o.el.classList.toggle('has', ci === cur); o.em.textContent = ci === cur ? '使用中：' + W.GUNS[look.gun | 0].name : o.n + ' 把'; });
+    if (!gCatEls.some(function (o) { return o.el.open; })) gCatEls[cur].el.open = true;
+  };
   const hBtns = cards($('hGrid'), W.HATS.slice(0, LIMITED_HAT), function (i) { return ''; }, function (i) {
     const p = prog();
     if (p.hats.indexOf(i) < 0) {
@@ -1820,7 +1840,7 @@ function bind() {
     mark(cBtns, look.c); mark(wBtns, look.w); mark(hBtns, look.h);
     { look.gun = ((look.gun | 0) % W.GUNS.length + W.GUNS.length) % W.GUNS.length; mark(gBtns, look.gun);
       gBtns.forEach(function (b, i) { b.lastChild.textContent = i === look.gun ? '使用中' : ''; });
-      renderGunStats(look.gun); Game.setGun(look.gun); }
+      renderGunStats(look.gun); Game.setGun(look.gun); gCatMark(); }
     pushLoadout();
     const pg = prog();
     hBtns.forEach(function (b, i) { const own = pg.hats.indexOf(i) >= 0; b.classList.toggle('lock', !own); b.lastChild.textContent = own ? (i === look.h ? '使用中' : '已擁有') : HAT_COST[i] + ' 金幣'; });
