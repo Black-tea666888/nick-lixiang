@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v214', items: ['休閒模式的說明文字加上賽車'] };
+const UPD = { v: 'v216', items: ['交易成功的提示保留 10 秒，點一下可以關掉'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -590,7 +590,7 @@ function tradeLogDraw(list) {
 let bannerT = null;
 function bannerShow(title, sub) {
   const el = $('banner'); el.querySelector('b').textContent = title; el.querySelector('span').textContent = sub || '';
-  el.classList.add('show'); clearTimeout(bannerT); bannerT = setTimeout(bannerHide, 4000);
+  el.classList.add('show'); clearTimeout(bannerT); bannerT = setTimeout(bannerHide, 10000);
 }
 function bannerHide() { clearTimeout(bannerT); $('banner').classList.remove('show'); }
 function mkFillSelect() {
