@@ -275,6 +275,14 @@ const Cloud = {
   },
 
   /* ---------- 排行榜 ---------- */
+  /** 刪掉自己在「其他地區」本週榜上的紀錄（換地區後不會同時出現在兩區）；mode 省略＝全部模式 */
+  cleanRegions: function (mode) {
+    if (!Cloud.ready()) return;
+    const mine = profile().region, w = weekId();
+    (mode ? [mode] : MODES.concat(['ar'])).forEach(function (m) {
+      REGION_KEY.forEach(function (rk) { if (rk !== mine) db.collection(Cloud.board(m, rk + '_w' + w)).doc(uid).delete().catch(function () {}); });
+    });
+  },
   board: function (mode, scope) { return 'lb_' + mode + '_' + scope; },
   /** 回報成績：總榜、本週榜、本週地區榜各留最高分 */
   submit: function (mode, score) {
@@ -289,6 +297,7 @@ const Cloud = {
         return ref.set(Object.assign({}, row));
       }).catch(fail());
     });
+    Cloud.cleanRegions(mode);   // 一個人只會在自己地區的榜上，其他地區本週的舊紀錄刪掉
     // 記下寫過哪些排行榜文件，刪除資料時才找得到
     const paths = ['all', 'w' + w, p.region + '_w' + w].map(function (s) { return Cloud.board(mode, s) + '/' + uid; });
     userRef().set({ boards: window.firebase.firestore.FieldValue.arrayUnion.apply(null, paths) }, { merge: true }).catch(fail());
