@@ -1215,102 +1215,129 @@ function buildProps(style, hr) {
 }
 function part(geo, m, x, y, z) { const o = new THREE.Mesh(geo, m); o.position.set(x || 0, y || 0, z || 0); return o; }
 
-/** 角色造型（純外觀）。身體用玩家顏色，正面朝 +z。 */
+/** 角色造型（純外觀）：寫實比例的士兵（約 1.8 公尺、頭身比約 1:7.5），正面朝 +z。
+ * 每個角色都是真人，用頭盔、面罩、塗裝表現主題；以後新增角色也照這個身體做，只換 THEME 裡的裝備。
+ * 隊伍色（或服裝顏色）用在防彈背心上。 */
+const SKIN = [0xc68e64, 0xe0b48e, 0x8d5a3b, 0xf0c8a8];   // 依隊伍位置換膚色
 function buildChar(c, slot, h, o, pet) {
   const g = new THREE.Group();
-  const M = o && COSTUME_COL[o] ? litMat({ color: COSTUME_COL[o], emissive: new THREE.Color(COSTUME_COL[o]).multiplyScalar(o === 2 ? 0.55 : o === 3 ? 0.3 : 0.12), shininess: o === 3 ? 90 : 20 }) : pmat(COLORS[slot % 4]);
-  const dark = new THREE.MeshBasicMaterial({ color: 0x0a0f0c }), glow = new THREE.MeshBasicMaterial({ color: 0xfff0cc });
-  const body = function () { return part(new THREE.CylinderGeometry(0.27, 0.25, 0.8, 28), M, 0, 0.99, 0); };   // 上身；腿另外做，走路會擺動
-  if (c === 1) {            // 機器人
-    const grey = pmat(0x9aa3a8, 0.12), eye = new THREE.BoxGeometry(0.1, 0.08, 0.05);
-    g.add(part(new THREE.BoxGeometry(0.56, 0.74, 0.4), M, 0, 0.97, 0), part(new THREE.BoxGeometry(0.46, 0.4, 0.4), grey, 0, 1.58, 0),
-      part(eye, glow, -0.11, 1.6, 0.21), part(eye, glow, 0.11, 1.6, 0.21),
-      part(new THREE.CylinderGeometry(0.015, 0.015, 0.25, 16), grey, 0, 1.9, 0),
-      part(new THREE.SphereGeometry(0.05, 20, 16), new THREE.MeshBasicMaterial({ color: 0xff4a3d }), 0, 2.03, 0),
-      part(new THREE.BoxGeometry(0.3, 0.18, 0.02), dark, 0, 0.95, 0.21), part(new THREE.SphereGeometry(0.03, 14, 12), new THREE.MeshBasicMaterial({ color: 0x5dff8a }), 0.18, 1.0, 0.21));
-  } else if (c === 2) {     // 太空人
-    const white = pmat(0xe8eef2, 0.14);
-    g.add(body(), part(new THREE.SphereGeometry(0.33, 32, 28), white, 0, 1.62, 0), part(new THREE.SphereGeometry(0.25, 28, 24), dark, 0, 1.62, 0.13),
-      part(new THREE.BoxGeometry(0.4, 0.6, 0.2), white, 0, 0.95, -0.33), part(new THREE.SphereGeometry(0.05, 20, 16), glow, 0.2, 1.25, 0.26), part(new THREE.BoxGeometry(0.1, 0.02, 0.02), glow, 0.17, 1.72, 0.27), part(new THREE.BoxGeometry(0.04, 0.1, 0.02), glow, 0.12, 1.66, 0.27));
-  } else if (c === 3) {     // 貓貓
-    const ear = new THREE.ConeGeometry(0.09, 0.2, 4), eye = new THREE.SphereGeometry(0.04, 20, 16);
-    const tail = part(new THREE.CylinderGeometry(0.035, 0.05, 0.7, 16), M, 0, 0.75, -0.42); tail.rotation.x = -0.7;
-    g.add(body(), part(new THREE.SphereGeometry(0.27, 28, 24), M, 0, 1.6, 0), part(ear, M, -0.15, 1.9, 0), part(ear, M, 0.15, 1.9, 0),
-      part(eye, glow, -0.1, 1.63, 0.24), part(eye, glow, 0.1, 1.63, 0.24), part(new THREE.SphereGeometry(0.03, 20, 16), dark, 0, 1.55, 0.27), tail,
-      part(new THREE.SphereGeometry(0.012, 10, 8), dark, -0.09, 1.65, 0.28), part(new THREE.SphereGeometry(0.012, 10, 8), dark, 0.11, 1.65, 0.28));
-  } else if (c === 4) {     // 南瓜頭
-    const head = part(new THREE.SphereGeometry(0.36, 32, 24), pmat(0xff8a1f, 0.4), 0, 1.6, 0); head.scale.y = 0.8;
-    const eye = new THREE.ConeGeometry(0.06, 0.1, 3);
-    const mouth = part(new THREE.BoxGeometry(0.22, 0.04, 0.03), dark, 0, 1.5, 0.34);
-    g.add(part(new THREE.CylinderGeometry(0.2, 0.24, 0.8, 28), M, 0, 0.99, 0), head, part(new THREE.CylinderGeometry(0.03, 0.045, 0.14, 16), pmat(0x4f7a3a, 0.2), 0, 1.93, 0),
-      part(eye, dark, -0.12, 1.65, 0.33), part(eye, dark, 0.12, 1.65, 0.33), mouth);
-  } else if (c === 6) {     // 恐龍：長吻、牙齒、背棘、尾巴
-    const skin = o ? M : pmat(0x4fae5a, 0.25), belly = pmat(0xe8dca0, 0.2), tooth = pmat(0xffffff, 0.3);
-    const head = part(new THREE.BoxGeometry(0.4, 0.36, 0.44), skin, 0, 1.62, 0.02), snout = part(new THREE.BoxGeometry(0.3, 0.22, 0.34), skin, 0, 1.55, 0.36);
-    const tail = part(new THREE.ConeGeometry(0.15, 0.8, 12), skin, 0, 0.72, -0.5); tail.rotation.x = -1.95;
-    g.add(part(new THREE.CylinderGeometry(0.27, 0.27, 0.8, 28), skin, 0, 0.99, 0), part(new THREE.BoxGeometry(0.3, 0.6, 0.06), belly, 0, 0.98, 0.26), head, snout, tail,
-      part(new THREE.SphereGeometry(0.05, 20, 16), glow, -0.14, 1.72, 0.2), part(new THREE.SphereGeometry(0.05, 20, 16), glow, 0.14, 1.72, 0.2),
-      part(new THREE.SphereGeometry(0.025, 12, 10), dark, -0.14, 1.72, 0.245), part(new THREE.SphereGeometry(0.025, 12, 10), dark, 0.14, 1.72, 0.245));
-    for (let k = 0; k < 4; k++) g.add(part(new THREE.ConeGeometry(0.025, 0.07, 6), tooth, -0.1 + k * 0.066, 1.42, 0.5));
-    g.children.slice(-4).forEach(function (t) { t.rotation.x = Math.PI; });
-    for (let k = 0; k < 4; k++) g.add(part(new THREE.ConeGeometry(0.06, 0.2, 6), pmat(0xff9f3a, 0.35), 0, 1.86 - k * 0.3, -0.2 - (k ? 0.08 : 0)));
-  } else if (c === 7) {     // 外星人：大頭、大黑眼、觸角
-    const skin = o ? M : pmat(0x9be8c8, 0.3);
-    const head = part(new THREE.SphereGeometry(0.33, 32, 24), skin, 0, 1.68, 0); head.scale.set(1, 1.2, 0.95);
-    const e1 = part(new THREE.SphereGeometry(0.1, 24, 18), dark, -0.13, 1.66, 0.25), e2 = part(new THREE.SphereGeometry(0.1, 24, 18), dark, 0.13, 1.66, 0.25);
-    e1.scale.set(0.8, 1.25, 0.5); e2.scale.set(0.8, 1.25, 0.5); e1.rotation.z = 0.35; e2.rotation.z = -0.35;
-    const a1 = part(new THREE.CylinderGeometry(0.012, 0.012, 0.26, 8), skin, -0.12, 2.14, 0), a2 = part(new THREE.CylinderGeometry(0.012, 0.012, 0.26, 8), skin, 0.12, 2.14, 0);
-    a1.rotation.z = 0.3; a2.rotation.z = -0.3;
-    g.add(part(new THREE.CylinderGeometry(0.2, 0.23, 0.8, 28), M, 0, 0.99, 0), head, e1, e2, a1, a2,
-      part(new THREE.SphereGeometry(0.04, 16, 12), new THREE.MeshBasicMaterial({ color: 0x7dffe0 }), -0.16, 2.28, 0), part(new THREE.SphereGeometry(0.04, 16, 12), new THREE.MeshBasicMaterial({ color: 0x7dffe0 }), 0.16, 2.28, 0),
-      part(new THREE.BoxGeometry(0.1, 0.015, 0.02), dark, 0, 1.46, 0.3));
-  } else if (c === 5) {     // 紙箱人
-    const eye = new THREE.BoxGeometry(0.09, 0.09, 0.03);
-    g.add(body(), part(new THREE.BoxGeometry(0.52, 0.5, 0.5), pmat(0xb98a55, 0.18), 0, 1.62, 0), part(eye, dark, -0.12, 1.66, 0.26), part(eye, dark, 0.12, 1.66, 0.26),
-      part(new THREE.BoxGeometry(0.52, 0.03, 0.08), pmat(0x8a6238, 0.15), 0, 1.88, 0), part(new THREE.BoxGeometry(0.12, 0.5, 0.02), pmat(0xd9c3a0, 0.2), 0, 1.62, 0.26));
-  } else {                  // 回收員
-    g.add(body(), part(new THREE.SphereGeometry(0.24, 28, 24), M, 0, 1.6, 0), part(new THREE.BoxGeometry(0.34, 0.12, 0.1), dark, 0, 1.63, 0.2),
-      part(new THREE.SphereGeometry(0.035, 20, 16), glow, -0.08, 1.63, 0.25), part(new THREE.SphereGeometry(0.035, 20, 16), glow, 0.08, 1.63, 0.25),
-      part(new THREE.SphereGeometry(0.25, 28, 24, 0, Math.PI * 2, 0, Math.PI / 2.4), pmat(0xffc928, 0.3), 0, 1.66, 0),
-      part(new THREE.SphereGeometry(0.05, 20, 16), glow, 0.2, 1.25, 0.26),
-      part(new THREE.BoxGeometry(0.2, 0.16, 0.04), pmat(0x1c2220, 0.05), -0.12, 1.02, 0.26),
-      part(new THREE.SphereGeometry(0.012, 10, 8), glow, -0.08, 1.64, 0.27), part(new THREE.SphereGeometry(0.012, 10, 8), glow, 0.12, 1.64, 0.27),
-      part(new THREE.BoxGeometry(0.07, 0.13, 0.03), dark, -0.095, 1.5, 0.27), part(new THREE.BoxGeometry(0.1, 0.02, 0.02), dark, -0.095, 1.52, 0.27));
-    // 回收員的反光背心條與回收背包（背帶、側袋、捲起的垃圾袋）
-    const hv = litMat({ color: 0xd9f23a, emissive: 0x4a5a08, shininess: 60 }), pack = pmat(0x3d4a3e, 0.08), strap = pmat(0x1c2220, 0.05);
-    [0.82, 1.1].forEach(function (y) { const st = part(new THREE.TorusGeometry(0.262, 0.024, 8, 40), hv, 0, y, 0); st.rotation.x = Math.PI / 2; g.add(st); });
-    g.add(part(new THREE.BoxGeometry(0.4, 0.46, 0.2), pack, 0, 1.04, -0.36), part(new THREE.BoxGeometry(0.34, 0.12, 0.06), pack, 0, 0.88, -0.48),
-      part(new THREE.CylinderGeometry(0.09, 0.09, 0.42, 18), pmat(0x2a6a3a, 0.1), 0, 1.33, -0.36),
-      part(new THREE.BoxGeometry(0.05, 0.5, 0.03), strap, -0.13, 1.06, 0.255), part(new THREE.BoxGeometry(0.05, 0.5, 0.03), strap, 0.13, 1.06, 0.255),
-      part(new THREE.BoxGeometry(0.1, 0.03, 0.04), hv, 0, 0.94, -0.5));
-    g.children[g.children.length - 4].rotation.z = Math.PI / 2;
+  const vest = o && COSTUME_COL[o] ? litMat({ color: COSTUME_COL[o], emissive: new THREE.Color(COSTUME_COL[o]).multiplyScalar(o === 2 ? 0.45 : o === 3 ? 0.25 : 0.08), shininess: o === 3 ? 90 : 18 })
+    : pmat(new THREE.Color(COLORS[slot % 4]).lerp(new THREE.Color(0x3a4032), 0.55).getHex(), 0.08);   // 隊伍色混軍綠，比較像真的裝備
+  // 主題：[軍服, 頭盔, 面罩/皮膚露出, 護目鏡]
+  const TH = [
+    { cloth: 0x3c4a3a, helm: 0x4a5640, face: 'skin', goggle: 0x1a1f22 },   // 回收員：露臉、反光條、回收背包
+    { cloth: 0x50585e, helm: 0x8a949a, face: 'visor', goggle: 0x6ad8ff },  // 機器人：金屬外骨骼、發光面罩
+    { cloth: 0xd8dde2, helm: 0xe8eef2, face: 'visor', goggle: 0x1c2a3a },  // 太空人：白色防護服、大面罩
+    { cloth: 0x3a3a40, helm: 0x2c2c32, face: 'mask', goggle: 0x1a1f22 },   // 貓貓：頭盔上的貓耳、貓臉面罩
+    { cloth: 0x3d3a30, helm: 0xd9711c, face: 'mask', goggle: 0x1a1f22 },   // 南瓜頭：橘色頭盔、南瓜面罩
+    { cloth: 0x6e5a3e, helm: 0x9a7a50, face: 'mask', goggle: 0x1a1f22 },   // 紙箱人：紙箱色裝甲
+    { cloth: 0x3f5a36, helm: 0x4f7a3a, face: 'mask', goggle: 0x1a1f22 },   // 恐龍：綠迷彩、恐龍下顎面罩、背脊
+    { cloth: 0x2e3a3a, helm: 0x2a3434, face: 'alien', goggle: 0x050608 }   // 外星人：青色皮膚、大黑護目鏡
+  ][c] || null;
+  const T = TH || { cloth: 0x3c4a3a, helm: 0x4a5640, face: 'skin', goggle: 0x1a1f22 };
+  const cloth = pmat(T.cloth, 0.06), clothD = pmat(new THREE.Color(T.cloth).multiplyScalar(0.7).getHex(), 0.05);
+  const gear = pmat(0x24282a, 0.04), strapM = pmat(0x1a1d1e, 0.03), helm = pmat(T.helm, c === 1 ? 0.14 : 0.06);
+  const skin = pmat(c === 7 ? 0x7fc8b0 : SKIN[slot % 4], 0.12), black = new THREE.MeshBasicMaterial({ color: 0x0a0c0d });
+  const glass = litMat({ color: T.goggle, emissive: new THREE.Color(T.goggle).multiplyScalar(c === 1 ? 0.9 : 0.15), shininess: 120 });
+  const add = function (o2) { g.add(o2); return o2; };
+  const flat = function (m, sz) { m.scale.z = sz; return m; };
+  // --- 軀幹 ---
+  add(part(new THREE.BoxGeometry(0.33, 0.16, 0.2), clothD, 0, 0.95, 0));                                   // 骨盆
+  add(flat(part(new THREE.CylinderGeometry(0.155, 0.16, 0.24, 20), cloth, 0, 1.12, 0), 0.74));            // 腹部
+  add(flat(part(new THREE.CylinderGeometry(0.23, 0.17, 0.3, 24), cloth, 0, 1.35, 0), 0.7));                // 胸
+  add(part(new THREE.CylinderGeometry(0.048, 0.056, 0.1, 14), skin, 0, 1.53, 0));                          // 脖子
+  // 防彈背心：前後板、側邊、彈匣袋
+  add(part(new THREE.BoxGeometry(0.4, 0.36, 0.09), vest, 0, 1.3, 0.12));
+  add(part(new THREE.BoxGeometry(0.4, 0.38, 0.08), vest, 0, 1.31, -0.12));
+  add(part(new THREE.BoxGeometry(0.07, 0.28, 0.22), vest, -0.19, 1.27, 0)); add(part(new THREE.BoxGeometry(0.07, 0.28, 0.22), vest, 0.19, 1.27, 0));
+  for (let k = 0; k < 3; k++) add(part(new THREE.BoxGeometry(0.085, 0.12, 0.05), gear, -0.11 + k * 0.11, 1.2, 0.18));
+  add(part(new THREE.BoxGeometry(0.1, 0.07, 0.04), gear, 0.11, 1.38, 0.175));                                // 無線電
+  add(part(new THREE.BoxGeometry(0.05, 0.12, 0.02), strapM, -0.13, 1.47, 0.08)); add(part(new THREE.BoxGeometry(0.05, 0.12, 0.02), strapM, 0.13, 1.47, 0.08));   // 肩帶
+  // 腰帶與腰包
+  add(part(new THREE.BoxGeometry(0.36, 0.05, 0.22), strapM, 0, 1.0, 0));
+  add(part(new THREE.BoxGeometry(0.07, 0.09, 0.06), gear, -0.19, 0.97, 0.06)); add(part(new THREE.BoxGeometry(0.08, 0.1, 0.07), gear, 0.19, 0.96, -0.02));
+  // 背包
+  add(part(new THREE.BoxGeometry(0.3, 0.34, 0.14), pmat(c === 0 ? 0x2a6a3a : 0x3a4034, 0.05), 0, 1.3, -0.23));
+  add(part(new THREE.CylinderGeometry(0.05, 0.05, 0.28, 12), clothD, 0, 1.5, -0.23)).rotation.z = Math.PI / 2;   // 捲起的睡墊
+  // --- 頭 ---
+  const head = add(part(new THREE.SphereGeometry(0.105, 28, 22), T.face === 'skin' || T.face === 'alien' ? skin : black, 0, 1.665, 0.005)); head.scale.set(0.9, 1.12, 1);
+  if (T.face === 'skin' || T.face === 'alien') {
+    add(part(new THREE.BoxGeometry(0.03, 0.05, 0.03), skin, 0, 1.655, 0.1));                                 // 鼻子
+    add(part(new THREE.BoxGeometry(0.06, 0.012, 0.01), pmat(0x6a3a2a, 0.1), 0, 1.612, 0.098));              // 嘴
+    add(part(new THREE.SphereGeometry(0.075, 18, 12, 0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.45), c === 7 ? skin : pmat(0x2a1e18, 0.05), 0, 1.63, 0.01)).scale.set(1, 1.2, 1.25);   // 下巴（鬍渣）
+  } else if (T.face === 'mask') {
+    add(part(new THREE.BoxGeometry(0.14, 0.07, 0.04), gear, 0, 1.6, 0.09));                                  // 防護面罩
   }
-  // 手腳（以肩膀／腳踝為軸，走路時擺動）
-  const sx = c === 1 ? 0.34 : 0.33, limb = c === 1 ? pmat(0x9aa3a8, 0.12) : o ? M : pmat(c === 6 ? 0x4fae5a : c === 7 ? 0x9be8c8 : COLORS[slot % 4], 0.12), shoe = pmat(0x1c2220, 0.05);
-  const mkArm = function (x) { const pv = new THREE.Group(); pv.position.set(x, 1.22, 0); pv.add(part(new THREE.CylinderGeometry(0.07, 0.06, 0.62, 16), limb, 0, -0.3, 0), part(new THREE.SphereGeometry(0.08, 20, 16), pmat(0xf1e6d6, 0.2), 0, -0.63, 0)); return pv; };
-  const pants = pmat(c === 1 ? 0x7d868c : 0x27313c, 0.1);
-  const mkFoot = function (x) { const pv = new THREE.Group(); pv.position.set(x, 0.64, 0); pv.add(part(new THREE.CylinderGeometry(0.105, 0.09, 0.56, 16), pants, 0, -0.28, 0), part(new THREE.BoxGeometry(0.18, 0.12, 0.32), shoe, 0, -0.58, 0.06), part(new THREE.BoxGeometry(0.2, 0.04, 0.34), dark, 0, -0.65, 0.06), part(new THREE.BoxGeometry(0.1, 0.02, 0.1), glow, 0, -0.52, 0.16)); return pv; };
-  const aL = mkArm(-sx), aR = mkArm(sx), fL = mkFoot(-0.13), fR = mkFoot(0.13);
-  // 護膝與手肘：讓手腳不只是一根圓柱
-  if (c !== 1 && c !== 3) {
-    const pad = pmat(0x1c2220, 0.06);
-    [fL, fR].forEach(function (f) { f.add(part(new THREE.BoxGeometry(0.15, 0.12, 0.06), pad, 0, -0.27, 0.1)); });
-    [aL, aR].forEach(function (a) { a.add(part(new THREE.SphereGeometry(0.075, 16, 12), limb, 0, -0.31, 0)); });
+  // 頭盔＋護目鏡
+  const dome = add(part(new THREE.SphereGeometry(0.13, 28, 16, 0, Math.PI * 2, 0, Math.PI / 2), helm, 0, 1.69, 0)); dome.scale.set(1, 0.95, 1.08);
+  add(part(new THREE.CylinderGeometry(0.135, 0.135, 0.035, 28, 1, true), helm, 0, 1.7, 0));
+  add(part(new THREE.BoxGeometry(0.06, 0.04, 0.03), gear, 0, 1.76, 0.125));                                 // 夜視鏡座
+  if (T.face === 'visor') { add(part(new THREE.SphereGeometry(0.11, 24, 16, -Math.PI * 0.4, Math.PI * 0.8, Math.PI * 0.3, Math.PI * 0.4), glass, 0, 1.66, 0.01)); }
+  else {
+    const gw = T.face === 'alien' ? 0.19 : 0.17;
+    add(part(new THREE.BoxGeometry(gw, 0.05, 0.04), glass, 0, 1.68, 0.095));
+    add(part(new THREE.TorusGeometry(0.115, 0.01, 6, 28), strapM, 0, 1.68, 0)).rotation.x = Math.PI / 2;
   }
+  // --- 主題裝備 ---
+  if (c === 0) {      // 回收員：反光條
+    const hv = litMat({ color: 0xd9f23a, emissive: 0x4a5a08, shininess: 60 });
+    add(part(new THREE.BoxGeometry(0.41, 0.025, 0.1), hv, 0, 1.38, 0.125)); add(part(new THREE.BoxGeometry(0.41, 0.025, 0.09), hv, 0, 1.38, -0.125));
+  } else if (c === 1) {   // 機器人：肩甲、胸口能量核心
+    add(part(new THREE.SphereGeometry(0.03, 14, 10), new THREE.MeshBasicMaterial({ color: 0x5dff8a }), 0, 1.33, 0.17));
+    [-1, 1].forEach(function (s) { add(part(new THREE.BoxGeometry(0.12, 0.05, 0.16), helm, s * 0.28, 1.5, 0)).rotation.z = s * -0.3; });
+  } else if (c === 2) {   // 太空人：氧氣管
+    add(part(new THREE.TorusGeometry(0.09, 0.015, 8, 20, Math.PI), pmat(0x9aa3a8, 0.1), 0.12, 1.45, 0.05)).rotation.y = Math.PI / 2;
+  } else if (c === 3) {   // 貓貓：頭盔上的貓耳
+    [-1, 1].forEach(function (s) { const e = add(part(new THREE.ConeGeometry(0.035, 0.08, 4), helm, s * 0.08, 1.82, 0)); e.rotation.z = -s * 0.25; });
+    add(part(new THREE.BoxGeometry(0.02, 0.006, 0.006), new THREE.MeshBasicMaterial({ color: 0xdddddd }), -0.08, 1.6, 0.112));
+    add(part(new THREE.BoxGeometry(0.02, 0.006, 0.006), new THREE.MeshBasicMaterial({ color: 0xdddddd }), 0.08, 1.6, 0.112));
+  } else if (c === 4) {   // 南瓜頭：面罩上刻南瓜臉、頭盔頂蒂頭
+    add(part(new THREE.CylinderGeometry(0.012, 0.018, 0.05, 8), pmat(0x4f7a3a, 0.2), 0, 1.83, 0));
+    add(part(new THREE.BoxGeometry(0.1, 0.012, 0.005), new THREE.MeshBasicMaterial({ color: 0xffa53a }), 0, 1.592, 0.112));
+  } else if (c === 5) {   // 紙箱人：背心外面再綁紙箱板
+    add(part(new THREE.BoxGeometry(0.34, 0.24, 0.02), pmat(0xb98a55, 0.15), 0, 1.3, 0.175));
+    add(part(new THREE.BoxGeometry(0.34, 0.03, 0.025), pmat(0xd9c3a0, 0.2), 0, 1.3, 0.187));
+  } else if (c === 6) {   // 恐龍：下顎面罩上的牙、背上一排脊刺
+    for (let k = 0; k < 4; k++) add(part(new THREE.ConeGeometry(0.008, 0.02, 4), new THREE.MeshBasicMaterial({ color: 0xffffff }), -0.045 + k * 0.03, 1.575, 0.112)).rotation.x = Math.PI;
+    for (let k = 0; k < 4; k++) add(part(new THREE.ConeGeometry(0.025, 0.07, 5), pmat(0x6a9a3a, 0.15), 0, 1.8 - k * 0.14, -0.13 - (k ? 0.14 : 0))).rotation.x = -0.5;
+  } else if (c === 7) {   // 外星人：耳後的發光觸鬚
+    [-1, 1].forEach(function (s) { add(part(new THREE.SphereGeometry(0.014, 10, 8), new THREE.MeshBasicMaterial({ color: 0x7dffe0 }), s * 0.1, 1.64, -0.02)); });
+  }
+  // --- 手（以肩膀為軸）：上臂、手肘、前臂、手套 ---
+  const glove = pmat(0x1e2022, 0.04);
+  const mkArm = function (s) {
+    const pv = new THREE.Group(); pv.position.set(s * 0.27, 1.45, 0);
+    pv.add(part(new THREE.SphereGeometry(0.08, 16, 12), cloth, 0, 0, 0));
+    pv.add(part(new THREE.CylinderGeometry(0.07, 0.058, 0.29, 14), cloth, 0, -0.15, 0));
+    pv.add(part(new THREE.SphereGeometry(0.058, 14, 10), clothD, 0, -0.3, 0));
+    const fa = new THREE.Group(); fa.position.set(0, -0.3, 0); fa.rotation.x = -0.25; pv.add(fa);
+    fa.add(part(new THREE.CylinderGeometry(0.056, 0.046, 0.26, 14), cloth, 0, -0.13, 0));
+    fa.add(part(new THREE.BoxGeometry(0.085, 0.1, 0.055), glove, 0, -0.3, 0.01));
+    const tip = new THREE.Object3D(); tip.position.set(0, -0.3, 0.01); fa.add(tip); pv.userData.tip = tip;
+    return pv;
+  };
+  // --- 腳（以髖關節為軸）：大腿、護膝、小腿、軍靴 ---
+  const mkLeg = function (s) {
+    const pv = new THREE.Group(); pv.position.set(s * 0.105, 0.93, 0);
+    pv.add(part(new THREE.CylinderGeometry(0.1, 0.076, 0.44, 14), clothD, 0, -0.22, 0));
+    pv.add(part(new THREE.BoxGeometry(0.06, 0.12, 0.08), gear, s * 0.095, -0.2, 0.01));                 // 大腿口袋
+    pv.add(part(new THREE.BoxGeometry(0.1, 0.1, 0.05), gear, 0, -0.45, 0.06));                          // 護膝
+    pv.add(part(new THREE.CylinderGeometry(0.072, 0.056, 0.38, 14), clothD, 0, -0.64, 0));
+    pv.add(part(new THREE.BoxGeometry(0.12, 0.13, 0.27), pmat(0x2a2420, 0.04), 0, -0.86, 0.035));      // 軍靴
+    pv.add(part(new THREE.BoxGeometry(0.13, 0.03, 0.29), black, 0, -0.915, 0.035));
+    return pv;
+  };
+  const aL = mkArm(-1), aR = mkArm(1), fL = mkLeg(-1), fR = mkLeg(1);
   aR.rotation.x = -0.45;   // 右手往前握著攻擊物
   g.add(aL, aR, fL, fR);
   g.userData.limbs = [aL, aR, fL, fR];
-  if (c !== 1) {   // 細節：腰帶、領口、肩膀圓角
-    const trim = pmat(0x1c2220, 0.05);
-    const belt = part(new THREE.TorusGeometry(c === 4 ? 0.235 : 0.25, 0.035, 12, 36), trim, 0, 0.62, 0); belt.rotation.x = Math.PI / 2;
-    const buckle = part(new THREE.BoxGeometry(0.1, 0.08, 0.03), pmat(0xffd24a, 0.4), 0, 0.62, c === 4 ? 0.26 : 0.275);
-    const collar = part(new THREE.TorusGeometry(0.2, 0.045, 12, 36), M, 0, 1.36, 0); collar.rotation.x = Math.PI / 2;
-    g.add(belt, buckle, collar, part(new THREE.SphereGeometry(0.1, 20, 16), limb, -sx, 1.24, 0), part(new THREE.SphereGeometry(0.1, 20, 16), limb, sx, 1.24, 0));
-  }
-  const hat = buildHat(h || 0); if (hat) { hat.position.y = [1.84, 1.78, 1.95, 1.87, 1.89, 1.9, 1.84, 2.08][c] || 1.84; if (c === 1) hat.position.x = 0.14; g.add(hat); }
+  // 右手手心的位置（武器握在這裡）
+  g.updateMatrixWorld(true);
+  const hp = new THREE.Vector3(); aR.userData.tip.getWorldPosition(hp); g.userData.hand = [hp.x + 0.02, hp.y - 0.04, hp.z];
+  const hat = buildHat(h || 0); if (hat) { hat.scale.setScalar(0.62); hat.position.y = 1.85; g.add(hat); }
   addSurface(g);
   castAll(g);
-  addOutline(g, 0x05080a, 1.07); addShadow(g, 0.42);
+  addShadow(g, 0.36);   // 不加卡通描邊，看起來比較寫實
   const pm = buildPet(pet || 0); if (pm) { pm.position.set(-0.75, 0, -0.25); g.add(pm); g.userData.pet = pm; }
   return g;
 }
@@ -1399,7 +1426,7 @@ function buildWeapon(w) {
 
 function buildAvatar(p) {
   const g = buildChar(p.c || 0, p.slot, p.h || 0, p.o || 0, p.pet || 0);
-  const wg = buildWeapon(p.w || 0); wg.position.set(0.37, 0.67, 0.3); wg.rotation.x = 0.5; g.add(wg);   // 握在右手上
+  const wg = buildWeapon(p.w || 0), hd = g.userData.hand || [0.37, 0.67, 0.3]; wg.position.set(hd[0], hd[1], hd[2]); wg.rotation.x = 0.5; wg.rotation.z = -0.4; g.add(wg);   // 握在右手上
   const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
   const c = cv.getContext('2d');
   c.font = 'bold 30px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
@@ -2453,7 +2480,7 @@ RR.Game = {
     if (pv.model) pv.sc.remove(pv.model);
     pv.gun = false; pv.cam.position.set(0, 1.3, 4.7); pv.cam.lookAt(0, 1.08, 0);
     const g = buildChar(c, 0, h || 0, o || 0, pet || 0), wg = buildWeapon(w);
-    wg.position.set(0.37, 0.67, 0.3); wg.rotation.x = 0.5; g.add(wg);
+    const hd = g.userData.hand || [0.37, 0.67, 0.3]; wg.position.set(hd[0], hd[1], hd[2]); wg.rotation.x = 0.5; wg.rotation.z = -0.4; g.add(wg);
     // 大廳展示：AR 抓到的怪物站在角色旁邊（buddy＝[屬性, 外觀]）
     if (buddy) { const m = buildMonster(['fire', 'ice', 'poison', 'shadow'][buddy[0] | 0], buddy[1] | 0); m.group.visible = true; m.group.scale.multiplyScalar(0.33); m.group.position.set(-0.85, 0, -0.2); m.group.rotation.y = 0.5; if (m.bar) m.bar.visible = false; g.add(m.group); }
     pv.model = g; pv.sc.add(g);
