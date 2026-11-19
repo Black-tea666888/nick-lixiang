@@ -1930,6 +1930,13 @@ function initIcons() {
     if (!el.getAttribute('aria-label')) el.setAttribute('aria-label', el.textContent.trim());
     el.title = el.getAttribute('aria-label'); setIcon(id, id);
   });
+  // 設定裡的「手機上顯示的按鈕」勾選框也改用同一套圖示（不再顯示舊的文字）
+  Array.prototype.forEach.call(document.querySelectorAll('#btnChks .btnChk'), function (lb) {
+    const inp = lb.querySelector('input'), sp = lb.querySelector('span'), id = inp && inp.dataset.btn;
+    if (!sp || !id || !ICONS[id]) return;
+    sp.textContent = ''; sp.setAttribute('aria-label', (lb.dataset.label || id));
+    sp.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[id] + '</svg>';
+  });
 }
 function bindInput() {
   initIcons();
