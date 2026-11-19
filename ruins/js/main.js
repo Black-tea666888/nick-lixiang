@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v216', items: ['交易紀錄可以手動刪除單筆或清空'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
+const UPD = { v: 'v217', items: ['休閒模式新增國際象棋（同機雙人）', '交易成功的提示保留 10 秒，點一下可以關掉', '交易紀錄可以手動刪除單筆或清空'] };
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -603,7 +603,7 @@ function tradeLogDraw(list) {
 let bannerT = null;
 function bannerShow(title, sub) {
   const el = $('banner'); el.querySelector('b').textContent = title; el.querySelector('span').textContent = sub || '';
-  el.classList.add('show'); clearTimeout(bannerT); bannerT = setTimeout(bannerHide, 4000);
+  el.classList.add('show'); clearTimeout(bannerT); bannerT = setTimeout(bannerHide, 10000);
 }
 function bannerHide() { clearTimeout(bannerT); $('banner').classList.remove('show'); }
 function mkFillSelect() {
@@ -1165,6 +1165,41 @@ function avaDraw() {
     $('avaGrid').appendChild(b);
   });
 }
+/* ---------- 國際象棋（同機雙人） ---------- */
+let chessS = null, chessSel = -1, chessMoves = [];
+const CHESS_GLYPH = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙', k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
+function chessOpen() { show('scrChess'); if (!chessS) chessS = RR.Chess.start(); chessSel = -1; chessMoves = []; chessDraw(); }
+function chessNew() { chessS = RR.Chess.start(); chessSel = -1; chessMoves = []; chessDraw(); }
+function chessTap(i) {
+  const C = RR.Chess, s = chessS, st = C.status(s);
+  if (st.k === 'mate' || st.k === 'stale') return;
+  const hit = chessMoves.filter(function (m) { return m.to === i; });
+  if (hit.length) { chessS = C.apply(s, hit[0]); chessSel = -1; chessMoves = []; chessDraw(); return; }
+  const p = s.b[i];
+  if (p && C.color(p) === s.turn) { chessSel = i; chessMoves = C.legalMoves(s, i); }
+  else { chessSel = -1; chessMoves = []; }
+  chessDraw();
+}
+function chessDraw() {
+  const C = RR.Chess, s = chessS, st = C.status(s), bd = $('chessBoard');
+  bd.textContent = '';
+  const tg = {}; chessMoves.forEach(function (m) { tg[m.to] = true; });
+  for (let i = 0; i < 64; i++) {
+    const r = Math.floor(i / 8), c = i % 8, p = s.b[i];
+    const cls = 'chSq' + ((r + c) % 2 ? ' dk' : '') + (i === chessSel ? ' sel' : '') + (tg[i] ? ' tgt' : '') + (p ? (C.color(p) === 'w' ? ' pw' : ' pb') : '');
+    const sq = mk('button', cls, p ? CHESS_GLYPH[p] : '');
+    sq.type = 'button';
+    sq.addEventListener('click', (function (k) { return function () { chessTap(k); }; })(i));
+    bd.appendChild(sq);
+  }
+  const who = s.turn === 'w' ? '白方' : '黑方';
+  let msg;
+  if (st.k === 'mate') msg = (st.winner === 'w' ? '白方' : '黑方') + '將死，獲勝！';
+  else if (st.k === 'stale') msg = '逼和，平手。';
+  else if (st.k === 'check') msg = who + '被將軍，輪到' + who + '走';
+  else msg = '輪到' + who + '走';
+  $('chessStatus').textContent = msg;
+}
 function showMenu() {
   ccWatchStart(); rankWatch(false);
   const u = Auth.user();
@@ -1197,11 +1232,11 @@ function recOptsOpen() {
   $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
 }
 /* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race'] };
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車' };
+const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
@@ -2016,6 +2051,9 @@ function bind() {
   $('brBtn').addEventListener('click', function () { startSolo('br'); });
   $('tdBtn').addEventListener('click', function () { startSolo('td'); });
   $('raceBtn').addEventListener('click', function () { startSolo('race'); });
+  $('chessBtn').addEventListener('click', chessOpen);
+  $('chessBack').addEventListener('click', showMenu);
+  $('chessNew').addEventListener('click', chessNew);
   $('huntBtn').addEventListener('click', function () { startSolo('hunt'); });
   $('pvpBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.pvp = !S.sim.pvp; hostBroadcast(rosterMsg()); tickLobby(); });
   $('lobbyMic').addEventListener('click', function () { if (Voice.hasMic()) Voice.setMuted(!Voice.isMuted()); else say('沒有麥克風權限。請在瀏覽器允許麥克風後，重新進入房間。'); tickLobby(); });
