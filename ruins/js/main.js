@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v166', items: ['角色全部改成寫實比例的士兵：頭盔、護目鏡、防彈背心、手套、軍靴，手腳有關節', '恐龍、貓貓、南瓜頭等角色改成真人穿主題裝備（例如貓耳頭盔、南瓜面罩、恐龍背脊）', '隊伍色改顯示在防彈背心上'] };
+const UPD = { v: 'v167', items: ['AR 抓怪移到大廳下方的模式列，選好後按開始'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1008,13 +1008,14 @@ function showUpdNote() {
   $('updNote').classList.remove('hide');
 }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '多人合作', solo: '單人遊玩', hunt: '獵殺模式', td: '塔防模式', br: '大逃殺' };
+const LOBBY_MODE = { coop: '多人合作', solo: '單人遊玩', hunt: '獵殺模式', td: '塔防模式', br: '大逃殺', ar: 'AR 抓怪' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
   Array.prototype.forEach.call($('modeStrip').children, function (b) { const on = b.dataset.mode === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
   $('startMode').textContent = LOBBY_MODE[m] + (m === 'coop' ? '：建立房間' : '');
   $('mapName').textContent = (W.MAPS[myMap()] || W.MAPS[0]).name;
+  $('mapChip').classList.toggle('dim', m === 'ar');   // AR 不用選地圖
   const look = myLook();
   $('lbName').textContent = W.CHARS[look.c] + '　' + (W.GUNS[look.gun] || W.GUNS[0]).name;
   { const bd = String(prog().arBuddy || '').split(':'); Game.preview($('lobbyChar'), look.c, look.w, look.h, look.o, look.pet, true, bd.length === 2 ? [bd[0] | 0, bd[1] | 0] : null); }

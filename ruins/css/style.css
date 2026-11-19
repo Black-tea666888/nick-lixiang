@@ -988,3 +988,5 @@ body.touch.playing:not(.lk-near):not(.btnedit) #locker { display: none !importan
 
 /* 換彈鍵拿掉：子彈打完會自動換彈，槍鍵上會顯示換彈中，不需要另一顆按鈕 */
 #reload { display: none !important; }
+
+.mapChip.dim { opacity: .35; pointer-events: none; }
