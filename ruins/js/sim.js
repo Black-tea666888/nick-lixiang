@@ -363,7 +363,7 @@ const GUNS = [
   { name: '狗狗槍', dmg: 26, pvp: 19, cd: 0.6, clip: [5, 8], range: 30, w: 0.9, n: 1, spread: 0.04, stun: 2.4, reload: 1.6, auto: false, cost: 0 },
   { name: '大蔥槍', dmg: 55, pvp: 40, cd: 0.7, clip: [4, 6], range: 45, w: 0.7, n: 1, spread: 0.02, stun: 3, reload: 2, auto: false, cost: 0 }
 ];
-const HATS = ['無', '安全帽', '頭燈', '天線', '光環', '皇冠'];   // 頭飾（純外觀）
+const HATS = ['無', '安全帽', '頭燈', '天線', '光環', '皇冠', '冠軍王冠'];   // 頭飾（純外觀）；最後一個是限定，只有週排行榜前 3 名能拿到
 const pick = (v, n) => { v = Math.floor(+v); return v >= 0 && v < n ? v : 0; };
 
 const isWall = (c, r) => r < 0 || c < 0 || r >= ROWS || c >= COLS || MAP[r][c] === '#';
