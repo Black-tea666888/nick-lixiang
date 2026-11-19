@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v186', items: ['修正下拉選單、彈出視窗變半透明造成疊字：浮在上面的選單一律實色'] };
+const UPD = { v: 'v187', items: ['新增等級說明：點大廳的等級就能看 Lv.1～100 怎麼拿經驗、每 10 等解鎖哪個背包、可以撿哪些回收物', '等級上限 100，升級曲線調順，後面不會卡太久（大家的等級只會變高不會變低）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -712,12 +712,37 @@ function prog() {
   return p;
 }
 function progSave(p) { lsSet('rr_prog', JSON.stringify(p)); if (RR.Cloud) RR.Cloud.saveSoon(); }
-function levelOf(xp) { return 1 + Math.floor(Math.sqrt(xp / 60)); }
+// 等級 1～100：升到 Lv.L 需要的總經驗 = 60 × (L−1)^1.6（越後面越難，但 100 等打得到）
+const LV_MAX = 100, LV_POW = 1.6;
+function xpAt(lv) { return Math.ceil(60 * Math.pow(Math.max(0, lv - 1), LV_POW)); }
+function levelOf(xp) { let lv = Math.min(LV_MAX, 1 + Math.floor(Math.pow(Math.max(0, xp) / 60, 1 / LV_POW) + 1e-9)); while (lv < LV_MAX && xp >= xpAt(lv + 1)) lv++; while (lv > 1 && xp < xpAt(lv)) lv--; return lv; }
+/** 等級說明：怎麼拿經驗、每 10 等解鎖什麼 */
+function lvInfoOpen() {
+  const p = prog(), lv = levelOf(p.xp), body = $('lvBody'); body.textContent = '';
+  $('lvNow').textContent = lv >= LV_MAX ? '你已經是滿級 Lv.100！' : '你現在 Lv.' + lv + '，經驗 ' + p.xp + '，再 ' + (xpAt(lv + 1) - p.xp) + ' 升到 Lv.' + (lv + 1) + '。';
+  const sec = function (t) { const b = document.createElement('b'); b.className = 'lvSec'; b.textContent = t; body.appendChild(b); };
+  const line = function (t) { const d = document.createElement('p'); d.textContent = t; body.appendChild(d); return d; };
+  sec('怎麼拿經驗');
+  ['每打完一局：拿到的金幣 + 10', '廢墟生存戰：擊倒越多、名次越前面越多', 'AR 抓怪、AR 迷宮：每天有次數上限', '送朋友金幣：+10'].forEach(line);
+  sec('每 10 等換一個更好的背包');
+  const tbl = document.createElement('div'); tbl.className = 'lvTbl'; body.appendChild(tbl);
+  for (let t = 0; t <= 10; t++) {
+    const at = t === 0 ? 1 : t * 10, items = W.KINDS.filter(function (k) { return (k.req | 0) === t; }).map(function (k) { return k.n; });
+    const row = document.createElement('div'); row.className = 'lvRow' + (W.bagTierOf(lv) >= t ? ' ok' : '') + (W.bagTierOf(lv) === t ? ' cur' : '');
+    const a = document.createElement('span'); a.className = 'lvAt'; a.textContent = 'Lv.' + at;
+    const b = document.createElement('span'); b.className = 'lvBag'; b.textContent = W.BAG_TIERS[t] + '　' + (W.BAG_MAX + t) + ' 格';
+    const c = document.createElement('small'); c.textContent = (items.length ? '可撿：' + items.join('、') : '背包 +1 格') + '　需要 ' + xpAt(at) + ' 經驗';
+    row.appendChild(a); row.appendChild(b); row.appendChild(c); tbl.appendChild(row);
+  }
+  sec('其他');
+  ['回收物分等級，背包等級不夠就撿不起來', '有些拾荒團要求最低等級才能加入', '滿級 Lv.100 拿到傳說背包'].forEach(line);
+  $('lvInfo').classList.remove('hide');
+}
 function renderProg() {
-  const p = prog(), lv = levelOf(p.xp), lo = 60 * (lv - 1) * (lv - 1), hi = 60 * lv * lv;
+  const p = prog(), lv = levelOf(p.xp), lo = xpAt(lv), hi = lv >= LV_MAX ? lo + 1 : xpAt(lv + 1);
   $('lvTag').textContent = lv; $('coinTag').textContent = p.coins; $('coinTag2').textContent = p.coins;
   $('bagTag').textContent = W.BAG_TIERS[W.bagTierOf(lv)].replace('背包', '');
-  $('xpFill').style.width = Math.min(100, (p.xp - lo) / (hi - lo) * 100) + '%';
+  $('xpFill').style.width = (lv >= LV_MAX ? 100 : Math.min(100, (p.xp - lo) / (hi - lo) * 100)) + '%';
   const box = $('missions'); box.textContent = '';
   MISSIONS.forEach(function (m, i) {
     const row = document.createElement('div'); if (p.done[i]) row.className = 'ok';
@@ -1867,6 +1892,8 @@ function bind() {
   };
   drawKeys();
   $('keyReset').addEventListener('click', function () { Game.resetKeys(); drawKeys(); mtoast('按鍵已恢復預設'); });
+  $('lvInfoBtn').addEventListener('click', lvInfoOpen);
+  $('lvClose').addEventListener('click', function () { $('lvInfo').classList.add('hide'); });
   $('moreBtn').addEventListener('click', function (e) {
     e.stopPropagation(); $('moreMenu').classList.toggle('hide');
   });
