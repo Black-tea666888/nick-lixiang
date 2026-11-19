@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v173', items: ['選槍改成分類：手槍、突擊步槍、衝鋒槍、霰彈槍、狙擊槍、機槍、特殊武器，點開分類再選', '槍的屬性多了命中和換彈速度，並顯示分類'] };
+const UPD = { v: 'v174', items: ['賽季只顯示自己的賽區和全區', '賽區每週只能換一次，週日 24:00 後才能再換'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1411,11 +1411,14 @@ function renderSocial() {
     if (socMode === 'mix') socMode = 'coop';
     const p = prog(), rk = ['tw', 'hk'][p.region];
     // 下拉選單只切換「看哪一區」，不會改你自己的地區（地區在設定裡改）
-    if (socRegion == null) socRegion = rk;
+    // 只看得到自己的賽區和全區；賽區每週只能換一次（週日 24:00 後）
+    if (socRegion !== 'all') socRegion = rk;
     const row = mk('div', 'soc-row');
-    row.appendChild(socSelect([['all', '全區']].concat(C.REGIONS.map(function (n, i) { return [['tw', 'hk'][i], n + '區' + (i === p.region ? '（我的）' : '')]; })), socRegion, function (v) { socRegion = v; renderSocial(); }));
+    row.appendChild(socSelect([[rk, C.REGIONS[p.region] + '區'], ['all', '全區']], socRegion, function (v) { socRegion = v; renderSocial(); }));
     row.appendChild(modeSel); b.appendChild(row);
-    socNote('每週一換季。你目前在' + C.REGIONS[p.region] + '區；上週在自己地區前 10 名可以領金幣（第 1 名 300、第 2～3 名 200、第 4～10 名 100）。');
+    socNote('每週一換季。上週在自己賽區前 10 名可以領金幣（第 1 名 300、第 2～3 名 200、第 4～10 名 100）。');
+    { const canSwap = p.regionW !== C.weekId(), sw = mk('button', 'btn', canSwap ? '換賽區（本週還可以換 1 次）' : '本週已選過賽區，週日 24:00 後才能再換'); sw.type = 'button'; sw.disabled = !canSwap; sw.style.margin = '0 0 10px';
+      sw.addEventListener('click', function () { $('regionAsk').classList.remove('hide'); }); b.appendChild(sw); }
     const claim = mk('div'); b.appendChild(claim);
     b.appendChild(mk('p', 'note wait', '讀取中…'));
     C.top(socMode, (socRegion === 'all' ? '' : socRegion + '_') + 'w' + C.weekId(), guard(function (rows) { socRows(rows, scoreUnit(socMode), socRegion === 'all' ? '本週還沒有人上榜。' : '本週這個地區還沒有人上榜。'); }));
@@ -1925,7 +1928,8 @@ function bind() {
     });
   });
   $('tutNext').addEventListener('click', function () { if (tutI < TUT.length - 1) tutShow(tutI + 1); else tutDone(); });
-  Array.prototype.forEach.call(document.querySelectorAll('#regionAsk [data-r]'), function (b) { b.addEventListener('click', function () { const q = prog(); q.region = +b.dataset.r; progSave(q); socRegion = null; if (RR.Cloud) setTimeout(function () { RR.Cloud.cleanRegions(); }, 4000); lsSet('rr_region', '1'); $('regionAsk').classList.add('hide'); }); });
+  Array.prototype.forEach.call(document.querySelectorAll('#regionAsk [data-r]'), function (b) { b.addEventListener('click', function () { const q = prog(); if (ls('rr_region') && +b.dataset.r === q.region) { $('regionAsk').classList.add('hide'); return; }   // 選同一區不算換
+    if (q.regionW === RR.Cloud.weekId() && ls('rr_region')) { $('regionAsk').classList.add('hide'); say('本週已經選過賽區，週日 24:00 後才能再換。'); return; } q.region = +b.dataset.r; q.regionW = RR.Cloud.weekId(); progSave(q); socRegion = null; if ($('scrSocial') && !$('scrSocial').classList.contains('hide')) setTimeout(renderSocial, 0); if (RR.Cloud) setTimeout(function () { RR.Cloud.cleanRegions(); }, 4000); lsSet('rr_region', '1'); $('regionAsk').classList.add('hide'); }); });
   $('tutSkip').addEventListener('click', tutDone);
   $('avatar').addEventListener('click', function () { statsOpen(); });
   $('stAva').addEventListener('click', function () { avaDraw(); $('avaPick').classList.remove('hide'); });
