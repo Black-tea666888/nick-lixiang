@@ -1083,3 +1083,11 @@ select.fselNative { position: absolute !important; width: 1px !important; height
 .keyRow b { font-weight: 900; padding: 1px 6px; background: var(--kraft); border: 1px solid var(--ink); white-space: nowrap; }
 .keyRow.on { background: var(--haz); }
 #pauseTag { margin: 0 0 4px; padding: 4px 8px; font-weight: 900; text-align: center; color: var(--ink); background: var(--haz); }
+
+/* 半透明（毛玻璃）面板：模式選單、主頁按鈕、社群／拾荒團等所有選單。後面的畫面會模糊，字保持清楚 */
+:root { --kraft-a: rgba(220,189,141,.8); --kraft-la: rgba(234,213,177,.8); --frost: blur(10px) saturate(1.15); }
+.panel { background: var(--kraft-a); -webkit-backdrop-filter: var(--frost); backdrop-filter: var(--frost); }
+.mcard, .tile, .icon, .clanCard, .ccMsg { background: var(--kraft-la); -webkit-backdrop-filter: var(--frost); backdrop-filter: var(--frost); }
+.card, .srow, .gCat, .ccReq, .clanSet, .arDex, .arPick, .qrCard, .fselPanel, .keyRow { background: var(--kraft-la); }
+.gCat > .cards, .gCat summary { background: transparent; }
+.mcard b, .tile b, .card b, .srow .nm, .panel h2 { text-shadow: 0 1px 0 rgba(255,248,230,.55); }   /* 背景透出來時字也清楚 */
