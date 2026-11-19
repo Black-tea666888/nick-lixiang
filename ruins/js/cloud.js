@@ -29,6 +29,23 @@ function fail(cb) { return function (e) { console.warn('cloud', e && (e.code || 
 function clean(s, n) { return String(s || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n); }
 
 function saveRef(id) { return userRef(id).collection('save').doc('main'); }
+/** 裝備與造型跟著帳號走，換裝置也一樣；按鍵位置、音效、靈敏度等仍留在每台裝置 */
+const LOADOUT_KEYS = ['rr_c', 'rr_w', 'rr_h', 'rr_o', 'rr_pet', 'rr_gun', 'rr_gs', 'rr_is', 'rr_ms', 'rr_fx', 'rr_eq', 'rr_map'];
+function loadoutSnap() {
+  const v = {}; let t = 0;
+  try { LOADOUT_KEYS.forEach(function (k) { const x = localStorage.getItem(k); if (x !== null) v[k] = x; }); t = +localStorage.getItem('rr_lo_t') || 0; } catch (e) {}
+  return { t: t, v: v };
+}
+/** 雲端的裝備比較新（時間較晚）才採用，否則保留本機的 */
+function loadoutAdopt(remote) {
+  if (!remote || typeof remote !== 'object' || !remote.v) return;
+  let t = 0; try { t = +localStorage.getItem('rr_lo_t') || 0; } catch (e) {}
+  if ((+remote.t || 0) <= t) return;
+  try {
+    LOADOUT_KEYS.forEach(function (k) { if (typeof remote.v[k] === 'string') localStorage.setItem(k, remote.v[k]); else localStorage.removeItem(k); });
+    localStorage.setItem('rr_lo_t', String(remote.t));
+  } catch (e) {}
+}
 /** 頭像：底色與 64×64 小照片一起上傳，別人點你的頭像、戰績都看得到（太大的照片就不傳） */
 function avatarData() {
   let av = '', img = ''; try { av = localStorage.getItem('rr_avatar') || ''; img = localStorage.getItem('rr_avatar_img') || ''; } catch (e) {}
@@ -46,12 +63,18 @@ function push() {
   if (me && me.code) d.code = me.code;
   if (me && me.prog) d.prog = FV.delete();
   userRef().set(d, { merge: true }).catch(fail());
-  saveRef().set({ prog: JSON.stringify(H.prog()), seen: Date.now() }).catch(fail());
+  saveRef().set({ prog: JSON.stringify(H.prog()), seen: Date.now(), loadout: loadoutSnap() }).catch(fail());
 }
 
 const Cloud = {
   REGIONS: REGIONS, MODES: MODES, weekId: weekId, TIERS: TIERS, tierOf: tierOf,
   ready: function () { return !!(db && uid); },
+  /** 本機的裝備設定改了：記下時間並存雲端（main.js 的 lsSet 會呼叫） */
+  loadoutKey: function (k) {
+    if (LOADOUT_KEYS.indexOf(k) < 0) return;
+    try { localStorage.setItem('rr_lo_t', String(Date.now())); } catch (e) {}
+    Cloud.saveSoon();
+  },
   uid: function () { return uid; },
   me: function () { return me; },
   /** main.js 提供：prog() 讀本機進度、adopt(p) 採用雲端進度、name()、level() */
@@ -82,6 +105,7 @@ const Cloud = {
       let remote = null; try { remote = raw ? JSON.parse(raw) : null; } catch (e) {}
       // 進度以經驗值高的為準（換手機、清資料後能拿回來）
       if (remote && (remote.xp | 0) > (local.xp | 0)) H.adopt(remote);
+      loadoutAdopt(sv && sv.exists ? sv.data().loadout : null);
       if (!me.code) me.code = rcode(6);
       push();
       beatT = setInterval(function () { if (!document.hidden) userRef().set({ seen: Date.now(), room: room || '' }, { merge: true }).catch(fail()); }, 90000);
