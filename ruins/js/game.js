@@ -203,6 +203,31 @@ function buildDust() {
   const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xd8d0b8, map: getGlowTex(), size: 0.03, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending }));
   pts.frustumCulled = false; pts.userData.vel = vel; return pts;
 }
+/* 賽車的車子：玩家自己的車跟著 me 走，其他車（AI）用主機傳來的位置 */
+const RACE_COLS = [0xe0b040, 0x3a8fd9, 0x3fae5a, 0xd9573a];
+let raceMyCar = null, raceAiCars = new Map();
+function buildRaceCar(col) {
+  const g = new THREE.Group(), body = pmat(col, 0.3), dark = pmat(0x1a2330, 0.2), wheel = pmat(0x111111, 0.1);
+  g.add(part(new THREE.BoxGeometry(1.1, 0.4, 2.0), body, 0, 0.45, 0), part(new THREE.BoxGeometry(0.9, 0.35, 1.0), dark, 0, 0.85, -0.1));
+  [[-0.6, 0.3, 0.7], [0.6, 0.3, 0.7], [-0.6, 0.3, -0.7], [0.6, 0.3, -0.7]].forEach(function (w) { g.add(part(new THREE.BoxGeometry(0.2, 0.4, 0.4), wheel, w[0], w[1], w[2])); });
+  return g;
+}
+function syncRaceAi(list) {
+  const seen = new Set();
+  list.forEach(function (a, i) {
+    seen.add(a[0]);
+    let m = raceAiCars.get(a[0]);
+    if (!m) { m = buildRaceCar(RACE_COLS[(i + 1) % RACE_COLS.length]); scene.add(m); raceAiCars.set(a[0], m); }
+    m.visible = true; m.position.set(a[1], 0, a[2]); m.rotation.y = a[3];
+  });
+  raceAiCars.forEach(function (m, id) { if (!seen.has(id)) { scene.remove(m); raceAiCars.delete(id); } });
+}
+function clearRaceAi() { raceAiCars.forEach(function (m) { scene.remove(m); }); raceAiCars.clear(); }
+function tickRaceCars() {
+  const on = view.mode === 'race' && me.alive;
+  if (on && !raceMyCar) { raceMyCar = buildRaceCar(0xd9573a); scene.add(raceMyCar); }
+  if (raceMyCar) { raceMyCar.visible = on; if (on) { raceMyCar.position.set(me.x, 0, me.z); raceMyCar.rotation.y = me.yaw; } }
+}
 function tickFx(dt) {
   if (dust) {
     const p = dust.geometry.attributes.position.array, v = dust.userData.vel, cx = camera.position.x, cz = camera.position.z;
@@ -2278,13 +2303,15 @@ function updateMe(dt) {
   f -= touch.jy + pad.y; s += touch.jx + pad.x;
   let mag = Math.hypot(f, s);
   if (mag > 1) { f /= mag; s /= mag; mag = 1; }
+  // 賽車：開車，前後是油門、左右是方向盤（轉向），不能跑步
+  if (view.mode === 'race') { me.yaw -= s * 2.2 * dt; s = 0; f = Math.max(-0.4, Math.min(1, f)); mag = Math.abs(f); }
   const moving = mag > 0.15;
-  const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run || touch.runLock || pad.run) && moving && !me.tired && !me.riding;
+  const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run || touch.runLock || pad.run) && moving && !me.tired && !me.riding && view.mode !== 'race';
   if (wantRun) { me.stam -= 0.15 * (1 - 0.05 * myGem(1)) * dt; if (me.stam <= 0) { me.stam = 0; me.tired = true; } }
   else { me.stam = Math.min(1, me.stam + 0.28 * (myPet() === 4 ? 1.2 : 1) * (myC() === 7 ? 1.15 : 1) * dt); if (me.tired && me.stam > 0.2) me.tired = false; }
   if (me.rallyT > 0) me.rallyT -= dt;
   const speed0 = (wantRun ? 9.0 : 4.2) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05) * CHAR_SPEED[myC()] * (myPet() === 1 ? 1.05 : 1) * (myEq(1) ? 1.06 : 1) * (iceNear() ? 0.75 : 1) * (me.rallyT > 0 ? 1.2 : 1);   // 靠近藍色（冰）怪物減速 25%
-  const speed = (me.riding ? 11.5 * (iceNear() ? 0.75 : 1) : speed0) * (quakeT > 0 ? 0.6 : 1);   // 推車：固定高速、不受背包影響；地震時變慢
+  const speed = (view.mode === 'race' ? 11 : me.riding ? 11.5 * (iceNear() ? 0.75 : 1) : speed0) * (quakeT > 0 ? 0.6 : 1);   // 推車：固定高速、不受背包影響；地震時變慢
   const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   // 跳：耗 18% 體力，在空中時怪物抓不到；衝刺：往移動方向（沒動就往前）瞬間衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒
   if (me.riding) { jumpQ = false; dashQ = false; }   // 推車上不能跳、衝
@@ -2550,6 +2577,7 @@ function frame(nowMs) {
   pvs.forEach(function (pv) { if (pv.model && pv.model.userData.mixer && pv.canvas.offsetParent) { pv.model.userData.mixer.update(dt); followHand(pv.model); } });
   pvs.forEach(function (pv) { if (pv.model && pv.canvas.offsetParent) { pv.model.rotation.y = (pv.gun ? Math.PI / 2 + Math.sin(now * 0.7) * 0.6 : pv.sway ? -0.35 + Math.sin(now * 0.6) * 0.3 : now * 0.9) + (pv.spin || 0); pv.model.rotation.x = pv.gun ? 0.15 : 0; pv.r.render(pv.sc, pv.cam); } });
   tickFx(dt);
+  tickRaceCars();
   renderer.render(scene, camera);
 }
 
@@ -2764,6 +2792,7 @@ RR.Game = {
     // 推車
     if (s.bk) s.bk.forEach(function (q) { showBreak(q[0], q[1], true); });   // 補上漏掉的（例如中途才連上）
     if (s.td) view.td = s.td;
+    if (s.race && s.race[3]) syncRaceAi(s.race[3]); else clearRaceAi();
     if (s.race) {   // 賽車 HUD：圈數與時間
       const mineR = s.race[2].filter(function (x) { return x[0] === myId; })[0] || [myId, 0, 0];
       const hud = document.getElementById('raceHud');
