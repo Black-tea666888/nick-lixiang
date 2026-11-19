@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v160', items: ['新怪物外觀：枯瘦長臂、巨獸（體型大一倍半），每天輪替', '跑步鍵點一下可以切換自動連續跑；近戰模式時攻擊鍵隱藏（槍鍵已經是近戰）', '回收物分等級：越值錢的東西要背包等級夠高才撿得起', '關閉交易站時黃色橫幅會立即收起', '房間代碼輸入框清空提示字', '更多選單改成和其他按鈕一樣的牛皮紙風格，戰隊聊天從選單移除（用聊天與社群進入）', '背包等級：每 10 等解鎖一個背包（帆布、皮革、…、黃金、白金、…傳說），共 10 級，每級多 1 格', '交易紀錄與最高紀錄也跟著帳號同步，換裝置會合併', '裝備與造型跟著帳號同步：換裝置也一樣（按鍵、音效等設定仍留在本機）', '戰績與頭像同步雲端：換裝置也看得到，戰績保留最近 30 場', '怪物外觀增加：長顎、背刺、駝背長臂、肋骨、三眼，全部黑色系', '怪物碰到玩家不再直接死：一次扣一半血，碰兩下才會倒', '設定裡的手機按鈕勾選改用新圖示（不再是舊文字）', '特效機與槍枝造型機：第一輪全部抽到後進入第二輪（新造型）', '好友頁先顯示上次的列表，不用每次等很久', '修正交易成功的黃色橫幅收不掉（切換畫面、點一下、切到背景都會收起）', '大廳新增獨立的「交易所」按鈕', '修正大廳換槍、換造型後，進局內沒有跟著換', '週排行榜每週日 24:00 重新計算；上週各模式全區前 3 名獲得限定頭飾「冠軍王冠」', '拿到櫃子裡的近戰武器會得到 4 秒護盾', '每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v161', items: ['加好友：可以搜尋玩家名字，或用 QR code 掃描加好友', '新怪物外觀：枯瘦長臂、巨獸（體型大一倍半），每天輪替', '跑步鍵點一下可以切換自動連續跑；近戰模式時攻擊鍵隱藏（槍鍵已經是近戰）', '回收物分等級：越值錢的東西要背包等級夠高才撿得起', '關閉交易站時黃色橫幅會立即收起', '房間代碼輸入框清空提示字', '更多選單改成和其他按鈕一樣的牛皮紙風格，戰隊聊天從選單移除（用聊天與社群進入）', '背包等級：每 10 等解鎖一個背包（帆布、皮革、…、黃金、白金、…傳說），共 10 級，每級多 1 格', '交易紀錄與最高紀錄也跟著帳號同步，換裝置會合併', '裝備與造型跟著帳號同步：換裝置也一樣（按鍵、音效等設定仍留在本機）', '戰績與頭像同步雲端：換裝置也看得到，戰績保留最近 30 場', '怪物外觀增加：長顎、背刺、駝背長臂、肋骨、三眼，全部黑色系', '怪物碰到玩家不再直接死：一次扣一半血，碰兩下才會倒', '設定裡的手機按鈕勾選改用新圖示（不再是舊文字）', '特效機與槍枝造型機：第一輪全部抽到後進入第二輪（新造型）', '好友頁先顯示上次的列表，不用每次等很久', '修正交易成功的黃色橫幅收不掉（切換畫面、點一下、切到背景都會收起）', '大廳新增獨立的「交易所」按鈕', '修正大廳換槍、換造型後，進局內沒有跟著換', '週排行榜每週日 24:00 重新計算；上週各模式全區前 3 名獲得限定頭飾「冠軍王冠」', '拿到櫃子裡的近戰武器會得到 4 秒護盾', '每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1270,6 +1270,31 @@ function afterMatch(mode, win, day, myStat, coins, info) {
   return got.length ? '，成就：' + got.join('、') : '';
 }
 /** 上週排行榜各模式前 3 名：送限定頭飾（每週只結算一次，查詢失敗就下次再試） */
+/* ---------- QR code 加好友 ----------
+ * QR 內容是遊戲網址加上 ?add=好友代碼；用手機相機掃了會打開遊戲，登入後自動加好友 */
+function qrUrl(code) { return location.origin + location.pathname + '?add=' + encodeURIComponent(code); }
+function qrShow(name, code) {
+  if (!code) { say('還沒有好友代碼，請先登入雲端帳號。'); return; }
+  const draw = function () {
+    let svg = '';
+    try { const q = window.qrcode(0, 'M'); q.addData(qrUrl(code)); q.make(); svg = q.createSvgTag({ cellSize: 6, margin: 2, scalable: true }); } catch (e) { say('QR code 產生失敗。'); return; }
+    $('qrImg').innerHTML = svg; $('qrName').textContent = name || '玩家'; $('qrCode').textContent = code; $('qrBox').classList.remove('hide');
+  };
+  if (window.qrcode) { draw(); return; }
+  const sc = document.createElement('script'); sc.src = 'vendor/qrcode.js'; sc.onload = draw; sc.onerror = function () { say('QR code 載入失敗，請確認網路。'); }; document.head.appendChild(sc);
+}
+// 掃 QR 打開的網址：記下代碼，登入後再加
+(function () {
+  try {
+    const add = new URLSearchParams(location.search).get('add');
+    if (add) { lsSet('rr_pending_add', add.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)); history.replaceState(null, '', location.pathname); }
+  } catch (e) {}
+})();
+function pendingFriend() {
+  const code = ls('rr_pending_add'); if (!code || !RR.Cloud.ready()) return;
+  try { localStorage.removeItem('rr_pending_add'); } catch (e) {}
+  RR.Cloud.addFriend(code, function (err, name) { say(err ? RR.Cloud.message(err) : '已和 ' + name + ' 成為好友。'); });
+}
 function checkWeekReward() {
   const C = RR.Cloud;
   if (!C || !C.ready()) return;
@@ -1388,6 +1413,28 @@ function renderSocial() {
   } else if (socTab === 'friends') {
     b.appendChild(mk('p', 'note', '你的好友代碼（給朋友輸入）'));
     b.appendChild(mk('div', 'bigcode', (C.me() && C.me().code) || '------'));
+    { const myQr = mk('button', 'btn', '我的 QR code'); myQr.type = 'button'; myQr.addEventListener('click', function () { qrShow(myName(), C.me() && C.me().code); }); b.appendChild(myQr); }
+    // 用名字搜尋玩家：可以直接加好友，或顯示對方的 QR code 讓別人掃
+    const srow = mk('div', 'soc-row'), sinp = mk('input'); sinp.type = 'text'; sinp.maxLength = 12; sinp.placeholder = '搜尋玩家名字'; sinp.autocomplete = 'off';
+    const sbtn = mk('button', 'btn', '搜尋'); sbtn.type = 'button';
+    const sres = mk('div');
+    const doSearch = function () {
+      sres.textContent = ''; sres.appendChild(mk('p', 'ccEmpty', '搜尋中…'));
+      C.searchUsers(sinp.value, function (err, rows) {
+        sres.textContent = '';
+        if (err) { sres.appendChild(mk('p', 'ccEmpty', C.message(err))); return; }
+        if (!rows.length) { sres.appendChild(mk('p', 'ccEmpty', '找不到這個名字的玩家。')); return; }
+        rows.forEach(function (u) {
+          const r = mk('div', 'srow'); r.appendChild(mk('span', 'nm', u.name + (u.lv ? '　Lv.' + u.lv : '')));
+          const qb = mk('button', 'btn', 'QR'); qb.type = 'button'; qb.addEventListener('click', function () { qrShow(u.name, u.code); });
+          const ab = mk('button', 'btn primary', '加好友'); ab.type = 'button';
+          ab.addEventListener('click', function () { ab.disabled = true; C.addFriend(u.code, function (e2, name) { ab.disabled = false; if (e2) { say(C.message(e2)); return; } say('已和 ' + name + ' 成為好友。'); renderSocial(); }); });
+          r.appendChild(qb); r.appendChild(ab); sres.appendChild(r);
+        });
+      });
+    };
+    sbtn.addEventListener('click', doSearch); sinp.addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(); });
+    srow.appendChild(sinp); srow.appendChild(sbtn); b.appendChild(srow); b.appendChild(sres);
     const row = mk('div', 'soc-row'), inp = mk('input'); inp.type = 'text'; inp.maxLength = 6; inp.placeholder = '輸入朋友的代碼'; inp.autocapitalize = 'characters'; inp.autocomplete = 'off';
     const add = mk('button', 'btn primary', '加好友'); add.type = 'button';
     add.addEventListener('click', function () { add.disabled = true; C.addFriend(inp.value, function (err, name) { add.disabled = false; if (err) { say(C.message(err)); return; } say('已和 ' + name + ' 成為好友。'); renderSocial(); }); });
@@ -1653,6 +1700,7 @@ function bind() {
   $('confirmNo').addEventListener('click', function () { $('confirm').classList.add('hide'); });
   $('confirmYes').addEventListener('click', leave);
   $('msgOk').addEventListener('click', function () { $('msg').classList.add('hide'); });
+  $('qrClose').addEventListener('click', function () { $('qrBox').classList.add('hide'); });
   $('chatBtn').addEventListener('click', function () { chatOpen(!document.body.classList.contains('chatting')); });
   $('chatForm').addEventListener('submit', function (e) { e.preventDefault(); chatSend(); });
   $('chatInput').addEventListener('keydown', function (e) { if (e.key === 'Escape') { $('chatInput').value = ''; chatOpen(false); } e.stopPropagation(); });
@@ -1899,7 +1947,7 @@ function boot() {
   Auth.init(function (user) {
     if (!user) { lastUid = null; RR.Cloud.onUser(null); if (S.mode) leave(); else show('scrLogin'); return; }
     if (!S.mode) showMenu();
-    if (user.uid !== lastUid) { lastUid = user.uid; RR.Cloud.onUser(user, function () { renderProg(); if (!S.mode) dailyLogin(); checkWeekReward(); }); }
+    if (user.uid !== lastUid) { lastUid = user.uid; RR.Cloud.onUser(user, function () { renderProg(); if (!S.mode) dailyLogin(); checkWeekReward(); pendingFriend(); }); }
   });
 }
 boot();

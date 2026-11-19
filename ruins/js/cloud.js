@@ -315,6 +315,15 @@ const Cloud = {
       }).then(function () { cb(null, od.name || '玩家'); });
     }).catch(fail(cb));
   },
+  /** 用名字搜尋玩家（開頭相同就算），cb(err, [{uid, name, lv, code}]) */
+  searchUsers: function (text, cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    text = clean(text, 12); if (!text) { cb(null, []); return; }
+    db.collection('users').where('name', '>=', text).where('name', '<=', text + '\uf8ff').limit(12).get().then(function (q) {
+      const rows = []; q.forEach(function (d) { const x = d.data(); if (d.id !== uid && x.code) rows.push({ uid: d.id, name: x.name || '玩家', lv: x.lv | 0, code: x.code }); });
+      cb(null, rows);
+    }).catch(fail(cb));
+  },
   removeFriend: function (fid, cb) {
     if (!Cloud.ready()) return;
     userRef().collection('friends').doc(fid).delete().then(function () { return userRef(fid).collection('friends').doc(uid).delete(); })
