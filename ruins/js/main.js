@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v210', items: ['沒人開的推車若卡在箱子裡，會自動移到附近的空地'] };
+const UPD = { v: 'v211', items: ['新增休閒模式「賽車」：廢墟固定賽道跑 3 圈計時，成績上傳圈數榜與完賽時間榜'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1014,7 +1014,7 @@ function hostStart(day) { if ((day || 1) === 1) recApply(); const info = S.sim.s
 /* ---------- 進入各種模式 ---------- */
 function startSolo(gmode) {
   Sfx.unlock();
-  S.mode = 'solo'; S.myId = 'me'; S.sim = new W.Sim(); S.sim.mode = gmode === 'hunt' || gmode === 'br' || gmode === 'td' ? gmode : 'coop'; S.gmode = S.sim.mode; S.base = 0;
+  S.mode = 'solo'; S.myId = 'me'; S.sim = new W.Sim(); S.sim.mode = gmode === 'hunt' || gmode === 'br' || gmode === 'td' || gmode === 'race' ? gmode : 'coop'; S.gmode = S.sim.mode; S.base = 0;
   document.body.classList.add('solo');
   S.sim.map = myMap();
   S.sim.addPlayer('me', myName(), myLook());
@@ -1184,11 +1184,11 @@ function recOptsOpen() {
   $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
 }
 /* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card'] };
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌' };
+const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
@@ -1875,6 +1875,11 @@ function showResult(e) {
     const ts = e.win ? 1 + (e.core >= 70 ? 1 : 0) + (e.core >= 100 ? 1 : 0) : 0, sb2 = $('resStars'); sb2.textContent = '';
     for (let k = 0; k < 3; k++) { const x = document.createElement(k < ts ? 'span' : 'i'); x.textContent = '★'; sb2.appendChild(x); }
   }
+  if (e.why === 'race') {   // 賽車：完賽看用時，成績上傳排行榜（圈數榜、完賽時間榜）
+    $('resTitle').textContent = e.win ? '完賽！' : '比賽失敗';
+    $('resText').textContent = e.win && e.rr ? '用時 ' + e.rr.time.toFixed(1) + ' 秒（' + e.rr.laps + ' 圈）。' : '中途被淘汰。';
+    if (e.win && e.rr && RR.Cloud && RR.Cloud.ready()) { RR.Cloud.submit('race', e.rr.laps); RR.Cloud.submit('racet', 99999 - Math.floor(e.rr.time * 10)); }
+  }
   const st = $('resStats'); st.textContent = '';
   if (!solo && e.stats) e.stats.forEach(function (p) {
     const row = document.createElement('div'); row.className = 'prow' + (p.alive ? '' : ' dead');
@@ -1997,6 +2002,7 @@ function bind() {
   $('modeBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.mode = S.sim.mode === 'coop' ? 'hunt' : S.sim.mode === 'hunt' ? 'br' : S.sim.mode === 'br' ? 'td' : 'coop'; hostBroadcast(rosterMsg()); tickLobby(); });
   $('brBtn').addEventListener('click', function () { startSolo('br'); });
   $('tdBtn').addEventListener('click', function () { startSolo('td'); });
+  $('raceBtn').addEventListener('click', function () { startSolo('race'); });
   $('huntBtn').addEventListener('click', function () { startSolo('hunt'); });
   $('pvpBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.pvp = !S.sim.pvp; hostBroadcast(rosterMsg()); tickLobby(); });
   $('lobbyMic').addEventListener('click', function () { if (Voice.hasMic()) Voice.setMuted(!Voice.isMuted()); else say('沒有麥克風權限。請在瀏覽器允許麥克風後，重新進入房間。'); tickLobby(); });
