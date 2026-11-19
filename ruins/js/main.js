@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v145', items: ['修正交易成功的黃色橫幅收不掉（切換畫面、點一下、切到背景都會收起）', '大廳新增獨立的「交易所」按鈕', '修正大廳換槍、換造型後，進局內沒有跟著換', '週排行榜每週日 24:00 重新計算；上週各模式全區前 3 名獲得限定頭飾「冠軍王冠」', '拿到櫃子裡的近戰武器會得到 4 秒護盾', '每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v146', items: ['好友頁先顯示上次的列表，不用每次等很久', '修正交易成功的黃色橫幅收不掉（切換畫面、點一下、切到背景都會收起）', '大廳新增獨立的「交易所」按鈕', '修正大廳換槍、換造型後，進局內沒有跟著換', '週排行榜每週日 24:00 重新計算；上週各模式全區前 3 名獲得限定頭飾「冠軍王冠」', '拿到櫃子裡的近戰武器會得到 4 秒護盾', '每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1365,17 +1365,24 @@ function renderSocial() {
     const add = mk('button', 'btn primary', '加好友'); add.type = 'button';
     add.addEventListener('click', function () { add.disabled = true; C.addFriend(inp.value, function (err, name) { add.disabled = false; if (err) { say(C.message(err)); return; } say('已和 ' + name + ' 成為好友。'); renderSocial(); }); });
     row.appendChild(inp); row.appendChild(add); b.appendChild(row);
-    b.appendChild(mk('p', 'note wait', '讀取中…'));
-    C.friends(guard(function (rows) {
-      if (!rows.length) { socNote('還沒有好友。把上面的代碼傳給朋友，或輸入他的代碼。'); return; }
+    const fl = mk('div'); b.appendChild(fl);
+    // 先顯示上次的好友列表，再更新，不用每次都等
+    const paint = function (rows) {
+      lsSet('rr_friends', JSON.stringify(rows.slice(0, 40).map(function (f) { return { uid: f.uid, name: f.name, lv: f.lv, online: f.online, room: f.room, clan: f.clan }; })));
+      fl.textContent = '';
+      if (!rows.length) { fl.appendChild(mk('p', 'note', '還沒有好友。把上面的代碼傳給朋友，或輸入他的代碼。')); return; }
       rows.forEach(function (f) {
         const r = mk('div', 'srow'); r.appendChild(mk('span', f.online ? 'dotOn' : 'dotOff'));
         const nm = mk('span', 'nm', f.name); statsLink(nm, f.uid, f.name); nm.appendChild(mk('small', null, '　Lv.' + f.lv + (f.clan ? ' [' + f.clan + ']' : '') + (f.online ? (f.room ? '，在房間 ' + f.room : '，線上') : '，離線'))); r.appendChild(nm);
         if (f.online && f.room) { const j = mk('button', 'btn primary', '加入'); j.type = 'button'; j.addEventListener('click', function () { $('scrSocial').classList.add('hide'); $('codeInput').value = f.room; joinRoom(); }); r.appendChild(j); }
         const del = mk('button', 'btn', '刪除'); del.type = 'button'; del.addEventListener('click', function () { C.removeFriend(f.uid, function () { renderSocial(); }); }); r.appendChild(del);
-        b.appendChild(r);
+        fl.appendChild(r);
       });
-    }));
+    };
+    let cached = null; try { cached = JSON.parse(ls('rr_friends') || 'null'); } catch (e) {}
+    if (Array.isArray(cached) && cached.length) { paint(cached); fl.appendChild(mk('p', 'note wait', '更新中…')); }
+    else fl.appendChild(mk('p', 'note wait', '讀取中…'));
+    C.friends(guard(paint));
   } else if (socTab === 'clan') {
     b.appendChild(mk('p', 'note wait', '讀取中…'));
     C.clan(guard(function (info) {
