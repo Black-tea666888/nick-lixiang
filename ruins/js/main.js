@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v129', items: ['首頁上方資訊卡縮小（聊天、社群、設定、更多改為 2×2）', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v130', items: ['出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1552,7 +1552,6 @@ function bind() {
     });
     return { cat: cat, key: d[2], btns: btns };
   });
-  const mBtns = cards($('mGrid'), W.MAPS.map(function (m) { return m.name; }), null, function (i) { mapSel = i; lsSet('rr_map', String(i)); showMapName(); Game.showMap(mapSel); });
   const showLook = function () {
     look.c = ((look.c % W.CHARS.length) + W.CHARS.length) % W.CHARS.length;
     look.w = ((look.w % W.WEAPONS.length) + W.WEAPONS.length) % W.WEAPONS.length;
@@ -1581,7 +1580,7 @@ function bind() {
       $('fsFx').textContent = cur('fx', 'rr_fx') + '彈道'; }
     Game.preview($('lookPrev'), look.c, look.w, look.h, look.o, look.pet);
   };
-  showMapName = function () { mapSel = myMap(); mark(mBtns, mapSel); refreshPickSummary(); $('fsMap').textContent = W.MAPS[mapSel].name; };
+  showMapName = function () { mapSel = myMap(); refreshPickSummary(); };
   // 收合狀態記在 rr_fold（預設只展開「角色」）
   { let open = null; try { open = JSON.parse(ls('rr_fold') || 'null'); } catch (e) {} if (!open) open = { char: 1, m_play: 1, m_mis: 1, h_help: 1, g_acc: 1 };
     ['m_play', 'h_help', 'g_acc'].forEach(function (k) { if (open[k] == null) open[k] = 1; });
