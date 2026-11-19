@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v208', items: ['拾荒團成員列表會顯示每位成員的上次上線時間'] };
+const UPD = { v: 'v209', items: ['單人拾荒打開選單時不再暫停', '修正牆邊跳上牆後可以穿過牆的問題'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -993,7 +993,6 @@ function hostTick() {
   const now = Date.now(), dt = Math.min(0.1, (now - S.lastTick) / 1000); S.lastTick = now;
   const sim = S.sim;
   // 單人拾荒打開選單時暫停（多人不能暫停，別人還在玩）
-  if (S.mode === 'solo' && !$('hudMenu').classList.contains('hide')) return;
   sim.setInput(S.myId, Game.input());
   sim.step(dt);
   flushEvents();
@@ -2014,7 +2013,6 @@ function bind() {
   $('hudMore').addEventListener('click', function () {
     const m = $('hudMenu'), open = m.classList.contains('hide');
     m.classList.toggle('hide', !open); this.setAttribute('aria-expanded', String(open));
-    $('pauseTag').classList.toggle('hide', !(open && S.mode === 'solo'));
     if (open) { try { if (document.exitPointerLock) document.exitPointerLock(); } catch (e) {} }
   });
   $('hudResume').addEventListener('click', function () { $('hudMore').click(); });

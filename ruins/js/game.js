@@ -2302,7 +2302,7 @@ function updateMe(dt) {
   const R = 0.42;
   if (editing) { dx = 0; dz = 0; }   // 調整按鈕位置時不移動
   const inS = hitSolid(me.x, me.z, me.y);   // 萬一已經卡在擺設裡就放行，讓玩家走得出來
-  const onTop = me.y >= WH - 0.25;   // 已經在牆頂就可以走過牆
+  const onTop = me.y >= WH - 0.25 && (W.isWall(Math.floor(me.x / CS), Math.floor(me.z / CS)) || W.blocked(me.x, me.z, 1.1));   // 在牆頂（或牆邊起跳上牆）才可以走過牆；空中飄在空地上不行
   if ((onTop || !W.blocked(me.x + dx, me.z, R)) && (inS || !hitSolid(me.x + dx, me.z, me.y))) me.x += dx;
   if ((onTop || !W.blocked(me.x, me.z + dz, R)) && (inS || !hitSolid(me.x, me.z + dz, me.y))) me.z += dz;
   // 重力：腳下是地板或擺設頂端；走出箱子邊緣會掉下來
