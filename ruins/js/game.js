@@ -2064,28 +2064,31 @@ function bindInput() {
   { const g = $('setGyro'); let saved = false; try { saved = localStorage.getItem('rr_gyro') === '1'; } catch (e) {} gyroOn = saved; if (g) { g.checked = saved; g.addEventListener('change', function () { gyroSet(g.checked); }); } }
   window.addEventListener('keydown', function (e) {
     if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
-    keys[e.code] = true;
-    if (canControl() && e.code.indexOf('Arrow') === 0) e.preventDefault();
-    if (active && e.code === 'KeyM') RR.Game.toggleMic();
-    if (e.code === 'KeyQ' && !e.repeat) trySmoke();
-    if (e.code === 'KeyE' && !e.repeat && canControl()) swapPress();
-    if (e.code === 'KeyU' && !e.repeat) useUav();
-    if (e.code === 'KeyH' && !e.repeat) reloadPress();
-    if (e.code === 'KeyK' && !e.repeat) weaponPress();
-    if (e.code === 'KeyJ' && !e.repeat) useAir();
-    if (e.code === 'KeyR' && !e.repeat) trySkill();
-    if (e.code === 'KeyY' && !e.repeat && canControl()) { e.preventDefault(); lockerPress(); }
-    if (e.code === 'KeyG' && !e.repeat && canControl() && !(e.target && /INPUT|TEXTAREA/.test(e.target.tagName))) { if ($('scrMini').classList.contains('hide')) openMini(); else closeMini(); }
-    if (e.code === 'KeyF') { if (canControl()) { e.preventDefault(); attack(); } }
-    if (e.code === 'Space') { if (canControl()) { e.preventDefault(); if (!e.repeat) jumpQ = true; } }
-    if (e.code === 'KeyC' && !e.repeat && canControl()) dashQ = true;
-    if (e.code === 'KeyX' && canControl()) { gunHeld = true; if (!e.repeat) shoot(); }
-    if (e.code === 'KeyB' && !e.repeat && canControl() && RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100);
-    if (e.code === 'KeyZ' && !e.repeat && canControl()) scopeOn = !scopeOn;
-    if (e.code === 'KeyT' && !e.repeat && canControl() && view.mode === 'td' && RR.Game.onTower) RR.Game.onTower();
-    if (e.code === 'KeyV' && !e.repeat && canControl()) vhQ = true;
+    if (keyCapture) { e.preventDefault(); const cb = keyCapture; keyCapture = null; cb(e.code); return; }   // 設定頁正在改按鍵
+    if (e.code === 'Escape' && active) { const mb = $('hudMore'); if (mb) mb.click(); return; }
+    const kc = keyCode(e.code);
+    keys[kc] = true;
+    if (canControl() && kc.indexOf('Arrow') === 0) e.preventDefault();
+    if (active && kc === 'KeyM') RR.Game.toggleMic();
+    if (kc === 'KeyQ' && !e.repeat) trySmoke();
+    if (kc === 'KeyE' && !e.repeat && canControl()) swapPress();
+    if (kc === 'KeyU' && !e.repeat) useUav();
+    if (kc === 'KeyH' && !e.repeat) reloadPress();
+    if (kc === 'KeyK' && !e.repeat) weaponPress();
+    if (kc === 'KeyJ' && !e.repeat) useAir();
+    if (kc === 'KeyR' && !e.repeat) trySkill();
+    if (kc === 'KeyY' && !e.repeat && canControl()) { e.preventDefault(); lockerPress(); }
+    if (kc === 'KeyG' && !e.repeat && canControl() && !(e.target && /INPUT|TEXTAREA/.test(e.target.tagName))) { if ($('scrMini').classList.contains('hide')) openMini(); else closeMini(); }
+    if (kc === 'KeyF') { if (canControl()) { e.preventDefault(); attack(); } }
+    if (kc === 'Space') { if (canControl()) { e.preventDefault(); if (!e.repeat) jumpQ = true; } }
+    if (kc === 'KeyC' && !e.repeat && canControl()) dashQ = true;
+    if (kc === 'KeyX' && canControl()) { gunHeld = true; if (!e.repeat) shoot(); }
+    if (kc === 'KeyB' && !e.repeat && canControl() && RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100);
+    if (kc === 'KeyZ' && !e.repeat && canControl()) scopeOn = !scopeOn;
+    if (kc === 'KeyT' && !e.repeat && canControl() && view.mode === 'td' && RR.Game.onTower) RR.Game.onTower();
+    if (kc === 'KeyV' && !e.repeat && canControl()) vhQ = true;
   });
-  window.addEventListener('keyup', function (e) { keys[e.code] = false; if (e.code === 'KeyX') gunHeld = false; });
+  window.addEventListener('keyup', function (e) { const kc = keyCode(e.code); keys[kc] = false; if (kc === 'KeyX') gunHeld = false; });
   window.addEventListener('blur', function () { for (const k in keys) keys[k] = false; });
   canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   canvas.addEventListener('mousedown', function (ev) {
@@ -2182,6 +2185,26 @@ function bindInput() {
   initMini(); initLayout();
 }
 
+/* ---------- 電腦按鍵自訂 ----------
+ * 程式裡都用預設按鍵判斷；玩家改了按鍵，就把新按鍵翻譯成預設按鍵（keyCode），原本的預設按鍵則停用，避免一鍵兩用。 */
+const KEY_ACTIONS = [['前進', 'KeyW'], ['後退', 'KeyS'], ['左移', 'KeyA'], ['右移', 'KeyD'], ['跑步', 'ShiftLeft'], ['跳', 'Space'], ['衝刺', 'KeyC'],
+  ['開槍', 'KeyX'], ['近戰攻擊', 'KeyF'], ['切近戰／救人', 'KeyE'], ['換槍', 'KeyK'], ['開鏡', 'KeyZ'], ['煙霧彈', 'KeyQ'], ['技能', 'KeyR'], ['炸藥', 'KeyB'],
+  ['躲櫃子', 'KeyY'], ['上車', 'KeyV'], ['無人機', 'KeyU'], ['空中掃射', 'KeyJ'], ['蓋塔（塔防）', 'KeyT'], ['小遊戲', 'KeyG'], ['麥克風', 'KeyM']];
+let keyMap = {}, keyBack = {}, keyCapture = null;
+function keyLoad() {
+  keyMap = {}; keyBack = {};
+  let saved = {}; try { saved = JSON.parse(localStorage.getItem('rr_keys') || '{}') || {}; } catch (e) {}
+  KEY_ACTIONS.forEach(function (a) { const cur = saved[a[1]]; if (cur && cur !== a[1]) { keyMap[cur] = a[1]; keyBack[a[1]] = cur; } });
+}
+function keyCode(c) { if (keyMap[c]) return keyMap[c]; if (keyBack[c]) return '_off_' + c; return c; }
+keyLoad();
+// 電腦：玩家按 Esc 讓滑鼠離開鎖定時（瀏覽器吃掉 Esc，頁面收不到），自動打開選單；程式自己解除鎖定時不算
+let codeUnlock = false;
+if (document.exitPointerLock) { const _ex = document.exitPointerLock.bind(document); document.exitPointerLock = function () { codeUnlock = true; setTimeout(function () { codeUnlock = false; }, 300); return _ex(); }; }
+document.addEventListener('pointerlockchange', function () {
+  if (document.pointerLockElement || codeUnlock || !active) return;
+  const m = document.getElementById('hudMenu'); if (m && m.classList.contains('hide')) { const mb = document.getElementById('hudMore'); if (mb) mb.click(); }
+});
 /* ---------- 遊戲手把（Xbox／PS 標準配置，Steam Deck 也一樣） ----------
  * 左搖桿移動、右搖桿轉視角、RT 開槍（按住連射）、LT 開鏡、A 跳、B 衝刺、X 切近戰／救人（按住）、Y 換槍、
  * LB 煙霧彈、RB 技能、L3 切換跑步、R3 近戰攻擊、十字鍵：上 UAV、下 櫃子、左 炸藥、右 空中掃射、Back 上車、Start 選單 */
@@ -2516,6 +2539,23 @@ function frame(nowMs) {
 /* ---------- 對外介面 ---------- */
 RR.Game = {
   buildMonster: buildMonster,   // AR 抓怪借用怪物模型
+  KEY_ACTIONS: KEY_ACTIONS,
+  /** 目前每個動作綁的按鍵（預設按鍵 → 實際按鍵） */
+  keyOf: function (def) { return keyBack[def] || def; },
+  /** 等玩家按下一個鍵，綁到這個動作；cb(新按鍵) */
+  captureKey: function (def, cb) {
+    keyCapture = function (code) {
+      if (code === 'Escape') { cb(null); return; }
+      let saved = {}; try { saved = JSON.parse(localStorage.getItem('rr_keys') || '{}') || {}; } catch (e) {}
+      // 新按鍵已經被別的動作用了：兩個動作互換
+      const prev = keyBack[def] || def;
+      KEY_ACTIONS.forEach(function (a) { if (a[1] !== def && (saved[a[1]] || a[1]) === code) saved[a[1]] = prev; });
+      saved[def] = code;
+      try { localStorage.setItem('rr_keys', JSON.stringify(saved)); } catch (e) {}
+      keyLoad(); cb(code);
+    };
+  },
+  resetKeys: function () { try { localStorage.removeItem('rr_keys'); } catch (e) {} keyLoad(); },
   dbg: function () { return { pvs: pvs, scene: scene, renderer: renderer, camera: camera, cloud: showCloud, me: me, solids: solids, groundAt: groundAt }; },
   stats: function () { const i = renderer.info; let n = 0, lights = 0, outl = 0; scene.traverse(function (o) { if (o.isMesh && o.visible) n++; if (o.isLight) lights++; if (o.userData && o.userData.outline) outl++; }); return { calls: i.render.calls, tris: i.render.triangles, geo: i.memory.geometries, tex: i.memory.textures, progs: i.programs ? i.programs.length : 0, meshes: n, lights: lights, outl: outl, pr: renderer.getPixelRatio() }; },
   openMini: openMini,

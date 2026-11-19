@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v181', items: ['部分槍名改成原創名字：巴雷特→破甲重狙、M4A1→遊騎兵步槍、火麒麟→赤焰雙管、阿姆斯特旋風炮→旋風巨炮（能力不變）'] };
+const UPD = { v: 'v182', items: ['電腦可以自訂按鍵（設定 → 電腦按鍵）', '按 Esc 或手把 Start 打開選單；單人遊玩打開選單會暫停', '設定新增全螢幕按鈕'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -870,6 +870,8 @@ function hostRemove(id) {
 function hostTick() {
   const now = Date.now(), dt = Math.min(0.1, (now - S.lastTick) / 1000); S.lastTick = now;
   const sim = S.sim;
+  // 單人遊玩打開選單時暫停（多人不能暫停，別人還在玩）
+  if (S.mode === 'solo' && !$('hudMenu').classList.contains('hide')) return;
   sim.setInput(S.myId, Game.input());
   sim.step(dt);
   flushEvents();
@@ -1843,7 +1845,28 @@ function bind() {
   $('hudMore').addEventListener('click', function () {
     const m = $('hudMenu'), open = m.classList.contains('hide');
     m.classList.toggle('hide', !open); this.setAttribute('aria-expanded', String(open));
+    $('pauseTag').classList.toggle('hide', !(open && S.mode === 'solo'));
+    if (open) { try { if (document.exitPointerLock) document.exitPointerLock(); } catch (e) {} }
   });
+  $('hudResume').addEventListener('click', function () { $('hudMore').click(); });
+  // 全螢幕（電腦、桌面版）
+  $('setFull').addEventListener('click', function () {
+    const el = document.documentElement;
+    try { if (document.fullscreenElement) document.exitFullscreen(); else (el.requestFullscreen || el.webkitRequestFullscreen).call(el); } catch (e) {}
+  });
+  // 電腦按鍵自訂
+  const keyName = function (c) { return String(c || '').replace(/^Key/, '').replace(/^Digit/, '').replace('ShiftLeft', '左 Shift').replace('ShiftRight', '右 Shift').replace('ControlLeft', '左 Ctrl').replace('Space', '空白鍵').replace(/^Arrow/, '方向 '); };
+  const drawKeys = function () {
+    const box = $('keyBinds'); box.textContent = '';
+    Game.KEY_ACTIONS.forEach(function (a) {
+      const r = mk('button', 'keyRow'); r.type = 'button';
+      r.appendChild(mk('span', null, a[0])); const k = mk('b', null, keyName(Game.keyOf(a[1]))); r.appendChild(k);
+      r.addEventListener('click', function () { k.textContent = '按一個鍵…（Esc 取消）'; r.classList.add('on'); Game.captureKey(a[1], function () { drawKeys(); }); });
+      box.appendChild(r);
+    });
+  };
+  drawKeys();
+  $('keyReset').addEventListener('click', function () { Game.resetKeys(); drawKeys(); mtoast('按鍵已恢復預設'); });
   $('moreBtn').addEventListener('click', function (e) {
     e.stopPropagation(); $('moreMenu').classList.toggle('hide');
   });

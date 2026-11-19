@@ -1076,3 +1076,10 @@ select.fselNative { position: absolute !important; width: 1px !important; height
 /* 戰隊聊天的請求卡：頭像可以點開個人頁 */
 .ccReq .ccWho { display: flex; align-items: center; gap: 8px; }
 .ccReq .ccWho .ccAv { width: 28px; height: 28px; font-size: 13px; }
+
+/* 電腦按鍵自訂 */
+.keyBinds { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin: 4px 0 8px; }
+.keyRow { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 8px 10px; font: inherit; font-size: 13px; color: var(--ink); background: var(--kraft-l); border: 2px solid var(--ink); cursor: pointer; text-align: left; }
+.keyRow b { font-weight: 900; padding: 1px 6px; background: var(--kraft); border: 1px solid var(--ink); white-space: nowrap; }
+.keyRow.on { background: var(--haz); }
+#pauseTag { margin: 0 0 4px; padding: 4px 8px; font-weight: 900; text-align: center; color: var(--ink); background: var(--haz); }
