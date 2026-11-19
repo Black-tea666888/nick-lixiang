@@ -1835,6 +1835,7 @@ function isTouchDev() { return ('ontouchstart' in window) || !!(window.matchMedi
 let quality = 'high', fpsT = 0, fpsN = 0, slowN = 0;
 function applyQuality() {
   if (!renderer) return;
+  document.body.classList.toggle('qHigh', quality === 'high');   // 高畫質：畫面加一點對比與飽和度、底片顆粒
   const short = Math.max(1, Math.min(window.innerWidth, window.innerHeight));
   const target = quality === 'low' ? 480 : quality === 'mid' ? 720 : 1080;
   renderer.setPixelRatio(Math.max(0.75, Math.min(window.devicePixelRatio || 1, target / short)));
@@ -2433,7 +2434,7 @@ RR.Game = {
     sun = new THREE.DirectionalLight(0xfff2d8, 0); sun.position.set(30, 60, 20); scene.add(sun);
     torch = new THREE.SpotLight(0xfff0cc, 2.2, 42, 0.62, 0.55, 1.2);
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    torch.shadow.mapSize.set(LITE ? 512 : 1024, LITE ? 512 : 1024); torch.shadow.camera.near = 0.3; torch.shadow.camera.far = 30; torch.shadow.bias = -0.0008;
+    torch.shadow.mapSize.set(LITE ? 512 : 2048, LITE ? 512 : 2048);   // 高畫質：手電筒影子更清楚 torch.shadow.camera.near = 0.3; torch.shadow.camera.far = 30; torch.shadow.bias = -0.0008;
     sun.shadow.mapSize.set(LITE ? 1024 : 2048, LITE ? 1024 : 2048); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02;
     { const sc = sun.shadow.camera; sc.left = -30; sc.right = 30; sc.top = 30; sc.bottom = -30; sc.near = 1; sc.far = 120; }
     sunTgt = new THREE.Object3D(); scene.add(sunTgt); sun.target = sunTgt;
@@ -2502,7 +2503,7 @@ RR.Game = {
   state: function () { const others = {}; view.players.forEach(function (p) { if (p.id !== myId) others[p.id] = [p.x, p.z, p.alive, !!(p.avatar && p.avatar.visible)]; }); return { phase: view.phase, alive: me.alive, x: me.x, z: me.z, others: others, spec: specId, players: view.players.size, items: view.items.length, monsters: view.monsters.filter(function (m) { return m.group.visible; }).length }; },
   setActive: function (b) {
     active = !!b;
-    document.body.classList.toggle('playing', active);
+    document.body.classList.toggle('playing', active); if (!active) document.body.classList.remove('allowPortrait');   // 每局重新提醒轉橫式
     $('hud').classList.toggle('hide', !active);
     if (!active) {
       if (miniInPlay) closeMini();

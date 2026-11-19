@@ -1026,3 +1026,16 @@ body.touch.playing:not(.lk-near):not(.btnedit) #locker { display: none !importan
 .gCat.has summary em { color: var(--ink); }
 .gCat > .cards { padding: 8px; background: var(--kraft-l); border-top: 2px solid var(--ink); margin: 0; }
 .gCatTag { display: inline-block; margin: 0 0 6px !important; padding: 2px 8px; font-size: 12px !important; font-weight: 900; color: var(--kraft-l); background: var(--ink); }
+
+/* 手機以橫式為主：對局中直拿手機時提示轉橫式 */
+.rotateHint { display: none; position: fixed; inset: 0; z-index: 95; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; background: rgba(17,20,23,.94); color: var(--chalk); }
+.rotateHint svg { width: 84px; height: 84px; fill: none; stroke: var(--haz); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; animation: rotHint 2.2s ease-in-out infinite; }
+.rotateHint b { font-size: 22px; font-weight: 900; }
+.rotateHint span { font-size: 14px; opacity: .8; max-width: 300px; line-height: 1.5; }
+.rotateHint .btn { width: auto; padding: 0 18px; margin-top: 10px; }
+@keyframes rotHint { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+@media (prefers-reduced-motion: reduce) { .rotateHint svg { animation: none; transform: rotate(-90deg); } }
+@media (orientation: portrait) { body.touch.playing:not(.allowPortrait) .rotateHint { display: flex; } }
+/* 高畫質：一點點調色與底片顆粒，讓畫面不那麼平 */
+body.qHigh.playing #c { filter: contrast(1.06) saturate(1.1); }
+body.qHigh.playing::after { content: ''; position: fixed; inset: 0; z-index: 4; pointer-events: none; opacity: .06; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
