@@ -34,7 +34,24 @@ service cloud.firestore {
       allow update: if signedIn() && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['score', 'count', 'wk', 'wscore', 'best'])
         && exists(/databases/$(database)/documents/clans/$(cid)/members/$(request.auth.uid))
         || (request.auth.uid == resource.data.owner && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deputies', 'owner'])
-            && (request.resource.data.owner == resource.data.owner || exists(/databases/$(database)/documents/clans/$(cid)/members/$(request.resource.data.owner)))));
+            && (request.resource.data.owner == resource.data.owner || exists(/databases/$(database)/documents/clans/$(cid)/members/$(request.resource.data.owner))))
+        // 戰隊設定：隊長、副隊長可以改描述、徽章、類型、最低等級、地區
+        || ((request.auth.uid == resource.data.owner || ('deputies' in resource.data && request.auth.uid in resource.data.deputies))
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['desc', 'badge', 'type', 'minLv', 'region'])
+            && (!('desc' in request.resource.data) || (request.resource.data.desc is string && request.resource.data.desc.size() <= 60))
+            && (!('type' in request.resource.data) || request.resource.data.type in ['open', 'approve', 'invite'])));
+      // 加入申請：本人建立／取消；隊長、副隊長看得到，可以批准（ok=true）或拒絕（刪除）
+      match /reqs/{uid} {
+        function staff() {
+          let c = get(/databases/$(database)/documents/clans/$(cid)).data;
+          return request.auth.uid == c.owner || ('deputies' in c && request.auth.uid in c.deputies);
+        }
+        allow read: if signedIn() && (request.auth.uid == uid || staff());
+        allow create: if signedIn() && request.auth.uid == uid && request.resource.data.ok == false
+          && request.resource.data.name is string && request.resource.data.name.size() <= 20;
+        allow update: if signedIn() && staff() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ok']) && request.resource.data.ok == true;
+        allow delete: if signedIn() && (request.auth.uid == uid || staff());
+      }
       match /members/{uid} {
         function canKick() {
           let c = get(/databases/$(database)/documents/clans/$(cid)).data;

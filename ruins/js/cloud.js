@@ -75,7 +75,20 @@ function push() {
   saveRef().set({ prog: JSON.stringify(H.prog()), seen: Date.now(), loadout: loadoutSnap(), trades: localJson('rr_trades', []), best: parseInt(localStorage.getItem('rr_best') || '0', 10) || 0 }).catch(fail());
 }
 
+const CLAN_BADGES = ['🛡️', '⚡', '🔥', '💀', '🦖', '🐺', '🦅', '⭐', '👑', '🎯', '☢️', '🌙'];
+/** 加入戰隊（共用）：檢查人數、等級，寫隊員文件、人數 +1、記到自己的資料 */
+function joinRef(ref, cd, cb) {
+  if ((cd.count | 0) >= 30) { cb({ code: 'full' }); return; }
+  if ((cd.minLv | 0) > (profile().lv | 0)) { cb({ code: 'clan-lv', need: cd.minLv | 0 }); return; }
+  return ref.collection('members').doc(uid).set({ name: profile().name, score: 0, joined: Date.now() }).then(function () {
+    return ref.update({ count: window.firebase.firestore.FieldValue.increment(1) });
+  }).then(function () {
+    me.clan = ref.id; me.clanTag = cd.tag; me.clanName = cd.name;
+    return userRef().set({ clan: ref.id, clanTag: cd.tag, clanName: cd.name }, { merge: true });
+  }).then(function () { cb(null, { id: ref.id, tag: cd.tag, name: cd.name }); }).catch(fail(cb));
+}
 const Cloud = {
+  CLAN_BADGES: CLAN_BADGES,
   REGIONS: REGIONS, MODES: MODES, weekId: weekId, TIERS: TIERS, tierOf: tierOf,
   ready: function () { return !!(db && uid); },
   /** 本機的同步資料改了（裝備、交易紀錄、最高紀錄）：記下時間並存雲端（main.js 的 lsSet 會呼叫） */
@@ -359,13 +372,14 @@ const Cloud = {
     if (name.length < 2) { cb({ code: 'bad-name' }); return; }
     if (me && me.clan) { cb({ code: 'in-clan' }); return; }
     const tag = rcode(4), ref = db.collection('clans').doc();
-    ref.set({ name: name, tag: tag, owner: uid, count: 1, score: 0, created: Date.now() }).then(function () {
+    ref.set({ name: name, tag: tag, owner: uid, count: 1, score: 0, created: Date.now(), desc: '', badge: 0, type: 'open', minLv: 0, region: 'all' }).then(function () {
       return ref.collection('members').doc(uid).set({ name: profile().name, score: 0, joined: Date.now() });
     }).then(function () {
       me.clan = ref.id; me.clanTag = tag; me.clanName = name;
       return userRef().set({ clan: ref.id, clanTag: tag, clanName: name }, { merge: true });
     }).then(function () { cb(null, { id: ref.id, tag: tag, name: name }); }).catch(fail(cb));
   },
+  /** 用戰隊代碼加入＝受邀請：不管戰隊類型都能加入，但等級要夠 */
   joinClan: function (tag, cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
     tag = String(tag || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
@@ -373,15 +387,75 @@ const Cloud = {
     if (me && me.clan) { cb({ code: 'in-clan' }); return; }
     db.collection('clans').where('tag', '==', tag).limit(1).get().then(function (q) {
       if (q.empty) { cb({ code: 'not-found' }); return; }
-      const c = q.docs[0], cd = c.data();
-      if ((cd.count | 0) >= 30) { cb({ code: 'full' }); return; }
-      return c.ref.collection('members').doc(uid).set({ name: profile().name, score: 0, joined: Date.now() }).then(function () {
-        return c.ref.update({ count: window.firebase.firestore.FieldValue.increment(1) });
-      }).then(function () {
-        me.clan = c.id; me.clanTag = cd.tag; me.clanName = cd.name;
-        return userRef().set({ clan: c.id, clanTag: cd.tag, clanName: cd.name }, { merge: true });
-      }).then(function () { cb(null, { id: c.id, tag: cd.tag, name: cd.name }); });
+      return joinRef(q.docs[0].ref, q.docs[0].data(), cb);
     }).catch(fail(cb));
+  },
+  /** 從戰隊列表加入：只有「開放加入」的戰隊可以直接加入 */
+  joinOpenClan: function (id, cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    if (me && me.clan) { cb({ code: 'in-clan' }); return; }
+    const ref = db.collection('clans').doc(id);
+    ref.get().then(function (s) {
+      if (!s.exists) { cb({ code: 'gone' }); return; }
+      const cd = s.data(); if ((cd.type || 'open') !== 'open') { cb({ code: 'clan-closed' }); return; }
+      return joinRef(ref, cd, cb);
+    }).catch(fail(cb));
+  },
+  /** 戰隊設定（隊長、副隊長）：描述、徽章、類型、最低等級、地區 */
+  clanSettings: function (o, cb) {
+    if (!Cloud.ready() || !me || !me.clan) { cb({ code: 'no-clan' }); return; }
+    const d = { desc: clean(o.desc, 60), badge: Math.max(0, Math.min(CLAN_BADGES.length - 1, o.badge | 0)), type: ['open', 'approve', 'invite'].indexOf(o.type) >= 0 ? o.type : 'open',
+      minLv: Math.max(0, Math.min(100, (o.minLv | 0) - (o.minLv | 0) % 5)), region: ['all', 'tw', 'hk'].indexOf(o.region) >= 0 ? o.region : 'all' };
+    db.collection('clans').doc(me.clan).update(d).then(function () { cb(null); }).catch(fail(cb));
+  },
+  /** 公開的戰隊列表（依累計積分），給沒戰隊的人瀏覽 */
+  browseClans: function (cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    db.collection('clans').orderBy('score', 'desc').limit(40).get().then(function (q) {
+      const rows = []; q.forEach(function (d) { const x = d.data(); x.id = d.id; if ((x.count | 0) > 0) rows.push(x); }); cb(null, rows);
+    }).catch(fail(cb));
+  },
+  /** 申請加入「需要批准」的戰隊：寫一筆申請，隊長／副隊長批准後，下次打開戰隊頁會自動加入 */
+  applyClan: function (id, cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    if (me && me.clan) { cb({ code: 'in-clan' }); return; }
+    const p = profile();
+    db.collection('clans').doc(id).collection('reqs').doc(uid).set({ name: p.name, lv: p.lv | 0, t: Date.now(), ok: false }).then(function () {
+      me.pendClan = id; return userRef().set({ pendClan: id }, { merge: true });
+    }).then(function () { cb(null); }).catch(fail(cb));
+  },
+  cancelApply: function (cb) {
+    if (!Cloud.ready() || !me || !me.pendClan) { if (cb) cb(null); return; }
+    const id = me.pendClan; me.pendClan = '';
+    db.collection('clans').doc(id).collection('reqs').doc(uid).delete().catch(function () {});
+    userRef().set({ pendClan: '' }, { merge: true }).then(function () { if (cb) cb(null); }).catch(fail(cb));
+  },
+  /** 看自己的申請：被批准就加入；被拒絕（申請不見了）就清掉。cb(err, { state: 'none'|'wait'|'joined'|'rejected', name }) */
+  checkApply: function (cb) {
+    if (!Cloud.ready() || !me || !me.pendClan || me.clan) { cb(null, { state: 'none' }); return; }
+    const ref = db.collection('clans').doc(me.pendClan);
+    Promise.all([ref.get(), ref.collection('reqs').doc(uid).get()]).then(function (r) {
+      const cd = r[0].exists ? r[0].data() : null, rq = r[1].exists ? r[1].data() : null;
+      if (!cd || !rq) { me.pendClan = ''; userRef().set({ pendClan: '' }, { merge: true }).catch(fail()); cb(null, { state: 'rejected', name: cd ? cd.name : '' }); return; }
+      if (!rq.ok) { cb(null, { state: 'wait', name: cd.name }); return; }
+      return joinRef(ref, cd, function (err, c) {
+        if (err) { cb(err); return; }
+        ref.collection('reqs').doc(uid).delete().catch(function () {}); me.pendClan = ''; userRef().set({ pendClan: '' }, { merge: true }).catch(fail());
+        cb(null, { state: 'joined', name: c.name });
+      });
+    }).catch(fail(cb));
+  },
+  /** 隊長／副隊長看加入申請 */
+  clanReqs: function (cb) {
+    if (!Cloud.ready() || !me || !me.clan) { cb(null, []); return; }
+    db.collection('clans').doc(me.clan).collection('reqs').get().then(function (q) {
+      const rows = []; q.forEach(function (d) { const x = d.data(); x.uid = d.id; if (!x.ok) rows.push(x); }); cb(null, rows);
+    }).catch(fail(cb));
+  },
+  answerReq: function (target, ok, cb) {
+    if (!Cloud.ready() || !me || !me.clan) { cb({ code: 'no-clan' }); return; }
+    const r = db.collection('clans').doc(me.clan).collection('reqs').doc(target);
+    (ok ? r.update({ ok: true }) : r.delete()).then(function () { cb(null); }).catch(fail(cb));
   },
   /** 隊長設定或取消副隊長（寫在戰隊文件的 deputies 陣列裡） */
   setDeputy: function (target, on, cb) {
@@ -506,7 +580,7 @@ const Cloud = {
   message: function (e) {
     const c = e && e.code;
     return { offline: '雲端功能要先登入（Google 或訪客）並連上網路。', 'bad-code': '代碼格式不對。', self: '這是你自己的代碼。', 'not-found': '找不到這個代碼。',
-      'bad-name': '名稱至少 2 個字。', 'in-clan': '你已經在一個戰隊裡，請先退出。', full: '這個戰隊已滿（30 人）。', 'no-clan': '你不在任何戰隊。', gone: '這則請求已經不見了。', 'own-req': '不能捐給自己。', 'req-full': '這則請求已經收滿了。', 'give-max': '每則請求你最多捐 30 金幣。',
+      'bad-name': '名稱至少 2 個字。', 'in-clan': '你已經在一個戰隊裡，請先退出。', full: '這個戰隊已滿（30 人）。', 'clan-closed': '這個戰隊不開放直接加入。', 'clan-lv': '你的等級還不夠加入這個戰隊。', 'no-clan': '你不在任何戰隊。', gone: '這則請求已經不見了。', 'own-req': '不能捐給自己。', 'req-full': '這則請求已經收滿了。', 'give-max': '每則請求你最多捐 30 金幣。',
       'permission-denied': '雲端拒絕了這個操作：請確認 Firestore 的安全規則已經發布。', unavailable: '連不到雲端，請檢查網路。' }[c] || ('雲端錯誤：' + (c || (e && e.message) || '未知'));
   }
 };
