@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v170', items: ['AR 模式移到單人遊玩後面'] };
+const UPD = { v: 'v171', items: ['修正同一個人同時出現在台灣區和香港區：賽季頁的地區選單只用來切換查看，不會改你的地區', '賽季新增「全區」排名', '槍的標題拿掉「全部免費」'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1347,6 +1347,7 @@ function socRows(rows, unit, emptyText) {
   });
 }
 function scoreUnit(mode) { return function (v) { return mode === 'ar' ? v + ' 隻' : mode === 'br' ? v + ' 勝' : mode === 'coop' ? '第 ' + v + ' 天' : '第 ' + v + ' 關'; }; }
+let socRegion = null;   // 賽季頁正在看的地區（all／tw／hk），null＝自己的地區
 function renderSocial() {
   const b = $('socBody'), C = RR.Cloud; b.textContent = '';
   Array.prototype.forEach.call(document.querySelectorAll('#socTabs button'), function (x) { x.classList.toggle('on', x.dataset.tab === socTab); });
@@ -1395,13 +1396,15 @@ function renderSocial() {
   } else if (socTab === 'season') {
     if (socMode === 'mix') socMode = 'coop';
     const p = prog(), rk = ['tw', 'hk'][p.region];
+    // 下拉選單只切換「看哪一區」，不會改你自己的地區（地區在設定裡改）
+    if (socRegion == null) socRegion = rk;
     const row = mk('div', 'soc-row');
-    row.appendChild(socSelect(C.REGIONS.map(function (n, i) { return [String(i), n + '區']; }), String(p.region), function (v) { const q = prog(); q.region = +v; progSave(q); renderSocial(); }));
+    row.appendChild(socSelect([['all', '全區']].concat(C.REGIONS.map(function (n, i) { return [['tw', 'hk'][i], n + '區' + (i === p.region ? '（我的）' : '')]; })), socRegion, function (v) { socRegion = v; renderSocial(); }));
     row.appendChild(modeSel); b.appendChild(row);
-    socNote('每週一換季。這裡是你所在地區本週的排名；上週前 10 名可以領金幣（第 1 名 300、第 2～3 名 200、第 4～10 名 100）。');
+    socNote('每週一換季。你目前在' + C.REGIONS[p.region] + '區；上週在自己地區前 10 名可以領金幣（第 1 名 300、第 2～3 名 200、第 4～10 名 100）。');
     const claim = mk('div'); b.appendChild(claim);
     b.appendChild(mk('p', 'note wait', '讀取中…'));
-    C.top(socMode, rk + '_w' + C.weekId(), guard(function (rows) { socRows(rows, scoreUnit(socMode), '本週這個地區還沒有人上榜。'); }));
+    C.top(socMode, (socRegion === 'all' ? '' : socRegion + '_') + 'w' + C.weekId(), guard(function (rows) { socRows(rows, scoreUnit(socMode), socRegion === 'all' ? '本週還沒有人上榜。' : '本週這個地區還沒有人上榜。'); }));
     const lastKey = socMode + ':' + rk + ':' + C.weekId(-1);
     if ((p.claimed || []).indexOf(lastKey) < 0) C.top(socMode, rk + '_w' + C.weekId(-1), function (err, rows) {
       if (err || renderSocial.token !== token) return;
@@ -1893,7 +1896,7 @@ function bind() {
     });
   });
   $('tutNext').addEventListener('click', function () { if (tutI < TUT.length - 1) tutShow(tutI + 1); else tutDone(); });
-  Array.prototype.forEach.call(document.querySelectorAll('#regionAsk [data-r]'), function (b) { b.addEventListener('click', function () { const q = prog(); q.region = +b.dataset.r; progSave(q); lsSet('rr_region', '1'); $('regionAsk').classList.add('hide'); }); });
+  Array.prototype.forEach.call(document.querySelectorAll('#regionAsk [data-r]'), function (b) { b.addEventListener('click', function () { const q = prog(); q.region = +b.dataset.r; progSave(q); socRegion = null; if (RR.Cloud) setTimeout(function () { RR.Cloud.cleanRegions(); }, 4000); lsSet('rr_region', '1'); $('regionAsk').classList.add('hide'); }); });
   $('tutSkip').addEventListener('click', tutDone);
   $('avatar').addEventListener('click', function () { statsOpen(); });
   $('stAva').addEventListener('click', function () { avaDraw(); $('avaPick').classList.remove('hide'); });
