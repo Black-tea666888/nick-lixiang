@@ -643,7 +643,7 @@ function buildLevel() {
     scene.remove(level);
     level.traverse(function (o) { if (o.geometry && !o.userData.keep) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
   }
-  level = new THREE.Group(); builtMap = W.mapIndex; solids = []; wallIdx = {}; brokenVis = {}; cellInst = {};
+  level = new THREE.Group(); lockerMeshes = []; builtMap = W.mapIndex; solids = []; wallIdx = {}; brokenVis = {}; cellInst = {};
   const COLS = W.COLS, ROWS = W.ROWS, MAP = W.MAP, T = W.theme, VAN = W.VAN;
   // 光線：室內也調亮；開放場景（海邊、城市、太空站）沒有天花板，有天空與陽光
   const open = !!T.open, br = T.bright || 1.5, sk = SKY[T.style], skyC = open ? (sk ? sk[1] : T.sky) : 0x0a0f0d;
@@ -824,7 +824,7 @@ function buildLevel() {
       part(new THREE.BoxGeometry(0.3, 0.03, 0.02), lineM, -0.25, 1.75, 0.31), part(new THREE.BoxGeometry(0.3, 0.03, 0.02), lineM, 0.25, 1.75, 0.31),
       part(new THREE.BoxGeometry(0.04, 0.14, 0.04), lineM, -0.08, 1.05, 0.32), part(new THREE.BoxGeometry(0.04, 0.14, 0.04), lineM, 0.08, 1.05, 0.32),
       part(new THREE.BoxGeometry(0.22, 0.08, 0.02), tagM, 0, 2.22, 0.2));
-    lg.position.set(k[0], 0, k[1]); lg.rotation.y = k[2]; level.add(lg); solids.push([k[0], k[1], 0.5, 2.1]);
+    lg.position.set(k[0], 0, k[1]); lg.rotation.y = k[2]; level.add(lg); lockerMeshes.push(lg); solids.push([k[0], k[1], 0.5, 2.1]);
   });
   // 擺設：木箱、鐵桶貼牆放；天花板燈條（固定種子，每張地圖每次都一樣）
   let seed = 1234 + W.mapIndex * 77; const rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -1294,7 +1294,7 @@ function shoot() {
   if (RR.Game.onShoot) RR.Game.onShoot(Math.round(me.yaw * 100) / 100);
 }
 let zoneMesh = null, outT = 0, poisonT = 0;
-let lkSend = undefined, lkPos = null;   // 櫃子：要送給房主的請求（-1＝出來）、躲在櫃子裡時的位置
+let lkSend = undefined, lkPos = null, lkIdx = -1, lockerMeshes = [];   // 櫃子：要送給房主的請求（-1＝出來）、躲在櫃子裡時的位置
 function takeLk() { const v = lkSend; lkSend = undefined; return v; }
 // 按「櫃」：靠近櫃子就進去（先在本機鎖定位置，房主回應若拒絕，下一次快照會讓你出來）；躲著再按一次就出來
 function lockerPress() {
@@ -1303,7 +1303,8 @@ function lockerPress() {
   let best = -1, bd = 1.8;
   (W.lockers || []).forEach(function (k, i) { const d = Math.hypot(k[0] - me.x, k[1] - me.z); if (d < bd) { bd = d; best = i; } });
   if (best < 0) { toast('靠近櫃子再按'); return; }
-  lkSend = best; lkPos = [W.lockers[best][0], W.lockers[best][1]]; me.inLk = true;
+  lkSend = best; lkPos = [W.lockers[best][0], W.lockers[best][1]]; me.inLk = true; lkIdx = best;
+  me.yaw = (W.lockers[best][2] || 0) + Math.PI; me.pitch = 0;   // 躲進去後面向櫃門，從門縫往外看
 }
 // 出來：在櫃子旁找一個沒被擋住的位置
 function lkExitSpot() {
@@ -2022,6 +2023,13 @@ function interpolate(dt, now) {
 function atmosphere(L, dt) {
   const hidNow = me.alive && !me.running && (W.lockers || []).some(function (q) { return Math.hypot(q[0] - me.x, q[1] - me.z) < 1.4; });
   $('hideTag').classList.toggle('hide', !hidNow);
+  // 「櫃」鍵只在櫃子旁邊（或已經躲在裡面）才出現；躲著時改成「出」
+  const lkNear = me.alive && (me.inLk || (W.lockers || []).some(function (q) { return Math.hypot(q[0] - me.x, q[1] - me.z) < 1.8; }));
+  document.body.classList.toggle('lk-near', !!lkNear);
+  const lb = $('locker'); if (lb) { const t = me.inLk ? '出' : '櫃'; if (lb.textContent !== t) lb.textContent = t; }
+  $('lkView').classList.toggle('hide', !me.inLk);
+  if (!me.inLk) lkIdx = -1;
+  lockerMeshes.forEach(function (g, i) { g.visible = i !== lkIdx; });   // 躲在裡面時隱藏自己那個櫃子，才不會看到櫃子內壁
   let dist = 1e9, chase = false;
   for (let i = 0; i < view.monsters.length; i++) {
     const m = view.monsters[i];
