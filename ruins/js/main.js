@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v165', items: ['拿掉換彈鍵：子彈打完會自動換彈，槍鍵上會顯示換彈中'] };
+const UPD = { v: 'v166', items: ['角色全部改成寫實比例的士兵：頭盔、護目鏡、防彈背心、手套、軍靴，手腳有關節', '恐龍、貓貓、南瓜頭等角色改成真人穿主題裝備（例如貓耳頭盔、南瓜面罩、恐龍背脊）', '隊伍色改顯示在防彈背心上'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
