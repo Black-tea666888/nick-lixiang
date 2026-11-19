@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v214', items: ['休閒模式的說明文字加上賽車'] };
+const UPD = { v: 'v215', items: ['交易所改成拍賣：可以出價，結束時最高價得標'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -462,7 +462,7 @@ function marketOpen() {
   mkFillSelect();
   const C = RR.Cloud;
   if (!C || !C.ready()) { $('wcLog').textContent = ''; $('wcLog').appendChild(mk('p', 'ccEmpty', '交易所要先登入（Google、Apple、LINE、Facebook 或訪客）並連上網路。')); $('mkList').textContent = ''; $('mkList').appendChild(mk('p', 'ccEmpty', '交易所要先登入並連上網路才能看掛單。')); tmNote('快速組隊要先登入並連上網路。'); return; }
-  if (wcOff) wcOff(); if (mkOff) mkOff();
+  if (wcOff) wcOff(); if (mkOff) mkOff(); clearInterval(mkTick); mkTick = setInterval(function () { if (mkTab === 'shop') mkDraw(); }, 5000);
   wcOff = C.worldChat(function (err, rows) { if (err) { mtoast(C.message(err), 'warn'); return; } wcRows = rows; wcDraw(); });
   mkOff = C.marketWatch(function (err, rows) { if (err) { mtoast(C.message(err), 'warn'); return; } mkRows = rows; mkDraw(); });
   if (tmOff) tmOff(); tmOff = C.roomsWatch(function (err, rows) { if (err) { tmNote(C.message(err)); return; } tmRows = rows; tmDraw(); });
@@ -476,11 +476,11 @@ function marketOpen() {
   mkFillSelect();
 }
 let clanFrom = null, pickFrom = null;
-function marketClose(keep) { if (wcOff) wcOff(); if (mkOff) mkOff(); if (tmOff) tmOff(); wcOff = mkOff = tmOff = null; bannerHide(); if (!keep) showMenu(); }
+function marketClose(keep) { clearInterval(mkTick); if (wcOff) wcOff(); if (mkOff) mkOff(); if (tmOff) tmOff(); wcOff = mkOff = tmOff = null; bannerHide(); if (!keep) showMenu(); }
 /* 快速組隊：列出別人公開的房間，點「加入」或「快速加入」直接進房 */
 let tmOff = null, tmRows = [];
 function tmNote(t) { const l = $('tmList'); l.textContent = ''; l.appendChild(mk('p', 'ccEmpty', t)); }
-function tmJoin(code) { if (wcOff) wcOff(); if (mkOff) mkOff(); if (tmOff) tmOff(); wcOff = mkOff = tmOff = null; $('scrMarket').classList.add('hide'); $('codeInput').value = code; joinRoom(); }
+function tmJoin(code) { clearInterval(mkTick); if (wcOff) wcOff(); if (mkOff) mkOff(); if (tmOff) tmOff(); wcOff = mkOff = tmOff = null; $('scrMarket').classList.add('hide'); $('codeInput').value = code; joinRoom(); }
 function tmDraw() {
   const l = $('tmList'); l.textContent = '';
   if (!tmRows.length) { tmNote('目前沒有公開的房間。按「建立房間」開一個，別人就能快速加入。'); return; }
@@ -523,44 +523,67 @@ function wcDraw() {
     const img = mine ? ls('rr_avatar_img') : '';
     if (img) { av.textContent = ''; av.style.background = 'center / cover no-repeat url(' + img + ')'; } else av.style.background = (mine && ls('rr_avatar')) || ['#f0c040', '#6ad8ff', '#ff8a6a', '#9be564', '#c9a0ff'][((m.name || '').charCodeAt(0) || 0) % 5];
     head.appendChild(mk('b', null, mine ? '你' : (m.name || '玩家'))); if (m.lv) head.appendChild(mk('i', 'wcLv', 'Lv.' + m.lv));
-    body.appendChild(head); body.appendChild(mk('div', 'wcText' + (/^【掛單】/.test(m.text) ? ' deal' : ''), m.text));
+    body.appendChild(head); body.appendChild(mk('div', 'wcText' + (/^【(掛單|拍賣)】/.test(m.text) ? ' deal' : ''), m.text));
     statsLink(av, m.uid, m.name); statsLink(head, m.uid, m.name);
     r.appendChild(av); r.appendChild(body); log.appendChild(r);
   });
   log.scrollTop = log.scrollHeight;
 }
+/** 拍賣列表：每 5 秒重畫一次，讓倒數與按鈕狀態跟上時間 */
+let mkTick = null;
 function mkDraw() {
-  const my = RR.Cloud.uid(), list = $('mkList'), p = prog();
+  const my = RR.Cloud.uid(), list = $('mkList'), p = prog(), now = Date.now();
   list.textContent = '';
-  if (!mkRows.length) { list.appendChild(mk('p', 'ccEmpty', '目前沒有人掛單。用下面的欄位把你多的造型、配件或寶石賣掉。')); tradeLogDraw(list); return; }
-  mkRows.forEach(function (o) {
-    const mine = o.seller === my, card = mk('div', 'ccReq' + (mine ? ' me' : ''));
-    card.appendChild(mk('div', 'ccWho', (mine ? '你' : o.sellerName) + ' 在賣'));
+  const shown = mkRows.filter(function (o) { return o.seller === my || o.endAt; });
+  if (!shown.length) { list.appendChild(mk('p', 'ccEmpty', '目前沒有拍賣。用下面的欄位把你多的造型、配件或寶石拿出來拍。')); tradeLogDraw(list); return; }
+  shown.forEach(function (o) {
+    const mine = o.seller === my, ended = !!o.endAt && now >= o.endAt, won = o.bidder === my;
+    const card = mk('div', 'ccReq' + (mine ? ' me' : ''));
+    card.appendChild(mk('div', 'ccWho', (mine ? '你' : o.sellerName) + ' 在拍賣'));
     const body = mk('div', 'ccBody'), info = mk('div', 'mkInfo');
-    info.appendChild(mk('b', null, o.label)); info.appendChild(mk('span', null, o.price + ' 金幣')); body.appendChild(info);
+    info.appendChild(mk('b', null, o.label));
+    info.appendChild(mk('span', null, o.cur ? '最高 ' + o.cur + ' 金幣' + (o.bidderName ? '（' + o.bidderName + '）' : '') : '起標 ' + o.price + ' 金幣'));
+    info.appendChild(mk('small', null, !o.endAt ? '舊版掛單，請下架' : ended ? '已結束' : '剩 ' + hm(o.endAt - now)));
+    body.appendChild(info);
     let btn;
     if (mine) {
-      btn = mk('button', 'btn', '下架');
+      const canCancel = !o.bidder || now >= o.endAt + 86400000;
+      btn = mk('button', 'btn', canCancel ? '下架' : ended ? '等待得標者領取' : '已有人出價');
+      btn.disabled = !canCancel;
       btn.addEventListener('click', function () {
         btn.disabled = true;
         RR.Cloud.marketCancel(o.id, function (err, d) {
-          if (err) { mtoast(err.code === 'sold' ? '已經有人買走了' : RR.Cloud.message(err), 'warn'); btn.disabled = false; return; }
+          if (err) { mtoast(err.code === 'sold' ? '已經結束了' : RR.Cloud.message(err), 'warn'); btn.disabled = false; return; }
           const q = prog(); tradeGive(q, d.kind, d.item); progSave(q); pushEquip(myEquip(q)); mkFillSelect();
           tradeLogAdd('cancel', d.label, 0); bannerShow('已下架：' + d.label, '物品已還給你'); mkDraw();
         });
       });
+    } else if (ended) {
+      btn = mk('button', 'btn' + (won ? ' primary' : ''), won ? '領取' : '已結束');
+      btn.disabled = !won;
+      btn.addEventListener('click', function () {
+        const q0 = prog();
+        if (!tradeCanGet(q0, o.kind, o.item || {})) { mtoast('你已經有這件了，不能領取', 'warn'); return; }
+        if (q0.coins < o.cur) { mtoast('金幣不夠（需要 ' + o.cur + '），不能領取', 'warn'); return; }
+        btn.disabled = true;
+        RR.Cloud.marketClaim(o.id, function (err, d) {
+          if (err) { mtoast(err.code === 'sold' ? '這件已經不是你的得標了' : RR.Cloud.message(err), 'warn'); btn.disabled = false; return; }
+          const q = prog(); q.coins = Math.max(0, q.coins - (d.cur | 0)); tradeGive(q, d.kind, d.item); progSave(q);
+          RR.Cloud.marketGot(o.id); mkCoins(); mkFillSelect();
+          tradeLogAdd('buy', d.label, d.cur | 0, d.sellerName); bannerShow('得標：' + d.label, '花費 ' + (d.cur | 0) + ' 金幣，已放進你的收藏');
+        });
+      });
     } else {
-      const ok = tradeCanGet(p, o.kind, o.item || {}), rich = p.coins >= o.price;
-      btn = mk('button', 'btn' + (ok && rich ? ' primary' : ''), !ok ? (o.kind === 'gem' ? '已滿級' : '已擁有') : rich ? '買' : '金幣不夠');
+      const next = RR.Cloud.nextBid(o), ok = tradeCanGet(p, o.kind, o.item || {}), rich = p.coins >= next;
+      btn = mk('button', 'btn' + (ok && rich ? ' primary' : ''), !ok ? (o.kind === 'gem' ? '已滿級' : '已擁有') : rich ? '出價 ' + next : '金幣不夠');
       btn.disabled = !ok || !rich;
       btn.addEventListener('click', function () {
-        ask('用 ' + o.price + ' 金幣買' + o.label + '？', function () {
+        ask('出價 ' + next + ' 金幣買' + o.label + '？拍賣結束時你是最高價就得標。', function () {
           btn.disabled = true;
-          RR.Cloud.marketBuy(o.id, function (err, d) {
-            if (err) { mtoast(err.code === 'sold' || err.code === 'gone' ? '慢了一步，已經被買走了' : RR.Cloud.message(err), 'warn'); btn.disabled = false; return; }
-            const q = prog(); q.coins = Math.max(0, q.coins - (d.price | 0)); if (tradeCanGet(q, d.kind, d.item)) tradeGive(q, d.kind, d.item); progSave(q);
-            RR.Cloud.marketGot(o.id); mkCoins(); mkFillSelect();
-            tradeLogAdd('buy', d.label, d.price, o.sellerName); bannerShow('交易成功：買到 ' + d.label, '花費 ' + (d.price | 0) + ' 金幣，已放進你的收藏');
+          RR.Cloud.marketBid(o.id, next, function (err) {
+            btn.disabled = false;
+            if (err) { mtoast(err.code === 'low' || err.code === 'ended' || err.code === 'gone' ? (err.code === 'low' ? '已經有人出更高的價，請重新出價' : '這個拍賣已經結束') : RR.Cloud.message(err), 'warn'); return; }
+            mtoast('已出價 ' + next + ' 金幣');
           });
         });
       });
@@ -570,7 +593,7 @@ function mkDraw() {
   tradeLogDraw(list);
 }
 /* 交易紀錄（存在本機，最近 50 筆）與成功橫幅 */
-const TRADE_TXT = { buy: '買入', sell: '賣出', post: '掛單', cancel: '下架' };
+const TRADE_TXT = { buy: '得標', sell: '賣出', post: '開拍', cancel: '下架' };
 function tradeLogList() { try { return JSON.parse(localStorage.getItem('rr_trades') || '[]'); } catch (e) { return []; } }
 function tradeLogAdd(k, label, price, who) {
   lsSet('rr_trades', JSON.stringify([{ t: Date.now(), k: k, label: label || '', price: price | 0, who: who || '' }].concat(tradeLogList()).slice(0, 50)));
@@ -583,7 +606,7 @@ function tradeLogDraw(list) {
     const d = new Date(x.t), tm = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     const r = mk('div', 'srow'), nm = mk('span', 'nm', TRADE_TXT[x.k] + ' ' + x.label + (x.who ? '（' + x.who + '）' : ''));
     nm.appendChild(mk('small', null, '　' + tm)); r.appendChild(nm);
-    r.appendChild(mk('span', 'sc', x.k === 'sell' ? '+' + x.price : x.k === 'buy' ? '-' + x.price : x.k === 'post' ? x.price + ' 金幣' : ''));
+    r.appendChild(mk('span', 'sc', x.k === 'sell' ? '+' + x.price : x.k === 'buy' ? '-' + x.price : x.k === 'post' ? '起標 ' + x.price + ' 金幣' : ''));
     list.appendChild(r);
   });
 }
@@ -599,20 +622,20 @@ function mkFillSelect() {
   if (!list.length) { const op = mk('option', null, '沒有可以賣的東西'); op.value = ''; sel.appendChild(op); return; }
   list.forEach(function (t, k) { const op = mk('option', null, tradeLabel(t.kind, t.item)); op.value = String(k); sel.appendChild(op); });
 }
-/** 掛單價格上限（同時要與 firestore.rules 的 price 上限一致） */
+/** 起標價上限（同時要與 firestore.rules 的 price 上限一致） */
 const MARKET_MAX = 1000;
 function mkPost() {
   const C = RR.Cloud; if (!C || !C.ready()) { mtoast('要先登入並連上網路', 'warn'); return; }
-  const list = tradeables(prog()), t = list[+$('mkItem').value], price = Math.floor(+$('mkPrice').value);
-  if (!t) { mtoast('先選要賣的東西', 'warn'); return; }
-  if (!(price >= 1 && price <= MARKET_MAX)) { mtoast('價格要在 1～' + MARKET_MAX + ' 金幣之間', 'warn'); return; }
+  const list = tradeables(prog()), t = list[+$('mkItem').value], price = Math.floor(+$('mkPrice').value), mins = +$('mkDur').value || 30;
+  if (!t) { mtoast('先選要拍的東西', 'warn'); return; }
+  if (!(price >= 1 && price <= MARKET_MAX)) { mtoast('起標價要在 1～' + MARKET_MAX + ' 金幣之間', 'warn'); return; }
   const label = tradeLabel(t.kind, t.item), q = prog();
   if (!tradeHas(q, t.kind, t.item)) return;
   tradeTake(q, t.kind, t.item); progSave(q); pushEquip(myEquip(q));   // 先扣掉，失敗再還
-  C.marketPost(t.kind, t.item, label, price, function (err) {
+  C.marketPost(t.kind, t.item, label, price, Date.now() + mins * 60000, function (err) {
     if (err) { const q2 = prog(); tradeGive(q2, t.kind, t.item); progSave(q2); mtoast(C.message(err), 'warn'); mkFillSelect(); return; }
-    $('mkPrice').value = ''; mkFillSelect(); tradeLogAdd('post', label, price); bannerShow('掛單成功：' + label, price + ' 金幣，等待買家'); mkDraw();
-    C.worldSay('【掛單】' + label + '，' + price + ' 金幣，到交易所的「掛單」買', function () {});
+    $('mkPrice').value = ''; mkFillSelect(); tradeLogAdd('post', label, price); bannerShow('開拍成功：' + label, '起標 ' + price + ' 金幣，' + hm(mins * 60000) + '後結束'); mkDraw();
+    C.worldSay('【拍賣】' + label + '，起標 ' + price + ' 金幣，' + hm(mins * 60000) + '後結束，到交易所的「交易所」分頁出價', function () {});
   });
 }
 

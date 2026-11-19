@@ -236,34 +236,22 @@ const Cloud = {
     text = clean(text, 80); if (!text) { cb(null); return; }
     db.collection('world').add({ uid: uid, name: profile().name, lv: profile().lv | 0, text: text, t: Date.now() }).then(function () { cb(null); }).catch(fail(cb));
   },
-  /** 即時訂閱交易所的掛單（open 的最多 80 筆，新到舊） */
+  /** 即時訂閱交易所的拍賣（open 的最多 80 筆，結束時間早的在前） */
   marketWatch: function (onRows) {
     if (!Cloud.ready()) { onRows({ code: 'offline' }); return function () {}; }
     return db.collection('market').where('status', '==', 'open').limit(80).onSnapshot(function (q) {
       const rows = []; q.forEach(function (d) { const x = d.data(); x.id = d.id; rows.push(x); });
-      rows.sort(function (a, b) { return (b.t || 0) - (a.t || 0); }); onRows(null, rows);
+      rows.sort(function (a, b) { return (a.endAt || 0) - (b.endAt || 0); }); onRows(null, rows);
     }, fail(onRows));
   },
-  /** 掛單：item = { cat, i }（造型）、{ i }（配件或寶石）；呼叫前本機要先把東西扣掉 */
-  marketPost: function (kind, item, label, price, cb) {
+  /** 拍賣：item = { cat, i }（造型）、{ i }（配件或寶石）；呼叫前本機要先把東西扣掉。price＝起標價，endAt＝結束時間（毫秒） */
+  marketPost: function (kind, item, label, price, endAt, cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
-    db.collection('market').add({ seller: uid, sellerName: profile().name, kind: kind, item: item, label: clean(label, 30), price: Math.floor(price), status: 'open', t: Date.now() })
+    db.collection('market').add({ seller: uid, sellerName: profile().name, kind: kind, item: item, label: clean(label, 30), price: Math.floor(price), cur: 0, endAt: endAt, status: 'open', t: Date.now() })
       .then(function (r) { cb(null, r.id); }).catch(fail(cb));
   },
-  /** 下架：成功才把東西還給賣家 */
-  marketCancel: function (id, cb) {
-    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
-    const ref = db.collection('market').doc(id);
-    db.runTransaction(function (tx) {
-      return tx.get(ref).then(function (s) {
-        if (!s.exists || s.data().seller !== uid) throw { code: 'gone' };
-        if (s.data().status !== 'open') throw { code: 'sold' };
-        tx.update(ref, { status: 'cancel' }); return s.data();
-      });
-    }).then(function (d) { ref.delete().catch(function () {}); cb(null, d); }).catch(fail(cb));
-  },
-  /** 購買：交易成功（搶到）才回傳掛單內容，呼叫端再扣金幣、給東西，最後 marketGot 標記已收貨 */
-  marketBuy: function (id, cb) {
+  /** 出價：金額必須達到下一口價（起標價或目前最高價加價）；結束前才能出價，不能標自己的 */
+  marketBid: function (id, amount, cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
     const ref = db.collection('market').doc(id);
     db.runTransaction(function (tx) {
@@ -271,7 +259,38 @@ const Cloud = {
         if (!s.exists) throw { code: 'gone' };
         const d = s.data();
         if (d.seller === uid) throw { code: 'own-offer' };
+        if (d.status !== 'open' || Date.now() >= d.endAt) throw { code: 'ended' };
+        if (amount < Cloud.nextBid(d)) throw { code: 'low' };
+        tx.update(ref, { cur: amount, bidder: uid, bidderName: profile().name, bidT: Date.now() }); return d;
+      });
+    }).then(function () { cb(null); }).catch(fail(cb));
+  },
+  /** 下一口價：沒人出價就是起標價，有人就加 10%（至少 1 金幣） */
+  nextBid: function (d) { const c = d.cur | 0; return c ? c + Math.max(1, Math.floor(c * 0.1)) : d.price | 0; },
+  /** 下架：沒人出價、或已結束超過 24 小時還沒人領取，才能下架拿回東西 */
+  marketCancel: function (id, cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    const ref = db.collection('market').doc(id);
+    db.runTransaction(function (tx) {
+      return tx.get(ref).then(function (s) {
+        if (!s.exists || s.data().seller !== uid) throw { code: 'gone' };
+        const d = s.data();
         if (d.status !== 'open') throw { code: 'sold' };
+        if (d.bidder && Date.now() < d.endAt + 86400000) throw { code: 'bid' };
+        tx.update(ref, { status: 'cancel' }); return d;
+      });
+    }).then(function (d) { ref.delete().catch(function () {}); cb(null, d); }).catch(fail(cb));
+  },
+  /** 領取：拍賣結束後，最高出價者領取，回傳內容與成交價，呼叫端再扣金幣、給東西，最後 marketGot */
+  marketClaim: function (id, cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    const ref = db.collection('market').doc(id);
+    db.runTransaction(function (tx) {
+      return tx.get(ref).then(function (s) {
+        if (!s.exists) throw { code: 'gone' };
+        const d = s.data();
+        if (d.status !== 'open' || d.bidder !== uid) throw { code: 'sold' };
+        if (Date.now() < d.endAt) throw { code: 'not-ended' };
         tx.update(ref, { status: 'sold', buyer: uid, buyerName: profile().name, tb: Date.now() }); return d;
       });
     }).then(function (d) { cb(null, d); }).catch(fail(cb));
@@ -282,7 +301,7 @@ const Cloud = {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
     db.collection('market').where('seller', '==', uid).where('status', '==', 'sold').get().then(function (q) {
       const out = [];
-      q.forEach(function (d) { const x = d.data(); if (!x.paid) out.push({ id: d.id, price: x.price | 0, label: x.label, buyerName: x.buyerName || '玩家', got: !!x.got }); });
+      q.forEach(function (d) { const x = d.data(); if (!x.paid) out.push({ id: d.id, price: (x.cur || x.price) | 0, label: x.label, buyerName: x.buyerName || '玩家', got: !!x.got }); });
       return Promise.all(out.map(function (o) { return db.collection('market').doc(o.id).update({ paid: true }).then(function () { return o; }, function () { return null; }); }));
     }).then(function (rows) { cb(null, rows.filter(Boolean)); }).catch(fail(cb));
   },
@@ -595,6 +614,7 @@ const Cloud = {
     const c = e && e.code;
     return { offline: '雲端功能要先登入（Google 或訪客）並連上網路。', 'bad-code': '代碼格式不對。', self: '這是你自己的代碼。', 'not-found': '找不到這個代碼。',
       'bad-name': '名稱至少 2 個字。', 'in-clan': '你已經在一個拾荒團裡，請先退出。', full: '這個拾荒團已滿（30 人）。', 'clan-closed': '這個拾荒團不開放直接加入。', 'clan-lv': '你的等級還不夠加入這個拾荒團。', 'no-clan': '你不在任何拾荒團。', gone: '這則請求已經不見了。', 'own-req': '不能捐給自己。', 'req-full': '這則請求已經收滿了。', 'give-max': '每則請求你最多捐 30 金幣。',
+      low: '出價要達到下一口價。', 'own-offer': '不能標自己的拍賣。', ended: '這個拍賣已經結束。', bid: '已經有人出價，不能下架了。', 'not-ended': '拍賣還沒結束，不能領取。',
       'permission-denied': '雲端拒絕了這個操作：請確認 Firestore 的安全規則已經發布。', unavailable: '連不到雲端，請檢查網路。' }[c] || ('雲端錯誤：' + (c || (e && e.message) || '未知'));
   }
 };

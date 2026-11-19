@@ -3,16 +3,13 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
 
-    // 玩家資料：登入的人都能讀（好友列表要看名字與上線狀態），只有本人能寫
     match /users/{uid} {
       allow read: if signedIn();
       allow write: if signedIn() && request.auth.uid == uid;
-      // 好友：加好友時雙方各寫一筆，所以對方也能寫進（或刪掉）自己那一筆
       match /friends/{fid} {
         allow read: if signedIn() && request.auth.uid == uid;
         allow write: if signedIn() && (request.auth.uid == uid || request.auth.uid == fid);
       }
-      // 歷史戰績：登入的人都能看（點頭像看別人的戰績），只有本人能新增、刪除
       match /matches/{mid} {
         allow read: if signedIn();
         allow create: if signedIn() && request.auth.uid == uid
@@ -21,13 +18,11 @@ service cloud.firestore {
           && request.resource.data.t is number;
         allow delete: if signedIn() && request.auth.uid == uid;
       }
-      // 進度存檔：只有本人能讀寫（公開的 users 文件不放進度）
       match /save/{sid} {
         allow read, write: if signedIn() && request.auth.uid == uid;
       }
     }
 
-    // 戰隊：任何登入的人可建立（owner 必須是自己）；之後只能改積分與人數
     match /clans/{cid} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.owner == request.auth.uid;
@@ -35,12 +30,10 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/clans/$(cid)/members/$(request.auth.uid))
         || (request.auth.uid == resource.data.owner && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deputies', 'owner'])
             && (request.resource.data.owner == resource.data.owner || exists(/databases/$(database)/documents/clans/$(cid)/members/$(request.resource.data.owner))))
-        // 戰隊設定：隊長、副隊長可以改描述、徽章、類型、最低等級、地區
         || ((request.auth.uid == resource.data.owner || ('deputies' in resource.data && request.auth.uid in resource.data.deputies))
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['desc', 'badge', 'type', 'minLv', 'region'])
             && (!('desc' in request.resource.data) || (request.resource.data.desc is string && request.resource.data.desc.size() <= 60))
             && (!('type' in request.resource.data) || request.resource.data.type in ['open', 'approve', 'invite'])));
-      // 加入申請：本人建立／取消；隊長、副隊長看得到，可以批准（ok=true）或拒絕（刪除）
       match /reqs/{uid} {
         function staff() {
           let c = get(/databases/$(database)/documents/clans/$(cid)).data;
@@ -62,8 +55,6 @@ service cloud.firestore {
         allow create, update: if signedIn() && request.auth.uid == uid;
         allow delete: if signedIn() && (request.auth.uid == uid || canKick());
       }
-      // 戰隊聊天：只有隊員能讀寫。文字與請求只能用自己的名義發；
-      // 別人只能「捐」（got 每次 +10、不超過 need），本人只能「領」（claimed 不超過 got）
       match /msgs/{mid} {
         function member() { return exists(/databases/$(database)/documents/clans/$(cid)/members/$(request.auth.uid)); }
         allow read: if signedIn() && member();
@@ -80,12 +71,10 @@ service cloud.firestore {
           || (resource.data.uid == request.auth.uid
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimed'])
             && request.resource.data.claimed <= resource.data.got));
-        // 刪除自己發的訊息（刪帳號時用）
         allow delete: if signedIn() && member() && resource.data.uid == request.auth.uid;
       }
     }
 
-    // 快速組隊：房主公開自己的房間（代碼、模式、人數），大家都能看到並加入；只有房主能改、刪
     match /rooms/{code} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.host == request.auth.uid
@@ -95,7 +84,6 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.host == request.auth.uid;
     }
 
-    // 世界頻道：登入的人都能讀；只能用自己的名義發言，80 字以內；本人可刪
     match /world/{mid} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid
@@ -105,31 +93,43 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
-    // 交易所掛單：賣家掛出（status=open），別人買下（sold），賣家可下架（cancel），賣家收款（paid）、買家收貨（got）
     match /market/{oid} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.seller == request.auth.uid
         && request.resource.data.status == 'open'
         && request.resource.data.kind in ['skin', 'acc', 'gem']
         && request.resource.data.price is int && request.resource.data.price >= 1 && request.resource.data.price <= 1000
+        && request.resource.data.cur == 0
+        && request.resource.data.endAt is int && request.resource.data.endAt > request.time.toMillis()
+        && request.resource.data.endAt <= request.time.toMillis() + 86400000
         && request.resource.data.label is string && request.resource.data.label.size() <= 30
         && request.resource.data.sellerName is string && request.resource.data.sellerName.size() <= 20
-        && !('buyer' in request.resource.data) && !('paid' in request.resource.data) && !('got' in request.resource.data);
+        && !('bidder' in request.resource.data) && !('buyer' in request.resource.data)
+        && !('paid' in request.resource.data) && !('got' in request.resource.data);
       allow update: if signedIn() && (
         (resource.data.status == 'open' && resource.data.seller != request.auth.uid
+          && request.time.toMillis() < resource.data.endAt
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cur', 'bidder', 'bidderName', 'bidT'])
+          && request.resource.data.bidder == request.auth.uid
+          && request.resource.data.bidderName is string && request.resource.data.bidderName.size() <= 20
+          && request.resource.data.cur is int && request.resource.data.cur >= resource.data.price
+          && request.resource.data.cur > resource.data.cur && request.resource.data.cur <= 100000)
+        || (resource.data.status == 'open' && resource.data.bidder == request.auth.uid
+          && request.time.toMillis() >= resource.data.endAt
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'buyer', 'buyerName', 'tb'])
           && request.resource.data.status == 'sold' && request.resource.data.buyer == request.auth.uid)
         || (resource.data.status == 'open' && resource.data.seller == request.auth.uid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) && request.resource.data.status == 'cancel')
+          && (!('bidder' in resource.data) || request.time.toMillis() > resource.data.get('endAt', 0) + 86400000)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          && request.resource.data.status == 'cancel')
         || (resource.data.status == 'sold' && resource.data.seller == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid']) && request.resource.data.paid == true)
         || (resource.data.status == 'sold' && resource.data.buyer == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['got']) && request.resource.data.got == true));
       allow delete: if signedIn() && resource.data.seller == request.auth.uid
-        && (resource.data.status == 'cancel' || (resource.data.status == 'open') || (resource.data.get('paid', false) == true && resource.data.get('got', false) == true));
+        && (resource.data.status == 'cancel' || (resource.data.get('paid', false) == true && resource.data.get('got', false) == true));
     }
 
-    // 排行榜（集合名稱以 lb_ 開頭）：只能寫自己的那一筆，分數要是合理的數字
     match /{board}/{uid} {
       allow read: if signedIn() && board.matches('lb_.*');
       allow write: if signedIn() && board.matches('lb_.*') && request.auth.uid == uid
