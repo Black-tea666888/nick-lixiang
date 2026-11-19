@@ -658,7 +658,7 @@ function showBreak(c, r, quiet) {
   (cellInst[key] || []).forEach(function (q) { q[0].setMatrixAt(q[1], new THREE.Matrix4().makeScale(0, 0, 0)); q[0].instanceMatrix.needsUpdate = true; });
   // 缺口旁貼牆的木箱、鐵桶一起炸掉（不然會擋住新開的路）
   const bx = c * CS + CS / 2, bz = r * CS + CS / 2, near = function (x, z) { return Math.abs(x - bx) < CS / 2 + 0.9 && Math.abs(z - bz) < CS / 2 + 0.9; };
-  solids = solids.filter(function (q) { return q[2] >= 0.5 || !near(q[0], q[1]); });   // 櫃子（半徑 0.5）留著
+  solids = solids.filter(function (q) { return q[3] >= 2 || !near(q[0], q[1]); });   // 櫃子（高 2.1，半徑 0.3）留著
   if (level) level.children.filter(function (o) { const t = o.isMesh && !o.isInstancedMesh && o.geometry && o.geometry.type; return (t === 'BoxGeometry' || t === 'CylinderGeometry') && o.position.y < 1.6 && near(o.position.x, o.position.z); }).forEach(function (o) { level.remove(o); });
   buildMini();
   if (quiet) return;
@@ -952,7 +952,7 @@ function buildLevel() {
       part(new THREE.BoxGeometry(0.3, 0.03, 0.02), lineM, -0.25, 1.75, 0.31), part(new THREE.BoxGeometry(0.3, 0.03, 0.02), lineM, 0.25, 1.75, 0.31),
       part(new THREE.BoxGeometry(0.04, 0.14, 0.04), lineM, -0.08, 1.05, 0.32), part(new THREE.BoxGeometry(0.04, 0.14, 0.04), lineM, 0.08, 1.05, 0.32),
       part(new THREE.BoxGeometry(0.22, 0.08, 0.02), tagM, 0, 2.22, 0.2));
-    lg.position.set(k[0], 0, k[1]); lg.rotation.y = k[2]; level.add(lg); lockerMeshes.push(lg); solids.push([k[0], k[1], 0.5, 2.1]);
+    lg.position.set(k[0], 0, k[1]); lg.rotation.y = k[2]; level.add(lg); lockerMeshes.push(lg); solids.push([k[0], k[1], 0.3, 2.1]);
   });
   // 擺設：木箱、鐵桶貼牆放；天花板燈條（固定種子，每張地圖每次都一樣）
   let seed = 1234 + W.mapIndex * 77; const rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
