@@ -7,7 +7,7 @@ const RR = window.RR = window.RR || {};
 
 const REGIONS = ['台灣', '香港'];
 const REGION_KEY = ['tw', 'hk'];
-const MODES = ['coop', 'hunt', 'td', 'br'];
+const MODES = ['coop', 'hunt', 'td', 'br', 'card'];
 const CODE_CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function rcode(n) { let s = ''; for (let i = 0; i < n; i++) s += CODE_CH[Math.floor(Math.random() * CODE_CH.length)]; return s; }
 function ls(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -304,8 +304,8 @@ const Cloud = {
     ['all', 'w' + w, p.region + '_w' + w].forEach(function (scope) {
       const ref = db.collection(Cloud.board(mode, scope)).doc(uid);
       ref.get().then(function (s) {
-        // 廢墟生存戰是累計勝場，其餘取最高紀錄
-        if (mode === 'br' || mode === 'ar') row.score = ((s.exists && s.data().score) | 0) + Math.floor(score);   // AR 是累計抓到的隻數
+        // 廢墟生存戰、怪物卡牌是累計勝場，其餘取最高紀錄
+        if (mode === 'br' || mode === 'ar' || mode === 'card') row.score = ((s.exists && s.data().score) | 0) + Math.floor(score);   // AR 是累計抓到的隻數
         else if (s.exists && (s.data().score | 0) >= row.score) return;
         return ref.set(Object.assign({}, row));
       }).catch(fail());
