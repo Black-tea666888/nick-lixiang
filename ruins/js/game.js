@@ -107,11 +107,15 @@ function trySkill() {
   if (left > 0) { toast('技能冷卻中，還要 ' + left + ' 秒'); return; }
   skQ = true;
 }
+/** 冷卻中：圖示變淡，上面疊倒數秒數 */
+function cdNum(id, left) {
+  const el = $(id); if (!el) return;
+  let n = el.querySelector('.cdNum'); if (!n) { n = document.createElement('b'); n.className = 'cdNum'; el.appendChild(n); }
+  const t = left > 0 ? String(left) : ''; if (n.textContent !== t) { n.textContent = t; el.classList.toggle('cd', left > 0); }
+}
 function renderTT() {
-  const left = Math.ceil((skEnd - Date.now()) / 1000), sb = $('skill'), txt = left > 0 ? String(left) : '技';
-  if (sb.textContent !== txt) { sb.textContent = txt; sb.classList.toggle('cd', left > 0); }
-  const sl = Math.ceil((smEnd - Date.now()) / 1000), mb = $('smoke'), mt = sl > 0 ? String(sl) : '煙';
-  if (mb.textContent !== mt) { mb.textContent = mt; mb.classList.toggle('cd', sl > 0); }
+  cdNum('skill', Math.ceil((skEnd - Date.now()) / 1000));
+  cdNum('smoke', Math.ceil((smEnd - Date.now()) / 1000));
   if ($('scrMini').classList.contains('hide')) return;
   if (miniInPlay && !canControl()) { closeMini(); return; }
   if ($('miniTTBox').classList.contains('hide') || !view.tt) return;
@@ -1851,7 +1855,42 @@ function releaseTouch() {
   touch.joyId = touch.lookId = null; touch.jx = touch.jy = 0; touch.run = false;
   $('joy').style.display = $('knob').style.display = 'none'; $('run').classList.remove('on');
 }
+/* 觸控按鍵圖示（白色線條，不寫字）；狀態改變時換圖示 */
+const ICONS = {
+  run: '<path d="M13 4.5a1.8 1.8 0 1 0 0-.1"/><path d="M9 21l2.5-5.5 3 2.5v4"/><path d="M6 12l3-3.5 4 1 2.5 3.5 3 .5"/><path d="M11.5 15.5l1.5-6"/>',
+  atk: '<path d="M14.5 3.5l6 6-9 9-3-3z"/><path d="M8.5 15.5l-5 5"/><path d="M6 13l5 5"/>',
+  knife: '<path d="M4 20l9-9"/><path d="M13 11c2-4 5-6 8-7-1 3-3 6-7 8z"/><path d="M6 16l2 2"/>',
+  gun: '<path d="M8 21h8v-3H8z"/><path d="M8 18V9c0-3 1.8-5.5 4-6.5 2.2 1 4 3.5 4 6.5v9"/><path d="M8 12h8"/>',
+  reload: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',
+  swap: '<path d="M4 9h13l-3.5-3.5"/><path d="M20 15H7l3.5 3.5"/>',
+  uav: '<path d="M12 4v16"/><path d="M3 11l9-2 9 2"/><path d="M8 19l4-1.5 4 1.5"/><circle cx="12" cy="6" r="1.3"/>',
+  air: '<path d="M12 2.5c1 1 1.4 3 1.4 5v3.5l8 4.5v2l-8-2.5V19l2.5 2v1.2L12 21.4l-3.9.8V21l2.5-2v-4l-8 2.5v-2l8-4.5V7.5c0-2 .4-4 1.4-5z"/>',
+  tower: '<path d="M6 21h12"/><path d="M8 21l1.5-7h5L16 21"/><path d="M8 14h8l-1-4H9z"/><path d="M12 10V4l6 2"/>',
+  bomb: '<circle cx="10" cy="14" r="6.5"/><path d="M14.5 9.5l2-2"/><path d="M17 5l1.5-1.5M19 7.5h2M16.5 3V1.5"/>',
+  veh: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2"/><path d="M3.8 10.5c5 1.5 11.4 1.5 16.4 0"/><path d="M12 14v6.5"/>',
+  exit: '<path d="M10 4H5v16h5"/><path d="M14 8l4 4-4 4"/><path d="M18 12H9"/>',
+  jump: '<path d="M6 13l6-6 6 6"/><path d="M6 19l6-6 6 6"/>',
+  dash: '<path d="M5 6l6 6-6 6"/><path d="M12 6l6 6-6 6"/>',
+  rescue: '<path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6z"/>',
+  locker: '<rect x="6" y="3" width="12" height="18" rx="1"/><path d="M12 3v18"/><path d="M8.5 6.5h2M13.5 6.5h2M8.5 8.5h2M13.5 8.5h2"/><path d="M10.5 13v2M13.5 13v2"/>',
+  smoke: '<path d="M7 18a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 0 9.5z"/>',
+  scope: '<circle cx="12" cy="12" r="7.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/><circle cx="12" cy="12" r="1"/>',
+  skill: '<path d="M13 2L5 13.5h6L10 22l9-12.5h-6z"/>'
+};
+function setIcon(id, name) {
+  const el = $(id); if (!el || el.dataset.icon === name) return;
+  el.dataset.icon = name;
+  el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS[name] + '</svg>';
+}
+function initIcons() {
+  ['run', 'atk', 'gun', 'swap', 'uav', 'air', 'tower', 'bomb', 'veh', 'jump', 'dash', 'rescue', 'locker', 'smoke', 'scope', 'skill'].forEach(function (id) {
+    const el = $(id); if (!el) return;
+    if (!el.getAttribute('aria-label')) el.setAttribute('aria-label', el.textContent.trim());
+    el.title = el.getAttribute('aria-label'); setIcon(id, id);
+  });
+}
 function bindInput() {
+  initIcons();
   window.addEventListener('keydown', function (e) {
     if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
     keys[e.code] = true;
@@ -2120,7 +2159,7 @@ function atmosphere(L, dt) {
   // 「櫃」鍵只在櫃子旁邊（或已經躲在裡面）才出現；躲著時改成「出」
   const lkNear = me.alive && (me.inLk || (W.lockers || []).some(function (q) { return Math.hypot(q[0] - me.x, q[1] - me.z) < 1.8; }));
   document.body.classList.toggle('lk-near', !!lkNear);
-  const lb = $('locker'); if (lb) { const t = me.inLk ? '出' : '櫃'; if (lb.textContent !== t) lb.textContent = t; }
+  setIcon('locker', me.inLk ? 'exit' : 'locker');
   $('lkView').classList.toggle('hide', !me.inLk);
   if (!me.inLk) lkIdx = -1;
   lockerMeshes.forEach(function (g, i) { g.visible = i !== lkIdx; });   // 躲在裡面時隱藏自己那個櫃子，才不會看到櫃子內壁
@@ -2172,7 +2211,7 @@ function updateHud() {
   $('bag').textContent = me.bagN;
   const bm = $('bombs'), bt = '∞'; if (bm.textContent !== bt) bm.textContent = bt;
   const am = $('ammo'), at = '∞'; if (am.textContent !== at) am.textContent = at;
-  const gb = $('gun'), gt = wpnMode === 'melee' ? '近' : me.reloading ? '…' : '槍'; if (gb.textContent !== gt) gb.textContent = gt; gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
+  const gb = $('gun'); setIcon('gun', wpnMode === 'melee' ? 'knife' : me.reloading ? 'reload' : 'gun'); gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
   const qf = $('qfill'), pct = view.mode === 'td' && view.td ? view.td[0] : view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
   qf.style.width = pct + '%'; qf.classList.toggle('done', pct >= 100);
   const cap = (myEq(2) ? 4 : 3) + (me.riding ? 2 : 0), pp = $('pips'); while (pp.children.length < 6) pp.appendChild(document.createElement('i')); if ($('bagCap').textContent !== String(cap)) $('bagCap').textContent = cap;
@@ -2442,7 +2481,7 @@ RR.Game = {
     } else { if (cartMesh) cartMesh.visible = false; view.veh = null; me.riding = false; }
     if (cartView) cartView.visible = !!me.riding;
     const nearV = view.veh && me.alive && (me.riding || (!view.veh[2] && Math.hypot(view.veh[0] - me.x, view.veh[1] - me.z) < 2.4));
-    document.body.classList.toggle('nearveh', !!nearV); const vb = $('veh'), vt = me.riding ? '下車' : '車'; if (vb.textContent !== vt) vb.textContent = vt;
+    document.body.classList.toggle('nearveh', !!nearV); setIcon('veh', me.riding ? 'exit' : 'veh');
     if (s.pad && !padMesh) {
       padMesh = new THREE.Mesh(new THREE.RingGeometry(0.6, 1.0, 40), new THREE.MeshBasicMaterial({ color: 0x66e0ff, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
       padMesh.rotation.x = -Math.PI / 2; padMesh.position.y = 0.05; scene.add(padMesh);
