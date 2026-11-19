@@ -322,16 +322,18 @@ function hasAcc(p, k) { return !!p.eq && p.eq.indexOf(k) >= 0; }
 // 背包等級：每 10 等解鎖一個（Lv10～Lv100 共 10 級），每級多 1 格
 const BAG_TIERS = ['普通背包', '帆布背包', '皮革背包', '登山背包', '青銅背包', '白銀背包', '黃金背包', '白金背包', '鑽石背包', '紫晶背包', '傳說背包'];
 function bagTierOf(level) { return Math.max(0, Math.min(10, Math.floor((level | 0) / 10))); }
+function itemReq(it) { const k = KINDS[it.kind]; return k ? k.req | 0 : 0; }
 function bagCap(p) { return BAG_MAX + (p.bt | 0) + (hasAcc(p, 2) ? 1 : 0) + (p.veh ? 2 : 0); }   // 推車上可以多放 2 件
 // 天氣：0 晴朗、1 下雨（開放場景；雨聲蓋過腳步，怪物聽力 ×0.7）、2 濃霧（怪物視線變短）、3 停電（室內；很暗，怪物視線變短）、4 沙塵暴／太陽風暴（開放場景；能見度低、小地圖不顯示怪物）
 const WEATHERS = ['晴朗', '下雨', '濃霧', '停電', '風暴'];
 const WX_SIGHT = [1, 1.15, 2.1, 1.6, 1.9], WX_HEAR = [1, 0.7, 1, 1, 0.85];
 function maxHp(p) { return hasAcc(p, 4) ? 130 : 100; }
 const KINDS = [
-  { n: '齒輪', lo: 25, hi: 45 }, { n: '電池', lo: 40, hi: 70 }, { n: '銅線圈', lo: 60, hi: 95 },
-  { n: '舊收音機', lo: 35, hi: 60 }, { n: '玩具', lo: 20, hi: 40 }, { n: '馬達', lo: 50, hi: 80 },
-  { n: '金條', lo: 100, hi: 140 }, { n: '燈泡', lo: 30, hi: 50 }, { n: '電路板', lo: 45, hi: 70 },
-  { n: '儀表', lo: 55, hi: 85 }, { n: '鐵罐', lo: 20, hi: 40 }
+  // req＝撿起來需要的背包等級（0～10）：越值錢的東西，背包要等級夠高才裝得下
+  { n: '齒輪', lo: 25, hi: 45, req: 0 }, { n: '電池', lo: 40, hi: 70, req: 2 }, { n: '銅線圈', lo: 60, hi: 95, req: 4 },
+  { n: '舊收音機', lo: 35, hi: 60, req: 2 }, { n: '玩具', lo: 20, hi: 40, req: 0 }, { n: '馬達', lo: 50, hi: 80, req: 4 },
+  { n: '金條', lo: 100, hi: 140, req: 7 }, { n: '燈泡', lo: 30, hi: 50, req: 1 }, { n: '電路板', lo: 45, hi: 70, req: 3 },
+  { n: '儀表', lo: 55, hi: 85, req: 5 }, { n: '鐵罐', lo: 20, hi: 40, req: 0 }
 ];
 
 const CHARS = ['回收員', '機器人', '太空人', '貓貓', '南瓜頭', '紙箱人', '恐龍', '外星人'];
@@ -1250,7 +1252,7 @@ Sim.prototype.step = function (dt) {
     if (it.taken) continue;
     for (let k = 0; k < alive.length; k++) {
       const p = alive[k];
-      if (p.bag.length < bagCap(p) && Math.hypot(it.x - p.x, it.z - p.z) < 1.5) {
+      if (p.bag.length < bagCap(p) && (p.bt | 0) >= itemReq(it) && Math.hypot(it.x - p.x, it.z - p.z) < 1.5) {
         it.taken = true; p.bag.push(i);
         this.events.push({ t: 'pickup', id: p.id, i: i });
         break;
