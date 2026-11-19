@@ -1098,3 +1098,8 @@ select.fselNative { position: absolute !important; width: 1px !important; height
 
 /* 手機上「衝」跟「跳」重複，只留跳（衝刺改成鍵盤 C／手把 B） */
 body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; }
+/* 浮在其他內容上面的東西（下拉選單、彈出視窗、更多選單、遊戲內選單、QR、AR 圖鑑）一律實色，避免跟下面的字疊在一起；只有最底層的頁面是半透明 */
+.fselPanel, .modal .panel, .moreMenu, .qrBox .panel, .qrCard, .arDex, .arPick, .gisBox, .mapCard { background: var(--kraft-l); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.modal .panel { background: var(--kraft); }
+.modal .panel .mcard, .modal .panel .tile, .modal .panel .card, .modal .panel .srow, .modal .panel .icon, .modal .panel .clanCard, .fselPanel .fselItem:not(.on) { background-color: var(--kraft-l); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.fselOv, .modal { background: rgba(17,20,23,.7); }
