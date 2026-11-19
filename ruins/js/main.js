@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v131', items: ['設定頁文字與滑桿改成上下排列，不再擠在一起', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v132', items: ['戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1274,7 +1274,7 @@ function renderSocial() {
     b.appendChild(mk('p', 'note wait', '讀取中…'));
     C.clan(guard(function (info) {
       if (!info) {
-        socNote('加入戰隊後，每局得到的金幣數會同時累積成戰隊積分。');
+        socNote('加入戰隊後，每局得到的金幣數會同時累積成戰隊積分。本週積分決定段位，每週一重算。');
         const r1 = mk('div', 'soc-row'), tag = mk('input'); tag.type = 'text'; tag.maxLength = 4; tag.placeholder = '戰隊代碼（4 碼）'; tag.autocapitalize = 'characters';
         const jb = mk('button', 'btn primary', '加入'); jb.type = 'button';
         jb.addEventListener('click', function () { jb.disabled = true; C.joinClan(tag.value, function (err, c) { jb.disabled = false; if (err) { say(C.message(err)); return; } say('已加入戰隊「' + c.name + '」。'); renderSocial(); }); });
@@ -1288,7 +1288,9 @@ function renderSocial() {
         });
         r2.appendChild(nm); r2.appendChild(cb); b.appendChild(r2);
       } else {
-        b.appendChild(mk('p', 'note', '戰隊「' + info.clan.name + '」，積分 ' + (info.clan.score | 0) + '，' + info.members.length + ' / 30 人，代碼'));
+        const wsNow = info.clan.wk === C.weekId() ? (info.clan.wscore | 0) : 0, ti = C.tierOf(wsNow), bi = info.clan.best | 0, TT = C.TIERS;
+        b.appendChild(mk('p', 'note', '戰隊「' + info.clan.name + '」，' + info.members.length + ' / 30 人，累計 ' + (info.clan.score | 0) + ' 分，代碼'));
+        b.appendChild(mk('p', 'note', '本週 ' + wsNow + ' 分，段位 ' + TT[ti].n + (ti < TT.length - 1 ? '（下一階 ' + TT[ti + 1].n + ' 還差 ' + (TT[ti + 1].min - wsNow) + ' 分）' : '') + '；歷史最高 ' + TT[bi].n));
         b.appendChild(mk('div', 'bigcode', info.clan.tag));
         { const cc = mk('button', 'btn primary', '打開戰隊聊天'); cc.type = 'button'; cc.style.width = '100%'; cc.style.margin = '6px 0 10px'; cc.addEventListener('click', function () { $('scrSocial').classList.add('hide'); renderSocial.token = null; clanOpen(); }); b.appendChild(cc); }
         const isLeader = info.clan.owner === RR.Cloud.uid(), deps = info.clan.deputies || [];
@@ -1317,11 +1319,11 @@ function renderSocial() {
         });
         const lv = mk('button', 'btn', '退出戰隊'); lv.type = 'button'; lv.addEventListener('click', function () { C.leaveClan(function (err) { if (err) say(C.message(err)); renderSocial(); }); }); b.appendChild(lv);
       }
-      b.appendChild(mk('div', 'sec', '戰隊排行榜'));
+      b.appendChild(mk('div', 'sec', '戰隊排行榜（本週）'));
       C.topClans(function (err, rows) {
         if (err || renderSocial.token !== token) return;
-        if (!rows.length) { socNote('還沒有任何戰隊。'); return; }
-        rows.forEach(function (c, i) { const r = mk('div', 'srow' + (C.me() && C.me().clan === c.id ? ' me' : '')); r.appendChild(mk('span', 'rk', String(i + 1))); const nm = mk('span', 'nm', c.name); nm.appendChild(mk('small', null, '　' + (c.count | 0) + ' 人')); r.appendChild(nm); r.appendChild(mk('span', 'sc', (c.score | 0) + ' 分'));
+        if (!rows.length) { socNote('本週還沒有戰隊得分。'); return; }
+        rows.forEach(function (c, i) { const r = mk('div', 'srow' + (C.me() && C.me().clan === c.id ? ' me' : '')); r.appendChild(mk('span', 'rk', String(i + 1))); const nm = mk('span', 'nm', c.name); nm.appendChild(mk('small', null, '　' + (c.count | 0) + ' 人')); r.appendChild(nm); r.appendChild(mk('span', 'sc', (c.wscore | 0) + ' 分 · ' + C.TIERS[C.tierOf(c.wscore)].n));
           if (!(C.me() && C.me().clan) && (c.count | 0) < 30 && c.tag) { const j = mk('button', 'btn primary', '+'); j.type = 'button'; j.title = '加入戰隊'; j.addEventListener('click', function () { j.disabled = true; C.joinClan(c.tag, function (err, cl) { j.disabled = false; if (err) { say(C.message(err)); return; } say('已加入戰隊「' + cl.name + '」。'); renderSocial(); }); }); r.appendChild(j); }
           b.appendChild(r); });
       });

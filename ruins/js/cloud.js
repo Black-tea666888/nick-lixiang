@@ -14,6 +14,12 @@ function ls(k) { try { return localStorage.getItem(k); } catch (e) { return null
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 /** 週次：以台灣時間每週一 00:00 換週 */
 function weekId(off) { return Math.floor((Date.now() / 864e5 + 8 / 24 + 3) / 7) + (off || 0); }
+/** 戰隊段位：依「本週積分」分級，每週一重算；best 記錄歷史最高段位（索引） */
+const TIERS = [
+  { n: '青銅', min: 0 }, { n: '白銀', min: 300 }, { n: '黃金', min: 800 }, { n: '白金', min: 1800 },
+  { n: '鑽石', min: 3500 }, { n: '大師', min: 6000 }, { n: '宗師', min: 10000 }
+];
+function tierOf(s) { let i = 0; for (let k = 0; k < TIERS.length; k++) if ((s | 0) >= TIERS[k].min) i = k; return i; }
 
 let db = null, uid = null, me = null, saveT = null, beatT = null, room = null, fsLoading = false;
 const H = { prog: function () { return {}; }, adopt: function () {}, name: function () { return '玩家'; }, level: function () { return 1; } };
@@ -39,7 +45,7 @@ function push() {
 }
 
 const Cloud = {
-  REGIONS: REGIONS, MODES: MODES, weekId: weekId,
+  REGIONS: REGIONS, MODES: MODES, weekId: weekId, TIERS: TIERS, tierOf: tierOf,
   ready: function () { return !!(db && uid); },
   uid: function () { return uid; },
   me: function () { return me; },
@@ -338,9 +344,17 @@ const Cloud = {
   /** 每局結束把得分貢獻給戰隊 */
   clanAdd: function (pts) {
     if (!Cloud.ready() || !me || !me.clan || !(pts > 0)) return;
-    const inc = window.firebase.firestore.FieldValue.increment(Math.floor(pts)), ref = db.collection('clans').doc(me.clan);
-    ref.collection('members').doc(uid).set({ name: profile().name, score: inc }, { merge: true }).catch(fail());
-    ref.update({ score: inc }).catch(fail());
+    pts = Math.floor(pts);
+    const FV = window.firebase.firestore.FieldValue, ref = db.collection('clans').doc(me.clan), w = weekId();
+    ref.collection('members').doc(uid).set({ name: profile().name, score: FV.increment(pts) }, { merge: true }).catch(fail());
+    // 同一筆交易更新累計積分、本週積分（跨週自動歸零）與歷史最高段位
+    db.runTransaction(function (tx) {
+      return tx.get(ref).then(function (s) {
+        if (!s.exists) return;
+        const d = s.data(), ws = (d.wk === w ? (d.wscore | 0) : 0) + pts;
+        tx.update(ref, { score: FV.increment(pts), wk: w, wscore: ws, best: Math.max(d.best | 0, tierOf(ws)) });
+      });
+    }).catch(fail());
   },
   /** cb(err, { clan, members }) */
   clan: function (cb) {
@@ -361,8 +375,9 @@ const Cloud = {
   },
   topClans: function (cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
-    db.collection('clans').orderBy('score', 'desc').limit(20).get().then(function (q) {
-      const rows = []; q.forEach(function (d) { const x = d.data(); x.id = d.id; rows.push(x); }); cb(null, rows);
+    // 本週排行：只取本週有積分的戰隊
+    db.collection('clans').orderBy('wscore', 'desc').limit(40).get().then(function (q) {
+      const rows = []; q.forEach(function (d) { const x = d.data(); x.id = d.id; if (x.wk === weekId()) rows.push(x); }); cb(null, rows.slice(0, 20));
     }).catch(fail(cb));
   },
   /* ---------- 戰隊聊天：文字、請求金幣、捐贈 ---------- */
