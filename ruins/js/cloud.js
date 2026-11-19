@@ -21,7 +21,7 @@ const TIERS = [
 ];
 function tierOf(s) { let i = 0; for (let k = 0; k < TIERS.length; k++) if ((s | 0) >= TIERS[k].min) i = k; return i; }
 
-let db = null, uid = null, me = null, saveT = null, beatT = null, room = null, fsLoading = false;
+let db = null, uid = null, me = null, saveT = null, savePending = false, beatT = null, room = null, fsLoading = false;
 const H = { prog: function () { return {}; }, adopt: function () {}, name: function () { return '玩家'; }, level: function () { return 1; } };
 
 function userRef(id) { return db.collection('users').doc(id || uid); }
@@ -82,7 +82,9 @@ const Cloud = {
     }).catch(function (e) { fail()(e); uid = null; if (cb) cb(false); });
   },
   /** 本機進度有變時呼叫；3 秒內的多次變更合併成一次寫入 */
-  saveSoon: function () { if (!Cloud.ready()) return; clearTimeout(saveT); saveT = setTimeout(push, 3000); },
+  saveSoon: function () { if (!Cloud.ready()) return; clearTimeout(saveT); savePending = true; saveT = setTimeout(function () { savePending = false; push(); }, 3000); },
+  /** 關頁、切到背景時立刻寫入還沒送出的進度（抽獎、交易後 3 秒內離開也不會遺失） */
+  flush: function () { if (savePending && Cloud.ready()) { clearTimeout(saveT); savePending = false; push(); } },
   /** 目前所在的房間代碼（好友可以直接加入）；離開時傳 null */
   setRoom: function (code) { room = code || null; if (Cloud.ready()) userRef().set({ room: room || '', seen: Date.now() }, { merge: true }).catch(fail()); },
 
