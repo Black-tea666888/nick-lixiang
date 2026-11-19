@@ -29,10 +29,15 @@ function fail(cb) { return function (e) { console.warn('cloud', e && (e.code || 
 function clean(s, n) { return String(s || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n); }
 
 function saveRef(id) { return userRef(id).collection('save').doc('main'); }
+/** 頭像：底色與 64×64 小照片一起上傳，別人點你的頭像、戰績都看得到（太大的照片就不傳） */
+function avatarData() {
+  let av = '', img = ''; try { av = localStorage.getItem('rr_avatar') || ''; img = localStorage.getItem('rr_avatar_img') || ''; } catch (e) {}
+  return { av: clean(av, 20), avImg: img.length < 12000 ? img : '' };
+}
 function profile() {
   const p = H.prog(), st = p.st || {};
-  return { name: clean(H.name(), 12), bio: clean(p.bio, 30), lv: H.level(), coins: p.coins | 0, xp: p.xp | 0, region: REGION_KEY[p.region | 0] || 'tw',
-    st: { games: st.games | 0, wins: st.wins | 0, mk: st.mk | 0, brWins: st.brWins | 0 }, seen: Date.now(), room: room || '', v: 1 };
+  return Object.assign({ name: clean(H.name(), 12), bio: clean(p.bio, 30), lv: H.level(), coins: p.coins | 0, xp: p.xp | 0, region: REGION_KEY[p.region | 0] || 'tw',
+    st: { games: st.games | 0, wins: st.wins | 0, mk: st.mk | 0, brWins: st.brWins | 0 }, seen: Date.now(), room: room || '', v: 1 }, avatarData());
 }
 /** 公開資料寫在 users 文件；進度寫在只有本人能讀的 save/main（舊版進度欄位會順便清掉） */
 function push() {
@@ -71,6 +76,8 @@ const Cloud = {
     Promise.all([userRef().get(), saveRef().get().catch(function () { return null; })]).then(function (r) {
       const snap = r[0], sv = r[1], local = H.prog();
       me = snap.exists ? snap.data() : {};
+      // 頭像以雲端為準：換手機登入後，底色與照片會跟著過來
+      if (me.av !== undefined || me.avImg !== undefined) { try { if (me.av) localStorage.setItem('rr_avatar', me.av); else localStorage.removeItem('rr_avatar'); if (me.avImg) localStorage.setItem('rr_avatar_img', me.avImg); else localStorage.removeItem('rr_avatar_img'); } catch (e) {} }
       let raw = (sv && sv.exists) ? sv.data().prog : me.prog;   // 舊版進度還在 users 文件裡時也讀得到
       let remote = null; try { remote = raw ? JSON.parse(raw) : null; } catch (e) {}
       // 進度以經驗值高的為準（換手機、清資料後能拿回來）
@@ -131,11 +138,17 @@ const Cloud = {
   },
 
   /* ---------- 歷史戰績 ---------- */
-  addMatch: function (rec) { if (Cloud.ready()) userRef().collection('matches').add(rec).catch(fail()); },
-  /** 讀某個玩家的公開資料與最近 60 場戰績。cb(err, { prof, rows }) */
+  /** 存一場戰績，雲端只留最近 30 場（多的刪掉） */
+  addMatch: function (rec) {
+    if (!Cloud.ready()) return;
+    const col = userRef().collection('matches');
+    col.add(rec).then(function () { return col.orderBy('t', 'desc').offset(30).limit(50).get(); })
+      .then(function (q) { return Promise.all(q.docs.map(function (d) { return d.ref.delete(); })); }).catch(fail());
+  },
+  /** 讀某個玩家的公開資料與最近 30 場戰績。cb(err, { prof, rows }) */
   playerStats: function (id, cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
-    Promise.all([userRef(id).get(), userRef(id).collection('matches').orderBy('t', 'desc').limit(60).get()]).then(function (r) {
+    Promise.all([userRef(id).get(), userRef(id).collection('matches').orderBy('t', 'desc').limit(30).get()]).then(function (r) {
       const rows = []; r[1].forEach(function (d) { rows.push(d.data()); });
       cb(null, { prof: r[0].exists ? r[0].data() : null, rows: rows });
     }).catch(fail(cb));
