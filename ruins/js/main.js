@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v180', items: ['支援遊戲手把（Xbox／PS／Steam Deck）：左搖桿移動、右搖桿瞄準、RT 開槍、LT 開鏡'] };
+const UPD = { v: 'v181', items: ['部分槍名改成原創名字：巴雷特→破甲重狙、M4A1→遊騎兵步槍、火麒麟→赤焰雙管、阿姆斯特旋風炮→旋風巨炮（能力不變）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
