@@ -329,6 +329,100 @@ function salvageGeo(k) {
   return mergeGeos(P);
 }
 
+/** 回收物的真實物品造型：每一種回收物有好幾種長相（同一種的價值一樣），v＝第幾款 */
+function realGeo(k, v) {
+  const P = [], T = function (g, x, y, z, rx, ry, rz, c) { P.push([g, M4(x, y, z, rx || 0, ry || 0, rz || 0), c]); };
+  const B = function (sx, sy, sz) { return new THREE.BoxGeometry(sx, sy, sz); }, C = function (r, h, n) { return new THREE.CylinderGeometry(r, r, h, n || 16); };
+  const Cy = function (a, b, h, n) { return new THREE.CylinderGeometry(a, b, h, n || 16); }, S = function (r) { return new THREE.SphereGeometry(r, 16, 12); };
+  const Tor = function (R, r, arc) { return new THREE.TorusGeometry(R, r, 8, 24, arc || Math.PI * 2); };
+  const H = Math.PI / 2;
+  const key = k * 10 + v;
+  switch (key) {
+    case 1: {   // 腳踏車輪
+      T(Tor(0.38, 0.04), 0, 0, 0, 0, 0, 0, 0x1c1c1c); T(Tor(0.34, 0.015), 0, 0, 0, 0, 0, 0, 0xbfc5cc);
+      for (let i = 0; i < 12; i++) T(C(0.006, 0.66, 4), 0, 0, 0, 0, 0, i / 12 * Math.PI, 0xd0d4d8);
+      T(C(0.05, 0.12), 0, 0, 0, H, 0, 0, 0x8a9098); break; }
+    case 2:     // 扳手
+      T(B(0.62, 0.08, 0.04), 0, 0, 0, 0, 0, 0.3, 0xa8afb6); T(Tor(0.09, 0.035, Math.PI * 1.5), 0.32, 0.1, 0, 0, 0, 0.3 - 2.3, 0xa8afb6);
+      T(Tor(0.07, 0.03), -0.32, -0.1, 0, 0, 0, 0, 0xa8afb6); break;
+    case 11:    // 兩顆 3 號電池
+      [-0.11, 0.11].forEach(function (x) { T(C(0.1, 0.5), x, 0, 0, 0, 0, 0, 0x1f1f22); T(C(0.102, 0.18), x, 0.12, 0, 0, 0, 0, 0xd9a520); T(C(0.035, 0.04), x, 0.27, 0, 0, 0, 0, 0xc8c8c8); }); break;
+    case 12:    // 行動電源
+      T(B(0.36, 0.62, 0.12), 0, 0, 0, 0, 0, 0, 0xe8e8ea); T(B(0.3, 0.06, 0.125), 0, 0.2, 0, 0, 0, 0, 0x3a7bd5);
+      T(B(0.1, 0.03, 0.04), 0, -0.31, 0, 0, 0, 0, 0x2a2a2a); [0, 1, 2, 3].forEach(function (i) { T(S(0.015), -0.06 + i * 0.04, 0.12, 0.065, 0, 0, 0, i < 3 ? 0x5affa0 : 0x444444); }); break;
+    case 21:    // 延長線捲盤
+      T(C(0.3, 0.03), 0, 0, -0.16, H, 0, 0, 0xe0442e); T(C(0.3, 0.03), 0, 0, 0.16, H, 0, 0, 0xe0442e);
+      T(C(0.22, 0.3), 0, 0, 0, H, 0, 0, 0xf2f2f2); T(B(0.2, 0.12, 0.1), 0, 0.3, 0, 0, 0, 0, 0xe0442e); T(B(0.04, 0.4, 0.04), 0, 0.12, 0.2, 0, 0, 0, 0x2a2a2a); break;
+    case 22:    // 耳機
+      T(Tor(0.3, 0.035, Math.PI), 0, 0, 0, 0, 0, 0, 0x2a2a2e);
+      [-0.3, 0.3].forEach(function (x) { T(C(0.14, 0.1), x, -0.04, 0, 0, 0, H, 0x2a2a2e); T(C(0.12, 0.11), x, -0.04, 0, 0, 0, H, 0xd23a3a); }); break;
+    case 31:    // 映像管電視
+      T(B(0.7, 0.54, 0.5), 0, 0, 0, 0, 0, 0, 0x5a4636); T(B(0.48, 0.38, 0.02), -0.06, 0.02, 0.26, 0, 0, 0, 0x2d3a3a);
+      T(C(0.03, 0.04), 0.27, 0.12, 0.26, H, 0, 0, 0xc8c0a8); T(C(0.03, 0.04), 0.27, -0.02, 0.26, H, 0, 0, 0xc8c0a8);
+      T(C(0.008, 0.5), -0.1, 0.45, 0, 0, 0, 0.5, 0xbfc5cc); T(C(0.008, 0.5), 0.1, 0.45, 0, 0, 0, -0.5, 0xbfc5cc); break;
+    case 32:    // 錄音帶
+      T(B(0.62, 0.4, 0.07), 0, 0, 0, 0, 0, 0, 0x1f1f22); T(B(0.48, 0.18, 0.075), 0, 0.06, 0, 0, 0, 0, 0xf0e2c0);
+      [-0.14, 0.14].forEach(function (x) { T(C(0.06, 0.08), x, 0.06, 0, H, 0, 0, 0xfafafa); T(C(0.025, 0.085), x, 0.06, 0, H, 0, 0, 0x3a3a3a); }); break;
+    case 41:    // 泰迪熊
+      T(S(0.22), 0, -0.08, 0, 0, 0, 0, 0xb07a44); T(S(0.17), 0, 0.24, 0, 0, 0, 0, 0xb07a44); T(S(0.07), 0, 0.2, 0.15, 0, 0, 0, 0xe0c090);
+      T(S(0.065), -0.13, 0.38, 0, 0, 0, 0, 0xb07a44); T(S(0.065), 0.13, 0.38, 0, 0, 0, 0, 0xb07a44); T(S(0.025), 0, 0.22, 0.21, 0, 0, 0, 0x1a1a1a);
+      T(S(0.02), -0.06, 0.28, 0.15, 0, 0, 0, 0x1a1a1a); T(S(0.02), 0.06, 0.28, 0.15, 0, 0, 0, 0x1a1a1a);
+      [[-0.2, -0.02], [0.2, -0.02], [-0.11, -0.28], [0.11, -0.28]].forEach(function (q) { T(S(0.08), q[0], q[1], 0.04, 0, 0, 0, 0xb07a44); }); break;
+    case 42:    // 小黃鴨
+      T(S(0.24), 0, -0.06, 0, 0, 0, 0, 0xffd21f); T(S(0.15), 0, 0.2, 0.08, 0, 0, 0, 0xffd21f);
+      T(Cy(0.02, 0.07, 0.14, 8), 0, 0.18, 0.26, H, 0, 0, 0xff8a1f); T(S(0.025), -0.07, 0.25, 0.2, 0, 0, 0, 0x1a1a1a); T(S(0.025), 0.07, 0.25, 0.2, 0, 0, 0, 0x1a1a1a); break;
+    case 43:    // 玩具車
+      T(B(0.6, 0.16, 0.3), 0, -0.04, 0, 0, 0, 0, 0xd23a3a); T(B(0.32, 0.14, 0.28), -0.04, 0.1, 0, 0, 0, 0, 0xd23a3a); T(B(0.3, 0.1, 0.285), -0.04, 0.1, 0, 0, 0, 0, 0x9fd8f0);
+      [[-0.2, 0.15], [0.2, 0.15], [-0.2, -0.15], [0.2, -0.15]].forEach(function (q) { T(C(0.07, 0.05), q[0], -0.12, q[1], H, 0, 0, 0x1a1a1a); }); break;
+    case 51: {  // 電風扇
+      T(C(0.2, 0.05), 0, -0.36, 0, 0, 0, 0, 0xf2f2f2); T(C(0.03, 0.4), 0, -0.14, 0, 0, 0, 0, 0xf2f2f2); T(C(0.08, 0.14), 0, 0.12, -0.04, H, 0, 0, 0xf2f2f2);
+      T(Tor(0.25, 0.012), 0, 0.12, 0.06, 0, 0, 0, 0xd0d4d8); for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2; T(B(0.1, 0.2, 0.01), Math.cos(a) * 0.12, 0.12 + Math.sin(a) * 0.12, 0.06, 0, 0, a + H, 0x6ac8ff); } break; }
+    case 52:    // 電鑽
+      T(Cy(0.08, 0.1, 0.42), 0, 0.1, 0, 0, 0, H, 0xf2a21f); T(B(0.1, 0.32, 0.12), 0.06, -0.12, 0, 0, 0, -0.2, 0x2a2a2a);
+      T(B(0.2, 0.08, 0.16), 0.1, -0.3, 0, 0, 0, 0, 0x2a2a2a); T(C(0.015, 0.2), -0.3, 0.1, 0, 0, 0, H, 0xbfc5cc); break;
+    case 61:    // 金錶
+      T(C(0.16, 0.05), 0, 0, 0, H, 0, 0, 0xf2c230); T(C(0.13, 0.055), 0, 0, 0, H, 0, 0, 0xfaf6e8);
+      T(B(0.12, 0.3, 0.03), 0, 0.28, -0.01, 0, 0, 0, 0xe0b028); T(B(0.12, 0.3, 0.03), 0, -0.28, -0.01, 0, 0, 0, 0xe0b028);
+      T(B(0.01, 0.09, 0.01), 0, 0.04, 0.03, 0, 0, 0, 0x1a1a1a); T(B(0.07, 0.01, 0.01), 0.03, 0, 0.03, 0, 0, 0, 0x1a1a1a); break;
+    case 62:    // 獎盃
+      T(Cy(0.22, 0.08, 0.32, 18), 0, 0.16, 0, 0, 0, 0, 0xf2c230); T(C(0.03, 0.18), 0, -0.08, 0, 0, 0, 0, 0xf2c230);
+      T(B(0.28, 0.1, 0.2), 0, -0.22, 0, 0, 0, 0, 0x3a2a1a); T(Tor(0.08, 0.02, Math.PI), -0.22, 0.18, 0, 0, 0, H, 0xf2c230); T(Tor(0.08, 0.02, Math.PI), 0.22, 0.18, 0, 0, 0, -H, 0xf2c230); break;
+    case 71:    // 檯燈
+      T(C(0.16, 0.04), 0, -0.34, 0, 0, 0, 0, 0x2a2a2e); T(C(0.02, 0.4), 0.04, -0.14, 0, 0, 0, -0.25, 0x2a2a2e); T(C(0.02, 0.3), 0.12, 0.14, 0, 0, 0, 0.8, 0x2a2a2e);
+      T(Cy(0.06, 0.16, 0.18, 16), 0.0, 0.24, 0, 0, 0, 2.2, 0x2fa36b); T(S(0.05), -0.04, 0.2, 0, 0, 0, 0, 0xfff3c0); break;
+    case 72:    // 手電筒
+      T(C(0.07, 0.5), 0, 0, 0, 0, 0, H, 0x2a2a2e); T(Cy(0.12, 0.08, 0.14, 16), -0.3, 0, 0, 0, 0, H, 0x2a2a2e); T(C(0.105, 0.02), -0.37, 0, 0, 0, 0, H, 0xfff3c0);
+      T(B(0.06, 0.03, 0.04), 0.05, 0.075, 0, 0, 0, 0, 0xd23a3a); break;
+    case 81:    // 智慧型手機
+      T(B(0.32, 0.62, 0.05), 0, 0, 0, 0, 0, 0, 0x1a1a1e); T(B(0.29, 0.56, 0.01), 0, 0, 0.026, 0, 0, 0, 0x2a4a7a);
+      T(S(0.02), 0, 0.26, 0.03, 0, 0, 0, 0x0a0a0a); T(C(0.03, 0.01), 0.08, 0.22, -0.03, H, 0, 0, 0x3a3a3a); break;
+    case 82:    // 筆記型電腦
+      T(B(0.62, 0.03, 0.44), 0, -0.2, 0, 0, 0, 0, 0xb8bec4); T(B(0.54, 0.005, 0.24), 0, -0.183, -0.04, 0, 0, 0, 0x2a2a2e);
+      T(B(0.62, 0.42, 0.025), 0, 0.0, -0.24, -0.25, 0, 0, 0xb8bec4); T(B(0.56, 0.36, 0.005), 0, 0.0, -0.225, -0.25, 0, 0, 0x2a5a8a); break;
+    case 91:    // 鬧鐘
+      T(C(0.24, 0.12), 0, 0, 0, H, 0, 0, 0xd23a3a); T(C(0.2, 0.125), 0, 0, 0, H, 0, 0, 0xfaf6e8);
+      T(S(0.09), -0.16, 0.24, 0, 0, 0, 0, 0xc8c8c8); T(S(0.09), 0.16, 0.24, 0, 0, 0, 0, 0xc8c8c8);
+      T(C(0.02, 0.14), -0.16, -0.26, 0, 0, 0, 0.4, 0x2a2a2a); T(C(0.02, 0.14), 0.16, -0.26, 0, 0, 0, -0.4, 0x2a2a2a);
+      T(B(0.015, 0.14, 0.01), 0, 0.05, 0.07, 0, 0, 0, 0x1a1a1a); T(B(0.1, 0.015, 0.01), 0.04, 0, 0.07, 0, 0, 0, 0x1a1a1a); break;
+    case 92:    // 相機
+      T(B(0.56, 0.36, 0.22), 0, 0, 0, 0, 0, 0, 0x2a2a2e); T(C(0.13, 0.16), 0.02, -0.02, 0.18, H, 0, 0, 0x1a1a1a); T(C(0.09, 0.165), 0.02, -0.02, 0.18, H, 0, 0, 0x3a5a7a);
+      T(B(0.12, 0.06, 0.08), -0.18, 0.2, 0, 0, 0, 0, 0x2a2a2e); T(C(0.03, 0.04), 0.18, 0.2, 0, 0, 0, 0, 0xc8c8c8); break;
+    case 101:   // 寶特瓶
+      T(C(0.13, 0.46), 0, -0.06, 0, 0, 0, 0, 0x8fd0ee); T(Cy(0.05, 0.13, 0.12), 0, 0.23, 0, 0, 0, 0, 0x8fd0ee);
+      T(C(0.05, 0.06), 0, 0.32, 0, 0, 0, 0, 0x2a7ad5); T(C(0.132, 0.14), 0, -0.04, 0, 0, 0, 0, 0x3ab06a); break;
+    case 102:   // 茶壺
+      T(S(0.24), 0, 0, 0, 0, 0, 0, 0xbfc5cc); T(C(0.16, 0.04), 0, 0.2, 0, 0, 0, 0, 0xbfc5cc); T(S(0.04), 0, 0.25, 0, 0, 0, 0, 0x2a2a2a);
+      T(Cy(0.03, 0.06, 0.26), 0.27, 0.04, 0, 0, 0, -0.9, 0xbfc5cc); T(Tor(0.13, 0.025, Math.PI), -0.2, 0.06, 0, 0, 0, H, 0x2a2a2a); break;
+    case 103:   // 牛奶盒
+      T(B(0.3, 0.46, 0.3), 0, -0.04, 0, 0, 0, 0, 0xfafafa); T(B(0.302, 0.16, 0.302), 0, -0.1, 0, 0, 0, 0, 0x3a7bd5);
+      T(new THREE.ConeGeometry(0.22, 0.14, 4), 0, 0.26, 0, 0, Math.PI / 4, 0, 0xfafafa); T(B(0.04, 0.06, 0.04), 0.06, 0.32, 0, 0, 0, 0, 0xd23a3a); break;
+    default: return salvageGeo(k);
+  }
+  return mergeGeos(P);
+}
+/** 每種回收物有幾款造型（第 0 款是原本的） */
+const REAL_VARIANTS = [3, 3, 3, 3, 4, 3, 3, 3, 3, 3, 4];
+
 function mergeGeos(list) {
   let n = 0;
   const parts = list.map(function (e) {
@@ -2184,7 +2278,7 @@ RR.Game = {
     for (let i = 0; i < 6; i++) view.monsters.push(buildMonster(['fire', 'ice', 'poison', 'shadow'][i % 4]));
     setViewWeapon(0);
     skinGeos = [new THREE.SphereGeometry(0.28, 18, 14), new THREE.OctahedronGeometry(0.34, 0)];
-    itemGeos = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(salvageGeo);
+    itemGeos = REAL_VARIANTS.map(function (n, k) { const out = []; for (let v = 0; v < n; v++) out.push(realGeo(k, v)); return out; });
     window.addEventListener('resize', resize); resize(); applyShadows();
     bindInput();
     ready = true;
@@ -2285,7 +2379,7 @@ RR.Game = {
         lm.position.set(a[0], 0.45, a[1]); scene.add(lm);
         return { x: a[0], z: a[1], kind: a[2], value: 0, taken: false, mesh: lm };
       }
-      const mesh = new THREE.Mesh(isk === 1 ? skinGeos[0] : isk === 2 ? skinGeos[1] : itemGeos[a[2] % itemGeos.length], isk ? new THREE.MeshBasicMaterial({ color: icol }) : salvageMat());
+      const mesh = new THREE.Mesh(isk === 1 ? skinGeos[0] : isk === 2 ? skinGeos[1] : (function () { const vs = itemGeos[a[2] % itemGeos.length]; return vs[Math.abs(Math.floor(a[0] * 7 + a[1] * 13)) % vs.length]; })(), isk ? new THREE.MeshBasicMaterial({ color: icol }) : salvageMat());
       mesh.position.set(a[0], 0.75, a[1]); scene.add(mesh);
       return { x: a[0], z: a[1], kind: a[2], value: a[3], taken: false, mesh: mesh };
     });

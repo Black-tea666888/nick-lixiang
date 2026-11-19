@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v122', items: ['新增交易所：世界頻道聊天、用金幣買賣造型、頭飾、配件與寶石等級'] };
+const UPD = { v: 'v123', items: ['回收物改成真實物品的樣子：腳踏車輪、扳手、電池、耳機、電視、錄音帶、泰迪熊、小黃鴨、電風扇、電鑽、金錶、獎盃、檯燈、手電筒、手機、筆電、鬧鐘、相機、寶特瓶、茶壺、牛奶盒等'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
