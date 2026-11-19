@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=166" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=167" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -118,7 +118,7 @@
         <button class="icon" id="helpBtn" type="button" aria-label="設定與說明">設定</button>
         <button class="icon" id="moreBtn" type="button" aria-label="更多" aria-haspopup="true">更多<i class="badge hide" id="moreBadge"></i></button>
       </div>
-      <div class="moreMenu hide" id="moreMenu" role="menu"><i class="badge hide" id="ccBadge" style="display:none"></i><button class="mItem" id="misBtn" type="button">每日任務 <small id="fsMis">0 / 3 完成</small></button><button class="mItem" id="miniInfoBtn" type="button">小遊戲</button><button class="mItem" id="arOpen" type="button">AR 抓怪 <small>用相機抓怪物</small></button><button class="mItem" id="joinOpen" type="button">用房間代碼加入</button><button class="mItem" id="logoutBtn" type="button">登出 <small id="whoProv"></small></button></div>
+      <div class="moreMenu hide" id="moreMenu" role="menu"><i class="badge hide" id="ccBadge" style="display:none"></i><button class="mItem" id="misBtn" type="button">每日任務 <small id="fsMis">0 / 3 完成</small></button><button class="mItem" id="miniInfoBtn" type="button">小遊戲</button><button class="mItem" id="joinOpen" type="button">用房間代碼加入</button><button class="mItem" id="logoutBtn" type="button">登出 <small id="whoProv"></small></button></div>
     </header>
     <nav class="lbSide" aria-label="功能">
       <button class="tile big" id="pickBtn" type="button"><span class="tag">出戰角色</span><b id="pickSum"></b></button>
@@ -135,13 +135,14 @@
         <button class="mcard" type="button" data-mode="hunt" data-go="huntBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><b>獵殺模式</b><span>拿槍獵殺怪物</span></button>
         <button class="mcard" type="button" data-mode="td" data-go="tdBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V9l6-5 6 5v12z"/><path d="M10 21v-5h4v5M9 11h6"/></svg><b>塔防模式</b><span>守住回收車</span></button>
         <button class="mcard" type="button" data-mode="br" data-go="brBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="3 2.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg><b>大逃殺</b><span>6 人混戰</span></button>
+        <button class="mcard" type="button" data-mode="ar" data-go="arOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><circle cx="12" cy="12" r="3.5"/></svg><b>AR 抓怪</b><span>用相機抓怪物</span></button>
       </div>
       <div class="startBox">
         <button class="mapChip" id="mapChip" type="button"><span>地圖</span><b id="mapName">廢棄設施</b></button>
         <button class="startBtn" id="goBtn" type="button"><small id="startMode">多人合作</small><b>開始</b></button>
       </div>
     </footer>
-    <div class="hide" id="modeHidden"><button id="createBtn" type="button" tabindex="-1">多人合作</button><button id="soloBtn" type="button" tabindex="-1">單人遊玩</button><button id="huntBtn" type="button" tabindex="-1">獵殺模式</button><button id="tdBtn" type="button" tabindex="-1">塔防模式</button><button id="brBtn" type="button" tabindex="-1">大逃殺</button></div>
+    <div class="hide" id="modeHidden"><button id="arOpen" type="button" tabindex="-1">AR 抓怪</button><button id="createBtn" type="button" tabindex="-1">多人合作</button><button id="soloBtn" type="button" tabindex="-1">單人遊玩</button><button id="huntBtn" type="button" tabindex="-1">獵殺模式</button><button id="tdBtn" type="button" tabindex="-1">塔防模式</button><button id="brBtn" type="button" tabindex="-1">大逃殺</button></div>
   </div>
 </div>
 
@@ -643,15 +644,15 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=166"></script>
-<script src="js/sim.js?v=166"></script>
-<script src="js/audio.js?v=166"></script>
-<script src="js/auth.js?v=166"></script>
-<script src="js/cloud.js?v=166"></script>
-<script src="js/net.js?v=166"></script>
-<script src="js/game.js?v=166"></script>
-<script src="js/minigames.js?v=166"></script>
-<script src="js/ar.js?v=166"></script>
-<script src="js/main.js?v=166"></script>
+<script src="js/config.js?v=167"></script>
+<script src="js/sim.js?v=167"></script>
+<script src="js/audio.js?v=167"></script>
+<script src="js/auth.js?v=167"></script>
+<script src="js/cloud.js?v=167"></script>
+<script src="js/net.js?v=167"></script>
+<script src="js/game.js?v=167"></script>
+<script src="js/minigames.js?v=167"></script>
+<script src="js/ar.js?v=167"></script>
+<script src="js/main.js?v=167"></script>
 </body>
 </html>
