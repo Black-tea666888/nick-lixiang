@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v216', items: ['休閒模式新增國際象棋（同機雙人）', '交易成功的提示保留 10 秒，點一下可以關掉'] };
+const UPD = { v: 'v217', items: ['休閒模式新增國際象棋（同機雙人）', '交易成功的提示保留 10 秒，點一下可以關掉', '交易紀錄可以手動刪除單筆或清空'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -575,15 +575,28 @@ function tradeLogList() { try { return JSON.parse(localStorage.getItem('rr_trade
 function tradeLogAdd(k, label, price, who) {
   lsSet('rr_trades', JSON.stringify([{ t: Date.now(), k: k, label: label || '', price: price | 0, who: who || '' }].concat(tradeLogList()).slice(0, 50)));
 }
+function tradeLogDel(i) {
+  const l = tradeLogList(); l.splice(i, 1);
+  lsSet('rr_trades', JSON.stringify(l)); mkDraw();
+}
 function tradeLogDraw(list) {
-  list.appendChild(mk('div', 'sec', '交易紀錄'));
+  const head = mk('div', 'sec', '交易紀錄');
+  if (tradeLogList().length) {
+    const clr = mk('button', 'btn', '清空'); clr.type = 'button';
+    clr.addEventListener('click', function () { ask('清空所有交易紀錄？（只刪除本機紀錄，不影響物品）', function () { lsSet('rr_trades', '[]'); mkDraw(); }); });
+    head.appendChild(clr);
+  }
+  list.appendChild(head);
   const logs = tradeLogList();
   if (!logs.length) { list.appendChild(mk('p', 'ccEmpty', '還沒有交易紀錄。')); return; }
-  logs.forEach(function (x) {
+  logs.forEach(function (x, i) {
     const d = new Date(x.t), tm = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     const r = mk('div', 'srow'), nm = mk('span', 'nm', TRADE_TXT[x.k] + ' ' + x.label + (x.who ? '（' + x.who + '）' : ''));
     nm.appendChild(mk('small', null, '　' + tm)); r.appendChild(nm);
     r.appendChild(mk('span', 'sc', x.k === 'sell' ? '+' + x.price : x.k === 'buy' ? '-' + x.price : x.k === 'post' ? x.price + ' 金幣' : ''));
+    const del = mk('button', 'btn', '刪'); del.type = 'button';
+    del.addEventListener('click', function () { tradeLogDel(i); });
+    r.appendChild(del);
     list.appendChild(r);
   });
 }
