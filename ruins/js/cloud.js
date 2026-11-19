@@ -7,7 +7,7 @@ const RR = window.RR = window.RR || {};
 
 const REGIONS = ['台灣', '香港'];
 const REGION_KEY = ['tw', 'hk'];
-const MODES = ['coop', 'hunt', 'td', 'br', 'card'];
+const MODES = ['coop', 'hunt', 'td', 'br', 'card', 'race', 'racet'];   // race：賽車完成圈數；racet：賽車完賽時間（分數＝99999 - 秒×10，越快越高）
 const CODE_CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function rcode(n) { let s = ''; for (let i = 0; i < n; i++) s += CODE_CH[Math.floor(Math.random() * CODE_CH.length)]; return s; }
 function ls(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }

@@ -1287,3 +1287,4 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 /* 矮螢幕：模式列不再固定高度裁切，改由整個大廳捲動，最下面的開始列才不會疊在模式卡上 */
 @media (max-height: 700px) and (orientation: portrait) { .modeStrip { overflow: visible !important; max-height: none !important; } }
 @media (max-height: 400px) and (orientation: landscape) { .lb { height: auto !important; min-height: 0 !important; grid-template-rows: auto auto auto; } .lbStage { min-height: 160px; } .modeStrip { height: max-content; } }
+#raceHud { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, .62); color: #ffd84a; padding: 6px 14px; border-radius: 8px; font-weight: 700; z-index: 5; pointer-events: none; }

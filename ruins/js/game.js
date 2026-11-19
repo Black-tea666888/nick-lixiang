@@ -2764,6 +2764,11 @@ RR.Game = {
     // 推車
     if (s.bk) s.bk.forEach(function (q) { showBreak(q[0], q[1], true); });   // 補上漏掉的（例如中途才連上）
     if (s.td) view.td = s.td;
+    if (s.race) {   // 賽車 HUD：圈數與時間
+      const mineR = s.race[2].filter(function (x) { return x[0] === myId; })[0] || [myId, 0, 0];
+      const hud = document.getElementById('raceHud');
+      if (hud) { hud.classList.remove('hide'); const tt = mineR[2] || s.race[0]; hud.textContent = '第 ' + Math.min(mineR[1] + 1, s.race[1]) + ' / ' + s.race[1] + ' 圈　' + tt.toFixed(1) + ' 秒'; }
+    } else { const hud0 = document.getElementById('raceHud'); if (hud0) hud0.classList.add('hide'); }
     if (view.mode === 'td') syncTowers(s.tw);
     if (s.veh) {
       if (!cartMesh) { cartMesh = buildCart(); scene.add(cartMesh); }

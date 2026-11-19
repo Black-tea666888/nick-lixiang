@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=210" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=211" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -145,6 +145,7 @@
         <button class="mcard" type="button" data-mode="coop" data-go="createBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c0-4 2.5-6 5-6s5 2 5 6M11 20c0-4 2.5-6 5-6s5 2 5 6"/></svg><b>組隊回收</b><span>建房邀 3 位隊友</span></button>
         <button class="mcard" type="button" data-mode="solo" data-go="soloBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-5 3-8 7-8s7 3 7 8"/></svg><b>單人拾荒</b><span>自己練習回收</span></button>
         <button class="mcard" type="button" data-mode="ar" data-go="arOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><circle cx="12" cy="12" r="3.5"/></svg><b>AR 實境</b><span>抓怪・迷宮</span></button>
+        <button class="mcard" type="button" data-mode="race" data-go="raceBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16l3-6h8l4 3v3H3z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg><b>賽車</b><span>廢墟賽道計時跑圈</span></button>
         <button class="mcard" type="button" data-mode="card" data-go="cardOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="11" height="15" rx="1.5" transform="rotate(-10 8 13)"/><rect x="10" y="3" width="11" height="15" rx="1.5"/><path d="M13 12l2-3 2 3-2 3z"/></svg><b>怪物卡牌</b><span>出牌對戰電腦</span></button>
         <button class="mcard" type="button" data-mode="hunt" data-go="huntBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><b>清剿行動</b><span>拿槍清剿怪物</span></button>
         <button class="mcard" type="button" data-mode="td" data-go="tdBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V9l6-5 6 5v12z"/><path d="M10 21v-5h4v5M9 11h6"/></svg><b>死守回收車</b><span>守住回收車</span></button>
@@ -156,7 +157,8 @@
         <button class="startBtn" id="goBtn" type="button"><small id="startMode">組隊回收</small><b>開始</b></button>
       </div>
     </footer>
-    <div class="hide" id="modeHidden"><button id="arOpen" type="button" tabindex="-1">AR 實境</button><button id="createBtn" type="button" tabindex="-1">組隊回收</button><button id="soloBtn" type="button" tabindex="-1">單人拾荒</button><button id="huntBtn" type="button" tabindex="-1">清剿行動</button><button id="tdBtn" type="button" tabindex="-1">死守回收車</button><button id="brBtn" type="button" tabindex="-1">廢墟生存戰</button><button id="cardOpen" type="button" tabindex="-1">怪物卡牌</button></div>
+    <div id="raceHud" class="hide"></div>
+    <div class="hide" id="modeHidden"><button id="arOpen" type="button" tabindex="-1">AR 實境</button><button id="createBtn" type="button" tabindex="-1">組隊回收</button><button id="soloBtn" type="button" tabindex="-1">單人拾荒</button><button id="huntBtn" type="button" tabindex="-1">清剿行動</button><button id="tdBtn" type="button" tabindex="-1">死守回收車</button><button id="brBtn" type="button" tabindex="-1">廢墟生存戰</button><button id="cardOpen" type="button" tabindex="-1">怪物卡牌</button><button id="raceBtn" type="button" tabindex="-1">賽車</button></div>
   </div>
 </div>
 
@@ -684,17 +686,18 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=210"></script>
-<script src="js/sim.js?v=210"></script>
-<script src="js/audio.js?v=210"></script>
-<script src="js/auth.js?v=210"></script>
-<script src="js/cloud.js?v=210"></script>
-<script src="js/net.js?v=210"></script>
-<script src="js/game.js?v=210"></script>
-<script src="js/minigames.js?v=210"></script>
-<script src="js/ar.js?v=210"></script>
-<script src="js/padnav.js?v=210"></script>
-<script src="js/cards.js?v=210"></script>
-<script src="js/main.js?v=210"></script>
+<script src="js/config.js?v=211"></script>
+<script src="js/race_tracks.js?v=211"></script>
+<script src="js/sim.js?v=211"></script>
+<script src="js/audio.js?v=211"></script>
+<script src="js/auth.js?v=211"></script>
+<script src="js/cloud.js?v=211"></script>
+<script src="js/net.js?v=211"></script>
+<script src="js/game.js?v=211"></script>
+<script src="js/minigames.js?v=211"></script>
+<script src="js/ar.js?v=211"></script>
+<script src="js/padnav.js?v=211"></script>
+<script src="js/cards.js?v=211"></script>
+<script src="js/main.js?v=211"></script>
 </body>
 </html>

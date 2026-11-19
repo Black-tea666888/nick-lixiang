@@ -492,6 +492,7 @@ Sim.prototype.startDay = function (day) {
   const dm = this.mode === 'coop' ? DIFF_MUL[this.diff] || 1 : 1;   // 回收任務：難度影響目標金額
   this.quota = br ? 0 : hunt ? 50 * (5 + 2 * (day - 1) + 2 * (n - 1)) : Math.round(quotaFor(day, n) * dm); this.events = [];   // 清剿：每擊倒一隻 $50
   this.smokes = [];
+  if (this.mode === 'race') { this.time = 99999; this.quota = 0; this._raceInit(); }   // 賽車：沒有時間限制、沒有怪
   this.players.forEach(function (p) { p.skCd = 0; p.smCd = 0; p.shieldT = 0; p.hideT = 0; p.stealthT = 0; p.rallyT = 0; });   // 每天開始技能冷卻歸零
   // 物品：隨機放在離起點有段距離的格子
   const cands = floorCells.filter(function (c) {
@@ -553,6 +554,7 @@ Sim.prototype.startDay = function (day) {
   const vs = br ? null : this._spotAt(VAN[0], VAN[1], 2.5, 6);
   this.players.forEach(function (p) { p.ride = false; });
   this.veh = vs ? { x: vs[0], z: vs[1], rider: null, pass: [] } : null;
+  if (this.mode === 'race') this.monsters = [];   // 賽車沒有怪
   if (br) this._startBR();
   return self.dayInfo();
 };
@@ -615,7 +617,7 @@ Sim.prototype._dropBag = function (p) {
 Sim.prototype._end = function (win, why) {
   if (this.phase !== 'play') return;
   this.phase = win ? 'won' : 'lost';
-  this.events.push({ t: 'end', win: win, why: why, core: this.td ? this.td.core : undefined, day: this.day, money: this.money, quota: this.quota, time: Math.max(0, Math.ceil(this.time)),
+  this.events.push({ t: 'end', win: win, why: why, rr: this.raceRes, core: this.td ? this.td.core : undefined, day: this.day, money: this.money, quota: this.quota, time: Math.max(0, Math.ceil(this.time)),
     stats: this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, earned: p.earned, kills: p.kills, mk: p.mk || 0, alive: p.alive, rank: p.rank || 0, ai: !!p.ai }; }) });
 };
 
@@ -1171,6 +1173,7 @@ Sim.prototype.step = function (dt) {
   }
   if (this.mode === 'br') { this._stepBR(dt, alive); return; }
   if (this.mode === 'td') { this._stepTD(dt); return; }
+  if (this.mode === 'race') { this._stepRace(dt, alive); return; }
   if (this.mode === 'coop') this._stepPoison(dt, alive);
   // 天然災害
   if (this.disT > 0 && this.time <= this.disT) {
@@ -1298,6 +1301,32 @@ Sim.prototype.step = function (dt) {
   if (this.time <= 0) this._end(false, 'time');
 };
 
+/* 賽車：沿著地圖的固定環形路線（RACE_TRACKS）跑 3 圈，依完賽時間排名 */
+Sim.prototype._raceInit = function () {
+  const tr = RACE_TRACKS[this.map] || RACE_TRACKS[0];
+  this.race = { t: 0, laps: 3, cps: tr.map(function (q) { return center(q[1], q[0]); }) };
+  this.raceRes = null;
+  this.players.forEach(function (p) { p.rc = { lap: 0, next: 1, fin: 0 }; });   // 起點就是第 0 個路線點，所以從第 1 點開始計
+};
+Sim.prototype._stepRace = function (dt, alive) {
+  const R = this.race, self = this;
+  if (!R || this.phase !== 'play') return;
+  R.t += dt;
+  const N = R.cps.length;
+  alive.forEach(function (p) {
+    const rc = p.rc; if (!rc || rc.fin) return;
+    const cp = R.cps[rc.next];
+    if (Math.hypot(p.x - cp[0], p.z - cp[1]) < 2.6) {
+      if (rc.next === 0) {
+        rc.lap++; self.events.push({ t: 'lap', id: p.id, lap: rc.lap, time: R.t });
+        if (rc.lap >= R.laps) { rc.fin = R.t; self.raceRes = { time: R.t, laps: R.laps }; self._end(true, 'race'); return; }
+      }
+      rc.next = (rc.next + 1) % N;
+    }
+  });
+  if (this.phase === 'play' && !alive.length) this._end(false, 'race');
+};
+
 Sim.prototype.snapshot = function () {
   let it = '';
   for (let i = 0; i < this.items.length; i++) it += this.items[i].taken ? '1' : '0';
@@ -1314,6 +1343,7 @@ Sim.prototype.snapshot = function () {
     bp: this.boardPos ? [r2(this.boardPos[0]), r2(this.boardPos[1])] : null,
     tt: this.tt ? [this.tt.cells.map(function (c) { return c || '.'; }).join(''), this.tt.turn, this.tt.x, this.tt.o, this.tt.over, this.tt.winner] : null,
     m: this.monsters.map(function (m) { return [r2(m.x), r2(m.z), r2(m.rot), m.state === 'chase' ? 1 : 0, m.dead > 0 ? 0 : Math.max(1, Math.round(m.hp)), Math.round(m.sh || 0), m.maxHp || 100, m.shMax || MON_SH]; }),
+    race: this.race ? [Math.round(this.race.t * 10) / 10, this.race.laps, this.players.map(function (p) { return p.rc ? [p.id, p.rc.lap, p.rc.fin ? Math.round(p.rc.fin * 10) / 10 : 0] : [p.id, 0, 0]; })] : undefined,
     it: it };
 };
 
