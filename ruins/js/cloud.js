@@ -337,6 +337,17 @@ const Cloud = {
       }).then(function () { cb(null, od.name || '玩家'); });
     }).catch(fail(cb));
   },
+  /** 用 6 碼好友代碼找玩家（不含自己），cb(err, [{uid, name, lv, code}]) */
+  findByCode: function (code, cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    if (code.length !== 6) { cb({ code: 'bad-code' }); return; }
+    if (me && code === me.code) { cb(null, []); return; }
+    db.collection('users').where('code', '==', code).limit(1).get().then(function (q) {
+      const rows = []; q.forEach(function (d) { const x = d.data(); if (d.id !== uid) rows.push({ uid: d.id, name: x.name || '玩家', lv: x.lv | 0, code: code }); });
+      cb(null, rows);
+    }).catch(fail(cb));
+  },
   /** 用名字搜尋玩家（開頭相同就算），cb(err, [{uid, name, lv, code}]) */
   searchUsers: function (text, cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
