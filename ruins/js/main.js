@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v134', items: ['交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v135', items: ['交易所價格欄位改成跟按鍵同樣式，價格上限集中設定（MARKET_MAX）', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -552,11 +552,13 @@ function mkFillSelect() {
   if (!list.length) { const op = mk('option', null, '沒有可以賣的東西'); op.value = ''; sel.appendChild(op); return; }
   list.forEach(function (t, k) { const op = mk('option', null, tradeLabel(t.kind, t.item)); op.value = String(k); sel.appendChild(op); });
 }
+/** 掛單價格上限（同時要與 firestore.rules 的 price 上限一致） */
+const MARKET_MAX = 99999;
 function mkPost() {
   const C = RR.Cloud; if (!C || !C.ready()) { mtoast('要先登入並連上網路', 'warn'); return; }
   const list = tradeables(prog()), t = list[+$('mkItem').value], price = Math.floor(+$('mkPrice').value);
   if (!t) { mtoast('先選要賣的東西', 'warn'); return; }
-  if (!(price >= 1 && price <= 99999)) { mtoast('價格要在 1～99999 金幣之間', 'warn'); return; }
+  if (!(price >= 1 && price <= MARKET_MAX)) { mtoast('價格要在 1～' + MARKET_MAX + ' 金幣之間', 'warn'); return; }
   const label = tradeLabel(t.kind, t.item), q = prog();
   if (!tradeHas(q, t.kind, t.item)) return;
   tradeTake(q, t.kind, t.item); progSave(q); pushEquip(myEquip(q));   // 先扣掉，失敗再還
