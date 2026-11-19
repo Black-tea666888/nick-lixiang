@@ -1056,3 +1056,17 @@ body.qHigh.playing::after { content: ''; position: fixed; inset: 0; z-index: 4; 
 .clanBadges { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
 .clanBadges button { font-size: 22px; padding: 6px 0; background: var(--kraft); border: 2px solid var(--ink); cursor: pointer; }
 .clanBadges button.on { background: var(--haz); outline: 2px solid var(--ink); outline-offset: -5px; }
+
+/* 自製下拉選單：所有裝置長得一樣，跟遊戲的牛皮紙風格一致 */
+select.fselNative { position: absolute !important; width: 1px !important; height: 1px !important; opacity: 0 !important; pointer-events: none !important; overflow: hidden; }
+.fsel { flex: 1; min-width: 0; min-height: 40px; padding: 6px 34px 6px 10px; text-align: left; font: inherit; font-size: 14px; font-weight: 700; color: var(--ink); background: #f6ecd9; border: 2px solid var(--ink); border-radius: 3px; cursor: pointer; position: relative; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fsel::after { content: ''; position: absolute; right: 12px; top: 50%; width: 8px; height: 8px; border-right: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink); transform: translateY(-70%) rotate(45deg); }
+.fsel:focus-visible, .fselItem:focus-visible { outline: 3px solid var(--haz); outline-offset: 1px; }
+.fselOv { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(17,20,23,.55); }
+.fselPanel { width: min(340px, 100%); max-height: 70vh; overflow: auto; display: flex; flex-direction: column; background: var(--kraft-l); border: 3px solid var(--ink); box-shadow: 4px 4px 0 rgba(17,20,23,.5); }
+.fselItem { padding: 13px 14px; text-align: left; font: inherit; font-size: 15px; font-weight: 700; color: var(--ink); background: none; border: 0; border-bottom: 2px solid rgba(30,26,22,.15); cursor: pointer; }
+.fselItem:last-child { border-bottom: 0; }
+.fselItem.on { background: var(--haz); font-weight: 900; }
+.fselItem.on::before { content: '✓ '; }
+.fselItem:disabled { opacity: .45; cursor: default; }
+.field .fsel { width: 100%; }

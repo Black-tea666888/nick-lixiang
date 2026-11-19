@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v176', items: ['戰隊設定：徽章、描述、類型（開放加入／需要批准／僅限邀請）、最低等級、地區', '沒有戰隊時可以瀏覽戰隊，依設定直接加入或申請；隊長、副隊長可以批准申請'] };
+const UPD = { v: 'v177', items: ['所有下拉選單改成遊戲風格，每台手機看起來都一樣'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -22,6 +22,38 @@ const CINFO = [
 const S = { mode: null, pvp: true, map: 0, sim: null, myId: null, hostId: null, roster: [], timers: [], lastHost: 0, seen: {}, tickN: 0, lastTick: 0, chatRate: {}, flags: {} };
 
 function ls(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+/* ---------- 自製下拉選單 ----------
+ * 原生 <select> 的選單是手機系統畫的，每台裝置長得不一樣。這裡把畫面上所有 <select> 換成遊戲風格的按鈕＋選單面板；
+ * 原本的 <select> 留著（隱藏）負責存值與觸發 change，所以其他程式不用改。之後新加的 <select> 也會自動換掉。 */
+const SEL_PROTO = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+const SEL_IDX = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'selectedIndex');
+function fancySelect(sel) {
+  if (sel.dataset.fancy) return; sel.dataset.fancy = '1';
+  const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'fsel';
+  if (sel.getAttribute('aria-label')) btn.setAttribute('aria-label', sel.getAttribute('aria-label'));
+  btn.setAttribute('aria-haspopup', 'listbox');
+  const label = function () { const o = sel.options[SEL_IDX.get.call(sel)]; btn.textContent = o ? o.textContent : ''; };
+  Object.defineProperty(sel, 'value', { configurable: true, get: function () { return SEL_PROTO.get.call(sel); }, set: function (v) { SEL_PROTO.set.call(sel, v); label(); } });
+  Object.defineProperty(sel, 'selectedIndex', { configurable: true, get: function () { return SEL_IDX.get.call(sel); }, set: function (v) { SEL_IDX.set.call(sel, v); label(); } });
+  new MutationObserver(label).observe(sel, { childList: true, subtree: true, characterData: true });
+  btn.addEventListener('click', function () {
+    const ov = document.createElement('div'); ov.className = 'fselOv';
+    const panel = document.createElement('div'); panel.className = 'fselPanel'; panel.setAttribute('role', 'listbox'); ov.appendChild(panel);
+    Array.prototype.forEach.call(sel.options, function (o, i) {
+      const it = document.createElement('button'); it.type = 'button'; it.className = 'fselItem' + (i === SEL_IDX.get.call(sel) ? ' on' : ''); it.setAttribute('role', 'option');
+      it.textContent = o.textContent; it.disabled = o.disabled;
+      it.addEventListener('click', function () { ov.remove(); if (i === SEL_IDX.get.call(sel)) return; SEL_IDX.set.call(sel, i); label(); sel.dispatchEvent(new Event('change', { bubbles: true })); sel.dispatchEvent(new Event('input', { bubbles: true })); });
+      panel.appendChild(it);
+    });
+    ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+    document.body.appendChild(ov);
+    const cur = panel.querySelector('.on'); if (cur) cur.scrollIntoView({ block: 'center' }); (cur || panel.firstChild || panel).focus && (cur || panel.firstChild).focus();
+  });
+  sel.classList.add('fselNative'); sel.insertAdjacentElement('afterend', btn); label();
+}
+function fancyAll(root) { Array.prototype.forEach.call((root || document).querySelectorAll('select'), fancySelect); }
+new MutationObserver(function (list) { list.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType !== 1) return; if (n.tagName === 'SELECT') fancySelect(n); else if (n.querySelectorAll) fancyAll(n); }); }); }).observe(document.documentElement, { childList: true, subtree: true });
+document.addEventListener('DOMContentLoaded', function () { fancyAll(); }); fancyAll();
 function lsSet(k, v) { const same = ls(k) === String(v); try { localStorage.setItem(k, v); } catch (e) {} if (!same && RR.Cloud) RR.Cloud.localChanged(k); }
 let showMapName = function () {};
 function show(id) { SCREENS.forEach(function (s) { $(s).classList.toggle('hide', s !== id); }); bannerHide(); }
