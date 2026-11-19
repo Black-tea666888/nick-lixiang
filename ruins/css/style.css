@@ -89,13 +89,13 @@ body.solo #micBtn, body.solo #chatBtn { display: none; }
 #knob { width: 46px; height: 46px; margin: -23px 0 0 -23px; background: rgba(243,239,228,.4); }
 
 /* 觸控按鍵：實心鐵板方鍵，粉筆白字；只有「打」「跑」用警示黃。按下會往下壓。 */
-#run, #atk, #gun, #swap, #uav, #air, #rescue, #locker, #smoke, #skill, #jump, #dash, #bomb, #tower, #veh {
+#run, #atk, #gun, #swap, #reload, #wsw, #uav, #air, #rescue, #locker, #smoke, #skill, #jump, #dash, #bomb, #tower, #veh {
   position: fixed; display: none; pointer-events: auto; touch-action: none; padding: 0;
   width: 58px; height: 58px; border-radius: 12px; cursor: pointer;
   font: 900 17px/1 -apple-system, "PingFang TC", "Noto Sans TC", sans-serif; color: #fff;
   background: rgba(16,20,24,.34); border: 2px solid rgba(255,255,255,.55); border-radius: 50% !important;
   -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); box-shadow: 0 1px 6px rgba(0,0,0,.25); }
-#run:active, #atk:active, #gun:active, #swap:active, #rescue:active, #locker:active, #smoke:active, #skill:active, #jump:active, #dash:active, #bomb:active, #tower:active, #veh:active {
+#run:active, #atk:active, #gun:active, #swap:active, #reload:active, #wsw:active, #veh:active, #uav:active, #air:active, #rescue:active, #locker:active, #smoke:active, #skill:active, #jump:active, #dash:active, #bomb:active, #tower:active, #veh:active {
   transform: scale(.94); background: rgba(255,255,255,.22); }
 #run { right: 22px; bottom: 40px; width: 76px; height: 76px; border-color: var(--haz); color: var(--haz); }
 #run.on { background: rgba(240,192,64,.45); color: #fff; }
@@ -112,7 +112,7 @@ body.solo #gun { bottom: 116px; }
 /* 冷卻中：變暗＋斜線 */
 #skill.cd, #smoke.cd, #gun.cd { opacity: .45; }
 body.touch.playing #rescue, body.touch.playing #locker, body.touch.playing #smoke, body.touch.playing #skill, body.touch.playing #jump, body.touch.playing #dash,
-body.touch.playing #run, body.touch.playing #atk, body.touch.playing #gun, body.touch.playing #swap, body.touch.playing #uav, body.touch.playing #air, body.touch.playing #bomb { display: block; }
+body.touch.playing #run, body.touch.playing #atk, body.touch.playing #gun, body.touch.playing #swap, body.touch.playing #reload, body.touch.playing #wsw, body.touch.playing #uav, body.touch.playing #air, body.touch.playing #bomb { display: block; }
 #uav, #air { border-color: #6ad8ff; color: #bff0ff; }
 /* 切槍：小圓鍵，中間是迴轉箭頭 */
 
@@ -457,7 +457,7 @@ body.btnedit #btnEdit { background: rgba(31,70,132,.88); }
 body.btnedit #btnEdit::after { content: '搖桿區'; position: fixed; left: 14px; bottom: 30%; color: var(--chalk-2); font-size: 15px; font-weight: 800; pointer-events: none; }
 body.btnedit #hud { display: block !important; z-index: 41; }
 body.btnedit #hud > * { visibility: hidden; }
-body.btnedit #hud > #run, body.btnedit #hud > #atk, body.btnedit #hud > #gun, body.btnedit #hud > #swap, body.btnedit #hud > #tower, body.btnedit #hud > #bomb, body.btnedit #hud > #veh,
+body.btnedit #hud > #run, body.btnedit #hud > #atk, body.btnedit #hud > #gun, body.btnedit #hud > #swap, body.btnedit #hud > #reload, body.btnedit #hud > #wsw, body.btnedit #hud > #tower, body.btnedit #hud > #bomb, body.btnedit #hud > #veh,
 body.btnedit #hud > #jump, body.btnedit #hud > #dash, body.btnedit #hud > #rescue, body.btnedit #hud > #smoke, body.btnedit #hud > #skill {
   visibility: visible; display: block !important; z-index: 41; touch-action: none; outline: 2px dashed var(--chalk); outline-offset: 3px; }
 
@@ -850,3 +850,6 @@ body.touch.playing:not(.lk-near):not(.btnedit) #locker { display: none !importan
 #hud > button .cdNum { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #fff; text-shadow: 0 1px 3px #000; pointer-events: none; }
 #hud > button.cd svg { opacity: .35; }
 #skill.cd, #smoke.cd { opacity: 1; }
+/* 技能好了：閃一下提示 */
+#hud > #skill.ready { animation: skReady 1s ease-out 2; border-color: #ffe27a; }
+@keyframes skReady { 0% { box-shadow: 0 0 0 0 rgba(255,226,122,.9); } 100% { box-shadow: 0 0 0 18px rgba(255,226,122,0); } }
