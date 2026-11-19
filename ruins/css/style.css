@@ -1269,6 +1269,10 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .hubCard b { font-size: 22px; }
 .hubCard span { font-size: 13px; line-height: 1.5; color: var(--ink-2); }
 .hubCard.casual::before { background: var(--haz); }
-.lbHubB { min-height: 0; padding: 4px 10px; font-size: 13px; }
+.lbHubB { flex: 0 0 auto; align-self: stretch; width: 46px; min-height: 0; padding: 4px 0; font-size: 18px; line-height: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.lbHubB small { font-size: 12px; font-weight: 800; }
+@media (orientation: portrait) { .modeStrip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; overflow-x: hidden; overflow-y: auto; max-height: 300px; } .modeStrip .mcard { min-width: 0; } }
 #optChip.hide { display: none; }
+#optChip b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (orientation: portrait) { .lbId .avatar { width: 46px; height: 46px; font-size: 22px; } .lbId .stats { font-size: 12px; } #optChip b { font-size: 15px; } }
 @media (orientation: landscape) and (max-height: 520px) { .hubBox { gap: 8px; } .hubTitle { font-size: 20px; } .hubCard { min-height: 72px; padding: 10px 14px; } .hubCard b { font-size: 18px; } }
