@@ -80,7 +80,8 @@ RR.Auth = {
   },
   /** 加到主畫面（獨立視窗）時，Firebase 的彈窗與跳轉登入在 iPhone 上都會失敗；改用 Google 官方按鈕拿 ID token 再交給 Firebase */
   standalone: function () { try { return !!(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)); } catch (e) { return false; } },
-  gisReady: function () { return !!(auth && RR.CONFIG.googleClientId && RR.Auth.standalone()); },
+  // 不要求 auth 已建立：登入按鈕在 Auth.init 之前就會畫；點擊時 auth 一定已就緒
+  gisReady: function () { return !!(RR.CONFIG.googleClientId && RR.Auth.configured() && RR.Auth.standalone()); },
   /** 把官方按鈕畫進 el；onError(e) 在失敗時呼叫 */
   gisButton: function (el, onError) {
     const go = function () {
