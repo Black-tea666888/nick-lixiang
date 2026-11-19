@@ -528,7 +528,9 @@ const Cloud = {
         cb(null, null); return;
       }
       const c = r[0].data(); c.id = r[0].id;
-      cb(null, { clan: c, members: members });
+      // 讀每位成員的上次上線時間（users/{uid}.seen），讀不到就略過
+      Promise.all(members.map(function (x) { return db.collection('users').doc(x.uid).get().then(function (s) { x.seen = s.exists ? (Number(s.data().seen) || 0) : 0; }, function () { x.seen = 0; }); }))
+        .then(function () { cb(null, { clan: c, members: members }); });
     }).catch(fail(cb));
   },
   topClans: function (cb) {
