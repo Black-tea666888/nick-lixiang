@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v207', items: ['近戰時按射擊鍵（電腦 X、右鍵、手把 RT）會自動切回槍並開槍'] };
+const UPD = { v: 'v208', items: ['拾荒團成員列表會顯示每位成員的上次上線時間'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1791,13 +1791,13 @@ function renderSocial() {
         { const cc = mk('button', 'btn primary', '打開拾荒團聊天'); cc.type = 'button'; cc.style.width = '100%'; cc.style.margin = '6px 0 10px'; cc.addEventListener('click', function () { $('scrSocial').classList.add('hide'); renderSocial.token = null; clanFrom = 'social'; clanOpen(); }); b.appendChild(cc); }
         const isLeader = info.clan.owner === RR.Cloud.uid(), deps = info.clan.deputies || [];
         const roleOf = function (m) { return m.uid === info.clan.owner ? '團長' : deps.indexOf(m.uid) >= 0 ? '副團長' : '團員'; };
-        socRows(info.members.map(function (m) { return Object.assign({}, m, { name: (m.name || '玩家') + ' 〔' + roleOf(m) + '〕' }); }), function (v) { return v + ' 分'; });
+        socRows(info.members.map(function (m) { return Object.assign({}, m, { name: (m.name || '玩家') + ' 〔' + roleOf(m) + '〕' + (seenText(m.seen) ? '・' + seenText(m.seen) : '') }); }), function (v) { return v + ' 分'; });
         const my = RR.Cloud.uid();
         const amDep = deps.indexOf(my) >= 0;
         if (isLeader || amDep) info.members.forEach(function (m) {
           if (m.uid === info.clan.owner || m.uid === my) return;
           const isDep = deps.indexOf(m.uid) >= 0, r = mk('div', 'srow');
-          r.appendChild(mk('span', 'nm', (m.name || '玩家') + ' · ' + roleOf(m)));
+          r.appendChild(mk('span', 'nm', (m.name || '玩家') + ' · ' + roleOf(m) + (seenText(m.seen) ? ' · ' + seenText(m.seen) : '')));
           if (isLeader) {
             const bt = mk('button', 'btn', isDep ? '取消副團長' : '設為副團長'); bt.type = 'button';
             bt.addEventListener('click', function () { C.setDeputy(m.uid, !isDep, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
