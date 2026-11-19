@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v174', items: ['賽季只顯示自己的賽區和全區', '賽區每週只能換一次，週日 24:00 後才能再換'] };
+const UPD = { v: 'v175', items: ['手機以橫式遊玩為主：開始時會進全螢幕並轉橫式（Android），直拿時會提示轉橫式', '高畫質：手電筒影子更清楚、畫面調色更有層次'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1722,6 +1722,15 @@ function bind() {
   $('confirmYes').addEventListener('click', leave);
   $('msgOk').addEventListener('click', function () { $('msg').classList.add('hide'); });
   $('qrClose').addEventListener('click', function () { $('qrBox').classList.add('hide'); });
+  // 手機以橫式為主：按開始／加入時進全螢幕並鎖成橫式（Android 支援；iPhone 不能鎖，改用直式時的提示）
+  const lockLandscape = function () {
+    if (!('ontouchstart' in window)) return;
+    const el = document.documentElement, rq = el.requestFullscreen || el.webkitRequestFullscreen;
+    const lock = function () { try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(function () {}); } catch (e) {} };
+    try { if (rq && !document.fullscreenElement) { const pr = rq.call(el, { navigationUI: 'hide' }); if (pr && pr.then) pr.then(lock).catch(lock); else lock(); } else lock(); } catch (e) { lock(); }
+  };
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('#goBtn, #joinBtn, #startBtn, #tmQuick, #tmCreate, .tmJoin')) lockLandscape(); }, true);
+  $('rotateSkip').addEventListener('click', function () { document.body.classList.add('allowPortrait'); });
   // AR 抓怪：每天前 10 隻有獎勵（普通 5、稀有 15、傳說 40 金幣）；第一次抓到的外觀記進圖鑑，集滿 32 種送 300 金幣
   const AR_MAX = 10, AR_COIN = [5, 15, 40], AR_XP = [3, 8, 20];
   // 每日 AR 任務：[說明, 統計欄位, 目標, 金幣]
