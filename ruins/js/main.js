@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v193', items: ['離開對戰回大廳時先進分類畫面（主玩法／休閒模式）', '分類按鈕縮成一欄，不再擠壓身分卡', '直版模式列改成兩欄可上下滑，所有模式都看得到', '回收任務難度鈕文字縮短，不再被切掉'] };
+const UPD = { v: 'v194', items: ['身分卡在直版不再切邊：功能按鈕改到獨立一列，「背包」「最佳」數字完整顯示'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [

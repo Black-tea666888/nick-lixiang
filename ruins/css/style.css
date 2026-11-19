@@ -1275,4 +1275,6 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 #optChip.hide { display: none; }
 #optChip b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (orientation: portrait) { .lbId .avatar { width: 46px; height: 46px; font-size: 22px; } .lbId .stats { font-size: 12px; } #optChip b { font-size: 15px; } }
+/* 直版：功能按鈕換到獨立一列，身分卡才有寬度顯示「背包 普通」「最佳 0天」 */
+@media (orientation: portrait) { .lbTop { flex-wrap: wrap; } .lbIcons { order: 1; width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); } .lbIcons .icon { min-height: 34px; } }
 @media (orientation: landscape) and (max-height: 520px) { .hubBox { gap: 8px; } .hubTitle { font-size: 20px; } .hubCard { min-height: 72px; padding: 10px 14px; } .hubCard b { font-size: 18px; } }
