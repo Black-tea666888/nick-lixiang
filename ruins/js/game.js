@@ -174,7 +174,7 @@ function showSub(text) { toast(text, 'warn'); }
 const keys = {};
 let scopeOn = false;   // 狙擊槍開鏡（Z 或「鏡」鍵）
 let smQ = false, skQ = false, smokeT = null, padMesh = null, ttQ = null, trophyMesh = null, boardMesh = null;   // Q 丟煙霧彈（按一下送一次）
-const touch = { joyId: null, lookId: null, ox: 0, oy: 0, jx: 0, jy: 0, lx: 0, ly: 0, run: false };
+const touch = { joyId: null, lookId: null, ox: 0, oy: 0, jx: 0, jy: 0, lx: 0, ly: 0, run: false, runLock: false };
 const settings = { sens: 1 };
 // 手機改用 Lambert 材質（逐頂點打光），GPU 負擔約少一半，畫面差異很小；電腦維持 Phong
 const LITE = ('ontouchstart' in window) || !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
@@ -2038,8 +2038,13 @@ function bindInput() {
   };
   canvas.addEventListener('touchend', touchEnd); canvas.addEventListener('touchcancel', touchEnd);
   const runBtn = $('run');
-  runBtn.addEventListener('touchstart', function (e) { e.preventDefault(); touch.run = true; runBtn.classList.add('on'); }, { passive: false });
-  const runOff = function (e) { e.preventDefault(); touch.run = false; runBtn.classList.remove('on'); };
+  // 跑步鍵：按住跑；點一下切換「自動連續跑」（再點一下關掉）
+  let runDownT = 0;
+  runBtn.addEventListener('touchstart', function (e) { e.preventDefault(); touch.run = true; runDownT = Date.now(); runBtn.classList.add('on'); }, { passive: false });
+  const runOff = function (e) {
+    e.preventDefault(); touch.run = false; runBtn.classList.remove('on');
+    if (e.type === 'touchend' && Date.now() - runDownT < 250) { touch.runLock = !touch.runLock; runBtn.classList.toggle('lock', touch.runLock); toast(touch.runLock ? '自動跑步：開' : '自動跑步：關'); }
+  };
   runBtn.addEventListener('touchend', runOff, { passive: false }); runBtn.addEventListener('touchcancel', runOff, { passive: false });
   runBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   $('micBtn').addEventListener('click', function () { RR.Game.toggleMic(); });
@@ -2091,7 +2096,7 @@ function updateMe(dt) {
   let mag = Math.hypot(f, s);
   if (mag > 1) { f /= mag; s /= mag; mag = 1; }
   const moving = mag > 0.15;
-  const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run) && moving && !me.tired && !me.riding;
+  const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run || touch.runLock) && moving && !me.tired && !me.riding;
   if (wantRun) { me.stam -= 0.15 * (1 - 0.05 * myGem(1)) * dt; if (me.stam <= 0) { me.stam = 0; me.tired = true; } }
   else { me.stam = Math.min(1, me.stam + 0.28 * (myPet() === 4 ? 1.2 : 1) * (myC() === 7 ? 1.15 : 1) * dt); if (me.tired && me.stam > 0.2) me.tired = false; }
   if (me.rallyT > 0) me.rallyT -= dt;
@@ -2293,6 +2298,8 @@ function updateHud() {
   const bm = $('bombs'), bt = '∞'; if (bm.textContent !== bt) bm.textContent = bt;
   const am = $('ammo'), at = '∞'; if (am.textContent !== at) am.textContent = at;
   const gb = $('gun'); setIcon('gun', wpnMode === 'melee' ? 'knife' : me.reloading ? 'reload' : 'gun'); gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
+  // 近戰模式下「槍」鍵已經是近戰攻擊，攻擊鍵隱藏避免兩顆一樣
+  $('atk').classList.toggle('hide', wpnMode === 'melee');
   const qf = $('qfill'), pct = view.mode === 'td' && view.td ? view.td[0] : view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
   qf.style.width = pct + '%'; qf.classList.toggle('done', pct >= 100);
   const cap = myCap(), pp = $('pips'); while (pp.children.length < 16) pp.appendChild(document.createElement('i')); if ($('bagCap').textContent !== String(cap)) $('bagCap').textContent = cap;

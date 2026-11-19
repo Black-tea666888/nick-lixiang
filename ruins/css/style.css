@@ -108,6 +108,7 @@ body.solo #micBtn, body.solo #chatBtn { display: none; }
   transform: scale(.94); background: rgba(255,255,255,.22); }
 #run { right: 22px; bottom: 40px; width: 76px; height: 76px; border-color: var(--haz); color: var(--haz); }
 #run.on { background: rgba(240,192,64,.45); color: #fff; }
+#run.lock { box-shadow: 0 0 0 4px var(--haz), 0 0 0 6px var(--ink); }
 #atk { right: 108px; bottom: 40px; width: 64px; height: 64px; }
 #rescue { right: 108px; bottom: 116px; }
 #locker { right: 260px; bottom: 116px; }
