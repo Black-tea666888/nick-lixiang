@@ -1288,3 +1288,13 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 @media (max-height: 700px) and (orientation: portrait) { .modeStrip { overflow: visible !important; max-height: none !important; } }
 @media (max-height: 400px) and (orientation: landscape) { .lb { height: auto !important; min-height: 0 !important; grid-template-rows: auto auto auto; } .lbStage { min-height: 160px; } .modeStrip { height: max-content; } }
 #raceHud { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, .62); color: #ffd84a; padding: 6px 14px; border-radius: 8px; font-weight: 700; z-index: 5; pointer-events: none; }
+
+/* 國際象棋 */
+.chessBoard { display: grid; grid-template-columns: repeat(8, 1fr); width: min(92vw, 420px); aspect-ratio: 1; margin: 8px auto; border: 3px solid var(--ink); }
+.chSq { position: relative; font-size: clamp(22px, 6vw, 36px); line-height: 1; padding: 0; border: 0; background: #e8d7b0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.chSq.dk { background: #8a6a4a; }
+.chSq.sel { outline: 3px solid #f0c040; outline-offset: -3px; }
+.chSq.tgt::after { content: ''; position: absolute; width: 28%; aspect-ratio: 1; border-radius: 50%; background: rgba(240, 192, 64, .75); }
+.chSq.pw { color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000; }
+.chSq.pb { color: #111; }
+.chessStatus { text-align: center; font-weight: 900; margin: 8px 0 0; }
