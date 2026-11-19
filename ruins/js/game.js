@@ -2182,8 +2182,43 @@ function bindInput() {
   initMini(); initLayout();
 }
 
+/* ---------- 遊戲手把（Xbox／PS 標準配置，Steam Deck 也一樣） ----------
+ * 左搖桿移動、右搖桿轉視角、RT 開槍（按住連射）、LT 開鏡、A 跳、B 衝刺、X 切近戰／救人（按住）、Y 換槍、
+ * LB 煙霧彈、RB 技能、L3 切換跑步、R3 近戰攻擊、十字鍵：上 UAV、下 櫃子、左 炸藥、右 空中掃射、Back 上車、Start 選單 */
+const pad = { x: 0, y: 0, prev: [], run: false, shoot: false, scope: false, on: false };
+function padDead(v) { return Math.abs(v) < 0.18 ? 0 : (v - Math.sign(v) * 0.18) / 0.82; }
+function pollPad(dt) {
+  const gps = navigator.getGamepads ? navigator.getGamepads() : null, gp = gps && Array.prototype.find.call(gps, function (g) { return g && g.connected; });
+  if (!gp) { pad.x = pad.y = 0; if (pad.shoot) { pad.shoot = false; gunHeld = false; } return; }
+  pad.on = true;
+  const ax = gp.axes, bt = function (i) { const b = gp.buttons[i]; return b ? (typeof b === 'object' ? b.value > 0.5 || b.pressed : b > 0.5) : false; };
+  const down = function (i) { const now = bt(i), was = !!pad.prev[i]; pad.prev[i] = now; return now && !was; };
+  pad.x = padDead(ax[0] || 0); pad.y = padDead(ax[1] || 0);
+  const rx = padDead(ax[2] || 0), ry = padDead(ax[3] || 0);
+  if ((rx || ry) && canControl()) look(rx * Math.abs(rx) * dt * 1100, ry * Math.abs(ry) * dt * 760, 0.0024);
+  if (!canControl()) { pad.prev = gp.buttons.map(function (_, i) { return bt(i); }); return; }
+  if (down(0)) jumpQ = true;
+  if (down(1)) dashQ = true;
+  if (down(2)) swapPress(); keys.PadRescue = bt(2);
+  if (down(3)) weaponPress();
+  if (down(4)) trySmoke();
+  if (down(5)) trySkill();
+  const lt = bt(6); if (lt !== pad.scope) { pad.scope = lt; scopeOn = lt; }
+  const rt = bt(7); if (rt && !pad.shoot) { pad.shoot = true; gunHeld = true; shoot(); } else if (!rt && pad.shoot) { pad.shoot = false; gunHeld = false; }
+  if (down(8)) vhQ = true;
+  if (down(9)) { const mb = document.getElementById('hudMore'); if (mb) mb.click(); }
+  if (down(10)) { pad.run = !pad.run; toast(pad.run ? '跑步：開' : '跑步：關'); }
+  if (down(11)) attack();
+  if (down(12)) useUav();
+  if (down(13)) lockerPress();
+  if (down(14) && RR.Game.onBomb) RR.Game.onBomb(Math.round(me.yaw * 100) / 100);
+  if (down(15)) { if (view.mode === 'td' && RR.Game.onTower) RR.Game.onTower(); else useAir(); }
+}
+window.addEventListener('gamepadconnected', function (e) { toast('已連接手把：' + String(e.gamepad.id || '').slice(0, 24)); });
+window.addEventListener('gamepaddisconnected', function () { toast('手把已中斷'); pad.x = pad.y = 0; });
 /* ---------- 每幀更新 ---------- */
 function updateMe(dt) {
+  pollPad(dt);
   if (keys.ArrowLeft) me.yaw += 2.2 * dt;
   if (keys.ArrowRight) me.yaw -= 2.2 * dt;
   if (me.inLk) { if (lkPos) { me.x = lkPos[0]; me.z = lkPos[1]; } return; }   // 躲在櫃子裡不能移動
@@ -2196,11 +2231,11 @@ function updateMe(dt) {
   if (keys.KeyS || keys.ArrowDown) f -= 1;
   if (keys.KeyD) s += 1;
   if (keys.KeyA) s -= 1;
-  f -= touch.jy; s += touch.jx;
+  f -= touch.jy + pad.y; s += touch.jx + pad.x;
   let mag = Math.hypot(f, s);
   if (mag > 1) { f /= mag; s /= mag; mag = 1; }
   const moving = mag > 0.15;
-  const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run || touch.runLock) && moving && !me.tired && !me.riding;
+  const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run || touch.runLock || pad.run) && moving && !me.tired && !me.riding;
   if (wantRun) { me.stam -= 0.15 * (1 - 0.05 * myGem(1)) * dt; if (me.stam <= 0) { me.stam = 0; me.tired = true; } }
   else { me.stam = Math.min(1, me.stam + 0.28 * (myPet() === 4 ? 1.2 : 1) * (myC() === 7 ? 1.15 : 1) * dt); if (me.tired && me.stam > 0.2) me.tired = false; }
   if (me.rallyT > 0) me.rallyT -= dt;
@@ -2886,7 +2921,7 @@ RR.Game = {
     const vh = vhQ; vhQ = false;
     const sm = smQ; smQ = false; const sk = skQ; skQ = false; const tt = ttQ; ttQ = null;
     return { t: 'i', x: Math.round(me.x * 100) / 100, z: Math.round(me.z * 100) / 100, yaw: Math.round(me.yaw * 100) / 100,
-      vh: vh || undefined, run: me.running && me.alive, air: me.y - (me.gnd || 0) > 0.25 && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!keys.KeyE && me.alive, lk: takeLk(), sm: sm, sk: sk, tt: tt === null ? undefined : tt };
+      vh: vh || undefined, run: me.running && me.alive, air: me.y - (me.gnd || 0) > 0.25 && me.alive, loud: loudT > 0 && me.alive, spk: spk, rs: !!(keys.KeyE || keys.PadRescue) && me.alive, lk: takeLk(), sm: sm, sk: sk, tt: tt === null ? undefined : tt };
   },
   setMonSkin: function (v) {
     RR.Game.settings.monSkin = v | 0;
