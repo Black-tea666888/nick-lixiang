@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v203', items: ['修正手機橫式大廳模式卡與開始列重疊（矮螢幕改為可捲動）'] };
+const UPD = { v: 'v204', items: ['卡牌與 AR 的金幣也計入本週段位積分', '社群排行榜可以選 AR 抓怪（休閒模式）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1210,6 +1210,8 @@ const PTIERS = [
   { n: '大師', min: 4500 }, { n: '宗師', min: 6000 }, { n: '傳奇', min: 8000 }
 ];
 function ptierOf(s) { let i = 0; for (let k = 0; k < PTIERS.length; k++) if ((s | 0) >= PTIERS[k].min) i = k; return i; }
+/** 卡牌、AR 的金幣也計入本週段位積分（與普通模式共用同一個段位） */
+function addWeekPts(p, n) { const w = RR.Cloud.weekId(); if (p.wk !== w) { p.wk = w; p.wpts = 0; } p.wpts = (p.wpts | 0) + Math.round(n | 0); }
 function myWeekPts() { const p = prog(); return p.wk === RR.Cloud.weekId() ? (p.wpts | 0) : 0; }
 /** 本週輪換地圖：依週次固定抽 6 張，全部玩家一致 */
 function rotMaps() {
@@ -1543,6 +1545,9 @@ function dailyLogin() {
 /* ---------- 社群畫面 ---------- */
 const MODE_NAME = { coop: '回收任務', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', card: '怪物卡牌' };
 let socTab = 'rank', socMode = 'coop', socScope = 'week';
+/* 社群排行可選的模式：主玩法（含卡牌）＋休閒的 AR */
+const SOC_MODES = ['coop', 'hunt', 'td', 'br', 'card', 'ar'];
+function socModeName(m) { return m === 'ar' ? 'AR 抓怪（隻數）' : MODE_NAME[m] + '模式'; }
 function mk(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function socNote(text) { const b = $('socBody'); b.appendChild(mk('p', 'note', text)); }
 function socSelect(opts, val, onChange) {
@@ -1612,14 +1617,14 @@ function renderSocial() {
   if (!C.ready()) { socNote('雲端還沒連上。請用 Google 或訪客登入並確認網路；如果剛登入，等幾秒再打開一次。'); return; }
   const token = {}; renderSocial.token = token;
   const guard = function (fn) { return function (err, data) { if (renderSocial.token !== token) return; const w = b.querySelector('.wait'); if (w) w.remove(); if (err) { socNote(C.message(err)); return; } fn(data); }; };
-  const modeSel = socSelect(C.MODES.map(function (m) { return [m, MODE_NAME[m] + '模式']; }), socMode, function (v) { socMode = v; renderSocial(); });
+  const modeSel = socSelect(SOC_MODES.map(function (m) { return [m, socModeName(m)]; }), socMode, function (v) { socMode = v; renderSocial(); });
   if (socTab === 'rank') {
     const mine = myWeekPts();
     const tr = mk('p', 'note', '我的本週段位：' + PTIERS[ptierOf(mine)].n + '（' + mine + ' 分）');
     b.appendChild(mk('p', 'note', '排行榜每週日 24:00（台灣時間）重新計算。上週各模式全區前 3 名，會獲得限定造型「冠軍王冠」。'));
     const tbtn = mk('button', 'btn', '段位與輪換說明'); tbtn.type = 'button'; tbtn.style.margin = '6px 0 10px';
     tbtn.addEventListener('click', openTierInfo); b.appendChild(tr); b.appendChild(tbtn);
-    const rankSel = socSelect(C.MODES.map(function (m) { return [m, MODE_NAME[m] + '模式']; }).concat([['mix', '全部模式'], ['ar', 'AR 抓怪（隻數）']]), socMode, function (v) { socMode = v; renderSocial(); });
+    const rankSel = socSelect(SOC_MODES.map(function (m) { return [m, socModeName(m)]; }).concat([['mix', '全部模式']]), socMode, function (v) { socMode = v; renderSocial(); });
     const row = mk('div', 'soc-row'); row.appendChild(rankSel);
     row.appendChild(socSelect([['week', '本週'], ['all', '總榜']], socScope, function (v) { socScope = v; renderSocial(); })); b.appendChild(row);
     b.appendChild(mk('p', 'note wait', '讀取中…'));
@@ -1963,7 +1968,7 @@ function bind() {
     sfx: function (k) { try { if (k === 'play') Sfx.tone(520, 0.05, 'square', 0.05, 700); else if (k === 'draw') Sfx.tone(330, 0.05, 'triangle', 0.05); else if (k === 'win') Sfx.tone(660, 0.25, 'triangle', 0.1, 1320); else if (k === 'lose') Sfx.tone(300, 0.3, 'sawtooth', 0.06, 150); else if (k === 'no') Sfx.tone(160, 0.08, 'square', 0.05); } catch (e) {} },
     award: function (win, opp) {
       const p = prog(), lv0 = levelOf(p.xp), coins = win ? 20 + opp * 10 : 5, xp = coins + 10;
-      p.coins += coins; p.xp += xp; p.st.games += 1; if (win) p.st.wins += 1; progSave(p); renderProg();
+      p.coins += coins; p.xp += xp; p.st.games += 1; if (win) p.st.wins += 1; addWeekPts(p, coins); progSave(p); renderProg();
       if (win && RR.Cloud && RR.Cloud.ready()) RR.Cloud.submit('card', 1);
       return '金幣 +' + coins + '，經驗 +' + xp + (levelOf(p.xp) > lv0 ? '，升到 Lv.' + levelOf(p.xp) + '（大廳點等級領獎勵）' : '');
     }
@@ -2096,7 +2101,7 @@ function bind() {
         const ms = arMisState(p); ms.n++; if (c.rar >= 1) ms.rare++; if (c.g === 2) ms.ex++;
         AR_MIS.forEach(function (x, i) { if (!ms.done[i] && (ms[x[1]] | 0) >= x[2]) { ms.done[i] = 1; p.coins += x[3]; parts.push('任務完成 +' + x[3]); } });
         if (RR.Cloud && RR.Cloud.ready()) RR.Cloud.submit('ar', 1);
-        if ((p.arToday | 0) < AR_MAX) { p.arToday = (p.arToday | 0) + 1; p.coins += AR_COIN[c.rar] || 5; p.xp += AR_XP[c.rar] || 3; parts.push('+' + (AR_COIN[c.rar] || 5) + ' 金幣'); }
+        if ((p.arToday | 0) < AR_MAX) { p.arToday = (p.arToday | 0) + 1; p.coins += AR_COIN[c.rar] || 5; addWeekPts(p, AR_COIN[c.rar] || 5); p.xp += AR_XP[c.rar] || 3; parts.push('+' + (AR_COIN[c.rar] || 5) + ' 金幣'); }
         else parts.push('今天的金幣已領完');
         progSave(p); renderProg(); return parts.join('，');
       }
