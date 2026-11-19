@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v146', items: ['好友頁先顯示上次的列表，不用每次等很久', '修正交易成功的黃色橫幅收不掉（切換畫面、點一下、切到背景都會收起）', '大廳新增獨立的「交易所」按鈕', '修正大廳換槍、換造型後，進局內沒有跟著換', '週排行榜每週日 24:00 重新計算；上週各模式全區前 3 名獲得限定頭飾「冠軍王冠」', '拿到櫃子裡的近戰武器會得到 4 秒護盾', '每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
+const UPD = { v: 'v147', items: ['特效機與槍枝造型機：第一輪全部抽到後進入第二輪（新造型）', '好友頁先顯示上次的列表，不用每次等很久', '修正交易成功的黃色橫幅收不掉（切換畫面、點一下、切到背景都會收起）', '大廳新增獨立的「交易所」按鈕', '修正大廳換槍、換造型後，進局內沒有跟著換', '週排行榜每週日 24:00 重新計算；上週各模式全區前 3 名獲得限定頭飾「冠軍王冠」', '拿到櫃子裡的近戰武器會得到 4 秒護盾', '每位玩家有公開 ID，個人戰績上方可看到；可以自訂一句簡介', '交易紀錄等列表文字改為深色，看得清楚', '修正進度沒存到雲端：抽獎、交易後很快離開，現在會立即寫入', '修正「段位與輪換說明」在社群畫面點了沒反應', '交易所單筆價格上限改為 1～1000 金幣', '交易所成功交易會跳出橫幅，並留下交易紀錄；段位與地圖輪換說明；個人段位依本週金幣；戰隊新增段位：依本週積分分青銅到宗師，每週一重算，並記錄歷史最高段位；戰隊排行榜改為本週排名', '出戰角色頁移除重複的地圖列表，地圖統一在大廳「地圖」選擇', '介面整理：右上角改成「聊天／社群／設定／更多」，每日任務、戰隊聊天、小遊戲、房間代碼、登出收進「更多」；遊戲內左上角新增「≡」收合小遊戲、背包、說明、離開', '「交易所」改成「聊天與組隊」：世界頻道新樣式（頭像、等級、時間）、戰隊分頁、交易所，右邊新增快速組隊（公開房間列表、建立房間、快速加入）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -124,7 +124,9 @@ function applyLocalSkins() {
   Game.settings.itemSkin = own('is', n('rr_is')); Game.settings.fx = own('fx', n('rr_fx')); Game.setGunSkin(own('gs', n('rr_gs')));
   const ms = own('ms', n('rr_ms')); if ((Game.settings.monSkin | 0) !== ms) Game.setMonSkin(ms);
 }
-const SKIN_NAMES = { is: ['預設', '糖果', '寶石'], ms: ['預設', '骸骨白', '霓虹'], fx: ['金黃', '冰藍', '粉紅', '紫光'], gs: ['原廠', '沙漠迷彩', '叢林迷彩', '黃金', '黑金', '霓虹粉', '寒冰'] };
+const SKIN_NAMES = { is: ['預設', '糖果', '寶石'], ms: ['預設', '骸骨白', '霓虹'], fx: ['金黃', '冰藍', '粉紅', '紫光', '熔岩紅', '星塵銀', '極光綠', '霓虹藍'], gs: ['原廠', '沙漠迷彩', '叢林迷彩', '黃金', '黑金', '霓虹粉', '寒冰', '極地迷彩', '熔岩裂紋', '全息', '鈦合金', '暗夜霓虹'] };
+// 第二輪才會抽到的造型：不進商店（只能靠轉蛋機）
+const WHEEL2_ONLY = { fx: 4, gs: 7 };
 const PET_NOTE = ['', '速度 +5%', '偵測 +8m', '賣出 +10%', '體力 +20%'];
 function catNames(cat) { return cat === 'o' ? W.COSTUMES : cat === 'pet' ? W.PETS : cat === 'hat' ? W.HATS : SKIN_NAMES[cat]; }
 const CAT_LABEL = { o: '服裝', pet: '寵物', hat: '頭飾', is: '回收品造型', ms: '怪物造型', fx: '彈道特效', gs: '槍枝造型' };
@@ -134,8 +136,10 @@ const WHEELS = [
   { n: '綜合', cost: 50, seg: [['o'], ['pet'], ['hat'], ['is'], ['coin', 30], ['ms'], ['fx'], ['gs']] },
   { n: '服裝', cost: 80, seg: [['o', 1], ['o', 2], ['o', 3], ['o', 4], ['o', 5], ['coin', 30], ['coin', 60], ['coin', 100]] },
   { n: '寵物', cost: 80, seg: [['pet', 1], ['coin', 20], ['pet', 2], ['coin', 40], ['pet', 3], ['coin', 60], ['pet', 4], ['coin', 100]] },
-  { n: '造型特效', cost: 60, seg: [['is', 1], ['is', 2], ['ms', 1], ['ms', 2], ['fx', 1], ['fx', 2], ['fx', 3], ['coin', 50]] },
-  { n: '槍枝造型', cost: 60, seg: [['gs', 1], ['gs', 2], ['gs', 3], ['gs', 4], ['gs', 5], ['gs', 6], ['coin', 30], ['coin', 60]] }
+  { n: '造型特效', cost: 60, seg: [['is', 1], ['is', 2], ['ms', 1], ['ms', 2], ['fx', 1], ['fx', 2], ['fx', 3], ['coin', 50]],
+    seg2: [['fx', 4], ['fx', 5], ['fx', 6], ['fx', 7], ['coin', 50], ['coin', 60], ['coin', 80], ['coin', 100]] },
+  { n: '槍枝造型', cost: 60, seg: [['gs', 1], ['gs', 2], ['gs', 3], ['gs', 4], ['gs', 5], ['gs', 6], ['coin', 30], ['coin', 60]],
+    seg2: [['gs', 7], ['gs', 8], ['gs', 9], ['gs', 10], ['gs', 11], ['coin', 30], ['coin', 60], ['coin', 100]] }
 ];
 let wheelI = 0, wheelBusy = false;
 const M_NAME = ['綜合機', '服裝機', '寵物機', '特效機', '槍械機'];
@@ -171,8 +175,14 @@ function segDesc(sg, p) {
   const extra = sg[0] === 'pet' ? '寵物加成：' + PET_NOTE[sg[1]] + '。' : sg[0] === 'gs' ? '換上後，所有槍都用這個配色。' : sg[0] === 'o' ? '角色的服裝。' : sg[0] === 'fx' ? '開槍彈道的顏色。' : sg[0] === 'is' ? '地圖上回收品的樣子。' : sg[0] === 'ms' ? '怪物的樣子（只有你看得到）。' : '';
   return extra + (own ? '你已經有了，抽到會換成 25 金幣。' : '你還沒有。');
 }
+/** 這台機器現在的獎品：第一輪全部抽到後自動進第二輪（只有有 seg2 的機器） */
+function wheelSeg(p, i) {
+  const w = WHEELS[i]; p.wr = Array.isArray(p.wr) ? p.wr : [];
+  if (!(p.wr[i] | 0) && w.seg2 && w.seg.every(function (sg) { return sg[0] === 'coin' || owns(p, sg[0], sg[1]); })) { p.wr[i] = 1; progSave(p); say('「' + w.n + '」第一輪全部抽到了，進入第二輪！'); }
+  return (p.wr[i] | 0) && w.seg2 ? w.seg2 : w.seg;
+}
 function dwPreview(i) {
-  const wh = WHEELS[wheelI], sg = wh.seg[i], p = prog(), look = myLook(); dwSel = i;
+  const p = prog(), sg = wheelSeg(p, wheelI)[i], look = myLook(); dwSel = i;
   Array.prototype.forEach.call($('dwGrid').querySelectorAll('.dwCell'), function (c) { c.classList.toggle('sel', +c.dataset.i === i); });
   $('dwKind').textContent = sg[0] === 'coin' ? '金幣' : sg.length === 1 ? '隨機' + CAT_LABEL[sg[0]] : CAT_LABEL[sg[0]];
   $('dwName').textContent = segLabel(sg); $('dwDesc').textContent = segDesc(sg, p);
@@ -182,7 +192,7 @@ function dwPreview(i) {
   cv.classList.toggle('hide', !three); ic.classList.toggle('hide', three); ic.innerHTML = three ? '' : iconSvg(sg[0]);
 }
 function wheelDraw() {
-  const wh = WHEELS[wheelI], p = prog();
+  const wh = WHEELS[wheelI], p = prog(), seg = wheelSeg(p, wheelI);
   const free = wheelI === 0 && p.freeDay !== today();
   $('wheelSpin').querySelector('b').textContent = free ? '免費抽' : '抽一次';
   $('mCost').textContent = free ? '今天免費一次' : wh.cost + ' 金幣';
@@ -197,21 +207,21 @@ function wheelDraw() {
       c.innerHTML = '<b></b><span></span>'; c.querySelector('b').textContent = M_NAME[wheelI]; c.querySelector('span').textContent = '每格 12.5%，點獎品看預覽';
       g.appendChild(c); continue;
     }
-    const sg = wh.seg[ri], own = sg.length > 1 && sg[0] !== 'coin' && owns(p, sg[0], sg[1]);
+    const sg = seg[ri], own = sg.length > 1 && sg[0] !== 'coin' && owns(p, sg[0], sg[1]);
     const c = document.createElement('button'); c.type = 'button'; c.className = 'dwCell t-' + segTier(sg) + (own ? ' own' : '') + (ri === dwWin ? ' won' : ''); c.dataset.i = ri;
     c.innerHTML = iconSvg(sg[0]) + '<b></b><small></small>';
     c.querySelector('b').textContent = segLabel(sg); c.querySelector('small').textContent = own ? '已擁有' : sg.length === 1 && sg[0] !== 'coin' ? poolStatus(p, sg) : segKind(sg);
     c.addEventListener('click', function () { if (!wheelBusy) dwPreview(ri); });
     g.appendChild(c);
   }
-  dwPreview(Math.min(dwSel, wh.seg.length - 1));
+  dwPreview(Math.min(dwSel, seg.length - 1));
 }
 function wheelSpin() {
   if (wheelBusy) return;
   const wh = WHEELS[wheelI], p = prog(), free = wheelI === 0 && p.freeDay !== today();
   if (!free && p.coins < wh.cost) { say('金幣不夠：這台一次要 ' + wh.cost + ' 金幣，你有 ' + p.coins + '。過關、每日任務和小遊戲可以賺金幣。'); return; }
   if (free) p.freeDay = today(); else p.coins -= wh.cost;
-  const idx = Math.floor(Math.random() * wh.seg.length), sg = wh.seg[idx];
+  const seg = wheelSeg(p, wheelI), idx = Math.floor(Math.random() * seg.length), sg = seg[idx];
   let msg, fresh = false, shown = sg;
   if (sg[0] === 'coin') { p.coins += sg[1]; msg = '金幣 +' + sg[1]; }
   else {
@@ -268,7 +278,7 @@ function seedRand(str) { let h = 2166136261; for (let i = 0; i < str.length; i++
 function shopToday(p) {
   if (p.shop && p.shop.d === today() && Array.isArray(p.shop.it)) return p.shop;
   const rnd = seedRand(today() + (RR.Cloud && RR.Cloud.uid() || '')), pool = [];
-  Object.keys(SHOP_PRICE).forEach(function (cat) { const names = catNames(cat); for (let i = 1; i < names.length; i++) pool.push([cat, i]); });
+  Object.keys(SHOP_PRICE).forEach(function (cat) { const names = catNames(cat); for (let i = 1; i < names.length; i++) if (!(WHEEL2_ONLY[cat] && i >= WHEEL2_ONLY[cat])) pool.push([cat, i]); });
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)), t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
   const fresh = pool.filter(function (x) { return !owns(p, x[0], x[1]); }), had = pool.filter(function (x) { return owns(p, x[0], x[1]); });
   p.shop = { d: today(), it: fresh.concat(had).slice(0, 6), b: [] };
