@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v217', items: ['休閒模式新增國際象棋（同機雙人）', '交易成功的提示保留 10 秒，點一下可以關掉', '交易紀錄可以手動刪除單筆或清空', '賽車改成開車跑圈，賽道上有 3 台 AI 對手車'] };
+const UPD = { v: 'v218', items: ['休閒模式新增國際象棋（同機雙人）', '交易成功的提示保留 10 秒，點一下可以關掉', '交易紀錄可以手動刪除單筆或清空', '賽車改成開車跑圈，賽道上有 3 台 AI 對手車', '新增信箱：更新內容改放進信箱，不再每次跳出提醒'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -56,7 +56,7 @@ new MutationObserver(function (list) { list.forEach(function (m) { m.addedNodes.
 document.addEventListener('DOMContentLoaded', function () { fancyAll(); }); fancyAll();
 function lsSet(k, v) { const same = ls(k) === String(v); try { localStorage.setItem(k, v); } catch (e) {} if (!same && RR.Cloud) RR.Cloud.localChanged(k); }
 let showMapName = function () {};
-function show(id) { SCREENS.forEach(function (s) { $(s).classList.toggle('hide', s !== id); }); bannerHide(); const rh = document.getElementById('raceHud'); if (rh) rh.classList.add('hide'); }   // 離開遊戲畫面時一起收起賽車計時
+function show(id) { SCREENS.forEach(function (s) { $(s).classList.toggle('hide', s !== id); }); $('mailBtn').classList.toggle('hide', id !== 'scrHub' && id !== 'scrMenu'); bannerHide(); const rh = document.getElementById('raceHud'); if (rh) rh.classList.add('hide'); }   // 離開遊戲畫面時一起收起賽車計時
 let sayDone = null, askYes = null;
 function say(text, done) { $('msgText').textContent = text; $('msg').classList.remove('hide'); sayDone = done || null; }
 function ask(text, onYes) { $('askText').textContent = text; askYes = onYes; $('askDlg').classList.remove('hide'); }
@@ -1211,13 +1211,36 @@ function showMenu() {
   $('best').textContent = ls('rr_best') || '0';
   show(hubCat ? 'scrMenu' : 'scrHub');
   refreshPickSummary(); renderProg(); refreshLobby();
-  if (ls('rr_upd_seen') !== UPD.v) showUpdNote();
+  mailAddUpd(); mailDot();
 }
-function showUpdNote() {
-  $('updVer').textContent = UPD.v;
-  $('updList').innerHTML = UPD.items.map(function (t) { return '<li>' + t + '</li>'; }).join('');
-  $('updNote').classList.remove('hide');
+/* ---------- 信箱：更新內容存進信箱（最多 30 封，超過就刪掉最舊的） ---------- */
+const MAIL_MAX = 30;
+function mailList() { try { return JSON.parse(ls('rr_mail') || '[]'); } catch (e) { return []; } }
+function mailSave(l) { lsSet('rr_mail', JSON.stringify(l.slice(0, MAIL_MAX))); }   // 新的在前面，超過 30 封就從最舊的截掉
+function mailAddUpd() {
+  if (ls('rr_mail_upd') === UPD.v) return;
+  mailSave([{ id: 'upd' + UPD.v, t: Date.now(), title: '更新了 ' + UPD.v, body: UPD.items.slice(), read: false }].concat(mailList()));
+  lsSet('rr_mail_upd', UPD.v);
 }
+function mailDot() { const n = mailList().filter(function (m) { return !m.read; }).length; const d = $('mailDot'); d.textContent = n > 9 ? '9+' : String(n); d.classList.toggle('hide', !n); }
+function mailRender() {
+  const list = $('mailList'); list.textContent = '';
+  const mails = mailList();
+  if (!mails.length) list.appendChild(mk('li', 'ccEmpty', '信箱是空的。'));
+  mails.forEach(function (m) {
+    const li = mk('li', 'mailItem' + (m.read ? '' : ' unread'));
+    const d = new Date(m.t), tm = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    li.appendChild(mk('b', null, m.title)); li.appendChild(mk('small', null, '　' + tm));
+    const ul = mk('ul', 'mailBody'); (m.body || []).forEach(function (t) { ul.appendChild(mk('li', null, t)); }); li.appendChild(ul);
+    list.appendChild(li);
+  });
+}
+$('mailBtn').addEventListener('click', function () {
+  mailRender(); $('mailBox').classList.remove('hide');
+  mailSave(mailList().map(function (m) { m.read = true; return m; })); mailDot();
+});
+$('mailClose').addEventListener('click', function () { $('mailBox').classList.add('hide'); });
+$('mailClear').addEventListener('click', function () { ask('清空信箱？（已讀與未讀都會刪掉）', function () { mailSave([]); mailRender(); mailDot(); }); });
 /* ---------- 回收任務的難度與天數（本機設定，房主開局時套用） ---------- */
 const REC_DIFF = { easy: '簡單', normal: '標準', hard: '困難' }, REC_DAYS = [0, 7, 14];
 function recCfg() { const d = ls('rr_diff'), n = +ls('rr_days'); return { diff: REC_DIFF[d] ? d : 'normal', days: REC_DAYS.indexOf(n) >= 0 ? n : 0 }; }
