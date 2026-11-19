@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=121" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=122" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -118,6 +118,7 @@
       <button class="tile hot" id="wheelOpen" type="button"><b>回收抽獎機</b><span>每天免費一次</span></button>
       <button class="tile" id="shopOpen" type="button"><b>市集</b><span id="shopSub">每日精選、免費補給</span></button>
       <button class="tile" id="clanChatOpen" type="button"><i class="badge hide" id="ccBadge"></i><b>戰隊聊天</b><span>請求、捐贈金幣</span></button>
+      <button class="tile" id="marketOpen" type="button"><b>交易所</b><span>世界頻道、玩家交易</span></button>
       <button class="tile" id="miniInfoBtn" type="button"><b>小遊戲</b><span>不用進遊戲也能玩</span></button>
       <button class="tile" id="misBtn" type="button"><b>每日任務</b><span id="fsMis">0 / 3 完成</span></button>
     </nav>
@@ -270,6 +271,29 @@
   <div class="row"><button class="btn" id="spCancel" type="button">取消</button><button class="btn primary" id="spOk" type="button">購買</button></div>
 </div></div>
 
+<!-- 交易所：世界頻道與玩家掛單 -->
+<div class="screen hide" id="scrMarket">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="mkDone" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">交易所</b>
+      <div class="lbCoin dwCoin"><span>金幣</span><b id="coinTag6">0</b></div>
+    </header>
+    <div class="mkTabs" role="tablist"><button type="button" class="on" data-tab="chat" role="tab">世界頻道</button><button type="button" data-tab="shop" role="tab">掛單</button></div>
+    <div class="ccLog" id="wcLog" aria-live="polite"></div>
+    <form class="ccBar" id="wcForm" autocomplete="off">
+      <input id="wcInput" type="text" maxlength="80" placeholder="在世界頻道說話、喊價" enterkeyhint="send">
+      <button class="btn" type="submit">送出</button>
+    </form>
+    <div class="ccLog hide" id="mkList"></div>
+    <form class="ccBar hide" id="mkForm" autocomplete="off">
+      <select id="mkItem" aria-label="要賣的東西"></select>
+      <input id="mkPrice" type="number" min="1" max="99999" inputmode="numeric" placeholder="價格" aria-label="價格（金幣）">
+      <button class="btn primary" type="submit">掛單</button>
+    </form>
+  </div>
+</div>
+
 <!-- 戰隊聊天 -->
 <div class="screen hide" id="scrClan">
   <div class="cc">
@@ -382,7 +406,7 @@
 <li><b>櫃子</b>（小地圖藍點）：站在旁邊不要跑，怪物看不到你；貼太近還是會被抓。</li>
 <li><b>煙霧彈</b>：冒出一團煙約 6 秒，站在煙裡怪物看不到你。冷卻 20 秒。</li>
 <li><b>跑</b>：跑步一定比怪物快，體力約可跑 6～7 秒；跑到牠看不到你，約 3.5 秒後牠會放棄。</li>
-<li><b>跳</b>：人在空中時抓不到你，耗 18% 體力。</li><li><b>爬牆</b>：朝牆按兩次跳可以爬上牆頭，站上去後能走動。</li><li><b>基地造型</b>：房主在大廳按「基地」可切換回收車、信號塔、圓頂營地、四柱燈四種造型與光圈顏色。</li><li><b>櫃子</b>：靠近櫃子時才會出現「櫃」鍵，按下（電腦按 Y）躲進去最多 8 秒，怪物看不到你，但不能移動；出來後 10 秒內不能再躲。櫃子裡有一把攻擊物，拿到後當天的近戰數值會換成它（只對玩家生效）。</li><li><b>隱私</b>：收集哪些資料、怎麼刪除，見<a href="../privacy.html">隱私權政策</a>。</li><li><b>刪除資料</b>：登入後在「設定」最下面按「刪除我的資料」，會刪掉雲端進度、排行榜、好友、戰隊發言與登入帳號（隊長要先轉讓隊長）。</li><li><b>毒圈</b>：開局 30 秒後，地圖外的黃色毒會慢慢往基地漫；毒區裡會持續扣血（最低留 1 血），毒圈越縮小傷害越高，基地光圈裡安全。</li><li><b>怪物倒下</b>：回收模式打到血量歸零會倒下，約 12 秒後在別處刷新（不給金幣）。</li>
+<li><b>跳</b>：人在空中時抓不到你，耗 18% 體力。</li><li><b>爬牆</b>：朝牆按兩次跳可以爬上牆頭，站上去後能走動。</li><li><b>基地造型</b>：房主在大廳按「基地」可切換回收車、信號塔、圓頂營地、四柱燈四種造型與光圈顏色。</li><li><b>櫃子</b>：靠近櫃子時才會出現「櫃」鍵，按下（電腦按 Y）躲進去最多 8 秒，怪物看不到你，但不能移動；出來後 10 秒內不能再躲。櫃子裡有一把攻擊物，拿到後當天的近戰數值會換成它（只對玩家生效）。</li><li><b>隱私</b>：收集哪些資料、怎麼刪除，見<a href="../privacy.html">隱私權政策</a>。</li><li><b>交易所</b>：大廳的「交易所」有世界頻道（所有玩家都看得到）和掛單。可以用金幣買賣造型、頭飾、配件和寶石等級；掛單時東西會先從你身上扣掉，下架才退回；賣出後下次打開交易所會收到金幣。</li><li><b>刪除資料</b>：登入後在「設定」最下面按「刪除我的資料」，會刪掉雲端進度、排行榜、好友、戰隊發言與登入帳號（隊長要先轉讓隊長）。</li><li><b>毒圈</b>：開局 30 秒後，地圖外的黃色毒會慢慢往基地漫；毒區裡會持續扣血（最低留 1 血），毒圈越縮小傷害越高，基地光圈裡安全。</li><li><b>怪物倒下</b>：回收模式打到血量歸零會倒下，約 12 秒後在別處刷新（不給金幣）。</li>
 <li><b>衝</b>：瞬間往前衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒。</li>
 <li><b>技能</b>：每個角色不同，見「角色技能」。按鈕上的數字是冷卻秒數。</li>
 <li><b>救隊友</b>：隊友倒地時靠近按住「救」2 秒。</li></ul>
@@ -581,14 +605,14 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=121"></script>
-<script src="js/sim.js?v=121"></script>
-<script src="js/audio.js?v=121"></script>
-<script src="js/auth.js?v=121"></script>
-<script src="js/cloud.js?v=121"></script>
-<script src="js/net.js?v=121"></script>
-<script src="js/game.js?v=121"></script>
-<script src="js/minigames.js?v=121"></script>
-<script src="js/main.js?v=121"></script>
+<script src="js/config.js?v=122"></script>
+<script src="js/sim.js?v=122"></script>
+<script src="js/audio.js?v=122"></script>
+<script src="js/auth.js?v=122"></script>
+<script src="js/cloud.js?v=122"></script>
+<script src="js/net.js?v=122"></script>
+<script src="js/game.js?v=122"></script>
+<script src="js/minigames.js?v=122"></script>
+<script src="js/main.js?v=122"></script>
 </body>
 </html>

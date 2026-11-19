@@ -96,6 +96,10 @@ const Cloud = {
       });
     }
     return chain.then(function () {
+      return db.collection('world').where('uid', '==', id).get().then(dropAll);
+    }).then(function () {
+      return db.collection('market').where('seller', '==', id).where('status', '==', 'open').get().then(dropAll).catch(function () {});
+    }).then(function () {
       return U.get();
     }).then(function (s) {
       const boards = (s.exists && s.data().boards) || [];
@@ -114,6 +118,70 @@ const Cloud = {
       clearInterval(beatT); beatT = null; uid = null; me = null;
       cb(null);
     }).catch(fail(cb));
+  },
+
+  /* ---------- 世界頻道與交易所 ---------- */
+  /** 即時訂閱世界頻道最新 50 則；回傳取消函式。onRows(err, rows)（新到舊） */
+  worldChat: function (onRows) {
+    if (!Cloud.ready()) { onRows({ code: 'offline' }); return function () {}; }
+    return db.collection('world').orderBy('t', 'desc').limit(50).onSnapshot(function (q) {
+      const rows = []; q.forEach(function (d) { const x = d.data(); x.id = d.id; rows.push(x); }); onRows(null, rows);
+    }, fail(onRows));
+  },
+  worldSay: function (text, cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    text = clean(text, 80); if (!text) { cb(null); return; }
+    db.collection('world').add({ uid: uid, name: profile().name, lv: profile().lv | 0, text: text, t: Date.now() }).then(function () { cb(null); }).catch(fail(cb));
+  },
+  /** 即時訂閱交易所的掛單（open 的最多 80 筆，新到舊） */
+  marketWatch: function (onRows) {
+    if (!Cloud.ready()) { onRows({ code: 'offline' }); return function () {}; }
+    return db.collection('market').where('status', '==', 'open').limit(80).onSnapshot(function (q) {
+      const rows = []; q.forEach(function (d) { const x = d.data(); x.id = d.id; rows.push(x); });
+      rows.sort(function (a, b) { return (b.t || 0) - (a.t || 0); }); onRows(null, rows);
+    }, fail(onRows));
+  },
+  /** 掛單：item = { cat, i }（造型）、{ i }（配件或寶石）；呼叫前本機要先把東西扣掉 */
+  marketPost: function (kind, item, label, price, cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    db.collection('market').add({ seller: uid, sellerName: profile().name, kind: kind, item: item, label: clean(label, 30), price: Math.floor(price), status: 'open', t: Date.now() })
+      .then(function (r) { cb(null, r.id); }).catch(fail(cb));
+  },
+  /** 下架：成功才把東西還給賣家 */
+  marketCancel: function (id, cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    const ref = db.collection('market').doc(id);
+    db.runTransaction(function (tx) {
+      return tx.get(ref).then(function (s) {
+        if (!s.exists || s.data().seller !== uid) throw { code: 'gone' };
+        if (s.data().status !== 'open') throw { code: 'sold' };
+        tx.update(ref, { status: 'cancel' }); return s.data();
+      });
+    }).then(function (d) { ref.delete().catch(function () {}); cb(null, d); }).catch(fail(cb));
+  },
+  /** 購買：交易成功（搶到）才回傳掛單內容，呼叫端再扣金幣、給東西，最後 marketGot 標記已收貨 */
+  marketBuy: function (id, cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    const ref = db.collection('market').doc(id);
+    db.runTransaction(function (tx) {
+      return tx.get(ref).then(function (s) {
+        if (!s.exists) throw { code: 'gone' };
+        const d = s.data();
+        if (d.seller === uid) throw { code: 'own-offer' };
+        if (d.status !== 'open') throw { code: 'sold' };
+        tx.update(ref, { status: 'sold', buyer: uid, buyerName: profile().name, tb: Date.now() }); return d;
+      });
+    }).then(function (d) { cb(null, d); }).catch(fail(cb));
+  },
+  marketGot: function (id) { if (Cloud.ready()) db.collection('market').doc(id).update({ got: true }).catch(fail()); },
+  /** 賣家收款：找出自己已賣出、還沒收款的掛單。cb(err, [{id, price, label, buyerName}]) */
+  marketPayouts: function (cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    db.collection('market').where('seller', '==', uid).where('status', '==', 'sold').get().then(function (q) {
+      const out = [];
+      q.forEach(function (d) { const x = d.data(); if (!x.paid) out.push({ id: d.id, price: x.price | 0, label: x.label, buyerName: x.buyerName || '玩家', got: !!x.got }); });
+      return Promise.all(out.map(function (o) { return db.collection('market').doc(o.id).update({ paid: true }).then(function () { return o; }, function () { return null; }); }));
+    }).then(function (rows) { cb(null, rows.filter(Boolean)); }).catch(fail(cb));
   },
 
   /* ---------- 排行榜 ---------- */
