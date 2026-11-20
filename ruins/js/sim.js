@@ -510,7 +510,7 @@ Sim.prototype.startDay = function (day) {
   for (let i = cands.length - 1; i > 0; i--) {
     const j = Math.floor(this.rng() * (i + 1)), t = cands[i]; cands[i] = cands[j]; cands[j] = t;
   }
-  const count = hunt || br ? 0 : Math.min(cands.length, Math.round(floorCells.length / 7) + 2 * n + Math.min(day, 6));
+  const count = hunt || br || this.mode === 'race' ? 0 : Math.min(cands.length, Math.round(floorCells.length / 7) + 2 * n + Math.min(day, 6));
   this.items = [];
   for (let i = 0; i < count; i++) {
     const p = center(cands[i][0], cands[i][1]);
@@ -729,13 +729,13 @@ Sim.prototype._startBR = function () {
   let zc = null, zd = 1e9;
   floorCells.forEach(function (fc) { const c = center(fc[0], fc[1]), d = Math.hypot(c[0] - W2 / 2, c[1] - D2 / 2) + self.rng() * 10; if (d < zd) { zd = d; zc = c; } });
   const r0 = Math.hypot(W2, D2) * 0.62;
-  this.zone = { x: zc[0], z: zc[1], r0: r0, r: r0 };
+  this.zone = this.mode === 'race' ? null : { x: zc[0], z: zc[1], r0: r0, r: r0 };   // 賽車沒有縮圈
   this.time = 210; this.dead = 0;
   // 補給箱：kind 20 急救（+40）、21 護甲（生命上限到 150，+50）、22 火力（傷害 ×1.5）
   const cells = floorCells.slice();
   for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(this.rng() * (i + 1)), t = cells[i]; cells[i] = cells[j]; cells[j] = t; }
   this.items = [];
-  for (let i = 0; i < Math.min(12, cells.length); i++) { const c = center(cells[i][0], cells[i][1]); this.items.push({ x: c[0], z: c[1], kind: 20 + (i % 3 === 2 ? (i % 2 ? 22 - 20 : 1) : 0), value: 0, taken: false }); }
+  if (this.mode !== 'race') for (let i = 0; i < Math.min(12, cells.length); i++) { const c = center(cells[i][0], cells[i][1]); this.items.push({ x: c[0], z: c[1], kind: 20 + (i % 3 === 2 ? (i % 2 ? 22 - 20 : 1) : 0), value: 0, taken: false }); }
 };
 Sim.prototype._brKill = function (v, by) {
   if (!v.alive) return;
@@ -1429,6 +1429,7 @@ function setMap(i) {
   floorCells.forEach(function (fc) { tryLocker(fc, 2); });
   floorCells.forEach(function (fc) { tryLocker(fc, 3); });   // 開放地圖轉角少：貼著單面牆也可以放
   LOCKER_W = LOCKERS.map(function () { return Math.floor(Math.random() * WEAPONS.length); });
+  if (MAPS[i].track) LOCKERS.length = 0;   // 賽車場地沒有櫃子
   api.lockers = LOCKERS;
   api.MAP = MAP; api.ROWS = ROWS; api.COLS = COLS; api.VAN = VAN; api.floorCells = floorCells; api.mapIndex = i;
   api.theme = MAPS[i].theme; api.mapName = MAPS[i].name; api.monsterCells = MONSTER_CELLS;

@@ -207,9 +207,21 @@ function buildDust() {
 const RACE_COLS = [0xe0b040, 0x3a8fd9, 0x3fae5a, 0xd9573a];
 let raceMyCar = null, raceAiCars = new Map();
 function buildRaceCar(col) {
-  const g = new THREE.Group(), body = pmat(col, 0.3), dark = pmat(0x1a2330, 0.2), wheel = pmat(0x111111, 0.1);
-  g.add(part(new THREE.BoxGeometry(1.1, 0.4, 2.0), body, 0, 0.45, 0), part(new THREE.BoxGeometry(0.9, 0.35, 1.0), dark, 0, 0.85, -0.1));
-  [[-0.6, 0.3, 0.7], [0.6, 0.3, 0.7], [-0.6, 0.3, -0.7], [0.6, 0.3, -0.7]].forEach(function (w) { g.add(part(new THREE.BoxGeometry(0.2, 0.4, 0.4), wheel, w[0], w[1], w[2])); });
+  const g = new THREE.Group(), body = pmat(col, 0.3), dark = pmat(0x1a2330, 0.2), wheel = pmat(0x161616, 0.1), skin = pmat(0xf2c9a0, 0.2);
+  g.add(part(new THREE.BoxGeometry(1.0, 0.3, 1.9), body, 0, 0.36, 0));                                   // 車身底盤
+  g.add(part(new THREE.BoxGeometry(0.62, 0.22, 0.6), body, 0, 0.56, -0.45));                              // 車頭（前端稍尖）
+  g.add(part(new THREE.BoxGeometry(0.5, 0.16, 0.45), dark, 0, 0.27, -1.05));                              // 前保險桿
+  g.add(part(new THREE.SphereGeometry(0.22, 12, 10), skin, 0, 0.72, 0.1));                                // 駕駛
+  g.add(part(new THREE.BoxGeometry(0.5, 0.36, 0.16), dark, 0, 0.72, 0.42));                               // 座椅靠背
+  g.add(part(new THREE.BoxGeometry(1.1, 0.08, 0.32), body, 0, 0.98, 0.95));                               // 尾翼
+  [-0.5, 0.5].forEach(function (x) { g.add(part(new THREE.BoxGeometry(0.08, 0.36, 0.08), dark, x, 0.78, 0.95)); });
+  const wGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.26, 14);
+  [[-0.58, 0.28, -0.66], [0.58, 0.28, -0.66], [-0.6, 0.3, 0.66], [0.6, 0.3, 0.66]].forEach(function (w) {
+    const m = part(wGeo, wheel, w[0], w[1], w[2]); m.rotation.z = Math.PI / 2; g.add(m);
+  });
+  // 加速火焰（噴射時才顯示）
+  const flame = part(new THREE.ConeGeometry(0.32, 1.3, 10), new THREE.MeshBasicMaterial({ color: 0x7fe6ff, transparent: true, opacity: 0.8, depthWrite: false, fog: false }), 0, 0.4, 1.7);
+  flame.rotation.x = Math.PI / 2; flame.visible = false; g.add(flame); g.userData.flame = flame;
   return g;
 }
 function syncRaceAi(list) {
@@ -250,7 +262,29 @@ function buildRaceTrack(map) {
 function tickRaceCars() {
   const on = view.mode === 'race' && me.alive;
   if (on && !raceMyCar) { raceMyCar = buildRaceCar(0xd9573a); scene.add(raceMyCar); }
-  if (raceMyCar) { raceMyCar.visible = on; if (on) { raceMyCar.position.set(me.x, 0, me.z); raceMyCar.rotation.y = me.yaw; } }
+  if (raceMyCar) { raceMyCar.visible = on; if (on) { raceMyCar.position.set(me.x, 0, me.z); raceMyCar.rotation.y = me.yaw; raceMyCar.userData.flame.visible = (me.boostT || 0) > 0; } }
+}
+/* 賽車操控（卡丁車）：油門加減速、方向盤轉向；按住「漂移」（Shift）過彎會甩尾並累積氣，放開時依氣量噴射加速 */
+const RACE_VMAX = 11;
+function raceDrive(f, steer, dt, driftKey) {
+  if (me.spd == null) me.spd = 0;
+  if (me.boostT == null) me.boostT = 0;
+  const boosting = me.boostT > 0;
+  const vmax = RACE_VMAX * (boosting ? 1.45 : 1);
+  const target = f >= 0 ? vmax * f : 4 * f;                       // 倒車慢慢退
+  me.spd += (target - me.spd) * Math.min(1, dt * (target > me.spd ? 2.2 : 3.5));
+  const frac = Math.min(1, Math.abs(me.spd) / RACE_VMAX);
+  const canDrift = !!driftKey && Math.abs(steer) > 0.35 && me.spd > 6;
+  if (canDrift) { if (!me.drifting) { me.drifting = true; me.charge = 0; } me.charge = (me.charge || 0) + dt * (0.6 + frac); }
+  const turn = 2.2 * (me.drifting ? 1.6 : 0.5 + 0.5 * frac);
+  me.yaw -= steer * turn * dt * (me.spd < -0.5 ? -1 : 1);       // 倒車時方向盤反過來，跟真車一樣
+  me.slideAng = (me.slideAng || 0) + ((me.drifting ? -steer * 0.45 : 0) - (me.slideAng || 0)) * Math.min(1, dt * 6);
+  if (me.drifting && !canDrift) {                                  // 放開漂移：氣夠就噴射
+    const c = me.charge || 0;
+    if (c >= 0.9) { me.boostT = c >= 2.2 ? 1.6 : 0.9; Sfx.tone(660, 0.12, 'square', 0.05, 980); }
+    me.drifting = false; me.charge = 0;
+  }
+  if (me.boostT > 0) me.boostT = Math.max(0, me.boostT - dt);
 }
 function tickFx(dt) {
   if (dust) {
@@ -820,6 +854,7 @@ function buildLevel() {
     scene.remove(level);
     level.traverse(function (o) { if (o.geometry && !o.userData.keep) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
   }
+  const raceLvl = !!(typeof MAPS !== 'undefined' && MAPS[W.mapIndex] && MAPS[W.mapIndex].track);
   level = new THREE.Group(); lockerMeshes = []; builtMap = W.mapIndex; solids = []; wallIdx = {}; brokenVis = {}; cellInst = {};
   const COLS = W.COLS, ROWS = W.ROWS, MAP = W.MAP, T = W.theme, VAN = W.VAN;
   // 光線：室內也調亮；開放場景（海邊、城市、太空站）沒有天花板，有天空與陽光
@@ -991,7 +1026,7 @@ function buildLevel() {
     [[-60, -80, 0.3], [80, 60, -0.8], [-20, 110, 1.2]].forEach(function (q) { const m = new THREE.Mesh(bld, cm); m.position.set(Wd / 2 + q[0], 0, D / 2 + q[1]); m.rotation.y = q[2]; level.add(m); });
   }
   if (open) scatterGround(style, hr);
-  buildProps(style, hr);
+  if (!raceLvl) buildProps(style, hr);
   buildBase();
   // 櫃子（躲藏點）
   const lockM = new THREE.MeshLambertMaterial({ color: 0x2a4a60, emissive: 0x0b1c28 }), lineM = new THREE.MeshBasicMaterial({ color: 0x0a141a }), tagM = new THREE.MeshBasicMaterial({ color: 0x7dffb0 });
@@ -1009,6 +1044,7 @@ function buildLevel() {
   const lampM = new THREE.MeshBasicMaterial({ color: 0xdfeee6 }), bandM = new THREE.MeshBasicMaterial({ color: 0xc9a227 });
   let lamps = 0; const shafts = [];
   W.floorCells.forEach(function (fc) {
+    if (raceLvl) return;   // 賽車場地不放擺設
     const c = fc[0], r = fc[1], cx = c * CS + CS / 2, cz = r * CS + CS / 2;
     if (Math.hypot(cx - VAN[0], cz - VAN[1]) < CS * 1.5) return;
     if ((W.lockers || []).some(function (k) { return Math.hypot(k[0] - cx, k[1] - cz) < CS * 0.75; })) return;
@@ -2328,7 +2364,8 @@ function updateMe(dt) {
   let mag = Math.hypot(f, s);
   if (mag > 1) { f /= mag; s /= mag; mag = 1; }
   // 賽車：開車，前後是油門、左右是方向盤（轉向），不能跑步
-  if (view.mode === 'race') { me.yaw -= s * 2.2 * dt; s = 0; f = Math.max(-0.4, Math.min(1, f)); mag = Math.abs(f); }
+  let raceMove = false;
+  if (view.mode === 'race') { const steer = Math.max(-1, Math.min(1, s)), dk = keys.ShiftLeft || keys.ShiftRight || touch.run || pad.run; raceDrive(Math.max(-0.4, Math.min(1, f)), steer, dt, dk); s = 0; f = Math.max(-0.4, Math.min(1, f)); mag = Math.abs(f); raceMove = true; }
   const moving = mag > 0.15;
   const wantRun = (keys.ShiftLeft || keys.ShiftRight || touch.run || touch.runLock || pad.run) && moving && !me.tired && !me.riding && view.mode !== 'race';
   if (wantRun) { me.stam -= 0.15 * (1 - 0.05 * myGem(1)) * dt; if (me.stam <= 0) { me.stam = 0; me.tired = true; } }
@@ -2349,6 +2386,7 @@ function updateMe(dt) {
     dashDir = [-sy * df + cy * ds, -cy * df - sy * ds]; dashT = 0.18; dashCd = 2.5; me.stam -= 0.25; Sfx.noise(0.14, 0.12); Sfx.tone(520, 0.14, 'sawtooth', 0.05, 180);
   } else if (dashCd > 0) toast('衝刺冷卻中'); }
   let dx = (-sy * f + cy * s) * speed * dt, dz = (-cy * f - sy * s) * speed * dt;
+  if (raceMove) { const hh = me.yaw + (me.slideAng || 0); dx = -Math.sin(hh) * me.spd * dt; dz = -Math.cos(hh) * me.spd * dt; }
   if (dashT > 0) { dashT -= dt; dx += dashDir[0] * 22 * dt; dz += dashDir[1] * 22 * dt; }
   const R = 0.42;
   if (editing) { dx = 0; dz = 0; }   // 調整按鈕位置時不移動
@@ -2397,8 +2435,16 @@ function updateMe(dt) {
   if (gunHeld && gunT <= 0 && wpnMode === 'gun') shoot();   // 每一種槍按住都會連續射擊（速度依各槍的射擊間隔）
   if (shakeT > 0) shakeT = Math.max(0, shakeT - dt);
   const sk2 = shakeT * 0.22;
-  camera.position.set(me.x + (Math.random() - 0.5) * sk2, 1.65 + me.y + (moving && me.vy === 0 ? Math.sin(me.walkT * 2) * 0.045 : 0) + (Math.random() - 0.5) * sk2, me.z + (Math.random() - 0.5) * sk2);
-  camera.rotation.set(me.pitch, me.yaw, 0);
+  if (view.mode === 'race') {   // 賽車：跟在車後面的追車視角（看得到自己的車）
+    const ry = me.yaw + (me.slideAng || 0) * 0.5, sy2 = Math.sin(ry), cy2 = Math.cos(ry);
+    camera.position.set(me.x + sy2 * 5.2, 2.6, me.z + cy2 * 5.2);
+    camera.lookAt(me.x - sy2 * 2, 0.9, me.z - cy2 * 2);
+    if (gunMesh) gunMesh.visible = false;
+  } else {
+    if (gunMesh) gunMesh.visible = true;
+    camera.position.set(me.x + (Math.random() - 0.5) * sk2, 1.65 + me.y + (moving && me.vy === 0 ? Math.sin(me.walkT * 2) * 0.045 : 0) + (Math.random() - 0.5) * sk2, me.z + (Math.random() - 0.5) * sk2);
+    camera.rotation.set(me.pitch, me.yaw, 0);
+  }
   $('stamBar').style.width = (me.stam * 100).toFixed(0) + '%';
   $('stam').className = me.tired ? 'tired' : '';
   // 背包滿的提示
@@ -2769,6 +2815,7 @@ RR.Game = {
     });
     view.mode = info.mode || 'coop'; document.body.classList.toggle('td', view.mode === 'td'); syncTowers([]); view.td = null;
     buildRaceTrack(view.mode === 'race' ? (info.map || 0) : -1);
+    if (view.mode === 'race') { me.spd = 0; me.boostT = 0; me.charge = 0; me.slideAng = 0; me.drifting = false; }
     document.body.classList.toggle('hunt', view.mode === 'hunt'); document.body.classList.toggle('br', view.mode === 'br');
     applyWeather(info.weather || 0); quakeT = 0; me.riding = false; rings.forEach(function (r) { scene.remove(r.mesh); }); rings.length = 0;
     setTimeout(function () { if (canControl() && view.mode !== 'br') skillHint('你的技能'); }, info.weather ? 7000 : 3500);

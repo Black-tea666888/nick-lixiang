@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v224', items: ['賽車改用獨立賽道場地（4 座，每座 1 條賽道）'] };
+const UPD = { v: 'v225', items: ['賽車改成卡丁車：按住 Shift 漂移過彎，放開噴射加速；追車視角；場地不放擺設、不縮圈'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
