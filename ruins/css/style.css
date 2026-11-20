@@ -1369,3 +1369,5 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .rmTile.c0 { color: #c2352b; } .rmTile.c1 { color: #2a6fd6; } .rmTile.c2 { color: #e08a1e; } .rmTile.c3 { color: #222; }
 .rmTile.joker { color: #7a3fb0; font-size: 12px; }
 .rmTile.sel { transform: translateY(-6px); box-shadow: 0 0 0 3px #ffd23a; }
+.rsLoose { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 6px; padding: 6px; border: 2px dashed #6b4a1e; border-radius: 8px; }
+.rsLoose.hide { display: none; }

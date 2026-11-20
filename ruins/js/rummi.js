@@ -3,7 +3,7 @@
  * 牌組：群組（同數字、不同顏色，3～4 張）或順組（同顏色、數字連續，3 張以上，13 後面不能接 1）。
  * 破冰：第一次出牌只能用手上的牌組成新組，數字總和至少 30。
  * 破冰後：至少從手上出一張，可以把手牌接到桌上的組上。
- * 沒有做：桌上的牌拆開重組（只能接在組的兩端或中間空位補、不能拆桌上的組）。
+ * 破冰後可以拆開桌上的組、和手上的牌重新組合（rearrange），桌上的牌不能少也不能多。
  * 結束：有人出完手牌就贏；其他人手上的點數加總當負分，有百搭每張另扣 30，贏家得全部負分。 */
 (function (root) {
   'use strict';
@@ -112,6 +112,32 @@
     return { ok: true, state: { deck: s.deck, hands: hands, table: table, opened: opened, turn: over ? seat : (seat + 1) % hands.length, over: over, winner: over ? seat : -1, pass: 0, log: s.log.concat([{ seat: seat, act: 'play' }]) } };
   }
 
+  /** 破冰後重排桌面：newTable 是出完牌後的整個桌面，fromHand 是這回合從手上放上桌的牌。
+   *  桌上的牌不能少、不能多；每一組都要合法。 */
+  function rearrange(s, seat, newTable, fromHand) {
+    if (s.over || seat !== s.turn) return { ok: false, why: '還沒輪到你' };
+    if (!s.opened[seat]) return { ok: false, why: '破冰前不能動桌上的牌' };
+    const hand = s.hands[seat];
+    if (!fromHand.length) return { ok: false, why: '至少要從手上放一張牌' };
+    fromHand.forEach(function (t) { if (!hand.some(function (h) { return h.id === t.id; })) throw new Error('not in hand'); });
+    const want = {};
+    s.table.forEach(function (ts) { ts.forEach(function (t) { want[t.id] = (want[t.id] || 0) + 1; }); });
+    fromHand.forEach(function (t) { want[t.id] = (want[t.id] || 0) + 1; });
+    const got = {};
+    for (let i = 0; i < newTable.length; i++) {
+      if (!newTable[i].length || !setValid(newTable[i])) return { ok: false, why: '有一組不是合法的組' };
+      newTable[i].forEach(function (t) { got[t.id] = (got[t.id] || 0) + 1; });
+    }
+    const ids = Object.keys(want), gotIds = Object.keys(got);
+    if (ids.length !== gotIds.length || ids.some(function (k) { return want[k] !== got[k]; })) return { ok: false, why: '桌上的牌對不上（有牌消失或多出來）' };
+    const used = {};
+    fromHand.forEach(function (t) { used[t.id] = 1; });
+    const left = hand.filter(function (h) { return !used[h.id]; });
+    const hands = s.hands.map(function (h, i) { return i === seat ? left : h; });
+    const over = left.length === 0;
+    return { ok: true, state: { deck: s.deck, hands: hands, table: newTable.map(function (x) { return x.slice(); }), opened: s.opened, turn: over ? seat : (seat + 1) % hands.length, over: over, winner: over ? seat : -1, pass: 0, log: s.log.concat([{ seat: seat, act: 'rearrange' }]) } };
+  }
+
   /** 抽一張（沒有能出的牌時）：結束回合 */
   function draw(s, seat) {
     if (s.over || seat !== s.turn) return { ok: false, why: '還沒輪到你' };
@@ -191,7 +217,7 @@
     return out.filter(setValid);
   }
 
-  const api = { deck: deck, start: start, play: play, draw: draw, score: score, aiMove: aiMove, setValid: setValid, setInfo: setInfo, OPEN_MIN: OPEN_MIN };
+  const api = { deck: deck, start: start, play: play, rearrange: rearrange, draw: draw, score: score, aiMove: aiMove, setValid: setValid, setInfo: setInfo, OPEN_MIN: OPEN_MIN };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else { root.RR = root.RR || {}; root.RR.Rummi = api; }
 })(typeof window !== 'undefined' ? window : globalThis);

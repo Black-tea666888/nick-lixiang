@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v241', items: ['休閒模式新增「德國麻將」（拉密規則：群組與順組、鬼牌、30 點破冰，和電腦對戰）'] };
+const UPD = { v: 'v242', items: ['德國麻將：破冰後可以拉起桌上的牌重新組合'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1310,61 +1310,89 @@ function xqDraw() {
   else msg = '輪到' + who + '走';
   $('xqStatus').textContent = msg;
 }
-/* 德國麻將（拉密）：玩家（座位 0）對兩個電腦。暫存的組合在「出牌」時才一次送進規則檢查 */
-let rmS = null, rmSel = {}, rmNew = [], rmExt = [], rmBusy = false;
+/* 德國麻將（拉密）：玩家（座位 0）對兩個電腦。
+ * 這回合的桌面先在畫面上暫存（rmWT），按「出牌」才一次送進規則檢查。
+ * rmLoose 是從桌上拉起來、還沒放回去的散牌。 */
+let rmS = null, rmSel = {}, rmWT = [], rmLoose = [], rmBusy = false;
 const RM_CLS = ['c0', 'c1', 'c2', 'c3'];
-const RM_COLOR_NAME = ['紅', '藍', '橘', '黑'];
-function rmOpen() { show('scrRummi'); if (!rmS) rmS = RR.Rummi.start(); rmReset(); rmDraw(); }
-function rmNewGame() { rmS = RR.Rummi.start(); rmBusy = false; rmReset(); rmDraw(); }
-function rmReset() { rmSel = {}; rmNew = []; rmExt = []; }
+function rmOpen() { show('scrRummi'); if (!rmS) rmS = RR.Rummi.start(); rmResetTurn(); rmDraw(); }
+function rmNewGame() { rmS = RR.Rummi.start(); rmBusy = false; rmResetTurn(); rmDraw(); }
+function rmCopyTable() { return rmS.table.map(function (ts) { return ts.slice(); }); }
+function rmResetTurn() { rmSel = {}; rmWT = rmCopyTable(); rmLoose = []; }
+function rmIdSet(list) { const o = {}; list.forEach(function (t) { o[t.id] = 1; }); return o; }
 /** 手上還沒放上桌的牌 */
 function rmHand() {
-  const used = {};
-  rmNew.forEach(function (ts) { ts.forEach(function (t) { used[t.id] = 1; }); });
-  rmExt.forEach(function (x) { x.tiles.forEach(function (t) { used[t.id] = 1; }); });
-  return rmS.hands[0].filter(function (t) { return !used[t.id]; });
+  const old = rmIdSet(rmS.table.reduce(function (a, ts) { return a.concat(ts); }, []));
+  const placed = {};
+  rmWT.forEach(function (ts) { ts.forEach(function (t) { if (!old[t.id]) placed[t.id] = 1; }); });
+  return rmS.hands[0].filter(function (t) { return !placed[t.id]; });
 }
-function rmSelected() { return rmHand().filter(function (t) { return rmSel[t.id]; }); }
+/** 這回合有沒有動到桌面（有就不能抽牌） */
+function rmDirty() { return rmLoose.length > 0 || JSON.stringify(rmWT.map(function (ts) { return ts.map(function (t) { return t.id; }); })) !== JSON.stringify(rmS.table.map(function (ts) { return ts.map(function (t) { return t.id; }); })) || rmHand().length !== rmS.hands[0].length; }
 function rmTileBtn(t, cls) {
   const b = mk('button', 'rmTile ' + (t.joker ? 'joker' : RM_CLS[t.color]) + (cls ? ' ' + cls : ''), t.joker ? '鬼' : String(t.num));
   b.type = 'button';
   return b;
 }
-function rmTap(t) { if (rmBusy) return; rmSel[t.id] = !rmSel[t.id]; rmDraw(); }
+function rmSelectedTiles() { return rmHand().concat(rmLoose).filter(function (t) { return rmSel[t.id]; }); }
+function rmTapHand(t) { if (rmBusy) return; rmSel[t.id] = !rmSel[t.id]; rmDraw(); }
+function rmTapLoose(t) { if (rmBusy) return; rmSel[t.id] = !rmSel[t.id]; rmDraw(); }
+/** 點桌上的牌：拉起來成為散牌（破冰後才能動桌上的牌） */
+function rmPullFromTable(setIdx, t) {
+  if (rmBusy) return;
+  if (!rmS.opened[0]) { mtoast('破冰前不能動桌上的牌', 'bad'); return; }
+  rmWT[setIdx] = rmWT[setIdx].filter(function (x) { return x.id !== t.id; });
+  rmWT = rmWT.filter(function (ts) { return ts.length; });
+  rmLoose.push(t); rmDraw();
+}
+function rmRemoveSelectedLoose(tiles) {
+  const ids = rmIdSet(tiles);
+  rmLoose = rmLoose.filter(function (t) { return !ids[t.id]; });
+}
 function rmMakeSet() {
-  const tiles = rmSelected();
+  const tiles = rmSelectedTiles();
   if (!tiles.length) { mtoast('先選牌', 'bad'); return; }
   if (!RR.Rummi.setValid(tiles)) { mtoast('這些牌不是合法的組（群組或順組）', 'bad'); return; }
-  rmNew.push(tiles); rmSel = {}; rmDraw();
+  rmWT.push(tiles.slice()); rmRemoveSelectedLoose(tiles); rmSel = {}; rmDraw();
 }
+/** 點桌上的組：把選到的牌接上去（破冰前只能接自己這回合新組的組） */
 function rmExtendSet(i) {
   if (rmBusy) return;
-  const tiles = rmSelected();
+  const tiles = rmSelectedTiles();
   if (!tiles.length) return;
-  if (!rmS.opened[0]) { mtoast('破冰前只能組成新組', 'bad'); return; }
-  const cur = rmSetAt(i);
-  if (!RR.Rummi.setValid(cur.concat(tiles))) { mtoast('接不上這組', 'bad'); return; }
-  const ex = rmExt.filter(function (x) { return x.setIdx === i; })[0];
-  if (ex) ex.tiles = ex.tiles.concat(tiles); else rmExt.push({ setIdx: i, tiles: tiles });
-  rmSel = {}; rmDraw();
+  const isOld = i < rmS.table.length;   // 破冰前桌面的順序不會變，前面幾組就是舊的
+  if (!rmS.opened[0] && isOld) { mtoast('破冰前只能接在自己新組的組上', 'bad'); return; }
+  const merged = rmWT[i].concat(tiles);
+  if (!RR.Rummi.setValid(merged)) { mtoast('接不上這組', 'bad'); return; }
+  rmWT[i] = merged; rmRemoveSelectedLoose(tiles); rmSel = {}; rmDraw();
 }
-/** 桌上第 i 組（含這回合已接上的牌） */
-function rmSetAt(i) {
-  const ex = rmExt.filter(function (x) { return x.setIdx === i; })[0];
-  return rmS.table[i].concat(ex ? ex.tiles : []);
-}
-function rmUndo() { if (rmBusy) return; rmReset(); rmDraw(); }
+function rmUndo() { if (rmBusy) return; rmResetTurn(); rmDraw(); }
 function rmDrawTile() {
   if (rmBusy || rmS.turn !== 0) return;
-  if (rmNew.length || rmExt.length) { mtoast('先出牌或復原，再抽牌', 'bad'); return; }
+  if (rmDirty()) { mtoast('先出牌或復原，再抽牌', 'bad'); return; }
   const r = RR.Rummi.draw(rmS, 0);
-  if (r.ok) { rmS = r.state; rmSel = {}; rmAfter(); }
+  if (r.ok) { rmS = r.state; rmResetTurn(); rmAfter(); }
 }
 function rmConfirm() {
   if (rmBusy || rmS.turn !== 0) return;
-  const r = RR.Rummi.play(rmS, 0, rmNew, rmExt);
+  if (rmLoose.length) { mtoast('還有散牌沒放上桌', 'bad'); return; }
+  const r = rmS.opened[0]
+    ? RR.Rummi.rearrange(rmS, 0, rmWT, rmHandUsed())
+    : RR.Rummi.play(rmS, 0, rmAddedSets(), []);
   if (!r.ok) { mtoast(r.why, 'bad'); return; }
-  rmS = r.state; rmReset(); rmAfter();
+  rmS = r.state; rmResetTurn(); rmAfter();
+}
+/** 還沒破冰時：這回合新加的組（舊的桌面不能動） */
+function rmAddedSets() {
+  const old = rmS.table.length;
+  if (rmWT.length < old || rmWT.slice(0, old).some(function (ts, i) { return ts.length !== rmS.table[i].length; })) return [];
+  return rmWT.slice(old);
+}
+function rmHandUsed() {
+  const old = rmIdSet(rmS.table.reduce(function (a, ts) { return a.concat(ts); }, []));
+  const out = [];
+  rmWT.forEach(function (ts) { ts.forEach(function (t) { if (!old[t.id]) out.push(t); }); });
+  return out;
 }
 /** 玩家出完或抽完牌之後：遊戲結束就結算，否則讓電腦依序走 */
 function rmAfter() {
@@ -1384,29 +1412,35 @@ function rmAi() {
 }
 function rmDraw() {
   const X = RR.Rummi, bd = $('rummiTable'), hd = $('rummiHand');
+  const mine = rmS.turn === 0 && !rmS.over && !rmBusy;
   bd.textContent = '';
-  rmS.table.forEach(function (ts, i) {
+  rmWT.forEach(function (ts, i) {
     const set = mk('button', 'rsSet', '');
     set.type = 'button';
-    const cur = rmSetAt(i);
-    cur.forEach(function (t) { set.appendChild(rmTileBtn(t)); });
+    ts.forEach(function (t) {
+      const b = rmTileBtn(t);
+      b.addEventListener('click', function (e) { e.stopPropagation(); rmPullFromTable(i, t); });
+      set.appendChild(b);
+    });
     set.addEventListener('click', function () { rmExtendSet(i); });
     bd.appendChild(set);
   });
-  rmNew.forEach(function (ts) {
-    const set = mk('div', 'rsSet pend', '');
-    ts.forEach(function (t) { set.appendChild(rmTileBtn(t)); });
-    bd.appendChild(set);
+  if (!rmWT.length) bd.appendChild(mk('p', 'ccEmpty', '桌上還沒有牌'));
+  const loose = $('rummiLoose');
+  loose.textContent = '';
+  rmLoose.forEach(function (t) {
+    const b = rmTileBtn(t, rmSel[t.id] ? 'sel' : '');
+    b.addEventListener('click', function () { rmTapLoose(t); });
+    loose.appendChild(b);
   });
-  if (!rmS.table.length && !rmNew.length) bd.appendChild(mk('p', 'ccEmpty', '桌上還沒有牌'));
+  loose.classList.toggle('hide', !rmLoose.length);
   hd.textContent = '';
   rmHand().forEach(function (t) {
     const b = rmTileBtn(t, rmSel[t.id] ? 'sel' : '');
-    b.addEventListener('click', function () { rmTap(t); });
+    b.addEventListener('click', function () { rmTapHand(t); });
     hd.appendChild(b);
   });
-  const mine = rmS.turn === 0 && !rmS.over && !rmBusy;
-  $('rummiMake').disabled = !mine; $('rummiDraw').disabled = !mine; $('rummiUndo').disabled = !mine; $('rummiOk').disabled = !mine;
+  ['rummiMake', 'rummiDraw', 'rummiUndo', 'rummiOk'].forEach(function (id) { $(id).disabled = !mine; });
   $('rummiDraw').textContent = rmS.deck.length ? '抽牌（剩 ' + rmS.deck.length + '）' : '抽牌（牌庫已空）';
   const names = ['你', '電腦一', '電腦二'];
   let msg;
