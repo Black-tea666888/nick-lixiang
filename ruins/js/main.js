@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v227', items: ['休閒模式新增「跳關」：橫向跳關、踩敵人、吃金幣、到旗桿過關'] };
+const UPD = { v: 'v228', items: ['跳關頁面改成自己的畫面（天空底、像素邊框、大顆觸控鍵），不再疊在 3D 場景上'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
