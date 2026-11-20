@@ -1322,3 +1322,17 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .platPad button:active { transform: translateY(4px); box-shadow: 0 1px 0 #1d2b4a; }
 .platPad button[data-k="jump"] { background: #ff7a6b; }
 #scrPlat .ccEmpty { color: #fff; text-shadow: 1px 1px 0 #1d2b4a; font-size: 14px; margin: 0; text-align: center; }
+
+/* 跳關：手機橫放時，畫面在左、按鈕在右（不再把直式排版硬擠進橫向螢幕） */
+@media (orientation: landscape) and (max-height: 520px) {
+  #scrPlat { padding: 6px 10px; }
+  #scrPlat .cc { max-width: none; flex-direction: column; gap: 4px; }
+  #scrPlat .dwTop { gap: 6px; }
+  #scrPlat .dwTop .icon { height: 30px; width: 30px; }
+  #scrPlat .dwTitle { font-size: 16px; }
+  #scrPlat .ccEmpty { display: none; }
+  .platHost { flex-direction: row; align-items: center; justify-content: center; gap: 12px; }
+  .platCanvas { width: auto; height: 84vh; max-width: calc(100vw - 150px); aspect-ratio: 16 / 9; box-shadow: 4px 4px 0 #1d2b4a; }
+  .platPad { grid-template-columns: 1fr 1fr; width: 136px; flex: 0 0 auto; gap: 8px; }
+  .platPad button { min-height: 56px; font-size: 20px; }
+}
