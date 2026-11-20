@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v228', items: ['跳關頁面改成自己的畫面（天空底、像素邊框、大顆觸控鍵），不再疊在 3D 場景上'] };
+const UPD = { v: 'v230', items: ['跳關改成原創玩法：撿荒者、衝刺撞碎脆石牆、收集 12 個齒輪開回收點'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -2140,7 +2140,7 @@ function bind() {
   $('raceBtn').addEventListener('click', function () { startSolo('race'); });
   $('chessBtn').addEventListener('click', chessOpen);
   $('platBtn').addEventListener('click', platOpen);
-  $('platBack').addEventListener('click', function () { RR.Plat.stop(); showMenu(); });
+  $('platBack').addEventListener('click', function () { RR.Plat.stop(); show('scrHub'); });
   $('chessBack').addEventListener('click', showMenu);
   $('chessNew').addEventListener('click', chessNew);
   $('huntBtn').addEventListener('click', function () { startSolo('hunt'); });
