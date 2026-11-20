@@ -1305,3 +1305,8 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .chSq.pw { color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000; }
 .chSq.pb { color: #111; }
 .chessStatus { text-align: center; font-weight: 900; margin: 8px 0 0; }
+
+/* 房間邀請橫幅（每秒檢查過期） */
+.invBanner { position: fixed; top: 8px; left: 50%; transform: translateX(-50%); z-index: 60; display: flex; gap: 8px; align-items: center; max-width: 94vw; padding: 10px 12px; background: #d6bf90; color: #222; border: 3px solid #1a1a1a; border-radius: 6px; box-shadow: 0 6px 18px rgba(0, 0, 0, .4); }
+.invBanner.hide { display: none; }
+.invBanner span { display: block; font-size: .85em; opacity: .8; }

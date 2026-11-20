@@ -377,6 +377,18 @@ const Cloud = {
   },
 
   /* ---------- 拾荒團 ---------- */
+  /** 送房間邀請：寫進對方的 users/{to}/invites/{我的uid}，cb(err) */
+  inviteSend: function (toUid, room, mode, cb) {
+    if (!Cloud.ready() || !toUid || !room) { if (cb) cb({ code: 'offline' }); return; }
+    userRef(toUid).collection('invites').doc(uid).set({ from: uid, fromName: profile().name, room: room, mode: mode || '', t: Date.now() }).then(function () { if (cb) cb(null); }).catch(fail(cb));
+  },
+  /** 即時監聽自己收到的邀請，onRows(rows)；回傳取消函式 */
+  invitesWatch: function (onRows) {
+    if (!Cloud.ready()) return function () {};
+    return userRef().collection('invites').onSnapshot(function (q) { const rows = []; q.forEach(function (d) { rows.push(Object.assign({ id: d.id }, d.data())); }); onRows(rows); }, fail());
+  },
+  inviteDismiss: function (fromUid) { if (Cloud.ready() && fromUid) userRef().collection('invites').doc(fromUid).delete().catch(function () {}); },
+
   createClan: function (name, cb) {
     if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
     name = clean(name, 12);

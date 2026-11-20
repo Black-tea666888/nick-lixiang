@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v222', items: ['賽車加上地面賽道與終點線'] };
+const UPD = { v: 'v223', items: ['新增房間邀請橫幅：好友或拾荒團成員邀請，頂部橫幅一鍵加入'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -600,6 +600,59 @@ function tradeLogDraw(list) {
     list.appendChild(r);
   });
 }
+/* 房間邀請：好友或同拾荒團的人送來的邀請，頂部橫幅顯示；每秒檢查一次是否過期（90 秒） */
+let invRows = [], invOff = null;
+const INV_TTL = 90000;
+function invWatchStart() { if (invOff) invOff(); invOff = RR.Cloud.invitesWatch(function (rows) { invRows = rows; invRender(); }); }
+function invWatchStop() { if (invOff) invOff(); invOff = null; invRows = []; invRender(); }
+function invRender() {
+  const now = Date.now(), el = $('invBanner');
+  if (!el) return;
+  invRows.forEach(function (x) { if (now - (Number(x.t) || 0) >= INV_TTL) RR.Cloud.inviteDismiss(x.from); });
+  invRows = invRows.filter(function (x) { return x.from && now - (Number(x.t) || 0) < INV_TTL; }).sort(function (a, b) { return (b.t || 0) - (a.t || 0); });
+  const x = invRows[0];
+  if (!x) { el.classList.add('hide'); return; }
+  el.querySelector('b').textContent = (x.fromName || '玩家') + ' 邀請你加入房間';
+  el.querySelector('span').textContent = (LOBBY_MODE[x.mode] || '') + '　房間 ' + x.room;
+  el.classList.remove('hide');
+}
+function invAccept() {
+  const x = invRows[0]; if (!x) return;
+  RR.Cloud.inviteDismiss(x.from); invRows = invRows.slice(1); invRender();
+  if (S.mode) leave();
+  $('codeInput').value = x.room; joinRoom();
+}
+function invDecline() {
+  const x = invRows[0]; if (!x) return;
+  RR.Cloud.inviteDismiss(x.from); invRows = invRows.slice(1); invRender();
+}
+/* 房間內的「邀請朋友」：列出好友與拾荒團成員，各自按一下送出邀請 */
+function invPickOpen() {
+  const C = RR.Cloud, room = Net.code && Net.code(), list = $('invList');
+  if (!room) { say('先建立或加入房間，才能邀請朋友。'); return; }
+  list.textContent = '讀取中…'; $('invPick').classList.remove('hide');
+  C.friends(function (err, fr) {
+    C.clan(function (e2, cl) {
+      list.textContent = ''; const seen = new Set();
+      const section = function (title, people, fail) {
+        list.appendChild(mk('p', 'note', title));
+        if (fail) { list.appendChild(mk('p', 'note', '讀取失敗')); return; }
+        if (!people.length) { list.appendChild(mk('p', 'note', '（沒有人）')); return; }
+        people.forEach(function (p) {
+          if (!p.uid || p.uid === C.uid() || seen.has(p.uid)) return; seen.add(p.uid);
+          const r = mk('div', 'srow'); r.appendChild(mk('span', 'nm', p.name || '玩家'));
+          const b = mk('button', 'btn primary', '邀請'); b.type = 'button';
+          b.addEventListener('click', function () { b.disabled = true; C.inviteSend(p.uid, room, S.gmode, function (e) { b.textContent = e ? '失敗' : '已送出'; }); });
+          r.appendChild(b); list.appendChild(r);
+        });
+      };
+      section('好友', err ? [] : fr || [], err);
+      section('拾荒團', e2 || !cl || !cl.members ? [] : cl.members, e2);
+    });
+  });
+}
+setInterval(invRender, 1000);
+
 let bannerT = null;
 function bannerShow(title, sub) {
   const el = $('banner'); el.querySelector('b').textContent = title; el.querySelector('span').textContent = sub || '';
@@ -1779,6 +1832,7 @@ function renderSocial() {
         const r = mk('div', 'srow'); r.appendChild(mk('span', f.online ? 'dotOn' : 'dotOff'));
         const nm = mk('span', 'nm', f.name); statsLink(nm, f.uid, f.name); nm.appendChild(mk('small', null, '　Lv.' + f.lv + (f.clan ? ' [' + f.clan + ']' : '') + (f.online ? (f.room ? '，在房間 ' + f.room : '，線上') : '，' + (seenText(f.seen) || '離線')))); r.appendChild(nm);
         if (f.online && f.room) { const j = mk('button', 'btn primary', '加入'); j.type = 'button'; j.addEventListener('click', function () { $('scrSocial').classList.add('hide'); $('codeInput').value = f.room; joinRoom(); }); r.appendChild(j); }
+        if (Net.code && Net.code()) { const iv = mk('button', 'btn', '邀請'); iv.type = 'button'; iv.addEventListener('click', function () { iv.disabled = true; RR.Cloud.inviteSend(f.uid, Net.code(), S.gmode, function (e) { iv.textContent = e ? '失敗' : '已送出'; }); }); r.appendChild(iv); }
         const del = mk('button', 'btn', '刪除'); del.type = 'button'; del.addEventListener('click', function () { C.removeFriend(f.uid, function () { renderSocial(); }); }); r.appendChild(del);
         fl.appendChild(r);
       });
@@ -2080,6 +2134,10 @@ function bind() {
   $('huntBtn').addEventListener('click', function () { startSolo('hunt'); });
   $('pvpBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.pvp = !S.sim.pvp; hostBroadcast(rosterMsg()); tickLobby(); });
   $('lobbyMic').addEventListener('click', function () { if (Voice.hasMic()) Voice.setMuted(!Voice.isMuted()); else say('沒有麥克風權限。請在瀏覽器允許麥克風後，重新進入房間。'); tickLobby(); });
+  $('inviteBtn').addEventListener('click', invPickOpen);
+  $('invPickClose').addEventListener('click', function () { $('invPick').classList.add('hide'); });
+  $('invJoin').addEventListener('click', invAccept);
+  $('invNo').addEventListener('click', invDecline);
   $('copyBtn').addEventListener('click', function () {
     const url = shareUrl($('roomCode').textContent);
     const fallback = function () { const i = $('shareLink'); i.value = url; i.classList.remove('hide'); i.focus(); i.select(); };
@@ -2474,10 +2532,10 @@ function boot() {
   Array.prototype.forEach.call(document.querySelectorAll('#socTabs button'), function (x) { x.addEventListener('click', function () { socTab = x.dataset.tab; renderSocial(); }); });
   let lastUid = null;
   Auth.init(function (user) {
-    if (!user) { lastUid = null; RR.Cloud.onUser(null); if (S.mode) leave(); else show('scrLogin'); return; }
+    if (!user) { lastUid = null; invWatchStop(); RR.Cloud.onUser(null); if (S.mode) leave(); else show('scrLogin'); return; }
     if (!S.mode) showMenu();
     markPlayDay();
-    if (user.uid !== lastUid) { lastUid = user.uid; RR.Cloud.onUser(user, function () { markPlayDay(); renderProg(); if (!S.mode) dailyLogin(); checkWeekReward(); pendingFriend(); }); }
+    if (user.uid !== lastUid) { lastUid = user.uid; RR.Cloud.onUser(user, function () { markPlayDay(); renderProg(); if (!S.mode) dailyLogin(); checkWeekReward(); pendingFriend(); invWatchStart(); }); }
   });
 }
 boot();

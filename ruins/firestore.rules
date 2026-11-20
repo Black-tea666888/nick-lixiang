@@ -2,6 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
+    // true when both users belong to the same clan (clan field set on users doc)
+    function sameClan(a, b) {
+      return get(/databases/$(database)/documents/users/$(a)).data.get('clan', '') != ''
+        && get(/databases/$(database)/documents/users/$(a)).data.get('clan', '') == get(/databases/$(database)/documents/users/$(b)).data.get('clan', '-');
+    }
 
     // 玩家資料：登入的人都能讀（好友列表要看名字與上線狀態），只有本人能寫
     match /users/{uid} {
@@ -11,6 +16,13 @@ service cloud.firestore {
       match /friends/{fid} {
         allow read: if signedIn() && request.auth.uid == uid;
         allow write: if signedIn() && (request.auth.uid == uid || request.auth.uid == fid);
+      }
+      // room invites: sender (fid) writes into the recipient's (uid) invites; sender must be a friend or same clan
+      match /invites/{fid} {
+        allow read: if signedIn() && request.auth.uid == uid;
+        allow create, update: if signedIn() && request.auth.uid == fid && request.resource.data.from == fid
+          && (exists(/databases/$(database)/documents/users/$(uid)/friends/$(fid)) || sameClan(uid, fid));
+        allow delete: if signedIn() && (request.auth.uid == uid || request.auth.uid == fid);
       }
       // 歷史戰績：登入的人都能看（點頭像看別人的戰績），只有本人能新增、刪除
       match /matches/{mid} {
