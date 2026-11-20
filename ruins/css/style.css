@@ -1336,3 +1336,11 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
   .platPad { grid-template-columns: 1fr 1fr; width: 136px; flex: 0 0 auto; gap: 8px; }
   .platPad button { min-height: 56px; font-size: 20px; }
 }
+
+/* 國際象棋棋子（自製怪物圖） */
+.chSq svg { width: 82%; height: 82%; display: block; margin: auto; overflow: visible; }
+.chSq svg .pc > * { fill: var(--fill); stroke: var(--stroke); stroke-width: 1.6; stroke-linejoin: round; }
+.chSq svg .pc > .eye { fill: var(--eye); stroke: none; }
+.chSq svg .pc > .accent { fill: var(--accent); stroke: none; }
+.chSq svg .pc > .dark { fill: #1d1a26; stroke: none; }
+.chSq svg .pc > .white { fill: #fff; }
