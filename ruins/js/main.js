@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v242', items: ['德國麻將：破冰後可以拉起桌上的牌重新組合'] };
+const UPD = { v: 'v243', items: ['德國麻將：每回合 1 分鐘，超時桌面還原並抽 3 張懲罰'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1315,8 +1315,22 @@ function xqDraw() {
  * rmLoose 是從桌上拉起來、還沒放回去的散牌。 */
 let rmS = null, rmSel = {}, rmWT = [], rmLoose = [], rmBusy = false;
 const RM_CLS = ['c0', 'c1', 'c2', 'c3'];
-function rmOpen() { show('scrRummi'); if (!rmS) rmS = RR.Rummi.start(); rmResetTurn(); rmDraw(); }
-function rmNewGame() { rmS = RR.Rummi.start(); rmBusy = false; rmResetTurn(); rmDraw(); }
+let rmDeadline = 0, rmTimer = null;
+const RM_TURN_MS = 60000;   // 每回合 1 分鐘
+function rmOpen() { show('scrRummi'); if (!rmS) rmS = RR.Rummi.start(); rmResetTurn(); rmStartTurn(); rmDraw(); if (!rmTimer) rmTimer = setInterval(rmTick, 1000); }
+function rmStartTurn() { rmDeadline = Date.now() + RM_TURN_MS; }
+/** 每秒檢查：時間到就結束這回合（桌面亂了抽 3 張懲罰，沒動就抽 1 張） */
+function rmTick() {
+  if (!rmS || rmS.over || rmS.turn !== 0 || rmBusy) return;
+  const left = Math.ceil((rmDeadline - Date.now()) / 1000);
+  if (left > 0) { rmStatus(); return; }   // 只更新文字，不重建牌面，免得點擊被吃掉
+  const dirty = rmDirty();
+  if (dirty) { rmResetTurn(); mtoast('超時了！桌面還原，抽 3 張懲罰', 'bad'); }
+  else mtoast('超時了，抽 1 張', 'bad');
+  const r = dirty ? RR.Rummi.penalty(rmS, 0) : RR.Rummi.draw(rmS, 0);
+  if (r.ok) { rmS = r.state; rmResetTurn(); rmAfter(); }
+}
+function rmNewGame() { rmS = RR.Rummi.start(); rmBusy = false; rmResetTurn(); rmStartTurn(); rmDraw(); }
 function rmCopyTable() { return rmS.table.map(function (ts) { return ts.slice(); }); }
 function rmResetTurn() { rmSel = {}; rmWT = rmCopyTable(); rmLoose = []; }
 function rmIdSet(list) { const o = {}; list.forEach(function (t) { o[t.id] = 1; }); return o; }
@@ -1396,14 +1410,14 @@ function rmHandUsed() {
 }
 /** 玩家出完或抽完牌之後：遊戲結束就結算，否則讓電腦依序走 */
 function rmAfter() {
-  rmDraw();
-  if (rmS.over) return;
-  if (rmS.turn !== 0) rmAi();
+  if (rmS.over) { rmDraw(); return; }
+  if (rmS.turn !== 0) { rmAi(); return; }
+  rmStartTurn(); rmDraw();
 }
 function rmAi() {
   rmBusy = true; rmDraw();
   const step = function () {
-    if (rmS.over || rmS.turn === 0) { rmBusy = false; rmDraw(); return; }
+    if (rmS.over || rmS.turn === 0) { rmBusy = false; rmStartTurn(); rmDraw(); return; }
     rmS = RR.Rummi.aiMove(rmS, rmS.turn).state;
     rmDraw();
     setTimeout(step, 700);
@@ -1442,13 +1456,16 @@ function rmDraw() {
   });
   ['rummiMake', 'rummiDraw', 'rummiUndo', 'rummiOk'].forEach(function (id) { $(id).disabled = !mine; });
   $('rummiDraw').textContent = rmS.deck.length ? '抽牌（剩 ' + rmS.deck.length + '）' : '抽牌（牌庫已空）';
-  const names = ['你', '電腦一', '電腦二'];
+  rmStatus();
+}
+function rmStatus() {
+  const X = RR.Rummi, names = ['你', '電腦一', '電腦二'];
   let msg;
   if (rmS.over) {
     const sc = X.score(rmS);
     msg = (rmS.winner === 0 ? '你贏了！' : names[rmS.winner] + '贏了') + '　點數：' + sc.map(function (v, i) { return names[i] + ' ' + (v > 0 ? '+' : '') + v; }).join('、');
   } else if (rmBusy || rmS.turn !== 0) msg = names[rmS.turn] + '思考中…';
-  else msg = (rmS.opened[0] ? '' : '你還沒破冰（需要 ' + X.OPEN_MIN + ' 點以上）。') + '輪到你出牌';
+  else msg = (rmS.opened[0] ? '' : '你還沒破冰（需要 ' + X.OPEN_MIN + ' 點以上）。') + '輪到你出牌（剩 ' + Math.max(0, Math.ceil((rmDeadline - Date.now()) / 1000)) + ' 秒）';
   $('rummiStatus').textContent = msg;
 }
 function chessDraw() {

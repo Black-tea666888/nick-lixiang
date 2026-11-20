@@ -151,6 +151,14 @@
     return { ok: true, state: { deck: d, hands: hands, table: s.table, opened: s.opened, turn: w, over: true, winner: w, pass: passes, log: s.log.concat([{ seat: seat, act: 'end' }]) } };
   }
 
+  /** 超時或亂了桌面：抽 3 張作為懲罰，結束回合 */
+  function penalty(s, seat) {
+    if (s.over || seat !== s.turn) return { ok: false, why: '還沒輪到你' };
+    const d = s.deck.slice(), hands = s.hands.map(function (h) { return h.slice(); });
+    for (let k = 0; k < 3 && d.length; k++) hands[seat].push(d.shift());
+    return { ok: true, state: { deck: d, hands: hands, table: s.table, opened: s.opened, turn: (seat + 1) % hands.length, over: false, winner: -1, pass: 0, log: s.log.concat([{ seat: seat, act: 'penalty' }]) } };
+  }
+
   /** 結算：贏家得其他人手上點數的總和（百搭每張另扣 30） */
   function score(s) {
     const pen = s.hands.map(function (h) {
@@ -217,7 +225,7 @@
     return out.filter(setValid);
   }
 
-  const api = { deck: deck, start: start, play: play, rearrange: rearrange, draw: draw, score: score, aiMove: aiMove, setValid: setValid, setInfo: setInfo, OPEN_MIN: OPEN_MIN };
+  const api = { deck: deck, start: start, play: play, rearrange: rearrange, draw: draw, penalty: penalty, score: score, aiMove: aiMove, setValid: setValid, setInfo: setInfo, OPEN_MIN: OPEN_MIN };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else { root.RR = root.RR || {}; root.RR.Rummi = api; }
 })(typeof window !== 'undefined' ? window : globalThis);
