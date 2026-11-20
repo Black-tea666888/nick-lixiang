@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v243', items: ['德國麻將：每回合 1 分鐘，超時桌面還原並抽 3 張懲罰'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi'];
+const UPD = { v: 'v244', items: ['休閒模式新增「五子棋」（同機雙人，先連五子者勝）'] };
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -1315,6 +1315,36 @@ function xqDraw() {
  * rmLoose 是從桌上拉起來、還沒放回去的散牌。 */
 let rmS = null, rmSel = {}, rmWT = [], rmLoose = [], rmBusy = false;
 const RM_CLS = ['c0', 'c1', 'c2', 'c3'];
+/* 五子棋（同機雙人） */
+let gmS = null;
+function gmOpen() { show('scrGomoku'); if (!gmS) gmS = RR.Gomoku.start(); gmDraw(); }
+function gmNew() { gmS = RR.Gomoku.start(); gmDraw(); }
+function gmTap(i) {
+  const r = RR.Gomoku.move(gmS, i);
+  if (r.ok) gmS = r.state;
+  gmDraw();
+}
+function gmDraw() {
+  const G = RR.Gomoku, bd = $('gomokuBoard');
+  bd.textContent = '';
+  const winSet = {};
+  if (gmS.win) gmS.win.line.forEach(function (i) { winSet[i] = 1; });
+  for (let i = 0; i < G.N * G.N; i++) {
+    const p = gmS.b[i];
+    const cls = 'gmCell' + (p === 'b' ? ' B' : p === 'w' ? ' W' : '') + (winSet[i] ? ' win' : '') + (gmS.last === i ? ' last' : '');
+    const cell = mk('button', cls, '');
+    cell.type = 'button';
+    cell.setAttribute('aria-label', (Math.floor(i / G.N) + 1) + '列' + (i % G.N + 1) + '行' + (p ? (p === 'b' ? '黑子' : '白子') : '空'));
+    cell.addEventListener('click', (function (k) { return function () { gmTap(k); }; })(i));
+    bd.appendChild(cell);
+  }
+  const st = G.status(gmS);
+  let msg;
+  if (st.k === 'win') msg = (st.winner === 'b' ? '黑方' : '白方') + '連成五子，獲勝！';
+  else if (st.k === 'draw') msg = '棋盤下滿了，和局。';
+  else msg = (gmS.turn === 'b' ? '黑方' : '白方') + '下子';
+  $('gomokuStatus').textContent = msg;
+}
 let rmDeadline = 0, rmTimer = null;
 const RM_TURN_MS = 60000;   // 每回合 1 分鐘
 function rmOpen() { show('scrRummi'); if (!rmS) rmS = RR.Rummi.start(); rmResetTurn(); rmStartTurn(); rmDraw(); if (!rmTimer) rmTimer = setInterval(rmTick, 1000); }
@@ -1544,11 +1574,11 @@ function recOptsOpen() {
   $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
 }
 /* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'plat', 'marble'] };
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'plat', 'marble'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', plat: '跳關', marble: '彈珠' };
+const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', plat: '跳關', marble: '彈珠' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
@@ -2368,6 +2398,9 @@ function bind() {
   $('chessBtn').addEventListener('click', chessOpen);
   $('xqBtn').addEventListener('click', xqOpen);
   $('rummiBtn').addEventListener('click', rmOpen);
+  $('gomokuBtn').addEventListener('click', gmOpen);
+  $('gomokuBack').addEventListener('click', showMenu);
+  $('gomokuNew').addEventListener('click', gmNew);
   $('rummiBack').addEventListener('click', showMenu);
   $('rummiNew').addEventListener('click', rmNewGame);
   $('rummiMake').addEventListener('click', rmMakeSet);
