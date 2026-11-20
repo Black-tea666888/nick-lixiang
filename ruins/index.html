@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=222" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=223" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -170,6 +170,11 @@
   <div class="row join"><input id="codeInput" type="text" maxlength="5" autocapitalize="characters" autocomplete="off"><button class="btn primary" id="joinBtn" type="button">加入</button></div>
   <div class="col"><button class="btn" id="joinClose" type="button">取消</button></div>
 </div></div>
+<div class="modal hide" id="invPick"><div class="panel small">
+  <b class="mTitle">邀請朋友加入</b>
+  <div id="invList"></div>
+  <div class="col"><button class="btn" id="invPickClose" type="button">關閉</button></div>
+</div></div>
 <!-- 每日任務 -->
 <div class="modal hide" id="misModal"><div class="panel small">
   <b class="mTitle">每日任務</b>
@@ -287,6 +292,7 @@
 <div id="aim" class="hide" aria-hidden="true"><i></i><b></b></div>
 <div id="mtoast" role="status"></div>
 <div id="banner" role="status" aria-live="polite"><b></b><span></span></div>
+<div id="invBanner" class="invBanner hide" role="alert"><div><b></b><span></span></div><button class="btn primary" id="invJoin" type="button">加入</button><button class="btn" id="invNo" type="button">略過</button></div>
 <!-- 市集：每日精選直購、免費補給 -->
 <div class="screen hide" id="scrShop">
   <div class="sp">
@@ -606,6 +612,7 @@
   <div class="panel">
     <h1 id="roomCode">-----</h1>
     <button class="link" id="copyBtn" type="button">複製邀請連結</button>
+    <button class="link" id="inviteBtn" type="button">邀請朋友</button>
     <input id="shareLink" class="hide" type="text" readonly>
     <div id="lobbyList"></div>
     <p class="note" id="micNote"></p>
@@ -702,19 +709,19 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=222"></script>
-<script src="js/race_tracks.js?v=222"></script>
-<script src="js/sim.js?v=222"></script>
-<script src="js/audio.js?v=222"></script>
-<script src="js/auth.js?v=222"></script>
-<script src="js/cloud.js?v=222"></script>
-<script src="js/net.js?v=222"></script>
-<script src="js/game.js?v=222"></script>
-<script src="js/minigames.js?v=222"></script>
-<script src="js/ar.js?v=222"></script>
-<script src="js/padnav.js?v=222"></script>
-<script src="js/cards.js?v=222"></script>
-<script src="js/chess.js?v=222"></script>
-<script src="js/main.js?v=222"></script>
+<script src="js/config.js?v=223"></script>
+<script src="js/race_tracks.js?v=223"></script>
+<script src="js/sim.js?v=223"></script>
+<script src="js/audio.js?v=223"></script>
+<script src="js/auth.js?v=223"></script>
+<script src="js/cloud.js?v=223"></script>
+<script src="js/net.js?v=223"></script>
+<script src="js/game.js?v=223"></script>
+<script src="js/minigames.js?v=223"></script>
+<script src="js/ar.js?v=223"></script>
+<script src="js/padnav.js?v=223"></script>
+<script src="js/cards.js?v=223"></script>
+<script src="js/chess.js?v=223"></script>
+<script src="js/main.js?v=223"></script>
 </body>
 </html>
