@@ -223,6 +223,30 @@ function syncRaceAi(list) {
   raceAiCars.forEach(function (m, id) { if (!seen.has(id)) { scene.remove(m); raceAiCars.delete(id); } });
 }
 function clearRaceAi() { raceAiCars.forEach(function (m) { scene.remove(m); }); raceAiCars.clear(); }
+/* 賽車賽道：在地面畫出 RACE_TRACKS 的路線（BFS 貼著通道走），並在起點畫白色終點線 */
+let raceTrackMesh = null;
+function buildRaceTrack(map) {
+  if (raceTrackMesh) { scene.remove(raceTrackMesh); raceTrackMesh.traverse(function (o) { if (o.geometry) o.geometry.dispose(); }); raceTrackMesh = null; }
+  if (map < 0 || !RACE_TRACKS[map]) return;
+  const cells = RACE_TRACKS[map].map(function (q) { return [q[1], q[0]]; }), pts = [];
+  for (let i = 0; i < cells.length; i++) {
+    const a = cells[i], b = cells[(i + 1) % cells.length], path = bfs(a[0], a[1], b[0], b[1]) || [a];
+    path.slice(0, -1).forEach(function (c) { pts.push(center(c[0], c[1])); });
+  }
+  if (pts.length < 2) return;
+  const g = new THREE.Group(), road = new THREE.MeshBasicMaterial({ color: 0xffb020, transparent: true, opacity: 0.6, depthWrite: false, fog: false });
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length], dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz);
+    if (L < 0.01) continue;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(1.4, L + 0.2), road);
+    m.rotation.set(-Math.PI / 2, Math.atan2(-dx, -dz), 0, 'YXZ');
+    m.position.set((a[0] + b[0]) / 2, 0.03, (a[1] + b[1]) / 2);
+    g.add(m);
+  }
+  const fin = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.35), new THREE.MeshBasicMaterial({ color: 0xffffff, depthWrite: false, fog: false }));
+  fin.rotation.x = -Math.PI / 2; fin.position.set(pts[0][0], 0.04, pts[0][1]); g.add(fin);
+  raceTrackMesh = g; scene.add(g);
+}
 function tickRaceCars() {
   const on = view.mode === 'race' && me.alive;
   if (on && !raceMyCar) { raceMyCar = buildRaceCar(0xd9573a); scene.add(raceMyCar); }
@@ -2744,6 +2768,7 @@ RR.Game = {
       return { x: a[0], z: a[1], kind: a[2], value: a[3], taken: false, mesh: mesh, fx: rarFx(a[0], a[1], a[2]) };
     });
     view.mode = info.mode || 'coop'; document.body.classList.toggle('td', view.mode === 'td'); syncTowers([]); view.td = null;
+    buildRaceTrack(view.mode === 'race' ? (info.map || 0) : -1);
     document.body.classList.toggle('hunt', view.mode === 'hunt'); document.body.classList.toggle('br', view.mode === 'br');
     applyWeather(info.weather || 0); quakeT = 0; me.riding = false; rings.forEach(function (r) { scene.remove(r.mesh); }); rings.length = 0;
     setTimeout(function () { if (canControl() && view.mode !== 'br') skillHint('你的技能'); }, info.weather ? 7000 : 3500);
