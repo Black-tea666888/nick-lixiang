@@ -1357,3 +1357,15 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .xqPt.sel { box-shadow: 0 0 0 3px #ffd23a; }
 .xqPt.cap { box-shadow: 0 0 0 3px #3fae5a; }
 .xqPt.dot { width: 4%; height: 4%; min-width: 10px; min-height: 10px; background: #3fae5a; border: none; opacity: 0.85; }
+
+/* 德國麻將（拉密） */
+.rsTable { display: flex; flex-wrap: wrap; gap: 6px; min-height: 90px; padding: 8px; background: #f3e6c4; border: 2px solid #6b4a1e; border-radius: 8px; margin: 8px 0; }
+.rsSet { display: flex; gap: 2px; padding: 4px 6px; background: #fff7e6; border: 2px solid #6b4a1e; border-radius: 8px; cursor: pointer; }
+.rsSet.pend { border-style: dashed; cursor: default; }
+.rsHand { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 8px; }
+.rsBtns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.rsBtns .btn:disabled { opacity: 0.5; }
+.rmTile { width: 30px; height: 40px; border-radius: 6px; border: 2px solid #6b4a1e; background: #fff; font-weight: 900; font-size: 15px; padding: 0; cursor: pointer; }
+.rmTile.c0 { color: #c2352b; } .rmTile.c1 { color: #2a6fd6; } .rmTile.c2 { color: #e08a1e; } .rmTile.c3 { color: #222; }
+.rmTile.joker { color: #7a3fb0; font-size: 12px; }
+.rmTile.sel { transform: translateY(-6px); box-shadow: 0 0 0 3px #ffd23a; }
