@@ -288,14 +288,57 @@ function tickRaceCars() {
   if (ub) { ub.classList.toggle('hide', !(view.mode === 'race' && me.alive)); ub.textContent = me.item ? '加速道具（E）' : '無道具'; ub.disabled = !me.item; }
   if (keys.KeyE && !raceUseQ) { if (view.mode === 'race') raceUseItem(); }
   raceUseQ = !!keys.KeyE;
+  if (view.mode === 'race' && me.ckX == null) { me.ckX = me.x; me.ckZ = me.z; me.ckYaw = me.yaw; }   // 復位點：這局開始的位置
+  if (keys.KeyN && !raceNitroQ) { if (view.mode === 'race') raceNitro(); }
+  raceNitroQ = !!keys.KeyN;
+  if (keys.KeyR && !raceResetQ) { if (view.mode === 'race' && me.alive) raceRespawn(false); }
+  raceResetQ = !!keys.KeyR;
+  const bn = document.getElementById('raceNitro'), br = document.getElementById('raceReset'), st = document.getElementById('raceStat');
+  const rOn = view.mode === 'race' && me.alive;
+  [bn, br, st].forEach(function (el) { if (el) el.classList.toggle('hide', !rOn); });
+  if (bn) { bn.disabled = (me.nitro || 0) < 1; bn.textContent = '氮氣 ' + Math.floor((me.nitro || 0) * 100) + '%'; }
+  if (st && rOn) st.textContent = '車況 ' + Math.ceil(me.hp == null ? 100 : me.hp) + '%' + (me.pauseT > 0 ? '　爆炸復位中' : '');
+}
+let raceNitroQ = false, raceResetQ = false;
+document.getElementById('raceNitro') && document.getElementById('raceNitro').addEventListener('click', function () { if (view.mode === 'race') raceNitro(); });
+document.getElementById('raceReset') && document.getElementById('raceReset').addEventListener('click', function () { if (view.mode === 'race' && me.alive) raceRespawn(false); });
+/* 氮氣：開滿（1 格）才能按，短暫衝到更高速 */
+function raceNitro() { if ((me.nitro || 0) >= 1 && !(me.nitroT > 0) && !(me.pauseT > 0)) { me.nitroT = 2.2; me.nitro = 0; Sfx.tone(300, 0.2, 'sawtooth', 0.06, 900); } }
+/* 撞牆：車速大時扣車況、減速；車況 0 就爆炸，停 3 秒後強制復位 */
+function raceImpact(bx, bz, dx, dz) {
+  const want = Math.hypot(dx, dz), got = Math.hypot(me.x - bx, me.z - bz);
+  if (want < 0.05 || got > want * 0.5 || me.pauseT > 0) return;
+  const hit = Math.abs(me.spd || 0);
+  me.spd *= 0.35;                                  // 撞牆減速
+  if (hit < 3 || (me.hitCd || 0) > 0) return;
+  me.hitCd = 0.3;
+  me.hp = Math.max(0, (me.hp == null ? 100 : me.hp) - Math.min(18, hit * 1.1));
+  Sfx.noise(0.08, 0.1);
+  if (me.hp <= 0) raceExplode();
+}
+function raceExplode() {
+  me.hp = 0; me.pauseT = 3; me.spd = 0; me.boostT = 0; me.nitroT = 0;
+  Sfx.noise(0.5, 0.2); toast('車子爆炸了！3 秒後強制復位');
+}
+/* 復位：回到這局的起點（爆炸後車況會補滿；手動復位不補） */
+function raceRespawn(full) {
+  if (me.ckX == null) return;
+  me.x = me.ckX; me.z = me.ckZ; me.yaw = me.ckYaw;
+  me.spd = 0; me.slideAng = 0; me.drifting = false; me.charge = 0; me.boostT = 0; me.nitroT = 0; me.pauseT = 0;
+  if (full) me.hp = 100;
+  toast(full ? '已復位，車況補滿' : '已復位');
 }
 /* 賽車操控（卡丁車）：油門加減速、方向盤轉向；按住「漂移」（Shift）過彎會甩尾並累積氣，放開時依氣量噴射加速 */
 const RACE_VMAX = 11;
 function raceDrive(f, steer, dt, driftKey) {
   if (me.spd == null) me.spd = 0;
   if (me.boostT == null) me.boostT = 0;
-  const boosting = me.boostT > 0;
-  const vmax = RACE_VMAX * (boosting ? 1.45 : 1);
+  if (me.pauseT > 0) { me.pauseT -= dt; me.spd = 0; if (me.pauseT <= 0) raceRespawn(true); return; }   // 爆炸後停 3 秒
+  if (me.hitCd > 0) me.hitCd -= dt;
+  me.nitro = Math.min(1, (me.nitro || 0) + (me.nitroT > 0 ? 0 : (me.spd > 6 ? dt * 0.12 : 0) + (me.drifting ? dt * 0.1 : 0)));
+  if (me.nitroT > 0) me.nitroT -= dt;
+  const boosting = me.boostT > 0 || me.nitroT > 0;
+  const vmax = RACE_VMAX * (me.nitroT > 0 ? 1.7 : boosting ? 1.45 : 1);
   const target = f >= 0 ? vmax * f : 4 * f;                       // 倒車慢慢退
   me.spd += (target - me.spd) * Math.min(1, dt * (target > me.spd ? 2.2 : 3.5));
   const frac = Math.min(1, Math.abs(me.spd) / RACE_VMAX);
@@ -2422,10 +2465,12 @@ function updateMe(dt) {
   if (dashT > 0) { dashT -= dt; dx += dashDir[0] * 22 * dt; dz += dashDir[1] * 22 * dt; }
   const R = 0.42;
   if (editing) { dx = 0; dz = 0; }   // 調整按鈕位置時不移動
+  const bx0 = me.x, bz0 = me.z;
   const inS = hitSolid(me.x, me.z, me.y);   // 萬一已經卡在擺設裡就放行，讓玩家走得出來
   const onTop = me.y >= WH - 0.25 && (W.isWall(Math.floor(me.x / CS), Math.floor(me.z / CS)) || W.blocked(me.x, me.z, 1.1));   // 在牆頂（或牆邊起跳上牆）才可以走過牆；空中飄在空地上不行
   if ((onTop || !W.blocked(me.x + dx, me.z, R)) && (inS || !hitSolid(me.x + dx, me.z, me.y))) me.x += dx;
   if ((onTop || !W.blocked(me.x, me.z + dz, R)) && (inS || !hitSolid(me.x, me.z + dz, me.y))) me.z += dz;
+  if (raceMove) raceImpact(bx0, bz0, dx, dz);
   // 重力：腳下是地板或擺設頂端；走出箱子邊緣會掉下來
   { const gnd = groundAt(me.x, me.z);
     if (me.y > gnd || me.vy > 0) { me.vy -= 15 * dt; me.y += me.vy * dt; if (me.y <= gnd) { if (me.vy < -2) Sfx.noise(0.05, 0.06); me.y = gnd; me.vy = 0; me.air2 = false; } }
@@ -2848,7 +2893,7 @@ RR.Game = {
     });
     view.mode = info.mode || 'coop'; document.body.classList.toggle('td', view.mode === 'td'); syncTowers([]); view.td = null;
     buildRaceTrack(view.mode === 'race' ? (info.map || 0) : -1);
-    if (view.mode === 'race') { me.spd = 0; me.boostT = 0; me.charge = 0; me.slideAng = 0; me.drifting = false; me.item = null; }
+    if (view.mode === 'race') { me.spd = 0; me.boostT = 0; me.charge = 0; me.slideAng = 0; me.drifting = false; me.item = null; me.ckX = null; me.hp = 100; me.nitro = 0; me.nitroT = 0; me.pauseT = 0; me.hitCd = 0; }
     document.body.classList.toggle('hunt', view.mode === 'hunt'); document.body.classList.toggle('br', view.mode === 'br');
     applyWeather(info.weather || 0); quakeT = 0; me.riding = false; rings.forEach(function (r) { scene.remove(r.mesh); }); rings.length = 0;
     setTimeout(function () { if (canControl() && view.mode !== 'br') skillHint('你的技能'); }, info.weather ? 7000 : 3500);
