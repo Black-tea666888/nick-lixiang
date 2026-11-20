@@ -257,6 +257,17 @@ function buildRaceTrack(map) {
   }
   const fin = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.35), new THREE.MeshBasicMaterial({ color: 0xffffff, depthWrite: false, fog: false }));
   fin.rotation.x = -Math.PI / 2; fin.position.set(pts[0][0], 0.04, pts[0][1]); g.add(fin);
+  // 彈跳台：沿路線隔一段放一個；靠牆的那幾個是近道（跳過牆），顏色跟地板很像，不容易發現
+  raceRamps = [];
+  for (let i = 9, k = 0; i < pts.length - 2; i += 14, k++) {
+    const p = pts[i], q = pts[i + 1], dx = q[0] - p[0], dz = q[1] - p[1], L = Math.hypot(dx, dz) || 1;
+    const cell = [Math.floor(p[0] / CS), Math.floor(p[1] / CS)];
+    const nearWall = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(function (d) { return W.isWall(cell[0] + d[0], cell[1] + d[1]); });
+    const sc = nearWall && k % 2 === 0;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.12, 1.4), new THREE.MeshBasicMaterial({ color: sc ? 0x6b6257 : 0xff8a3a, fog: false }));
+    m.position.set(p[0], 0.07, p[1]); m.rotation.y = Math.atan2(-dx, -dz); g.add(m);
+    raceRamps.push({ x: p[0], z: p[1], dx: dx / L, dz: dz / L, sc: sc, t: 0 });
+  }
   // 道具箱：沿路線每隔一段放一個，拿到後 4 秒重生
   raceBoxes = [];
   for (let i = 5; i < pts.length; i += 10) {
@@ -265,7 +276,7 @@ function buildRaceTrack(map) {
   }
   raceTrackMesh = g; scene.add(g);
 }
-let raceBoxes = [], raceUseQ = false;
+let raceBoxes = [], raceUseQ = false, raceRamps = [];
 /* 道具：目前只有「加速」（按 E 或按鈕使用，噴射 1.3 秒）。拿到道具箱就有一個，用掉才會再拿 */
 function raceUseItem() {
   if (!me.item) { toast('還沒有道具，去撞黃色道具箱'); return; }
@@ -280,7 +291,7 @@ function raceTickBoxes(dt) {
   });
 }
 document.getElementById('raceUse') && document.getElementById('raceUse').addEventListener('click', function () { if (view.mode === 'race') raceUseItem(); });
-function tickRaceCars() {
+function tickRaceCars(dt) {
   const on = view.mode === 'race' && me.alive;
   if (on && !raceMyCar) { raceMyCar = buildRaceCar(0xd9573a); scene.add(raceMyCar); }
   if (raceMyCar) { raceMyCar.visible = on; if (on) { raceMyCar.position.set(me.x, 0, me.z); raceMyCar.rotation.y = me.yaw; raceMyCar.userData.flame.visible = (me.boostT || 0) > 0; } }
@@ -289,6 +300,7 @@ function tickRaceCars() {
   if (keys.KeyE && !raceUseQ) { if (view.mode === 'race') raceUseItem(); }
   raceUseQ = !!keys.KeyE;
   if (view.mode === 'race' && me.ckX == null) { me.ckX = me.x; me.ckZ = me.z; me.ckYaw = me.yaw; }   // 復位點：這局開始的位置
+  raceTickRamps(dt || 0.016);
   if (keys.KeyN && !raceNitroQ) { if (view.mode === 'race') raceNitro(); }
   raceNitroQ = !!keys.KeyN;
   if (keys.KeyR && !raceResetQ) { if (view.mode === 'race' && me.alive) raceRespawn(false); }
@@ -300,6 +312,21 @@ function tickRaceCars() {
   if (st && rOn) st.textContent = '車況 ' + Math.ceil(me.hp == null ? 100 : me.hp) + '%' + (me.pauseT > 0 ? '　爆炸復位中' : '');
 }
 let raceNitroQ = false, raceResetQ = false;
+/* 不同角色的彈射力道不一樣（0.9 到 1.15 倍） */
+const RACE_LAUNCH_K = [1, 0.95, 1.1, 1, 1.15, 0.9, 1.05, 1];
+/* 彈跳台：在地上、速度夠快經過就彈起來；近道的力道足以跳過牆 */
+function raceTickRamps(dt) {
+  if (!me.alive || view.mode !== 'race') return;
+  const k = RACE_LAUNCH_K[myC() % RACE_LAUNCH_K.length] || 1;
+  raceRamps.forEach(function (r) {
+    if (r.t > 0) { r.t -= dt; return; }
+    if (Math.hypot(me.x - r.x, me.z - r.z) > 0.9 || (me.spd || 0) < 5) return;
+    if (me.vy !== 0 || me.y > groundAt(me.x, me.z) + 0.05) return;
+    me.vy = (r.sc ? 11 : 6.5) * k; me.air2 = false;
+    r.t = 1.5;
+    Sfx.tone(r.sc ? 380 : 600, 0.12, 'triangle', 0.08, r.sc ? 500 : 900);
+  });
+}
 document.getElementById('raceNitro') && document.getElementById('raceNitro').addEventListener('click', function () { if (view.mode === 'race') raceNitro(); });
 document.getElementById('raceReset') && document.getElementById('raceReset').addEventListener('click', function () { if (view.mode === 'race' && me.alive) raceRespawn(false); });
 /* 氮氣：開滿（1 格）才能按，短暫衝到更高速 */
@@ -2724,7 +2751,7 @@ function frame(nowMs) {
   pvs.forEach(function (pv) { if (pv.model && pv.model.userData.mixer && pv.canvas.offsetParent) { pv.model.userData.mixer.update(dt); followHand(pv.model); } });
   pvs.forEach(function (pv) { if (pv.model && pv.canvas.offsetParent) { pv.model.rotation.y = (pv.gun ? Math.PI / 2 + Math.sin(now * 0.7) * 0.6 : pv.sway ? -0.35 + Math.sin(now * 0.6) * 0.3 : now * 0.9) + (pv.spin || 0); pv.model.rotation.x = pv.gun ? 0.15 : 0; pv.r.render(pv.sc, pv.cam); } });
   tickFx(dt);
-  tickRaceCars();
+  tickRaceCars(dt);
   if (view.mode === 'race') raceTickBoxes(dt);
   renderer.render(scene, camera);
 }
