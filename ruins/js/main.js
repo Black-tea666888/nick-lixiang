@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v226', items: ['賽車加上道具箱（拿到加速道具，按 E 或道具鈕使用）與 AI 車數量設定'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess'];
+const UPD = { v: 'v227', items: ['休閒模式新增「跳關」：橫向跳關、踩敵人、吃金幣、到旗桿過關'] };
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -1222,6 +1222,14 @@ function avaDraw() {
 /* ---------- 國際象棋（同機雙人） ---------- */
 let chessS = null, chessSel = -1, chessMoves = [];
 const CHESS_GLYPH = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙', k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
+/* 跳關（休閒）：單機橫向跳關，過關或 GAME OVER 後回到大廳 */
+function platOpen() {
+  show('scrPlat');
+  RR.Plat.start($('platHost'), function (r) {
+    RR.Plat.stop(); show('scrHub');
+    mtoast(r.win ? '過關！金幣 ' + r.coins + '，用時 ' + r.time.toFixed(1) + ' 秒' : '遊戲結束，金幣 ' + r.coins, r.win ? 'good' : '');
+  });
+}
 function chessOpen() { show('scrChess'); if (!chessS) chessS = RR.Chess.start(); chessSel = -1; chessMoves = []; chessDraw(); }
 function chessNew() { chessS = RR.Chess.start(); chessSel = -1; chessMoves = []; chessDraw(); }
 function chessTap(i) {
@@ -1309,11 +1317,11 @@ function recOptsOpen() {
   $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
 }
 /* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess'] };
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'plat'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋' };
+const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', plat: '跳關' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
@@ -2131,6 +2139,8 @@ function bind() {
   $('tdBtn').addEventListener('click', function () { startSolo('td'); });
   $('raceBtn').addEventListener('click', function () { startSolo('race'); });
   $('chessBtn').addEventListener('click', chessOpen);
+  $('platBtn').addEventListener('click', platOpen);
+  $('platBack').addEventListener('click', function () { RR.Plat.stop(); showMenu(); });
   $('chessBack').addEventListener('click', showMenu);
   $('chessNew').addEventListener('click', chessNew);
   $('huntBtn').addEventListener('click', function () { startSolo('hunt'); });
