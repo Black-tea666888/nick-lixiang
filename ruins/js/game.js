@@ -304,9 +304,16 @@ function raceDrive(f, steer, dt, driftKey) {
   const turn = 2.2 * (me.drifting ? 1.6 : 0.5 + 0.5 * frac);
   me.yaw -= steer * turn * dt * (me.spd < -0.5 ? -1 : 1);       // 倒車時方向盤反過來，跟真車一樣
   me.slideAng = (me.slideAng || 0) + ((me.drifting ? -steer * 0.45 : 0) - (me.slideAng || 0)) * Math.min(1, dt * 6);
-  if (me.drifting && !canDrift) {                                  // 放開漂移：氣夠就噴射
-    const c = me.charge || 0;
-    if (c >= 0.9) { me.boostT = c >= 2.2 ? 1.6 : 0.9; Sfx.tone(660, 0.12, 'square', 0.05, 980); }
+  if (me.drifting && !canDrift) {                                  // 放開漂移
+    const c = me.charge || 0, ang = Math.abs(me.slideAng || 0);
+    if (c >= 0.9 && ang >= 0.3) {                                  // 彈射：角度夠大，放開像彈弓一樣衝出去
+      me.boostT = c >= 2.2 ? 1.6 : 0.9;
+      me.spd = Math.max(me.spd, RACE_VMAX * 1.35);
+      Sfx.tone(660, 0.12, 'square', 0.05, 980);
+    } else if (c >= 0.4 && ang >= 0.12) {                          // 小噴：角度較小，只有短暫加速
+      me.boostT = Math.max(me.boostT, 0.35);
+      Sfx.tone(520, 0.08, 'square', 0.03, 700);
+    }
     me.drifting = false; me.charge = 0;
   }
   if (me.boostT > 0) me.boostT = Math.max(0, me.boostT - dt);
