@@ -4,7 +4,7 @@
   'use strict';
   const T = 12, VW = 320, VH = 180, STEP = 1 / 60;
   const GRAV = 0.42, MAXFALL = 6.5, RUN = 2.0, ACC = 0.3, FRIC = 0.26;
-  const JUMP = -6.2, DASH_V = 5.4, DASH_T = 12, DASH_CD = 40, COYOTE = 6, JBUF = 6;
+  const JUMP = -6.2, DASH_V = 5.4, DASH_T = 12, DASH_CD = 32, COYOTE = 6, JBUF = 6;
   const PW = 8, PH = 13, GEARS_NEED = 12, LIVES = 3, DEAD_T = 72, END_DELAY = 1500;
   const SOLID = { '#': 1, '=': 1, 'x': 1, 'W': 1 };
   const KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', Space: 'jump', ArrowUp: 'jump', KeyW: 'jump', KeyJ: 'dash', KeyK: 'dash', ShiftLeft: 'dash', ShiftRight: 'dash' };
@@ -39,7 +39,7 @@
       const ch = m[r][c];
       if (ch === 'P') { st.p.x = c * T; st.p.y = (r + 1) * T - PH; m[r][c] = '.'; }
       else if (ch === 'g') { st.gearList.push({ c: c, r: r, got: false }); m[r][c] = '.'; }
-      else if (ch === 'b') { st.beasts.push({ x: c * T + 1, y: (r + 1) * T - 9, w: 10, h: 9, vx: -0.35, vy: 0, alive: true, dead: 0 }); m[r][c] = '.'; }
+      else if (ch === 'b') { st.beasts.push({ x: c * T + 2, y: (r + 1) * T - 9, w: 8, h: 9, vx: -0.22, vy: 0, alive: true, dead: 0 }); m[r][c] = '.'; }
     }
   }
 
