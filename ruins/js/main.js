@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v225', items: ['賽車改成卡丁車：按住 Shift 漂移過彎，放開噴射加速；追車視角；場地不放擺設、不縮圈'] };
+const UPD = { v: 'v226', items: ['賽車加上道具箱（拿到加速道具，按 E 或道具鈕使用）與 AI 車數量設定'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1083,6 +1083,7 @@ function startSolo(gmode) {
   S.mode = 'solo'; S.myId = 'me'; S.sim = new W.Sim(); S.sim.mode = gmode === 'hunt' || gmode === 'br' || gmode === 'td' || gmode === 'race' ? gmode : 'coop'; S.gmode = S.sim.mode; S.base = 0;
   document.body.classList.add('solo');
   S.sim.map = gmode === 'race' ? W.arenaIdx(Math.floor(Math.random() * W.ARENA_N)) : myMap();   // 賽車：隨機一座賽道場地
+  S.sim.raceAi = Math.max(1, Math.min(6, +ls('rr_raceai') || 3));
   S.sim.addPlayer('me', myName(), myLook());
   Game.setMe('me');
   dispatch({ t: 'roster', code: null, hostId: 'me', mode: S.sim.mode, base: S.base | 0, players: S.sim.roster() });

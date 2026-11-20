@@ -257,12 +257,37 @@ function buildRaceTrack(map) {
   }
   const fin = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.35), new THREE.MeshBasicMaterial({ color: 0xffffff, depthWrite: false, fog: false }));
   fin.rotation.x = -Math.PI / 2; fin.position.set(pts[0][0], 0.04, pts[0][1]); g.add(fin);
+  // 道具箱：沿路線每隔一段放一個，拿到後 4 秒重生
+  raceBoxes = [];
+  for (let i = 5; i < pts.length; i += 10) {
+    const p = pts[i], m = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshBasicMaterial({ color: 0xffd23a }));
+    m.position.set(p[0], 0.9, p[1]); g.add(m); raceBoxes.push({ x: p[0], z: p[1], m: m, on: true, t: 0 });
+  }
   raceTrackMesh = g; scene.add(g);
 }
+let raceBoxes = [], raceUseQ = false;
+/* 道具：目前只有「加速」（按 E 或按鈕使用，噴射 1.3 秒）。拿到道具箱就有一個，用掉才會再拿 */
+function raceUseItem() {
+  if (!me.item) { toast('還沒有道具，去撞黃色道具箱'); return; }
+  me.boostT = Math.max(me.boostT || 0, 1.3); me.item = null; Sfx.tone(780, 0.1, 'triangle', 0.06, 1200);
+}
+function raceTickBoxes(dt) {
+  if (!me.alive) return;
+  raceBoxes.forEach(function (b) {
+    if (!b.on) { b.t -= dt; if (b.t <= 0) { b.on = true; b.m.visible = true; } return; }
+    b.m.rotation.y += dt * 1.8;
+    if (me.alive && !me.item && Math.hypot(me.x - b.x, me.z - b.z) < 1.4) { b.on = false; b.t = 4; b.m.visible = false; me.item = 'boost'; toast('拿到道具：加速（按 E 或道具鈕）'); Sfx.tone(520, 0.08, 'square', 0.05, 880); }
+  });
+}
+document.getElementById('raceUse') && document.getElementById('raceUse').addEventListener('click', function () { if (view.mode === 'race') raceUseItem(); });
 function tickRaceCars() {
   const on = view.mode === 'race' && me.alive;
   if (on && !raceMyCar) { raceMyCar = buildRaceCar(0xd9573a); scene.add(raceMyCar); }
   if (raceMyCar) { raceMyCar.visible = on; if (on) { raceMyCar.position.set(me.x, 0, me.z); raceMyCar.rotation.y = me.yaw; raceMyCar.userData.flame.visible = (me.boostT || 0) > 0; } }
+  const ub = document.getElementById('raceUse');
+  if (ub) { ub.classList.toggle('hide', !(view.mode === 'race' && me.alive)); ub.textContent = me.item ? '加速道具（E）' : '無道具'; ub.disabled = !me.item; }
+  if (keys.KeyE && !raceUseQ) { if (view.mode === 'race') raceUseItem(); }
+  raceUseQ = !!keys.KeyE;
 }
 /* 賽車操控（卡丁車）：油門加減速、方向盤轉向；按住「漂移」（Shift）過彎會甩尾並累積氣，放開時依氣量噴射加速 */
 const RACE_VMAX = 11;
@@ -1025,9 +1050,9 @@ function buildLevel() {
     const bld = mergeGeos(bf);
     [[-60, -80, 0.3], [80, 60, -0.8], [-20, 110, 1.2]].forEach(function (q) { const m = new THREE.Mesh(bld, cm); m.position.set(Wd / 2 + q[0], 0, D / 2 + q[1]); m.rotation.y = q[2]; level.add(m); });
   }
-  if (open) scatterGround(style, hr);
+  if (open && !raceLvl) scatterGround(style, hr);
   if (!raceLvl) buildProps(style, hr);
-  buildBase();
+  if (!raceLvl) buildBase();
   // 櫃子（躲藏點）
   const lockM = new THREE.MeshLambertMaterial({ color: 0x2a4a60, emissive: 0x0b1c28 }), lineM = new THREE.MeshBasicMaterial({ color: 0x0a141a }), tagM = new THREE.MeshBasicMaterial({ color: 0x7dffb0 });
   (W.lockers || []).forEach(function (k) {
@@ -1077,7 +1102,7 @@ function buildLevel() {
   }
   // 回收車車體（放在光圈旁，緊貼最近的牆）
   const sc0 = W.cellOf(VAN[0], VAN[1]), vw = [[-1, 0], [0, -1], [1, 0], [0, 1]].filter(function (d) { return W.isWall(sc0[0] + d[0], sc0[1] + d[1]); })[0];
-  if (vw) {
+  if (vw && !raceLvl) {
     const tg = new THREE.Group(), bodyM = pmat(0xd9902f, 0.25), cabM = pmat(0xe8eef2, 0.15), tyre = pmat(0x111413, 0.02);
     tg.add(part(new THREE.BoxGeometry(1.5, 0.9, 0.8), bodyM, 0, 0.75, 0), part(new THREE.BoxGeometry(0.55, 0.7, 0.8), cabM, 1.05, 0.65, 0), part(new THREE.BoxGeometry(0.3, 0.25, 0.7), new THREE.MeshBasicMaterial({ color: 0x9fe8ff }), 1.2, 0.82, 0));
     [[-0.5, 0.42], [0.95, 0.42], [-0.5, -0.42], [0.95, -0.42]].forEach(function (q) { const w = part(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 10), tyre, q[0], 0.2, q[1]); w.rotation.x = Math.PI / 2; tg.add(w); });
@@ -2648,6 +2673,7 @@ function frame(nowMs) {
   pvs.forEach(function (pv) { if (pv.model && pv.canvas.offsetParent) { pv.model.rotation.y = (pv.gun ? Math.PI / 2 + Math.sin(now * 0.7) * 0.6 : pv.sway ? -0.35 + Math.sin(now * 0.6) * 0.3 : now * 0.9) + (pv.spin || 0); pv.model.rotation.x = pv.gun ? 0.15 : 0; pv.r.render(pv.sc, pv.cam); } });
   tickFx(dt);
   tickRaceCars();
+  if (view.mode === 'race') raceTickBoxes(dt);
   renderer.render(scene, camera);
 }
 
@@ -2815,7 +2841,7 @@ RR.Game = {
     });
     view.mode = info.mode || 'coop'; document.body.classList.toggle('td', view.mode === 'td'); syncTowers([]); view.td = null;
     buildRaceTrack(view.mode === 'race' ? (info.map || 0) : -1);
-    if (view.mode === 'race') { me.spd = 0; me.boostT = 0; me.charge = 0; me.slideAng = 0; me.drifting = false; }
+    if (view.mode === 'race') { me.spd = 0; me.boostT = 0; me.charge = 0; me.slideAng = 0; me.drifting = false; me.item = null; }
     document.body.classList.toggle('hunt', view.mode === 'hunt'); document.body.classList.toggle('br', view.mode === 'br');
     applyWeather(info.weather || 0); quakeT = 0; me.riding = false; rings.forEach(function (r) { scene.remove(r.mesh); }); rings.length = 0;
     setTimeout(function () { if (canControl() && view.mode !== 'br') skillHint('你的技能'); }, info.weather ? 7000 : 3500);

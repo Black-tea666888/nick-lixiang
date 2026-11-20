@@ -1322,7 +1322,8 @@ Sim.prototype._raceInit = function () {
     path.slice(0, -1).forEach(function (c) { route.push(center(c[0], c[1])); });
   }
   this.race.route = route;
-  this.race.ai = [0, 1, 2].map(function (i) { const w = route[0] || [0, 0]; return { id: 'ai' + i, x: w[0] + i * 0.9, z: w[1], yaw: 0, k: 1, lap: 0, fin: 0, sp: 8.4 + i * 0.6 }; });
+  const nAi = Math.max(1, Math.min(6, this.raceAi || 3));   // AI 賽車數量（1～6，預設 3）
+  this.race.ai = Array.from({ length: nAi }, function (_, i) { const w = route[0] || [0, 0]; return { id: 'ai' + i, x: w[0] + i * 0.9, z: w[1], yaw: 0, k: 1, lap: 0, fin: 0, sp: 8.4 + i * 0.6 }; });
 };
 Sim.prototype._stepRace = function (dt, alive) {
   const R = this.race, self = this;
