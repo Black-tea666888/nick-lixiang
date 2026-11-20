@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=234" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=235" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -146,9 +146,9 @@
         <button class="mcard" type="button" data-mode="solo" data-go="soloBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-5 3-8 7-8s7 3 7 8"/></svg><b>單人拾荒</b><span>自己練習回收</span></button>
         <button class="mcard" type="button" data-mode="ar" data-go="arOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><circle cx="12" cy="12" r="3.5"/></svg><b>AR 實境</b><span>抓怪・迷宮</span></button>
         <button class="mcard" type="button" data-mode="race" data-go="raceBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16l3-6h8l4 3v3H3z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg><b>賽車</b><span>廢墟賽道計時跑圈</span></button>
-        <button class="mcard" type="button" data-mode="marble" data-go="marbleBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="9" cy="10" r="1.6"/><circle cx="15" cy="10" r="1.6"/></svg><b>彈珠</b><span>拖曳瞄準，彈珠打怪物方塊</span></button>
-        <button class="mcard" type="button" data-mode="plat" data-go="platBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="14" width="18" height="3"/><rect x="8" y="8" width="5" height="3"/><circle cx="17" cy="6" r="2"/></svg><b>跳關</b><span>橫向跳關，踩敵人、吃金幣</span></button>
-        <button class="mcard" type="button" data-mode="chess" data-go="chessBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 20h6M12 4a2.5 2.5 0 0 0-2 4l-1 2h6l-1-2a2.5 2.5 0 0 0-2-4zM8 16h8l-1-4H9z"/></svg><b>國際象棋</b><span>同機兩人對弈</span></button>
+        <button class="mcard" type="button" data-mode="marble" data-go="marbleBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="9" cy="10" r="1.6"/><circle cx="15" cy="10" r="1.6"/></svg><b>彈珠</b><span>拖曳瞄準，彈珠打怪物方塊</span><i class="mpc" data-pc="marble"></i></button>
+        <button class="mcard" type="button" data-mode="plat" data-go="platBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="14" width="18" height="3"/><rect x="8" y="8" width="5" height="3"/><circle cx="17" cy="6" r="2"/></svg><b>跳關</b><span>橫向跳關，踩敵人、吃金幣</span><i class="mpc" data-pc="plat"></i></button>
+        <button class="mcard" type="button" data-mode="chess" data-go="chessBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 20h6M12 4a2.5 2.5 0 0 0-2 4l-1 2h6l-1-2a2.5 2.5 0 0 0-2-4zM8 16h8l-1-4H9z"/></svg><b>國際象棋</b><span>同機兩人對弈</span><i class="mpc" data-pc="chess"></i></button>
         <button class="mcard" type="button" data-mode="card" data-go="cardOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="11" height="15" rx="1.5" transform="rotate(-10 8 13)"/><rect x="10" y="3" width="11" height="15" rx="1.5"/><path d="M13 12l2-3 2 3-2 3z"/></svg><b>怪物卡牌</b><span>出牌對戰電腦</span></button>
         <button class="mcard" type="button" data-mode="hunt" data-go="huntBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><b>清剿行動</b><span>拿槍清剿怪物</span></button>
         <button class="mcard" type="button" data-mode="td" data-go="tdBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V9l6-5 6 5v12z"/><path d="M10 21v-5h4v5M9 11h6"/></svg><b>死守回收車</b><span>守住回收車</span></button>
@@ -732,23 +732,23 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=234"></script>
-<script src="js/race_tracks.js?v=234"></script>
-<script src="js/race_arenas.js?v=234"></script>
-<script src="js/sim.js?v=234"></script>
-<script src="js/audio.js?v=234"></script>
-<script src="js/auth.js?v=234"></script>
-<script src="js/cloud.js?v=234"></script>
-<script src="js/net.js?v=234"></script>
-<script src="js/game.js?v=234"></script>
-<script src="js/minigames.js?v=234"></script>
-<script src="js/ar.js?v=234"></script>
-<script src="js/padnav.js?v=234"></script>
-<script src="js/cards.js?v=234"></script>
-<script src="js/chess.js?v=234"></script>
-<script src="js/chess_art.js?v=234"></script>
-<script src="js/platform.js?v=234"></script>
-<script src="js/marble.js?v=234"></script>
-<script src="js/main.js?v=234"></script>
+<script src="js/config.js?v=235"></script>
+<script src="js/race_tracks.js?v=235"></script>
+<script src="js/race_arenas.js?v=235"></script>
+<script src="js/sim.js?v=235"></script>
+<script src="js/audio.js?v=235"></script>
+<script src="js/auth.js?v=235"></script>
+<script src="js/cloud.js?v=235"></script>
+<script src="js/net.js?v=235"></script>
+<script src="js/game.js?v=235"></script>
+<script src="js/minigames.js?v=235"></script>
+<script src="js/ar.js?v=235"></script>
+<script src="js/padnav.js?v=235"></script>
+<script src="js/cards.js?v=235"></script>
+<script src="js/chess.js?v=235"></script>
+<script src="js/chess_art.js?v=235"></script>
+<script src="js/platform.js?v=235"></script>
+<script src="js/marble.js?v=235"></script>
+<script src="js/main.js?v=235"></script>
 </body>
 </html>

@@ -141,6 +141,14 @@ service cloud.firestore {
         && (resource.data.status == 'cancel' || (resource.data.status == 'open') || (resource.data.get('paid', false) == true && resource.data.get('got', false) == true));
     }
 
+    // 模式在玩人數：登入的人都能讀人數；只能寫、刪自己的心跳（seen 是數字，模式限休閒三種）
+    match /modeplay/{mode}/players/{pid} {
+      allow read: if signedIn() && mode in ['marble', 'plat', 'chess'];
+      allow create, update: if signedIn() && pid == request.auth.uid && mode in ['marble', 'plat', 'chess']
+        && request.resource.data.seen is number;
+      allow delete: if signedIn() && pid == request.auth.uid;
+    }
+
     // 排行榜（集合名稱以 lb_ 開頭）：只能寫自己的那一筆，分數要是合理的數字
     match /{board}/{uid} {
       allow read: if signedIn() && board.matches('lb_.*');
