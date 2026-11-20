@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v233', items: ['國際象棋的棋子改成我們自己的怪物（規則不變）'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat'];
+const UPD = { v: 'v234', items: ['休閒模式新增「彈珠」：仿怪物彈珠，拖曳瞄準、彈珠打怪物方塊，撐過 15 回合過關'] };
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -1221,6 +1221,14 @@ function avaDraw() {
 }
 /* ---------- 國際象棋（同機雙人） ---------- */
 let chessS = null, chessSel = -1, chessMoves = [];
+/* 彈珠（休閒）：仿怪物彈珠，拖曳瞄準、放開發射，結束後回到大廳 */
+function marbleOpen() {
+  show('scrMarble');
+  RR.Marble.start($('marbleHost'), function (r) {
+    RR.Marble.stop(); show('scrHub');
+    mtoast(r.win ? '撐住了！齒輪 ' + r.gears : '被怪物吞了，齒輪 ' + r.gears + '（第 ' + r.round + ' 回合）', r.win ? 'good' : '');
+  });
+}
 /* 跳關（休閒）：單機橫向跳關，過關或 GAME OVER 後回到大廳 */
 function platOpen() {
   show('scrPlat');
@@ -1317,11 +1325,11 @@ function recOptsOpen() {
   $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
 }
 /* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'plat'] };
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'plat', 'marble'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', plat: '跳關' };
+const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', plat: '跳關', marble: '彈珠' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
@@ -2140,6 +2148,8 @@ function bind() {
   $('raceBtn').addEventListener('click', function () { startSolo('race'); });
   $('chessBtn').addEventListener('click', chessOpen);
   $('platBtn').addEventListener('click', platOpen);
+  $('marbleBtn').addEventListener('click', marbleOpen);
+  $('marbleBack').addEventListener('click', function () { RR.Marble.stop(); show('scrHub'); });
   $('platBack').addEventListener('click', function () { RR.Plat.stop(); show('scrHub'); });
   $('chessBack').addEventListener('click', showMenu);
   $('chessNew').addEventListener('click', chessNew);
