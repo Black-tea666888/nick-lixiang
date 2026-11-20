@@ -591,6 +591,8 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
 .mcard svg { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .mcard b { font-size: 15px; font-weight: 900; }
 .mcard span { font-size: 11px; color: var(--ink-2); line-height: 1.3; }
+.mpc { display: block; font-style: normal; font-size: 10px; font-weight: 800; color: #b3261e; margin-top: 2px; }
+.mpc:empty { display: none; }
 .mcard.on { background: var(--haz); transform: translateY(-3px); box-shadow: 3px 6px 0 rgba(17,20,23,.55); }
 .mcard.on span { color: var(--ink); }
 .startBox { display: flex; gap: 8px; align-items: stretch; }

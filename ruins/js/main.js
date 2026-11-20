@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v234', items: ['休閒模式新增「彈珠」：仿怪物彈珠，拖曳瞄準、彈珠打怪物方塊，撐過 15 回合過關'] };
+const UPD = { v: 'v235', items: ['休閒模式（彈珠、跳關、國際象棋）卡片顯示目前在玩人數'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -56,7 +56,19 @@ new MutationObserver(function (list) { list.forEach(function (m) { m.addedNodes.
 document.addEventListener('DOMContentLoaded', function () { fancyAll(); }); fancyAll();
 function lsSet(k, v) { const same = ls(k) === String(v); try { localStorage.setItem(k, v); } catch (e) {} if (!same && RR.Cloud) RR.Cloud.localChanged(k); }
 let showMapName = function () {};
-function show(id) { SCREENS.forEach(function (s) { $(s).classList.toggle('hide', s !== id); }); $('mailBtn').classList.toggle('hide', id !== 'scrHub'); bannerHide(); const rh = document.getElementById('raceHud'); if (rh) rh.classList.add('hide'); }   // 離開遊戲畫面時一起收起賽車計時
+function show(id) { SCREENS.forEach(function (s) { $(s).classList.toggle('hide', s !== id); }); $('mailBtn').classList.toggle('hide', id !== 'scrHub'); bannerHide(); const rh = document.getElementById('raceHud'); if (rh) rh.classList.add('hide'); if (id === 'scrHub') hubCounts(); }
+/** 回到大廳：先離開所有休閒模式的在玩紀錄，再更新卡片上的人數 */
+function pres(m, on) { if (RR.Cloud) RR.Cloud.presence(m, on); }
+function hubCounts() {
+  if (!RR.Cloud) return;
+  ['marble', 'plat', 'chess'].forEach(function (m) { pres(m, false); });
+  RR.Cloud.modeCounts(function (e, c) {
+    ['marble', 'plat', 'chess'].forEach(function (m) {
+      const el = document.querySelector('[data-pc="' + m + '"]');
+      if (el) el.textContent = e ? '' : '在玩 ' + (c[m] | 0) + ' 人';
+    });
+  });
+}   // 離開遊戲畫面時一起收起賽車計時
 let sayDone = null, askYes = null;
 function say(text, done) { $('msgText').textContent = text; $('msg').classList.remove('hide'); sayDone = done || null; }
 function ask(text, onYes) { $('askText').textContent = text; askYes = onYes; $('askDlg').classList.remove('hide'); }
@@ -1223,7 +1235,7 @@ function avaDraw() {
 let chessS = null, chessSel = -1, chessMoves = [];
 /* 彈珠（休閒）：仿怪物彈珠，拖曳瞄準、放開發射，結束後回到大廳 */
 function marbleOpen() {
-  show('scrMarble');
+  show('scrMarble'); pres('marble', true);
   RR.Marble.start($('marbleHost'), function (r) {
     RR.Marble.stop(); show('scrHub');
     mtoast(r.win ? '撐住了！齒輪 ' + r.gears : '被怪物吞了，齒輪 ' + r.gears + '（第 ' + r.round + ' 回合）', r.win ? 'good' : '');
@@ -1231,13 +1243,13 @@ function marbleOpen() {
 }
 /* 跳關（休閒）：單機橫向跳關，過關或 GAME OVER 後回到大廳 */
 function platOpen() {
-  show('scrPlat');
+  show('scrPlat'); pres('plat', true);
   RR.Plat.start($('platHost'), function (r) {
     RR.Plat.stop(); show('scrHub');
     mtoast(r.win ? '過關！金幣 ' + r.coins + '，用時 ' + r.time.toFixed(1) + ' 秒' : '遊戲結束，金幣 ' + r.coins, r.win ? 'good' : '');
   });
 }
-function chessOpen() { show('scrChess'); if (!chessS) chessS = RR.Chess.start(); chessSel = -1; chessMoves = []; chessDraw(); }
+function chessOpen() { show('scrChess'); pres('chess', true); if (!chessS) chessS = RR.Chess.start(); chessSel = -1; chessMoves = []; chessDraw(); }
 function chessNew() { chessS = RR.Chess.start(); chessSel = -1; chessMoves = []; chessDraw(); }
 function chessTap(i) {
   const C = RR.Chess, s = chessS, st = C.status(s);
