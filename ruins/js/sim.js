@@ -307,6 +307,13 @@ const MAPS = [
 const CS = 4, WH = 3.6;
 const MON_SH = 40;   // 怪物護盾：傷害先扣護盾再扣血；5 秒沒被打就每秒回 10 點
 function monHit(m, dmg) { m.shT = 0; const a = Math.min(m.sh || 0, dmg); m.sh = (m.sh || 0) - a; m.hp -= dmg - a; }
+// 賽車場地接在廢墟地圖後面（索引 RUIN_N 起）；其他模式只用廢墟地圖
+const RUIN_N = MAPS.length;
+if (typeof RACE_ARENAS !== 'undefined') MAPS.push.apply(MAPS, RACE_ARENAS);
+const ARENA_N = MAPS.length - RUIN_N;
+function arenaIdx(k) { return ARENA_N ? RUIN_N + (((+k) || 0) % ARENA_N + ARENA_N) % ARENA_N : 0; }
+function arenaNext(m) { return ARENA_N ? (m < RUIN_N ? RUIN_N : RUIN_N + ((m - RUIN_N + 1) % ARENA_N)) : 0; }
+function raceTrackOf(m) { return (MAPS[m] && MAPS[m].track) || (typeof RACE_TRACKS !== 'undefined' && RACE_TRACKS[m]) || [[1, 1]]; }
 let MAP = MAPS[0].rows, ROWS = MAP.length, COLS = MAP[0].length, mapIndex = -1;
 let BROKEN = [];   // 這一天被炸開的牆 [c, r]
 let startCell = [1, 1], floorCells = [], VAN = [6, 6], MONSTER_CELLS = [];
@@ -481,6 +488,7 @@ Sim.prototype.roster = function () {
 
 Sim.prototype.startDay = function (day) {
   restoreMap();
+  if (this.mode === 'race' && this.map < RUIN_N) this.map = arenaIdx(this.map);   // 賽車一律用賽道場地
   this.map = setMap(this.map);
   const self = this, n = Math.max(1, this.players.length);
   this.day = day; this.phase = 'play'; this.money = 0; this.time = DAY_TIME; this.pad = null;
@@ -1303,7 +1311,7 @@ Sim.prototype.step = function (dt) {
 
 /* 賽車：沿著地圖的固定環形路線（RACE_TRACKS）跑 3 圈，依完賽時間排名 */
 Sim.prototype._raceInit = function () {
-  const tr = RACE_TRACKS[this.map] || RACE_TRACKS[0];
+  const tr = raceTrackOf(this.map);
   this.race = { t: 0, laps: 3, cps: tr.map(function (q) { return center(q[1], q[0]); }) };
   this.raceRes = null;
   this.players.forEach(function (p) { p.rc = { lap: 0, next: 1, fin: 0 }; });   // 起點就是第 0 個路線點，所以從第 1 點開始計
@@ -1368,7 +1376,7 @@ Sim.prototype.snapshot = function () {
 };
 
 const BASE_STYLES = [{ n: '回收車（預設）', c: 0xffc24a, sh: 0 }, { n: '信號塔', c: 0x6ad8ff, sh: 1 }, { n: '圓頂營地', c: 0x9dff7a, sh: 2 }, { n: '四柱燈', c: 0xff7ad1, sh: 3 }, { n: '藍色回收車', c: 0x4a9cff, sh: 0 }, { n: '紅色信號塔', c: 0xff5a4a, sh: 1 }, { n: '金色圓頂', c: 0xffe066, sh: 2 }, { n: '紫色四柱燈', c: 0xb07aff, sh: 3 }];
-const api = { RARITY: RARITY, BAG_TIERS: BAG_TIERS, bagTierOf: bagTierOf, BASE_STYLES: BASE_STYLES, MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
+const api = { RUIN_N: RUIN_N, ARENA_N: ARENA_N, arenaIdx: arenaIdx, arenaNext: arenaNext, RARITY: RARITY, BAG_TIERS: BAG_TIERS, bagTierOf: bagTierOf, BASE_STYLES: BASE_STYLES, MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
   KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, GUNS: GUNS, BASE_R: BASE_R, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, breakWall: breakWall, restoreMap: restoreMap, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
   quotaFor: quotaFor, Sim: Sim, setMap: setMap };
 

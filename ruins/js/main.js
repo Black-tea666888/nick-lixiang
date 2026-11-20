@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v223', items: ['新增房間邀請橫幅：好友或拾荒團成員邀請，頂部橫幅一鍵加入'] };
+const UPD = { v: 'v224', items: ['賽車改用獨立賽道場地（4 座，每座 1 條賽道）'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -929,7 +929,7 @@ function progOnResult(e, stars) {
   const lvUp = levelOf(p.xp) > lv0 ? '，升到 Lv.' + levelOf(p.xp) + '（大廳點等級領獎勵）' : '';
   return '金幣 +' + coins + '，經驗 +' + xp + (bonus ? '，每日任務完成 +' + bonus : '') + (bagUp ? '，解鎖' + bagUp + '（背包 +1 格）' : '') + lvUp;
 }
-function myMap() { const m = parseInt(ls('rr_map') || '0', 10) || 0; return m >= 0 && m < W.MAPS.length ? m : 0; }
+function myMap() { const m = parseInt(ls('rr_map') || '0', 10) || 0; return m >= 0 && m < W.RUIN_N ? m : 0; }
 function rosterEntry(id) { for (let i = 0; i < S.roster.length; i++) if (S.roster[i].id === id) return S.roster[i]; return null; }
 
 // 單機小遊戲的金幣：每天最多 60
@@ -1082,7 +1082,7 @@ function startSolo(gmode) {
   Sfx.unlock();
   S.mode = 'solo'; S.myId = 'me'; S.sim = new W.Sim(); S.sim.mode = gmode === 'hunt' || gmode === 'br' || gmode === 'td' || gmode === 'race' ? gmode : 'coop'; S.gmode = S.sim.mode; S.base = 0;
   document.body.classList.add('solo');
-  S.sim.map = myMap();
+  S.sim.map = gmode === 'race' ? W.arenaIdx(Math.floor(Math.random() * W.ARENA_N)) : myMap();   // 賽車：隨機一座賽道場地
   S.sim.addPlayer('me', myName(), myLook());
   Game.setMe('me');
   dispatch({ t: 'roster', code: null, hostId: 'me', mode: S.sim.mode, base: S.base | 0, players: S.sim.roster() });
@@ -1338,13 +1338,13 @@ function addWeekPts(p, n) { const w = RR.Cloud.weekId(); if (p.wk !== w) { p.wk 
 function myWeekPts() { const p = prog(); return p.wk === RR.Cloud.weekId() ? (p.wpts | 0) : 0; }
 /** 本週輪換地圖：依週次固定抽 6 張，全部玩家一致 */
 function rotMaps() {
-  const N = W.MAPS.length, want = Math.min(6, N), out = [];
+  const N = W.RUIN_N, want = Math.min(6, N), out = [];
   let s = (RR.Cloud.weekId() * 9301 + 49297) % 233280;
   while (out.length < want) { s = (s * 9301 + 49297) % 233280; const i = Math.floor(s / 233280 * N); if (out.indexOf(i) < 0) out.push(i); }
   return out;
 }
 function openTierInfo() {
-  const b = $('tierBody'), C = RR.Cloud, N = W.MAPS.length; b.textContent = '';
+  const b = $('tierBody'), C = RR.Cloud, N = W.RUIN_N; b.textContent = '';
   const row = function (name, min, now) { const r = mk('div', 'srow' + (now ? ' me' : '')); r.appendChild(mk('span', 'nm', name)); r.appendChild(mk('span', 'sc', min + ' 分起')); b.appendChild(r); };
   b.appendChild(mk('div', 'sec', '拾荒團段位（本週積分）'));
   C.TIERS.forEach(function (t) { row(t.n, t.min, false); });
@@ -1360,7 +1360,7 @@ function openTierInfo() {
 }
 function renderMapGrid() {
   const g = $('mapGrid'), cur = myMap(), rot = rotMaps(); g.textContent = '';
-  W.MAPS.forEach(function (mp, i) {
+  W.MAPS.slice(0, W.RUIN_N).forEach(function (mp, i) {
     const T = mp.theme, b = document.createElement('button'); b.type = 'button'; b.className = 'mapCard' + (i === cur ? ' on' : '');
     // 縮圖直接畫出地圖的格子：牆、地板、出生點（綠）、怪物點（紅）
     const cv = document.createElement('canvas'); cv.className = 'mapPrev'; cv.width = mp.rows[0].length * 4; cv.height = mp.rows.length * 4;
@@ -2120,7 +2120,8 @@ function bind() {
   $('lobbyLeave').addEventListener('click', leave);
   $('mapBtn').addEventListener('click', function () {
     if (S.mode !== 'host') return;
-    S.sim.map = (S.sim.map + 1) % W.MAPS.length; lsSet('rr_map', String(S.sim.map));
+    if (S.sim.mode === 'race') S.sim.map = W.arenaNext(S.sim.map);   // 賽車：只在賽道場地間切換
+    else { S.sim.map = (S.sim.map + 1) % W.RUIN_N; lsSet('rr_map', String(S.sim.map)); }
     hostBroadcast(rosterMsg()); tickLobby(); showMapName();
   });
   $('baseBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.base = ((S.base | 0) + 1) % W.BASE_STYLES.length; S.sim.baseStyle = S.base; hostBroadcast(rosterMsg()); tickLobby(); });

@@ -223,12 +223,12 @@ function syncRaceAi(list) {
   raceAiCars.forEach(function (m, id) { if (!seen.has(id)) { scene.remove(m); raceAiCars.delete(id); } });
 }
 function clearRaceAi() { raceAiCars.forEach(function (m) { scene.remove(m); }); raceAiCars.clear(); }
-/* 賽車賽道：在地面畫出 RACE_TRACKS 的路線（BFS 貼著通道走），並在起點畫白色終點線 */
+/* 賽車賽道：在地面畫出該場地的賽道路線（BFS 貼著通道走），並在起點畫白色終點線 */
 let raceTrackMesh = null;
 function buildRaceTrack(map) {
   if (raceTrackMesh) { scene.remove(raceTrackMesh); raceTrackMesh.traverse(function (o) { if (o.geometry) o.geometry.dispose(); }); raceTrackMesh = null; }
-  if (map < 0 || !RACE_TRACKS[map]) return;
-  const cells = RACE_TRACKS[map].map(function (q) { return [q[1], q[0]]; }), pts = [];
+  if (map < 0 || typeof MAPS === 'undefined' || !MAPS[map]) return;
+  const cells = raceTrackOf(map).map(function (q) { return [q[1], q[0]]; }), pts = [];
   for (let i = 0; i < cells.length; i++) {
     const a = cells[i], b = cells[(i + 1) % cells.length], path = bfs(a[0], a[1], b[0], b[1]) || [a];
     path.slice(0, -1).forEach(function (c) { pts.push(center(c[0], c[1])); });
