@@ -314,6 +314,8 @@ function tickRaceCars(dt) {
 let raceNitroQ = false, raceResetQ = false;
 /* 不同角色的彈射力道不一樣（0.9 到 1.15 倍） */
 const RACE_LAUNCH_K = [1, 0.95, 1.1, 1, 1.15, 0.9, 1.05, 1];
+/* 彈射需要的漂移角度倍率：越小越容易彈射，越大要甩得更開 */
+const RACE_SLING_K = [1, 0.9, 1.1, 1, 1.2, 0.85, 1, 1];
 /* 彈跳台：在地上、速度夠快經過就彈起來；近道的力道足以跳過牆 */
 function raceTickRamps(dt) {
   if (!me.alive || view.mode !== 'race') return;
@@ -376,7 +378,8 @@ function raceDrive(f, steer, dt, driftKey) {
   me.slideAng = (me.slideAng || 0) + ((me.drifting ? -steer * 0.45 : 0) - (me.slideAng || 0)) * Math.min(1, dt * 6);
   if (me.drifting && !canDrift) {                                  // 放開漂移
     const c = me.charge || 0, ang = Math.abs(me.slideAng || 0);
-    if (c >= 0.9 && ang >= 0.3) {                                  // 彈射：角度夠大，放開像彈弓一樣衝出去
+    const sling = 0.3 * (RACE_SLING_K[myC() % RACE_SLING_K.length] || 1);   // 每個角色彈射需要的角度不一樣
+    if (c >= 0.9 && ang >= sling) {                                // 彈射：角度夠大，放開像彈弓一樣衝出去
       me.boostT = c >= 2.2 ? 1.6 : 0.9;
       me.spd = Math.max(me.spd, RACE_VMAX * 1.35);
       Sfx.tone(660, 0.12, 'square', 0.05, 980);
