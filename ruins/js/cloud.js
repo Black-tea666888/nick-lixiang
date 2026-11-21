@@ -87,6 +87,8 @@ function joinRef(ref, cd, cb) {
     return userRef().set({ clan: ref.id, clanTag: cd.tag, clanName: cd.name }, { merge: true });
   }).then(function () { cb(null, { id: ref.id, tag: cd.tag, name: cd.name }); }).catch(fail(cb));
 }
+const PRESENCE_MODES = { marble: 1, plat: 1, chess: 1 };   // 休閒模式才顯示在玩人數
+const presenceT = {};
 const Cloud = {
   CLAN_BADGES: CLAN_BADGES,
   REGIONS: REGIONS, MODES: MODES, weekId: weekId, TIERS: TIERS, tierOf: tierOf,
@@ -213,6 +215,23 @@ const Cloud = {
     db.collection('rooms').doc(code).set({ code: code, host: uid, hostName: profile().name, lv: profile().lv | 0, mode: info.mode || 'coop', map: info.map || '', n: info.n | 0, max: info.max || 4, play: !!info.play, t: Date.now() }).catch(fail());
   },
   roomClose: function (code) { if (Cloud.ready() && code) db.collection('rooms').doc(code).delete().catch(function () {}); },
+  /** 模式在玩人數：進入模式時寫入自己的心跳（每 60 秒），離開時刪掉；3 分鐘沒心跳就不算在玩 */
+  presence: function (mode, on) {
+    if (!Cloud.ready() || !PRESENCE_MODES[mode]) return;
+    const ref = db.collection('modeplay').doc(mode).collection('players').doc(uid);
+    clearInterval(presenceT[mode]); delete presenceT[mode];
+    if (!on) { ref.delete().catch(function () {}); return; }
+    const beat = function () { ref.set({ seen: Date.now() }).catch(fail()); };
+    beat(); presenceT[mode] = setInterval(function () { if (!document.hidden) beat(); }, 60000);
+  },
+  /** cb(err, {marble: 3, plat: 0, ...})：各模式目前在玩的人數 */
+  modeCounts: function (cb) {
+    if (!Cloud.ready()) { cb({ code: 'offline' }); return; }
+    const cutoff = Date.now() - 180000, out = {};
+    Promise.all(Object.keys(PRESENCE_MODES).map(function (m) {
+      return db.collection('modeplay').doc(m).collection('players').where('seen', '>', cutoff).get().then(function (q) { out[m] = q.size; });
+    })).then(function () { cb(null, out); }).catch(fail(cb));
+  },
   /** 即時訂閱公開房間：只留 2.5 分鐘內有更新、還沒滿的房間 */
   roomsWatch: function (onRows) {
     if (!Cloud.ready()) { onRows({ code: 'offline' }); return function () {}; }
