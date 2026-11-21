@@ -294,7 +294,7 @@ document.getElementById('raceUse') && document.getElementById('raceUse').addEven
 function tickRaceCars(dt) {
   const on = view.mode === 'race' && me.alive;
   if (on && !raceMyCar) { raceMyCar = buildRaceCar(0xd9573a); scene.add(raceMyCar); }
-  if (raceMyCar) { raceMyCar.visible = on; if (on) { raceMyCar.position.set(me.x, 0, me.z); raceMyCar.rotation.y = me.yaw; raceMyCar.userData.flame.visible = (me.boostT || 0) > 0; } }
+  if (raceMyCar) { raceMyCar.visible = on; if (on) { raceMyCar.position.set(me.x, 0, me.z); raceMyCar.rotation.y = me.yaw; raceMyCar.userData.flame.visible = (me.boostT || 0) > 0 || (me.nitroT || 0) > 0; } }
   const ub = document.getElementById('raceUse');
   if (ub) { ub.classList.toggle('hide', !(view.mode === 'race' && me.alive)); ub.textContent = me.item ? '加速道具（E）' : '無道具'; ub.disabled = !me.item; }
   if (keys.KeyE && !raceUseQ) { if (view.mode === 'race') raceUseItem(); }
@@ -309,7 +309,10 @@ function tickRaceCars(dt) {
   const rOn = view.mode === 'race' && me.alive;
   [bn, br, st].forEach(function (el) { if (el) el.classList.toggle('hide', !rOn); });
   if (bn) { bn.disabled = (me.nitro || 0) < 1; bn.textContent = '氮氣 ' + Math.floor((me.nitro || 0) * 100) + '%'; }
-  if (st && rOn) st.textContent = '車況 ' + Math.ceil(me.hp == null ? 100 : me.hp) + '%' + (me.pauseT > 0 ? '　爆炸復位中' : '');
+  if (st && rOn) st.textContent = '車況 ' + Math.ceil(me.hp == null ? 100 : me.hp) + '%'
+    + (me.drifting ? '　集氣 ' + Math.min(100, Math.floor((me.charge || 0) / 2.2 * 100)) + '%' : '')
+    + (me.nitroT > 0 ? '　氮氣中' : '') + (me.pauseT > 0 ? '　爆炸復位中' : '');
+  if (view.mode === 'race' && (me.hitFlash || 0) > 0) { me.hitFlash = Math.max(0, me.hitFlash - dt); const fl = $('flash'); if (fl) fl.style.opacity = (me.hitFlash * 0.8).toFixed(2); }
 }
 let raceNitroQ = false, raceResetQ = false;
 /* 不同角色的彈射力道不一樣（0.9 到 1.15 倍） */
@@ -340,7 +343,7 @@ function raceImpact(bx, bz, dx, dz) {
   const hit = Math.abs(me.spd || 0);
   me.spd *= 0.35;                                  // 撞牆減速
   if (hit < 3 || (me.hitCd || 0) > 0) return;
-  me.hitCd = 0.3;
+  me.hitCd = 0.3; me.hitFlash = 0.3;
   me.hp = Math.max(0, (me.hp == null ? 100 : me.hp) - Math.min(18, hit * 1.1));
   Sfx.noise(0.08, 0.1);
   if (me.hp <= 0) raceExplode();
