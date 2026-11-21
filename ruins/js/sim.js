@@ -580,10 +580,13 @@ Sim.prototype.startDay = function (day) {
   this.chaseSpeed = Math.min(3.9 + 0.1 * (day - 1), 4.9);   // 跑步（9）一定甩得掉；走路（4.2）在後期甩不掉
   this.wanderSpeed = Math.min(2.1 + 0.05 * (day - 1), 2.8);
   if (this.mode === 'coop') { const sp = DIFF_SPD[this.diff] || 1; this.chaseSpeed *= sp; this.wanderSpeed *= sp; }   // 困難怪物跑得快一點
+  let mapCenterSpawn = null;
+  if (td) { const cc = COLS / 2, cr = ROWS / 2; let best = null, bd = Infinity; for (const c of floorCells) { const d = Math.hypot(c[0] - cc, c[1] - cr); if (d < bd) { bd = d; best = c; } } if (best) mapCenterSpawn = center(best[0], best[1]); }
   this.players.forEach(function (p) {
     const o = SPAWN_OFF[p.slot % 4];
     p.lk = null; p.lkCd = 0; p.lw = null;
-    p.alive = true; p.bag = []; p.x = VAN[0] + o[0]; p.z = VAN[1] + o[1]; p.yaw = -Math.PI * 0.75;
+    const sp = td ? mapCenterSpawn : null;   // 死守：出生在地圖正中間（最近的地板）
+    p.alive = true; p.bag = []; p.x = (sp ? sp[0] : VAN[0]) + o[0]; p.z = (sp ? sp[1] : VAN[1]) + o[1]; p.yaw = -Math.PI * 0.75;
     p.bombs = 99;   // 炸藥不限量（顯示成 ∞）
     p.run = p.loud = false; p.hp = maxHp(p); p.atkCd = 0; p.hurtT = 99; p.esc = false;
     p.clip = Math.round(GUNS[p.gun | 0].clip[hunt || br ? 1 : 0] * (hasAcc(p, 3) ? 1.5 : 1)); p.ammo = p.clip; p.gunCd = 0; p.reload = 0;   // 回收任務每天 6 發（擊中讓怪物暈 2.5 秒）；清剿行動彈匣 12 發、自動裝填
@@ -894,7 +897,7 @@ Sim.prototype._meleeMon = function (a, wf) {
   }
   if (!best) return;
   const m = best, td = this.mode === 'td', hunt = this.mode === 'hunt' || td;
-  monHit(m, dmg);
+  monHit(m, 9999);   // 近戰一刀秒殺怪物（不論武器，護盾也擋不住）
   if (hunt) {
     if (m.hp <= 0) { m.dead = td ? 1e9 : 3; m.idle = td; m.state = 'wander'; m.path = null; this.money += 50; a.earned += 50; a.mk = (a.mk || 0) + 1; }
     else { m.cool = Math.max(m.cool || 0, 0.25); m.state = 'chase'; m.target = a.id; m.goal = cellOf(a.x, a.z); m.lost = 0; m.repath = 0; }
