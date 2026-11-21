@@ -255,12 +255,12 @@ const Cloud = {
     text = clean(text, 80); if (!text) { cb(null); return; }
     db.collection('world').add({ uid: uid, name: profile().name, lv: profile().lv | 0, text: text, t: Date.now() }).then(function () { cb(null); }).catch(fail(cb));
   },
-  /** 即時訂閱交易所的掛單（open 的最多 80 筆，新到舊） */
+  /** 即時訂閱交易所的掛單（open 的最多 80 筆，舊到新：新掛單在最下方） */
   marketWatch: function (onRows) {
     if (!Cloud.ready()) { onRows({ code: 'offline' }); return function () {}; }
     return db.collection('market').where('status', '==', 'open').limit(80).onSnapshot(function (q) {
       const rows = []; q.forEach(function (d) { const x = d.data(); x.id = d.id; rows.push(x); });
-      rows.sort(function (a, b) { return (b.t || 0) - (a.t || 0); }); onRows(null, rows);
+      rows.sort(function (a, b) { return (a.t || 0) - (b.t || 0); }); onRows(null, rows);
     }, fail(onRows));
   },
   /** 掛單：item = { cat, i }（造型）、{ i }（配件或寶石）；呼叫前本機要先把東西扣掉 */
