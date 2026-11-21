@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v246', items: ['休閒模式新增「飛行棋」（2～4 人同機，擲 6 出發，吃子送回基地）'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight'];
+const UPD = { v: 'v247', items: ['休閒模式新增「彈珠台」（調整角度與力道發射，落進中間袋子為大獎）'] };
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -1437,6 +1437,61 @@ function flDraw() {
   $('flightRoll').disabled = !(flS.phase === 'roll' && st.k === 'play');
   $('flightStatus').textContent = st.k === 'win' ? FL_COLS[flS.col[st.winner]] + '方獲勝！' : (FL_COLS[flS.col[flS.cur]] + '方' + (flS.phase === 'pick' ? '選擇要走的飛機' : '擲骰子')) + (flS.dice ? '（上次點數 ' + flS.dice + '）' : '') + (flS.msg ? '　' + flS.msg : '');
 }
+/* 彈珠台 */
+let pcS = null, pcRaf = 0;
+function pcOpen() { show('scrPachi'); if (!pcS) pcNew(); else pcDraw(); }
+function pcNew() { if (pcRaf) cancelAnimationFrame(pcRaf); pcRaf = 0; pcS = { balls: 30, won: 0, path: null, idx: 0, payout: 0, pocket: -1 }; pcDraw(); }
+function pcFire() {
+  if (!pcS || pcS.path || pcS.balls <= 0) return;
+  const deg = +$('pcAngle').value, pw = +$('pcPower').value / 100;
+  const r = RR.Pachinko.sim(deg * Math.PI / 180, pw, Math.random);
+  pcS.balls--; pcS.path = r.path; pcS.idx = 0; pcS.payout = r.payout; pcS.pocket = r.pocket;
+  pcStep();
+}
+function pcStep() {
+  pcS.idx = Math.min(pcS.path.length - 1, pcS.idx + 3);
+  pcDraw();
+  if (pcS.idx < pcS.path.length - 1) { pcRaf = requestAnimationFrame(pcStep); return; }
+  pcRaf = 0;
+  pcS.balls += pcS.payout; pcS.won += pcS.payout;
+  pcS.path = null;
+  pcDraw();
+}
+function pcDraw() {
+  const P = RR.Pachinko, cv = $('pcCanvas'), ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, P.W, P.H);
+  ctx.fillStyle = '#1b2a3a'; ctx.fillRect(0, 0, P.W, P.H);
+  // 袋子
+  const pw = P.W / P.PAYOUT.length;
+  P.PAYOUT.forEach(function (v, i) {
+    ctx.fillStyle = i === 2 ? 'rgba(255,210,58,.35)' : 'rgba(255,255,255,.08)';
+    ctx.fillRect(i * pw + 2, P.H - 36, pw - 4, 34);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(v + '顆', i * pw + pw / 2, P.H - 14);
+  });
+  // 釘子
+  ctx.fillStyle = '#c9d6e3';
+  P.pins().forEach(function (p) { ctx.beginPath(); ctx.arc(p.x, p.y, P.PIN_R, 0, Math.PI * 2); ctx.fill(); });
+  // 發射軌跡提示：角度線
+  if (!pcS.path) {
+    const a = +$('pcAngle').value * Math.PI / 180;
+    ctx.strokeStyle = 'rgba(255,210,58,.7)'; ctx.setLineDash([4, 4]); ctx.beginPath();
+    ctx.moveTo(P.W / 2, 14); ctx.lineTo(P.W / 2 + Math.sin(a) * 70, 14 + Math.cos(a) * 70); ctx.stroke(); ctx.setLineDash([]);
+  }
+  // 球
+  if (pcS.path) { const q = pcS.path[pcS.idx]; ctx.fillStyle = '#ffd23a'; ctx.beginPath(); ctx.arc(q.x, q.y, P.BALL_R, 0, Math.PI * 2); ctx.fill(); }
+  $('pcBalls').textContent = pcS.balls;
+  $('pcWon').textContent = pcS.won;
+  $('pcAngleVal').textContent = $('pcAngle').value + '°';
+  $('pcPowerVal').textContent = $('pcPower').value + '%';
+  $('pcFire').disabled = !!pcS.path || pcS.balls <= 0;
+  let msg;
+  if (pcS.path) msg = '彈珠滾動中…';
+  else if (pcS.balls <= 0) msg = '彈珠用完了，按「重新開始」再玩一次。';
+  else if (pcS.pocket >= 0) msg = pcS.payout === 0 ? '沒有進袋，可惜。' : (pcS.pocket === 2 ? '大獎！' : '') + '回收 ' + pcS.payout + ' 顆';
+  else msg = '調整角度與力道，按發射。';
+  $('pcStatus').textContent = msg;
+}
 let rmDeadline = 0, rmTimer = null;
 const RM_TURN_MS = 60000;   // 每回合 1 分鐘
 function rmOpen() { show('scrRummi'); if (!rmS) rmS = RR.Rummi.start(); rmResetTurn(); rmStartTurn(); rmDraw(); if (!rmTimer) rmTimer = setInterval(rmTick, 1000); }
@@ -1666,11 +1721,11 @@ function recOptsOpen() {
   $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
 }
 /* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'c4', 'flight', 'plat', 'marble'] };
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'c4', 'flight', 'pachi', 'plat', 'marble'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', flight: '飛行棋', plat: '跳關', marble: '彈珠' };
+const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', flight: '飛行棋', pachi: '彈珠台', plat: '跳關', marble: '彈珠' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
@@ -2493,6 +2548,12 @@ function bind() {
   $('gomokuBtn').addEventListener('click', gmOpen);
   $('c4Btn').addEventListener('click', c4Open);
   $('flightBtn').addEventListener('click', flOpen);
+  $('pachiBtn').addEventListener('click', pcOpen);
+  $('pachiBack').addEventListener('click', showMenu);
+  $('pachiNew').addEventListener('click', pcNew);
+  $('pcFire').addEventListener('click', pcFire);
+  $('pcAngle').addEventListener('input', pcDraw);
+  $('pcPower').addEventListener('input', pcDraw);
   $('flightBack').addEventListener('click', showMenu);
   $('flightNew').addEventListener('click', flSetup);
   $('flightRoll').addEventListener('click', flRoll);
