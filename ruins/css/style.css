@@ -1319,7 +1319,7 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 #scrPlat .dwTitle, #scrMarble .dwTitle { color: #fff; text-shadow: 2px 2px 0 #1d2b4a; font-size: 22px; }
 .platHost { display: flex; flex-direction: column; gap: 10px; width: 100%; }
 .platCanvas { width: 100%; height: auto; aspect-ratio: 16 / 9; display: block; image-rendering: pixelated; border: 4px solid #1d2b4a; box-shadow: 6px 6px 0 #1d2b4a; background: #6fb6ff; }
-.platPad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.platPad { position: relative; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; touch-action: none; user-select: none; -webkit-user-select: none; }
 .platPad button { min-height: 64px; font: 700 22px/1 system-ui, sans-serif; color: #1d2b4a; background: #ffe27a; border: 4px solid #1d2b4a; box-shadow: 0 5px 0 #1d2b4a; cursor: pointer; }
 .platPad button:active { transform: translateY(4px); box-shadow: 0 1px 0 #1d2b4a; }
 .platPad button[data-k="jump"] { background: #ff7a6b; }
