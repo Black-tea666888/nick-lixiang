@@ -1861,7 +1861,7 @@ function buildCart() {
   g.children[4].rotation.z = Math.PI / 2;
   [[-0.42, 0.38], [0.42, 0.38], [-0.42, -0.38], [0.42, -0.38]].forEach(function (q) { const w = part(new THREE.CylinderGeometry(0.16, 0.16, 0.08, 14), dark, q[0], 0.16, q[1]); w.rotation.z = Math.PI / 2; g.add(w); });
   addShadow(g, 0.7);
-  g.scale.setScalar(1.6);   // 推車模型放大（底部仍貼地）
+  g.scale.setScalar(1.25);   // 推車模型放大（底部仍貼地）
   return g;
 }
 // 死守：砲塔模型與射擊
