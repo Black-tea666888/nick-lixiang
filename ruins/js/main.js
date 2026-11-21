@@ -266,6 +266,7 @@ function wheelDraw() {
 function wheelSpin() {
   if (wheelBusy) return;
   const wh = WHEELS[wheelI], p = prog(), free = wheelI === 0 && p.freeDay !== today();
+  if (!wheelSeg(p, wheelI).some(function (sg) { return sg[0] === 'coin' || !owns(p, sg[0], sg[1]); })) say('這台的獎品已經全部收集，之後抽到會換成金幣。');
   if (!free && p.coins < wh.cost) { say('金幣不夠：這台一次要 ' + wh.cost + ' 金幣，你有 ' + p.coins + '。過關、每日任務和小遊戲可以賺金幣。'); return; }
   if (free) p.freeDay = today(); else p.coins -= wh.cost;
   const seg = wheelSeg(p, wheelI), idx = Math.floor(Math.random() * seg.length), sg = seg[idx];
