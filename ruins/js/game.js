@@ -834,16 +834,29 @@ function makeFloorTex(style, base) {
   for (let i = 0; i < 3000; i++) { g.fillStyle = 'rgba(0,0,0,' + (R() * 0.05).toFixed(3) + ')'; g.fillRect(R() * 128, R() * 128, 0.3, 0.3); }
   const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = maxAniso; return t;
 }
-let wallsMesh = null, wallIdx = {}, brokenVis = {}, cellInst = {};
+let wallsMesh = null, wallIdx = {}, brokenVis = {}, cellInst = {}, brokenSave = {};
+// 炸開的牆過一段時間長回來：還原那一格的牆與布景矩陣、重畫小地圖
+function healWall(c, r) {
+  const key = r * W.COLS + c;
+  if (!brokenVis[key]) return;
+  brokenVis[key] = false;
+  W.restoreCell(c, r);
+  (brokenSave[key] || []).forEach(function (q) { q[0].setMatrixAt(q[1], q[2]); q[0].instanceMatrix.needsUpdate = true; });
+  delete brokenSave[key];
+  buildMini();
+}
 // 牆被炸開：藏起那一格牆（和它上面的布景）、噴碎塊、重畫小地圖
 function showBreak(c, r, quiet) {
   const key = r * W.COLS + c;
   if (brokenVis[key]) return;
   brokenVis[key] = true;
   W.breakWall(c, r);   // 房主／單人已經炸過了，這裡只對其他玩家的地圖生效
-  if (wallsMesh && wallIdx[key] != null) { wallsMesh.setMatrixAt(wallIdx[key], new THREE.Matrix4().makeScale(0, 0, 0)); wallsMesh.instanceMatrix.needsUpdate = true; }
+  // 記下原本的牆與裝飾矩陣，過一段時間長回來時用
+  const save = [], tmp = new THREE.Matrix4(), zero = new THREE.Matrix4().makeScale(0, 0, 0);
+  if (wallsMesh && wallIdx[key] != null) { wallsMesh.getMatrixAt(wallIdx[key], tmp); save.push([wallsMesh, wallIdx[key], tmp.clone()]); wallsMesh.setMatrixAt(wallIdx[key], zero); wallsMesh.instanceMatrix.needsUpdate = true; }
   if (level) level.children.filter(function (o) { return o.userData && o.userData.cell === key; }).forEach(function (o) { level.remove(o); });
-  (cellInst[key] || []).forEach(function (q) { q[0].setMatrixAt(q[1], new THREE.Matrix4().makeScale(0, 0, 0)); q[0].instanceMatrix.needsUpdate = true; });
+  (cellInst[key] || []).forEach(function (q) { q[0].getMatrixAt(q[1], tmp); save.push([q[0], q[1], tmp.clone()]); q[0].setMatrixAt(q[1], zero); q[0].instanceMatrix.needsUpdate = true; });
+  brokenSave[key] = save;
   // 缺口旁貼牆的木箱、鐵桶一起炸掉（不然會擋住新開的路）
   const bx = c * CS + CS / 2, bz = r * CS + CS / 2, near = function (x, z) { return Math.abs(x - bx) < CS / 2 + 0.9 && Math.abs(z - bz) < CS / 2 + 0.9; };
   solids = solids.filter(function (q) { return q[3] >= 2 || !near(q[0], q[1]); });   // 櫃子（高 2.1，半徑 0.3）留著
@@ -960,7 +973,7 @@ function buildLevel() {
     level.traverse(function (o) { if (o.geometry && !o.userData.keep) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
   }
   const raceLvl = !!(typeof MAPS !== 'undefined' && MAPS[W.mapIndex] && MAPS[W.mapIndex].track);
-  level = new THREE.Group(); lockerMeshes = []; builtMap = W.mapIndex; solids = []; wallIdx = {}; brokenVis = {}; cellInst = {};
+  level = new THREE.Group(); lockerMeshes = []; builtMap = W.mapIndex; solids = []; wallIdx = {}; brokenVis = {}; cellInst = {}; brokenSave = {};
   const COLS = W.COLS, ROWS = W.ROWS, MAP = W.MAP, T = W.theme, VAN = W.VAN;
   // 光線：室內也調亮；開放場景（海邊、城市、太空站）沒有天花板，有天空與陽光
   const open = !!T.open, br = T.bright || 1.5, sk = SKY[T.style], skyC = open ? (sk ? sk[1] : T.sky) : 0x0a0f0d;
@@ -3141,6 +3154,8 @@ RR.Game = {
         me.x -= sy * d; me.z -= cy * d; toast('瞬移！');
       }
       Sfx.tone(900, 0.25, 'sine', 0.12, 1800);
+    } else if (e.t === 'heal') {
+      healWall(e.c, e.r);
     } else if (e.t === 'break') {
       showBreak(e.c, e.r); if (e.id === myId) { toast('炸開了！'); }
     } else if (e.t === 'nobomb') {
