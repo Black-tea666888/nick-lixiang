@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v244', items: ['賽車：集氣顯示百分比、氮氣中會噴火、撞牆畫面閃紅'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble'];
+const UPD = { v: 'v245', items: ['休閒模式新增「中國象棋」（同機雙人，含象眼、馬腿、炮架、將帥照面）'] };
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -1261,6 +1261,55 @@ function chessTap(i) {
   else { chessSel = -1; chessMoves = []; }
   chessDraw();
 }
+/* 中國象棋（同機雙人）：棋子用中文字，點棋子再點要去的點 */
+let xqS = null, xqSel = -1, xqMoves = [];
+const XQ_GLYPH = { K: '帥', A: '仕', B: '相', N: '傌', R: '俥', C: '炮', P: '兵', k: '將', a: '士', b: '象', n: '馬', r: '車', c: '砲', p: '卒' };
+function xqOpen() { show('scrXq'); if (!xqS) xqS = RR.Xiangqi.start(); xqSel = -1; xqMoves = []; xqDraw(); }
+function xqNew() { xqS = RR.Xiangqi.start(); xqSel = -1; xqMoves = []; xqDraw(); }
+function xqTap(i) {
+  const X = RR.Xiangqi, s = xqS, st = X.status(s);
+  if (st.k === 'mate') return;
+  const hit = xqMoves.filter(function (m) { return m.to === i; });
+  if (hit.length) { xqS = X.apply(s, hit[0]); xqSel = -1; xqMoves = []; xqDraw(); return; }
+  const p = s.b[i];
+  if (p && X.color(p) === s.turn) { xqSel = i; xqMoves = X.legalMoves(s, i); }
+  else { xqSel = -1; xqMoves = []; }
+  xqDraw();
+}
+function xqDraw() {
+  const X = RR.Xiangqi, s = xqS, st = X.status(s), bd = $('xqBoard');
+  bd.textContent = '';
+  const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 90 100'); svg.setAttribute('aria-hidden', 'true');
+  const line = function (x1, y1, x2, y2) { const l = document.createElementNS(NS, 'line'); l.setAttribute('x1', x1); l.setAttribute('y1', y1); l.setAttribute('x2', x2); l.setAttribute('y2', y2); svg.appendChild(l); };
+  const PX = function (c) { return 5 + c * 10; }, PY = function (r) { return 5 + r * 10; };
+  for (let r = 0; r < 10; r++) line(PX(0), PY(r), PX(8), PY(r));
+  for (let c = 0; c < 9; c++) {
+    if (c === 0 || c === 8) line(PX(c), PY(0), PX(c), PY(9));
+    else { line(PX(c), PY(0), PX(c), PY(4)); line(PX(c), PY(5), PX(c), PY(9)); }
+  }
+  line(PX(3), PY(0), PX(5), PY(2)); line(PX(5), PY(0), PX(3), PY(2));
+  line(PX(3), PY(7), PX(5), PY(9)); line(PX(5), PY(7), PX(3), PY(9));
+  bd.appendChild(svg);
+  const river = document.createElement('div'); river.className = 'xqRiver'; river.textContent = '楚河　漢界'; bd.appendChild(river);
+  const tg = {}; xqMoves.forEach(function (m) { tg[m.to] = true; });
+  for (let i = 0; i < 90; i++) {
+    const r = Math.floor(i / 9), c = i % 9, p = s.b[i];
+    if (!p && !tg[i]) continue;
+    const cls = 'xqPt' + (p ? ' ' + (X.color(p) === 'r' ? 'r' : 'b') : ' dot') + (i === xqSel ? ' sel' : '') + (p && tg[i] ? ' cap' : '');
+    const b = mk('button', cls, p ? XQ_GLYPH[p] : '');
+    b.type = 'button';
+    b.style.left = (PX(c) / 90 * 100) + '%'; b.style.top = (PY(r) / 100 * 100) + '%';
+    b.addEventListener('click', (function (k) { return function () { xqTap(k); }; })(i));
+    bd.appendChild(b);
+  }
+  const who = s.turn === 'r' ? '紅方' : '黑方';
+  let msg;
+  if (st.k === 'mate') msg = (st.winner === 'r' ? '紅方' : '黑方') + '獲勝！（對方無子可走）';
+  else if (st.k === 'check') msg = who + '被將軍，輪到' + who + '走';
+  else msg = '輪到' + who + '走';
+  $('xqStatus').textContent = msg;
+}
 function chessDraw() {
   const C = RR.Chess, s = chessS, st = C.status(s), bd = $('chessBoard');
   bd.textContent = '';
@@ -1337,11 +1386,11 @@ function recOptsOpen() {
   $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
 }
 /* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'plat', 'marble'] };
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'plat', 'marble'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', plat: '跳關', marble: '彈珠' };
+const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', plat: '跳關', marble: '彈珠' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
@@ -2159,6 +2208,9 @@ function bind() {
   $('tdBtn').addEventListener('click', function () { startSolo('td'); });
   $('raceBtn').addEventListener('click', function () { startSolo('race'); });
   $('chessBtn').addEventListener('click', chessOpen);
+  $('xqBtn').addEventListener('click', xqOpen);
+  $('xqBack').addEventListener('click', showMenu);
+  $('xqNew').addEventListener('click', xqNew);
   $('platBtn').addEventListener('click', platOpen);
   $('marbleBtn').addEventListener('click', marbleOpen);
   $('marbleBack').addEventListener('click', function () { RR.Marble.stop(); show('scrHub'); });

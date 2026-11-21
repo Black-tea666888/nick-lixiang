@@ -1346,3 +1346,14 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .chSq svg .pc > .accent { fill: var(--accent); stroke: none; }
 .chSq svg .pc > .dark { fill: #1d1a26; stroke: none; }
 .chSq svg .pc > .white { fill: #fff; }
+
+/* 中國象棋棋盤：9 直行 × 10 橫線，棋子放在交叉點上 */
+.xqBoard { position: relative; width: 100%; max-width: 340px; aspect-ratio: 90 / 100; margin: 8px auto; background: #f0d9a6; border: 2px solid #6b4a1e; border-radius: 6px; box-sizing: border-box; }
+.xqBoard svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.xqBoard line { stroke: #6b4a1e; stroke-width: 0.35; }
+.xqRiver { position: absolute; left: 0; right: 0; top: 45%; height: 10%; transform: translateY(-50%); text-align: center; font-weight: 900; color: #6b4a1e; font-size: clamp(11px, 3vw, 14px); letter-spacing: 0.3em; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+.xqPt { position: absolute; width: 10.5%; height: 9.5%; transform: translate(-50%, -50%); border-radius: 50%; border: 2px solid #6b4a1e; background: #fff7e6; font-weight: 900; font-size: clamp(14px, 4.2vw, 20px); display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; color: #222; }
+.xqPt.r { color: #b3261e; border-color: #b3261e; }
+.xqPt.sel { box-shadow: 0 0 0 3px #ffd23a; }
+.xqPt.cap { box-shadow: 0 0 0 3px #3fae5a; }
+.xqPt.dot { width: 4%; height: 4%; min-width: 10px; min-height: 10px; background: #3fae5a; border: none; opacity: 0.85; }
