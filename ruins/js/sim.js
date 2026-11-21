@@ -697,7 +697,7 @@ Sim.prototype.shoot = function (id, yaw) {
   const G = GUNS[p.gun | 0], td = this.mode === 'td', hunt = this.mode === 'hunt' || td, br = this.mode === 'br';
   const gem = 1 + 0.08 * (p.gems ? p.gems[0] : 0);
   p.gunCd = G.cd; p.ammo--;
-  if (p.ammo <= 0) { p.reload = G.reload; this.events.push({ t: 'reload', id: id, s: G.reload }); }   // 子彈不限量，但打完要花時間換彈
+  if (p.ammo <= 0) p.ammo = p.clip || 12;   // 子彈不限量：打完立刻補滿，不用換彈
   for (let k = 0; k < G.n; k++) {
     const a = p.yaw + (G.spread ? (this.rng() - 0.5) * 2 * G.spread : 0), fx = -Math.sin(a), fz = -Math.cos(a);
     let hit = -1, hd = G.range;
@@ -1028,8 +1028,8 @@ Sim.prototype.airStrike = function (id, x, z) {
 /** 手動換彈：彈匣沒滿、沒在換彈時開始換 */
 Sim.prototype.reloadGun = function (id) {
   const p = this.player(id);
-  if (!p || this.phase !== 'play' || !p.alive || p.reload > 0 || p.ammo >= (p.clip || 12)) return;
-  p.reload = GUNS[p.gun | 0].reload; this.events.push({ t: 'reload', id: id, s: p.reload });
+  // 子彈不限量，不需要換彈（保留函式給舊的客戶端呼叫，不做任何事）
+  return;
 };
 /** 換武器：在出戰的主槍與副槍（手槍；主槍就是手槍時副槍是步槍）之間切換，換槍要 0.7 秒 */
 Sim.prototype.switchGun = function (id) {
