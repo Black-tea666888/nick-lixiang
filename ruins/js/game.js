@@ -2930,6 +2930,8 @@ RR.Game = {
     document.body.classList.toggle('playing', active); if (!active) document.body.classList.remove('allowPortrait');   // 每局重新提醒轉橫式
     $('hud').classList.toggle('hide', !active);
     if (!active) {
+      view.mode = 'coop';   // 離開對局：賽車 HUD（氮氣、復位、車況、道具）跟著收起來
+      ['raceNitro', 'raceReset', 'raceStat', 'raceUse', 'raceHud'].forEach(function (id) { const el = document.getElementById(id); if (el) el.classList.add('hide'); });
       if (miniInPlay) closeMini();
       releaseTouch(); Sfx.drone(false);
       try { if (document.exitPointerLock) document.exitPointerLock(); } catch (e) {}
