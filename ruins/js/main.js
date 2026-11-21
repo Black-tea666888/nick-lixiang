@@ -266,6 +266,7 @@ function wheelDraw() {
 function wheelSpin() {
   if (wheelBusy) return;
   const wh = WHEELS[wheelI], p = prog(), free = wheelI === 0 && p.freeDay !== today();
+  if (!wheelSeg(p, wheelI).some(function (sg) { return sg[0] === 'coin' || !owns(p, sg[0], sg[1]); })) say('這台的獎品已經全部收集，之後抽到會換成金幣。');
   if (!free && p.coins < wh.cost) { say('金幣不夠：這台一次要 ' + wh.cost + ' 金幣，你有 ' + p.coins + '。過關、每日任務和小遊戲可以賺金幣。'); return; }
   if (free) p.freeDay = today(); else p.coins -= wh.cost;
   const seg = wheelSeg(p, wheelI), idx = Math.floor(Math.random() * seg.length), sg = seg[idx];
@@ -1785,12 +1786,29 @@ function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0)
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
 const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', flight: '飛行棋', pachi: '彈珠台', kangle: '康樂球', plat: '跳關', marble: '彈珠' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
+// 休閒模式的玩法說明（點大廳的「玩法說明」看）
+const CAS_HELP = {
+  ar: '在迷宮裡找怪物，用 AR 相機抓住它。\n迷宮會隨機生成，找到出口或抓滿怪物即可過關。',
+  card: '每回合出一張卡，和電腦輪流對戰。\n先把電腦的血量打到 0 就獲勝。',
+  race: '在廢墟賽道上計時跑圈，越快越好。\n按氮氣加速，撞牆會減速；跑完成績會記進排行。',
+  marble: '在下方拖曳瞄準，放開發射彈珠。\n每回合 5 顆彈珠，撐過 15 回合就過關；彈珠落到底部就失敗。',
+  plat: '橫向跳關，踩敵人、吃金幣。\n跳到終點旗子即過關；掉進坑裡或被敵人碰到就 GAME OVER。',
+  chess: '同一台裝置兩人輪流下棋。\n點選棋子再點目標格移動，把對方的王將死就獲勝。',
+  xq: '同一台裝置兩人輪流下棋。\n點選棋子再點目標格移動，把對方的將軍死就獲勝。',
+  rummi: '依拉密規則排出順子或同數字的組合，先出完手牌者獲勝。\n和電腦對戰；可以先摸牌或直接出牌。',
+  gomoku: '同一台裝置兩人輪流下子。\n先在橫、直、斜任一方向連成五子者獲勝。',
+  c4: '同一台裝置兩人輪流投子，棋子會落到該欄最下方。\n先在橫、直、斜任一方向連成四子者獲勝。',
+  flight: '2～4 人同一台裝置輪流。\n擲骰 6 點出發，沿路前進；踩到別人就把對方送回基地，先到終點者獲勝。',
+  pachi: '調整角度與力道發射彈珠。\n彈珠落進中間的袋子就是大獎，落在其他地方則依分數計算。',
+  kangle: '在桌上用球撞擊，兩人輪流。\n先把自己的 8 顆球打進洞者獲勝。',
+};
 function refreshLobby() {
   const m = selMode();
   $('scrMenu').classList.toggle('casualLobby', hubCat === 'casual');   // 休閒模式：隱藏主玩法的角色、抽獎、市集等
   Array.prototype.forEach.call($('modeStrip').children, function (b) { const on = b.dataset.mode === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
   Array.prototype.forEach.call($('modeStrip').children, function (b) { b.classList.toggle('hide', !!hubCat && HUB_CATS[hubCat].indexOf(b.dataset.mode) < 0); });
-  $('optChip').classList.toggle('hide', m !== 'coop'); $('optName').textContent = recText();
+  $('optChip').classList.toggle('hide', m !== 'coop');
+  $('casHelp').classList.toggle('hide', hubCat !== 'casual'); $('optName').textContent = recText();
   $('startMode').textContent = LOBBY_MODE[m] + (m === 'coop' ? '：建立房間' : '');
   $('mapName').textContent = m === 'card' ? cardOptsText() : (W.MAPS[myMap()] || W.MAPS[0]).name;
   $('mapChip').querySelector('span').textContent = m === 'card' ? '玩法' : '地圖';
@@ -2557,6 +2575,8 @@ function bind() {
   (function () { const cv = $('lobbyChar'); let lastX = null; cv.addEventListener('pointerdown', function (e) { lastX = e.clientX; cv.setPointerCapture(e.pointerId); }); cv.addEventListener('pointermove', function (e) { if (lastX == null) return; Game.previewSpin(cv, e.clientX - lastX); lastX = e.clientX; }); const up = function () { lastX = null; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); })();
   $('optChip').addEventListener('click', recOptsOpen);
   $('roOk').addEventListener('click', function () { $('recOpts').classList.add('hide'); refreshLobby(); });
+  $('casHelp').addEventListener('click', function () { const k = selMode(); $('casHelpT').textContent = LOBBY_MODE[k] + '玩法'; $('casHelpB').textContent = CAS_HELP[k] || '這個模式的說明還沒寫好。'; $('casHelpM').classList.remove('hide'); });
+  $('casHelpX').addEventListener('click', function () { $('casHelpM').classList.add('hide'); });
   $('hubMain').addEventListener('click', function () { hubEnter('main'); });
   $('hubCas').addEventListener('click', function () { hubEnter('casual'); });
   $('lbHub').addEventListener('click', function () { show('scrHub'); });

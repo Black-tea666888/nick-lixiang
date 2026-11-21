@@ -53,8 +53,8 @@ input { -webkit-user-select: text; user-select: text; }
 .prow i { display: inline-block; width: 8px; height: 8px; border-radius: 1px; margin-right: 6px; opacity: .55; }
 .prow.spk i { opacity: 1; outline: 2px solid var(--chalk); }
 .prow.dead span { text-decoration: line-through; opacity: .6; }
-#mini { position: absolute; left: 12px; top: 176px; width: 122px; height: auto; border: 2px solid var(--steel-d); border-radius: 2px; pointer-events: auto; cursor: pointer; }
-#mini.big { width: min(320px, calc(100vw - 24px)); z-index: 5; }
+#mini { position: absolute; left: 12px; top: 176px; width: 240px; height: auto; border: 2px solid var(--steel-d); border-radius: 2px; pointer-events: auto; cursor: pointer; }
+#mini.big { width: min(460px, calc(100vw - 24px)); z-index: 5; }
 #hudBtns { position: absolute; top: 70px; right: 10px; display: flex; flex-direction: column; gap: 6px; pointer-events: auto; }
 #hudBtns button { font: inherit; font-size: 12px; font-weight: 700; padding: 6px 9px; min-width: 78px; min-height: 34px; cursor: pointer;
   background: rgba(34,39,44,.9); color: var(--chalk); border: 0; border-bottom: 3px solid #111417; border-radius: 3px; }
@@ -496,7 +496,7 @@ body.btnedit #hud > #jump, body.btnedit #hud > #dash, body.btnedit #hud > #rescu
   .panel.lobby { max-width: 760px; }
   .logo { margin: 6px 0 !important; font-size: 26px !important; }
   .cards.c3 { grid-template-columns: repeat(6, 1fr); }
-  #mini { top: 112px; width: 110px !important; height: auto; }
+  #mini { top: 112px; width: 170px !important; height: auto; }
   #plist { top: 84px; }
   #hudBtns { top: 8px; right: 118px; flex-direction: row; flex-wrap: wrap; justify-content: flex-end; max-width: 210px; gap: 5px; }
   #hudBtns button { min-width: 0; padding: 5px 8px; min-height: 32px; }
