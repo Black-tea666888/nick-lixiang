@@ -1422,6 +1422,6 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 
 /* 休閒小遊戲全螢幕：畫布盡量放大，依螢幕高度與寬度等比縮放（不超出畫面） */
 #scrPlat .platHost, #scrMarble .platHost { height: calc(100dvh - 64px); display: flex; align-items: center; justify-content: center; }
-#scrPlat .platCanvas { width: min(100vw - 16px, (100dvh - 88px) * 16 / 9); height: auto; }
+#scrPlat .platCanvas { width: min(100vw - 48px, (100dvh - 170px) * 16 / 9); max-width: 960px; height: auto; }
 #scrMarble .marbleCanvas { width: min(100vw - 16px, (100dvh - 88px) * 2 / 3); height: auto; }
 #scrPachi .pcCanvas, .screen .pcCanvas { max-width: min(100vw - 16px, (100dvh - 150px) * 3 / 4); }

@@ -2593,8 +2593,9 @@ function updateMe(dt) {
   const bx0 = me.x, bz0 = me.z;
   const inS = hitSolid(me.x, me.z, me.y);   // 萬一已經卡在擺設裡就放行，讓玩家走得出來
   const onTop = me.y >= WH - 0.25 && (W.isWall(Math.floor(me.x / CS), Math.floor(me.z / CS)) || W.blocked(me.x, me.z, 1.1));   // 在牆頂（或牆邊起跳上牆）才可以走過牆；空中飄在空地上不行
-  if ((onTop || !W.blocked(me.x + dx, me.z, R)) && (inS || !hitSolid(me.x + dx, me.z, me.y))) me.x += dx;
-  if ((onTop || !W.blocked(me.x, me.z + dz, R)) && (inS || !hitSolid(me.x, me.z + dz, me.y))) me.z += dz;
+  const inW = W.blocked(me.x, me.z, R);   // 萬一掉進牆體裡（例如從牆頂墜落），放行讓玩家走出來
+  if ((onTop || inW || !W.blocked(me.x + dx, me.z, R)) && (inS || !hitSolid(me.x + dx, me.z, me.y))) me.x += dx;
+  if ((onTop || inW || !W.blocked(me.x, me.z + dz, R)) && (inS || !hitSolid(me.x, me.z + dz, me.y))) me.z += dz;
   if (raceMove) raceImpact(bx0, bz0, dx, dz);
   // 重力：腳下是地板或擺設頂端；走出箱子邊緣會掉下來
   { const gnd = groundAt(me.x, me.z);

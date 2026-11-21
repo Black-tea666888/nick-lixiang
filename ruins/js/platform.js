@@ -285,8 +285,10 @@
   function start(el, done) {
     stop();
     host = el; onDone = done; host.innerHTML = '';
-    cvs = document.createElement('canvas'); cvs.width = VW; cvs.height = VH; cvs.className = 'platCanvas';
-    ctx = cvs.getContext('2d'); ctx.imageSmoothingEnabled = false;
+    cvs = document.createElement('canvas'); cvs.className = 'platCanvas';
+    // 內部解析度依螢幕像素比放大（字與圖才不糊），畫的時候仍用 320×180 的座標
+    const kk = Math.min(4, Math.max(2, (window.devicePixelRatio || 1) * 2)); cvs.width = VW * kk; cvs.height = VH * kk;
+    ctx = cvs.getContext('2d'); ctx.setTransform(kk, 0, 0, kk, 0, 0); ctx.imageSmoothingEnabled = false;
     host.appendChild(cvs);
     const pad = document.createElement('div'); pad.className = 'platPad';
     pad.innerHTML = '<button type="button" data-k="left" aria-label="左">◀</button><button type="button" data-k="jump" aria-label="跳">跳</button><button type="button" data-k="dash" aria-label="衝刺">衝</button><button type="button" data-k="right" aria-label="右">▶</button>';
