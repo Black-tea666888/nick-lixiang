@@ -828,9 +828,9 @@ Sim.prototype._stepBR = function (dt, alive) {
 Sim.prototype._stepPoison = function (dt, alive) {
   const elapsed = DAY_TIME - this.time;
   if (elapsed < 30) { this.pz = null; return; }
-  const R0 = Math.hypot(MAP[0].length * CS, ROWS * CS), prog = Math.min(1, (elapsed - 30) / (DAY_TIME - 60));
+  const R0 = Math.hypot(MAP[0].length * CS, ROWS * CS), prog = Math.min(1, (elapsed - 30) / (DAY_TIME - 120));   // 縮短時間：毒圈比之前更快鋪開
   this.pz = R0 - (R0 - 1) * prog;
-  const dps = 1 + elapsed / 100, self = this;
+  const dps = 2 + elapsed / 60, self = this;
   alive.forEach(function (p) {
     if (inBase(self, p) || Math.hypot(p.x - VAN[0], p.z - VAN[1]) <= self.pz) return;
     p.hp = Math.max(1, p.hp - dps * dt); p.hurtT = 0;
@@ -1019,7 +1019,7 @@ Sim.prototype.airStrike = function (id, x, z) {
   p.airCd = 25;
   let kills = 0;
   this.monsters.forEach(function (m) {
-    if (m.dead > 0 || Math.hypot(m.x - x, m.z - z) > 7) return;
+    if (kills >= 3 || m.dead > 0 || Math.hypot(m.x - x, m.z - z) > 7) return;   // 一次最多擊倒 3 隻，不會整群清光
     monHit(m, 120);
     if (m.hp <= 0) { kills++; m.dead = 12; m.state = 'wander'; m.path = null; }
   });
