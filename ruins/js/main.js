@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v261', items: ['毒圈鋪得更快、毒傷更重；空中掃射一次最多擊倒 3 隻'] };
+const UPD = { v: 'v262', items: ['休閒模式不再顯示主玩法的出戰角色、抽獎、市集等按鈕'] };
 const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1787,6 +1787,7 @@ const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿�
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
+  $('scrMenu').classList.toggle('casualLobby', hubCat === 'casual');   // 休閒模式：隱藏主玩法的角色、抽獎、市集等
   Array.prototype.forEach.call($('modeStrip').children, function (b) { const on = b.dataset.mode === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
   Array.prototype.forEach.call($('modeStrip').children, function (b) { b.classList.toggle('hide', !!hubCat && HUB_CATS[hubCat].indexOf(b.dataset.mode) < 0); });
   $('optChip').classList.toggle('hide', m !== 'coop'); $('optName').textContent = recText();

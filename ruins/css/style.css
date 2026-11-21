@@ -1416,3 +1416,6 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 
 /* 康樂球 */
 .kgCanvas { display: block; width: 100%; max-width: 360px; aspect-ratio: 1 / 1; margin: 8px auto; border-radius: 6px; box-sizing: border-box; }
+
+/* 休閒模式大廳：只留模式列與角色，隱藏主玩法的功能格（出戰角色、抽獎、市集、交易所、金幣、社群） */
+.casualLobby .lbSide, .casualLobby #coinBtn, .casualLobby #marketOpen, .casualLobby #socialOpen { display: none !important; }
