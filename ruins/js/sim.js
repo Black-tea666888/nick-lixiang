@@ -315,7 +315,9 @@ function arenaIdx(k) { return ARENA_N ? RUIN_N + (((+k) || 0) % ARENA_N + ARENA_
 function arenaNext(m) { return ARENA_N ? (m < RUIN_N ? RUIN_N : RUIN_N + ((m - RUIN_N + 1) % ARENA_N)) : 0; }
 function raceTrackOf(m) { return (MAPS[m] && MAPS[m].track) || (typeof RACE_TRACKS !== 'undefined' && RACE_TRACKS[m]) || [[1, 1]]; }
 let MAP = MAPS[0].rows, ROWS = MAP.length, COLS = MAP[0].length, mapIndex = -1;
-let BROKEN = [];   // 這一天被炸開的牆 [c, r]
+let BROKEN = [];   // 被炸開的牆 [c, r, 炸開時間]
+const WALL_REGEN = 40;   // 炸開的牆幾秒後自動長回來
+let WALL_CLOCK = 0;      // 牆的計時（每次 step 累加）
 let startCell = [1, 1], floorCells = [], VAN = [6, 6], MONSTER_CELLS = [];
 const BAG_MAX = 3, DAY_TIME = 240, MAX_PLAYERS = 4;
 // 配件（最多同時裝 2 個，對局中可換）與寶石（每顆 0～5 級）
@@ -484,6 +486,21 @@ Sim.prototype.removePlayer = function (id) {
 };
 Sim.prototype.roster = function () {
   return this.players.map(function (p) { return { id: p.id, name: p.name, slot: p.slot, c: p.c, w: p.w, h: p.h || 0, o: p.o || 0, pet: p.pet || 0, gun: p.gun || 0, eq: p.eq || [], gems: p.gems || [0, 0, 0], bt: p.bt | 0 }; });
+};
+
+/** 炸開的牆過了 WALL_REGEN 秒就長回來；有人或怪還站在那格附近就等一下，免得把人卡在牆裡 */
+Sim.prototype._healWalls = function () {
+  const self = this;
+  BROKEN.slice().forEach(function (b) {
+    if (WALL_CLOCK - b[2] < WALL_REGEN || self._cellBusy(b[0], b[1])) return;
+    restoreCell(b[0], b[1]);
+    self.events.push({ t: 'heal', c: b[0], r: b[1] });
+  });
+};
+Sim.prototype._cellBusy = function (c, r) {
+  const x0 = c * CS - 0.6, x1 = (c + 1) * CS + 0.6, z0 = r * CS - 0.6, z1 = (r + 1) * CS + 0.6;
+  const inside = function (x, z) { return x > x0 && x < x1 && z > z0 && z < z1; };
+  return this.players.some(function (p) { return inside(p.x, p.z); }) || this.monsters.some(function (m) { return inside(m.x, m.z); });
 };
 
 Sim.prototype.startDay = function (day) {
@@ -1161,7 +1178,8 @@ function inBase(sim, p) { return sim.mode !== 'br' && Math.hypot(p.x - VAN[0], p
 Sim.prototype.step = function (dt) {
   if (this.phase !== 'play') return;
   dt = Math.min(dt, 0.1);
-  this.time -= dt;
+  this.time -= dt; WALL_CLOCK += dt;
+  if (BROKEN.length) this._healWalls();
   if (this.smokes && this.smokes.length) { this.smokes.forEach(function (k) { k.t -= dt; }); this.smokes = this.smokes.filter(function (k) { return k.t > 0; }); }
   const alive = this.players.filter(function (p) { return p.alive; });
   for (let k = 0; k < alive.length; k++) {
@@ -1378,7 +1396,7 @@ Sim.prototype.snapshot = function () {
 
 const BASE_STYLES = [{ n: '回收車（預設）', c: 0xffc24a, sh: 0 }, { n: '信號塔', c: 0x6ad8ff, sh: 1 }, { n: '圓頂營地', c: 0x9dff7a, sh: 2 }, { n: '四柱燈', c: 0xff7ad1, sh: 3 }, { n: '藍色回收車', c: 0x4a9cff, sh: 0 }, { n: '紅色信號塔', c: 0xff5a4a, sh: 1 }, { n: '金色圓頂', c: 0xffe066, sh: 2 }, { n: '紫色四柱燈', c: 0xb07aff, sh: 3 }];
 const api = { RUIN_N: RUIN_N, ARENA_N: ARENA_N, arenaIdx: arenaIdx, arenaNext: arenaNext, RARITY: RARITY, BAG_TIERS: BAG_TIERS, bagTierOf: bagTierOf, BASE_STYLES: BASE_STYLES, MAPS: MAPS, CS: CS, WH: WH, BAG_MAX: BAG_MAX, DAY_TIME: DAY_TIME, MAX_PLAYERS: MAX_PLAYERS,
-  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, GUNS: GUNS, BASE_R: BASE_R, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, breakWall: breakWall, restoreMap: restoreMap, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
+  KINDS: KINDS, CHARS: CHARS, WEAPONS: WEAPONS, GUNS: GUNS, BASE_R: BASE_R, HATS: HATS, COSTUMES: COSTUMES, PETS: PETS, WEATHERS: WEATHERS, ACCS: ACCS, ACC_NOTE: ACC_NOTE, GEMS: GEMS, GEM_NOTE: GEM_NOTE, isWall: isWall, breakWall: breakWall, restoreMap: restoreMap, restoreCell: restoreCell, WALL_REGEN: WALL_REGEN, cellOf: cellOf, center: center, blocked: blocked, los: los, bfs: bfs,
   quotaFor: quotaFor, Sim: Sim, setMap: setMap };
 
 /** 切換目前地圖（碰撞、視線、尋路都跟著換）。房主與每位玩家各自呼叫。 */
@@ -1386,7 +1404,16 @@ const api = { RUIN_N: RUIN_N, ARENA_N: ARENA_N, arenaIdx: arenaIdx, arenaNext: a
 function breakWall(c, r) {
   if (!(r > 0 && c > 0 && r < ROWS - 1 && c < COLS - 1) || MAP[r][c] !== '#') return false;
   MAP[r] = MAP[r].slice(0, c) + '.' + MAP[r].slice(c + 1);
-  floorCells.push([c, r]); BROKEN.push([c, r]);
+  floorCells.push([c, r]); BROKEN.push([c, r, WALL_CLOCK]);
+  return true;
+}
+/** 把一格炸開的牆長回來（自動恢復與每天開始都用這個）。 */
+function restoreCell(c, r) {
+  const i = BROKEN.findIndex(function (b) { return b[0] === c && b[1] === r; });
+  if (i < 0) return false;
+  MAP[r] = MAP[r].slice(0, c) + '#' + MAP[r].slice(c + 1);
+  floorCells = floorCells.filter(function (f) { return !(f[0] === c && f[1] === r); });
+  BROKEN.splice(i, 1);
   return true;
 }
 /** 把炸開的牆恢復原狀（每天開始時）。有恢復回傳 true。 */
