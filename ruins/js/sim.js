@@ -437,7 +437,7 @@ const TT_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 
 function newTT() { return { cells: ['', '', '', '', '', '', '', '', ''], x: null, o: null, turn: 'X', over: null, winner: null, timer: 0 }; }
 const DIFF_MUL = { easy: 0.75, normal: 1, hard: 1.3 }, DIFF_SPD = { easy: 0.92, normal: 1, hard: 1.12 };
 function quotaFor(day, n) { return 200 + 100 * day + 120 * (n - 1); }
-const ITEM_SWAP = 60;   // 每隔幾秒換掉地上的一件物品
+const ITEM_SWAP = 30;   // 每隔幾秒換掉地上的一件物品（30 秒刷新）
 
 function Sim(rng) {
   this.rng = rng || Math.random;
@@ -507,7 +507,8 @@ Sim.prototype._swapItem = function () {
   const kind = Math.floor(this.rng() * KINDS.length), k = KINDS[kind];
   const it = this.items[i];
   it.x = r2(p[0] + (this.rng() - 0.5) * 2); it.z = r2(p[1] + (this.rng() - 0.5) * 2); it.kind = kind;
-  it.value = Math.round((k.lo + this.rng() * (k.hi - k.lo)) / 5) * 5;
+  const rare = this.rng() < 0.08;   // 約 8% 稀有掉落：價值 2.5 倍
+  it.value = Math.round((k.lo + this.rng() * (k.hi - k.lo)) * (rare ? 2.5 : 1) / 5) * 5;
   this.events.push({ t: 'swap', i: i, x: it.x, z: it.z, kind: kind, value: it.value });
 };
 Sim.prototype._healWalls = function () {
