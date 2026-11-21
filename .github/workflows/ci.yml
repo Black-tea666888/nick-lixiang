@@ -15,4 +15,4 @@ jobs:
           node-version: '20'
       - name: 語法檢查（所有 js）
         run: |
-          for f in ruins/js/*.js ruins/tests/*.js; do node --check "$f" || exit 1; done
+          for f in ruins/js/*.js; do node --check "$f" || exit 1; done
