@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v248', items: ['休閒模式新增「四子連珠」（同機雙人，直橫斜先連四子者勝）'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4'];
+const UPD = { v: 'v249', items: ['休閒模式新增「飛行棋」（2～4 人同機，擲 6 出發，吃子送回基地）'] };
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -1380,6 +1380,63 @@ function c4Draw() {
   else msg = (c4S.turn === 'r' ? '紅方' : '黃方') + '落子';
   $('c4Status').textContent = msg;
 }
+/* 飛行棋（同機 2～4 人） */
+let flS = null;
+const FL_COLS = ['紅', '藍', '綠', '黃'];
+const FL_CLS = ['c0', 'c1', 'c2', 'c3'];
+function flOpen() { show('scrFlight'); flDraw(); }
+function flSetup() { flS = null; flDraw(); }
+function flNew(n) { flS = RR.Flight.start(n); flDraw(); }
+function flRoll() { if (!flS) return; flS = RR.Flight.roll(flS, function () { return 1 + Math.floor(Math.random() * 6); }); flDraw(); }
+function flPick(j) { flS = RR.Flight.pick(flS, j); flDraw(); }
+function flPos(ring) {
+  const a = -Math.PI / 2 + ring * 2 * Math.PI / RR.Flight.RING;
+  return { x: 50 + 42 * Math.cos(a), y: 50 + 42 * Math.sin(a) };
+}
+function flDraw() {
+  const setup = $('flSetup'), board = $('flBoard');
+  if (!flS) { setup.classList.remove('hide'); board.classList.add('hide'); $('flightStatus').textContent = '選擇人數開始'; $('flightRoll').disabled = true; return; }
+  setup.classList.add('hide'); board.classList.remove('hide');
+  const F = RR.Flight, ring = $('flRing');
+  ring.textContent = '';
+  // 跑道格：每格一個點，各色起點較大
+  for (let i = 0; i < F.RING; i++) {
+    const pt = flPos(i), dot = mk('span', 'flDot' + (F.SAFE.indexOf(i) >= 0 ? ' safe' : ''), '');
+    dot.style.left = pt.x + '%'; dot.style.top = pt.y + '%';
+    ring.appendChild(dot);
+  }
+  // 飛機：依位置放在環上（跑道上的才放）
+  for (let q = 0; q < flS.n; q++) {
+    for (let j = 0; j < 4; j++) {
+      const p = flS.pl[q][j];
+      if (p < 0 || p > 50) continue;
+      const pt = flPos(F.ringOf(flS.col[q], p)), tok = mk('span', 'flTok ' + FL_CLS[flS.col[q]], '');
+      tok.style.left = pt.x + '%'; tok.style.top = pt.y + '%';
+      ring.appendChild(tok);
+    }
+  }
+  // 玩家面板
+  const list = $('flPlayers');
+  list.textContent = '';
+  for (let q = 0; q < flS.n; q++) {
+    const row = mk('div', 'flRow' + (flS.cur === q && flS.win === null ? ' now' : ''), '');
+    row.appendChild(mk('b', FL_CLS[flS.col[q]], FL_COLS[flS.col[q]] + '方'));
+    for (let j = 0; j < 4; j++) {
+      const p = flS.pl[q][j];
+      const label = p === -1 ? '基地' : p === F.HOME ? '終點' : '第 ' + (p + 1) + ' 步';
+      const canPick = flS.phase === 'pick' && q === flS.cur && flS.legal.indexOf(j) >= 0;
+      const btn = mk('button', 'flPlane' + (canPick ? ' pick' : ''), '✈ ' + (j + 1) + '：' + label);
+      btn.type = 'button';
+      btn.disabled = !canPick;
+      if (canPick) btn.addEventListener('click', (function (k) { return function () { flPick(k); }; })(j));
+      row.appendChild(btn);
+    }
+    list.appendChild(row);
+  }
+  const st = F.status(flS);
+  $('flightRoll').disabled = !(flS.phase === 'roll' && st.k === 'play');
+  $('flightStatus').textContent = st.k === 'win' ? FL_COLS[flS.col[st.winner]] + '方獲勝！' : (FL_COLS[flS.col[flS.cur]] + '方' + (flS.phase === 'pick' ? '選擇要走的飛機' : '擲骰子')) + (flS.dice ? '（上次點數 ' + flS.dice + '）' : '') + (flS.msg ? '　' + flS.msg : '');
+}
 let rmDeadline = 0, rmTimer = null;
 const RM_TURN_MS = 60000;   // 每回合 1 分鐘
 function rmOpen() { show('scrRummi'); if (!rmS) rmS = RR.Rummi.start(); rmResetTurn(); rmStartTurn(); rmDraw(); if (!rmTimer) rmTimer = setInterval(rmTick, 1000); }
@@ -1609,11 +1666,11 @@ function recOptsOpen() {
   $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
 }
 /* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'c4', 'plat', 'marble'] };
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'c4', 'flight', 'plat', 'marble'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', plat: '跳關', marble: '彈珠' };
+const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', flight: '飛行棋', plat: '跳關', marble: '彈珠' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
@@ -2435,6 +2492,11 @@ function bind() {
   $('rummiBtn').addEventListener('click', rmOpen);
   $('gomokuBtn').addEventListener('click', gmOpen);
   $('c4Btn').addEventListener('click', c4Open);
+  $('flightBtn').addEventListener('click', flOpen);
+  $('flightBack').addEventListener('click', showMenu);
+  $('flightNew').addEventListener('click', flSetup);
+  $('flightRoll').addEventListener('click', flRoll);
+  document.querySelectorAll('[data-flp]').forEach(function (b) { b.addEventListener('click', function () { flNew(+b.getAttribute('data-flp')); }); });
   $('c4Back').addEventListener('click', showMenu);
   $('c4New').addEventListener('click', c4New);
   $('gomokuBack').addEventListener('click', showMenu);

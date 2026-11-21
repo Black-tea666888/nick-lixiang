@@ -1391,3 +1391,19 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .c4Slot.Y { background: radial-gradient(circle at 35% 35%, #fff59d, #f9a825); }
 .c4Slot.last { outline: 2px solid #fff; outline-offset: -2px; }
 .c4Slot.win { outline: 3px solid #3fae5a; outline-offset: -3px; }
+
+/* 飛行棋 */
+.flSetup { text-align: center; padding: 24px 0; }
+.flSetupBtns { display: flex; gap: 10px; justify-content: center; }
+.flRing { position: relative; width: 100%; max-width: 340px; aspect-ratio: 1 / 1; margin: 8px auto; border-radius: 50%; background: #f4ead2; border: 2px solid #6b4a1e; box-sizing: border-box; }
+.flDot { position: absolute; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #8a7150; }
+.flDot.safe { width: 10px; height: 10px; margin: -5px 0 0 -5px; background: #6b4a1e; }
+.flTok { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; border: 2px solid #222; box-sizing: border-box; }
+.flTok.c0 { background: #d33; } .flTok.c1 { background: #3a7bd5; } .flTok.c2 { background: #3fae5a; } .flTok.c3 { background: #f2c230; }
+.flBtns { text-align: center; margin: 8px 0; }
+.flPlayers { display: grid; gap: 6px; }
+.flRow { display: grid; grid-template-columns: 52px repeat(4, 1fr); gap: 4px; align-items: center; padding: 4px; border-radius: 6px; }
+.flRow.now { background: rgba(255, 210, 58, .25); }
+.flPlane { font-size: 12px; padding: 6px 2px; border: 1px solid #6b4a1e; border-radius: 6px; background: #fff7e0; }
+.flPlane.pick { background: #ffd23a; cursor: pointer; }
+.flPlane:disabled { opacity: .7; }
