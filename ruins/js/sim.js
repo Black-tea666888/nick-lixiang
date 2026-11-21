@@ -437,6 +437,7 @@ const TT_LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 
 function newTT() { return { cells: ['', '', '', '', '', '', '', '', ''], x: null, o: null, turn: 'X', over: null, winner: null, timer: 0 }; }
 const DIFF_MUL = { easy: 0.75, normal: 1, hard: 1.3 }, DIFF_SPD = { easy: 0.92, normal: 1, hard: 1.12 };
 function quotaFor(day, n) { return 200 + 100 * day + 120 * (n - 1); }
+const ITEM_SWAP = 60;   // 每隔幾秒換掉地上的一件物品
 
 function Sim(rng) {
   this.rng = rng || Math.random;
@@ -489,6 +490,26 @@ Sim.prototype.roster = function () {
 };
 
 /** 炸開的牆過了 WALL_REGEN 秒就長回來；有人或怪還站在那格附近就等一下，免得把人卡在牆裡 */
+/** 每隔一段時間，把地上一件沒人拿的物品換到別的地方（換成另一種）。 */
+Sim.prototype._swapItem = function () {
+  const alive = this.players.filter(function (p) { return p.alive; });
+  const pool = [];
+  for (let i = 0; i < this.items.length; i++) if (!this.items[i].taken) pool.push(i);
+  if (!pool.length) return;
+  const i = pool[Math.floor(this.rng() * pool.length)];
+  const cands = floorCells.filter(function (c) {
+    if (MONSTER_CELLS.some(function (m) { return m[0] === c[0] && m[1] === c[1]; })) return false;
+    const p = center(c[0], c[1]);
+    return alive.every(function (q) { return Math.hypot(p[0] - q.x, p[1] - q.z) > 8; });
+  });
+  if (!cands.length) return;
+  const c = cands[Math.floor(this.rng() * cands.length)], p = center(c[0], c[1]);
+  const kind = Math.floor(this.rng() * KINDS.length), k = KINDS[kind];
+  const it = this.items[i];
+  it.x = r2(p[0] + (this.rng() - 0.5) * 2); it.z = r2(p[1] + (this.rng() - 0.5) * 2); it.kind = kind;
+  it.value = Math.round((k.lo + this.rng() * (k.hi - k.lo)) / 5) * 5;
+  this.events.push({ t: 'swap', i: i, x: it.x, z: it.z, kind: kind, value: it.value });
+};
 Sim.prototype._healWalls = function () {
   const self = this;
   BROKEN.slice().forEach(function (b) {
@@ -516,7 +537,7 @@ Sim.prototype.startDay = function (day) {
   this.players = this.players.filter(function (p) { return !p.ai; });   // 上一局的機器人先清掉
   const dm = this.mode === 'coop' ? DIFF_MUL[this.diff] || 1 : 1;   // 回收任務：難度影響目標金額
   this.quota = br ? 0 : hunt ? 50 * (5 + 2 * (day - 1) + 2 * (n - 1)) : Math.round(quotaFor(day, n) * dm); this.events = [];   // 清剿：每擊倒一隻 $50
-  this.smokes = [];
+  this.smokes = []; this.swapT = ITEM_SWAP;
   if (this.mode === 'race') { this.time = 99999; this.quota = 0; this._raceInit(); }   // 賽車：沒有時間限制、沒有怪
   this.players.forEach(function (p) { p.skCd = 0; p.smCd = 0; p.shieldT = 0; p.hideT = 0; p.stealthT = 0; p.rallyT = 0; });   // 每天開始技能冷卻歸零
   // 物品：隨機放在離起點有段距離的格子
@@ -527,7 +548,7 @@ Sim.prototype.startDay = function (day) {
   for (let i = cands.length - 1; i > 0; i--) {
     const j = Math.floor(this.rng() * (i + 1)), t = cands[i]; cands[i] = cands[j]; cands[j] = t;
   }
-  const count = hunt || br || this.mode === 'race' ? 0 : Math.min(cands.length, Math.round(floorCells.length / 7) + 2 * n + Math.min(day, 6));
+  const count = hunt || br || this.mode === 'race' ? 0 : Math.min(cands.length, Math.round(floorCells.length / 7) + 2 * n + 2 * day);   // 數量隨天數成長
   this.items = [];
   for (let i = 0; i < count; i++) {
     const p = center(cands[i][0], cands[i][1]);
@@ -570,7 +591,8 @@ Sim.prototype.startDay = function (day) {
   this.weather = 0; this.disT = -1; this.strikes = [];
   if (!br && day > 1) {
     const r = this.rng();
-    this.weather = r < 0.35 ? 0 : r < 0.6 ? 2 : openMap ? (r < 0.82 ? 1 : 4) : 3;
+    const clear = Math.max(0.1, 0.35 - 0.06 * (day - 2));   // 天數越多，晴天越少、可變因素越多
+    this.weather = r < clear ? 0 : r < clear + 0.25 ? 2 : openMap ? (r < clear + 0.47 ? 1 : 4) : 3;
     this.disT = 60 + this.rng() * 100;   // 剩餘時間到這個秒數時發生
     this.disKind = this.rng() < 0.5 ? 'quake' : 'strike';
   }
@@ -1180,6 +1202,8 @@ Sim.prototype.step = function (dt) {
   dt = Math.min(dt, 0.1);
   this.time -= dt; WALL_CLOCK += dt;
   if (BROKEN.length) this._healWalls();
+  this.swapT -= dt;
+  if (this.swapT <= 0) { this.swapT = ITEM_SWAP; this._swapItem(); }
   if (this.smokes && this.smokes.length) { this.smokes.forEach(function (k) { k.t -= dt; }); this.smokes = this.smokes.filter(function (k) { return k.t > 0; }); }
   const alive = this.players.filter(function (p) { return p.alive; });
   for (let k = 0; k < alive.length; k++) {

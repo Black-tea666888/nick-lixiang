@@ -2462,6 +2462,19 @@ function rarFx(x, z, kind) {
   if (r >= 2) { const bm = new THREE.Mesh(rarGeo.beam, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: r === 3 ? 0.4 : 0.26, blending: THREE.AdditiveBlending, depthWrite: false })); bm.position.y = 1.3; g.add(bm); }
   g.position.set(x, 0, z); scene.add(g); return g;
 }
+/** 依照 [x, z, 種類, 價值] 做出一件地上物品（開局與換物品共用）。 */
+function makeItem(a) {
+  const isk = RR.Game.settings.itemSkin | 0;   // 回收品造型：0 預設、1 糖果（圓球粉彩）、2 寶石（八面體亮色）
+  const icol = isk === 1 ? [0xffb3d1, 0xb3e5ff, 0xfff0a8, 0xd5b8ff, 0xb8ffd9][a[2] % 5] : isk === 2 ? [0xff4a6a, 0x4ac8ff, 0x6aff8a, 0xffd24a, 0xc86aff][a[2] % 5] : [0xffd166, 0x6ecbff, 0xff9f5a, 0xc9a0ff, 0xff7eb6, 0x9be564, 0xffe94a, 0xfff3b0, 0x5affc9, 0xffb86b, 0xbfc7d1][a[2] % 11];
+  if (a[2] >= 20) {   // 廢墟生存戰補給箱：綠 急救、藍 護甲、紅 火力
+    const lm = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.45, 0.6), new THREE.MeshBasicMaterial({ color: [0x4ade80, 0x5aa9ff, 0xff5a5a][a[2] - 20] || 0xffffff }));
+    lm.position.set(a[0], 0.45, a[1]); scene.add(lm);
+    return { x: a[0], z: a[1], kind: a[2], value: 0, taken: false, mesh: lm };
+  }
+  const mesh = new THREE.Mesh(isk === 1 ? skinGeos[0] : isk === 2 ? skinGeos[1] : (function () { const vs = itemGeos[a[2] % itemGeos.length]; return vs[Math.abs(Math.floor(a[0] * 7 + a[1] * 13)) % vs.length]; })(), isk ? new THREE.MeshBasicMaterial({ color: icol }) : salvageMat());
+  mesh.position.set(a[0], 0.75, a[1]); scene.add(mesh);
+  return { x: a[0], z: a[1], kind: a[2], value: a[3], taken: false, mesh: mesh, fx: rarFx(a[0], a[1], a[2]) };
+}
 function itemVis(it, v) { it.mesh.visible = v; if (it.fx) it.fx.visible = v; }
 /* ---------- 每幀更新 ---------- */
 function updateMe(dt) {
@@ -2922,18 +2935,7 @@ RR.Game = {
     view.base = info.base | 0;
     if (builtMap !== W.mapIndex || builtBase !== view.base || Object.keys(brokenVis).length) buildLevel();   // 前一天炸開的牆恢復原狀
     view.items.forEach(function (it) { scene.remove(it.mesh); if (it.fx) scene.remove(it.fx); });
-    view.items = info.items.map(function (a) {
-      const isk = RR.Game.settings.itemSkin | 0;   // 回收品造型：0 預設、1 糖果（圓球粉彩）、2 寶石（八面體亮色）
-      const icol = isk === 1 ? [0xffb3d1, 0xb3e5ff, 0xfff0a8, 0xd5b8ff, 0xb8ffd9][a[2] % 5] : isk === 2 ? [0xff4a6a, 0x4ac8ff, 0x6aff8a, 0xffd24a, 0xc86aff][a[2] % 5] : [0xffd166, 0x6ecbff, 0xff9f5a, 0xc9a0ff, 0xff7eb6, 0x9be564, 0xffe94a, 0xfff3b0, 0x5affc9, 0xffb86b, 0xbfc7d1][a[2] % 11];
-      if (a[2] >= 20) {   // 廢墟生存戰補給箱：綠 急救、藍 護甲、紅 火力
-        const lm = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.45, 0.6), new THREE.MeshBasicMaterial({ color: [0x4ade80, 0x5aa9ff, 0xff5a5a][a[2] - 20] || 0xffffff }));
-        lm.position.set(a[0], 0.45, a[1]); scene.add(lm);
-        return { x: a[0], z: a[1], kind: a[2], value: 0, taken: false, mesh: lm };
-      }
-      const mesh = new THREE.Mesh(isk === 1 ? skinGeos[0] : isk === 2 ? skinGeos[1] : (function () { const vs = itemGeos[a[2] % itemGeos.length]; return vs[Math.abs(Math.floor(a[0] * 7 + a[1] * 13)) % vs.length]; })(), isk ? new THREE.MeshBasicMaterial({ color: icol }) : salvageMat());
-      mesh.position.set(a[0], 0.75, a[1]); scene.add(mesh);
-      return { x: a[0], z: a[1], kind: a[2], value: a[3], taken: false, mesh: mesh, fx: rarFx(a[0], a[1], a[2]) };
-    });
+    view.items = info.items.map(makeItem);
     view.mode = info.mode || 'coop'; document.body.classList.toggle('td', view.mode === 'td'); syncTowers([]); view.td = null;
     buildRaceTrack(view.mode === 'race' ? (info.map || 0) : -1);
     if (view.mode === 'race') { me.spd = 0; me.boostT = 0; me.charge = 0; me.slideAng = 0; me.drifting = false; me.item = null; me.ckX = null; me.hp = 100; me.nitro = 0; me.nitroT = 0; me.pauseT = 0; me.hitCd = 0; }
@@ -3066,6 +3068,9 @@ RR.Game = {
     } else if (e.t === 'sell') {
       Sfx.tone(523, 0.12, 'triangle', 0.14); setTimeout(function () { Sfx.tone(784, 0.2, 'triangle', 0.14); }, 110);
       toast((e.id === myId ? '賣出' : nameOf(e.id) + ' 賣出') + ' +$' + e.sum); floatText('+$' + e.sum);
+    } else if (e.t === 'swap') {
+      const old = view.items[e.i];
+      if (old) { scene.remove(old.mesh); if (old.fx) scene.remove(old.fx); view.items[e.i] = makeItem([e.x, e.z, e.kind, e.value]); }
     } else if (e.t === 'drop') {
       e.list.forEach(function (a) { const it = view.items[a[0]]; if (it) { it.x = a[1]; it.z = a[2]; it.taken = false; itemVis(it, true); } });
     } else if (e.t === 'caught') {
