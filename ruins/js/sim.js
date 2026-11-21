@@ -524,6 +524,12 @@ Sim.prototype._cellBusy = function (c, r) {
   return this.players.some(function (p) { return inside(p.x, p.z); }) || this.monsters.some(function (m) { return inside(m.x, m.z); });
 };
 
+// 天氣抽籤：天數越多，晴天越少、可變因素越多；開放地圖才會有雨與風暴
+Sim.prototype._rollWeather = function (day, openMap) {
+  const r = this.rng();
+  const clear = Math.max(0.1, 0.35 - 0.06 * (day - 2));
+  return r < clear ? 0 : r < clear + 0.25 ? 2 : openMap ? (r < clear + 0.47 ? 1 : 4) : 3;
+};
 Sim.prototype.startDay = function (day) {
   restoreMap();
   if (this.mode === 'race' && this.map < RUIN_N) this.map = arenaIdx(this.map);   // 賽車一律用賽道場地
@@ -595,10 +601,10 @@ Sim.prototype.startDay = function (day) {
   // 天氣與天然災害（第 1 天固定晴朗、沒有災害；廢墟生存戰不啟用）
   const openMap = !!MAPS[this.map].theme.open;
   this.weather = 0; this.disT = -1; this.strikes = [];
+  this.wxT = 0; this.wxOpen = openMap;
   if (!br && day > 1) {
-    const r = this.rng();
-    const clear = Math.max(0.1, 0.35 - 0.06 * (day - 2));   // 天數越多，晴天越少、可變因素越多
-    this.weather = r < clear ? 0 : r < clear + 0.25 ? 2 : openMap ? (r < clear + 0.47 ? 1 : 4) : 3;
+    this.weather = this._rollWeather(day, openMap);
+    this.wxT = 70 + this.rng() * 50;   // 白天每 70～120 秒換一次天氣
     this.disT = 60 + this.rng() * 100;   // 剩餘時間到這個秒數時發生
     this.disKind = this.rng() < 0.5 ? 'quake' : 'strike';
   }
@@ -1209,6 +1215,10 @@ Sim.prototype.step = function (dt) {
   this.time -= dt; WALL_CLOCK += dt;
   if (BROKEN.length) this._healWalls();
   this.swapT -= dt;
+  if (this.wxT > 0 && this.mode !== 'race') {   // 白天天氣會中途變化
+    this.wxT -= dt;
+    if (this.wxT <= 0) { this.weather = this._rollWeather(this.day, this.wxOpen); this.wxT = 70 + this.rng() * 50; this.events.push({ t: 'weather', w: this.weather }); }
+  }
   if (this.swapT <= 0) { this.swapT = ITEM_SWAP; this._swapItem(); }
   if (this.smokes && this.smokes.length) { this.smokes.forEach(function (k) { k.t -= dt; }); this.smokes = this.smokes.filter(function (k) { return k.t > 0; }); }
   const alive = this.players.filter(function (p) { return p.alive; });

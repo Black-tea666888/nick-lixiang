@@ -3139,6 +3139,8 @@ RR.Game = {
     } else if (e.t === 'sell') {
       Sfx.tone(523, 0.12, 'triangle', 0.14); setTimeout(function () { Sfx.tone(784, 0.2, 'triangle', 0.14); }, 110);
       toast((e.id === myId ? '賣出' : nameOf(e.id) + ' 賣出') + ' +$' + e.sum); floatText('+$' + e.sum);
+    } else if (e.t === 'weather') {
+      applyWeather(e.w); toast('天氣變了：' + (e.w ? W.WEATHERS[e.w] : '晴朗'));
     } else if (e.t === 'swap') {
       const old = view.items[e.i];
       if (old) { scene.remove(old.mesh); if (old.fx) scene.remove(old.fx); view.items[e.i] = makeItem([e.x, e.z, e.kind, e.value]); }
