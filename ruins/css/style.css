@@ -1407,3 +1407,9 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .flPlane { font-size: 12px; padding: 6px 2px; border: 1px solid #6b4a1e; border-radius: 6px; background: #fff7e0; }
 .flPlane.pick { background: #ffd23a; cursor: pointer; }
 .flPlane:disabled { opacity: .7; }
+
+/* 彈珠台 */
+.pcCanvas { display: block; width: 100%; max-width: 300px; aspect-ratio: 3 / 4; margin: 8px auto; border: 2px solid #6b4a1e; border-radius: 8px; box-sizing: border-box; }
+.pcCtl { display: grid; gap: 6px; max-width: 300px; margin: 0 auto; font-size: 14px; }
+.pcCtl label { display: flex; align-items: center; gap: 6px; }
+.pcCtl input[type=range] { flex: 1; }
