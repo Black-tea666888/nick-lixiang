@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=262" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=267" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -110,6 +110,7 @@
     <button class="mcard hubCard casual" id="hubCas" type="button"><b>休閒模式</b><span>AR 抓怪、怪物卡牌、賽車</span></button>
   </div>
 </div>
+<div class="modal hide" id="casHelpM"><div class="panel small tut"><h2 id="casHelpT"></h2><p id="casHelpB" style="white-space:pre-line;text-align:left"></p><div class="row"><button class="btn primary" id="casHelpX" type="button">知道了</button></div></div></div>
 <div class="modal hide" id="recOpts"><div class="panel small tut"><h2>回收任務：難度與天數</h2><p>難度（目標金額與怪物速度）</p><div class="row optRow" id="roDiff"><button class="btn" type="button" data-v="easy">簡單</button><button class="btn" type="button" data-v="normal">標準</button><button class="btn" type="button" data-v="hard">困難</button></div><p>天數（0＝無限天）</p><div class="row optRow" id="roDays"><button class="btn" type="button" data-v="0">無限天</button><button class="btn" type="button" data-v="7">7 天</button><button class="btn" type="button" data-v="14">14 天</button></div><div class="row"><button class="btn primary" id="roOk" type="button">確定</button></div></div></div>
 <div class="screen hide" id="scrMenu">
   <div class="lb">
@@ -127,6 +128,7 @@
       <div class="lbIcons">
         <button class="icon" id="marketOpen" type="button" aria-label="聊天與組隊">聊天</button>
         <button class="icon" id="socialOpen" type="button">社群<i class="badge hide" id="socBadge"></i></button>
+        <button class="icon hide" id="casHelp" type="button">玩法說明</button>
         <button class="icon" id="helpBtn" type="button" aria-label="設定與說明">設定</button>
         <button class="icon" id="moreBtn" type="button" aria-label="更多" aria-haspopup="true">更多<i class="badge hide" id="moreBadge"></i></button>
       </div>
@@ -854,30 +856,30 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=262"></script>
-<script src="js/race_tracks.js?v=262"></script>
-<script src="js/race_arenas.js?v=262"></script>
-<script src="js/sim.js?v=262"></script>
-<script src="js/audio.js?v=262"></script>
-<script src="js/auth.js?v=262"></script>
-<script src="js/cloud.js?v=262"></script>
-<script src="js/net.js?v=262"></script>
-<script src="js/game.js?v=262"></script>
-<script src="js/minigames.js?v=262"></script>
-<script src="js/ar.js?v=262"></script>
-<script src="js/padnav.js?v=262"></script>
-<script src="js/cards.js?v=262"></script>
-<script src="js/chess.js?v=262"></script>
-<script src="js/chess_art.js?v=262"></script>
-<script src="js/xiangqi.js?v=262"></script>
-<script src="js/rummi.js?v=262"></script>
-<script src="js/gomoku.js?v=262"></script>
-<script src="js/connect4.js?v=262"></script>
-<script src="js/flight.js?v=262"></script>
-<script src="js/pachinko.js?v=262"></script>
-<script src="js/carrom.js?v=262"></script>
-<script src="js/platform.js?v=262"></script>
-<script src="js/marble.js?v=262"></script>
-<script src="js/main.js?v=262"></script>
+<script src="js/config.js?v=267"></script>
+<script src="js/race_tracks.js?v=267"></script>
+<script src="js/race_arenas.js?v=267"></script>
+<script src="js/sim.js?v=267"></script>
+<script src="js/audio.js?v=267"></script>
+<script src="js/auth.js?v=267"></script>
+<script src="js/cloud.js?v=267"></script>
+<script src="js/net.js?v=267"></script>
+<script src="js/game.js?v=267"></script>
+<script src="js/minigames.js?v=267"></script>
+<script src="js/ar.js?v=267"></script>
+<script src="js/padnav.js?v=267"></script>
+<script src="js/cards.js?v=267"></script>
+<script src="js/chess.js?v=267"></script>
+<script src="js/chess_art.js?v=267"></script>
+<script src="js/xiangqi.js?v=267"></script>
+<script src="js/rummi.js?v=267"></script>
+<script src="js/gomoku.js?v=267"></script>
+<script src="js/connect4.js?v=267"></script>
+<script src="js/flight.js?v=267"></script>
+<script src="js/pachinko.js?v=267"></script>
+<script src="js/carrom.js?v=267"></script>
+<script src="js/platform.js?v=267"></script>
+<script src="js/marble.js?v=267"></script>
+<script src="js/main.js?v=267"></script>
 </body>
 </html>
