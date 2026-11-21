@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v250', items: ['休閒模式新增「彈珠台」（調整角度與力道發射，落進中間袋子為大獎）'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi'];
+const UPD = { v: 'v251', items: ['休閒模式新增「康樂球」（桌上撞擊，兩人輪流，先打完己方 8 顆者勝）'] };
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -1492,6 +1492,64 @@ function pcDraw() {
   else msg = '調整角度與力道，按發射。';
   $('pcStatus').textContent = msg;
 }
+/* 康樂球（桌上撞擊） */
+let kgS = null, kgRaf = 0;
+function kgOpen() { show('scrKangle'); if (!kgS) kgNew(); else kgDraw(); }
+function kgNew() { if (kgRaf) cancelAnimationFrame(kgRaf); kgRaf = 0; kgS = RR.Carrom.newGame(); kgDraw(); }
+function kgFire() {
+  if (!kgS || kgRaf || kgS.winner !== null) return;
+  const res = RR.Carrom.shoot(kgS, +$('kgX').value, +$('kgAngle').value * Math.PI / 180, +$('kgPower').value / 100);
+  const frames = res.frames;
+  let i = 0;
+  if (!frames.length) { kgS = res.state; kgDraw(); return; }
+  kgRaf = 1;
+  kgDraw();
+  (function tick() {
+    if (i < frames.length) { kgDrawBoard(frames[i]); i++; kgRaf = requestAnimationFrame(tick); return; }
+    kgRaf = 0; kgS = res.state; kgDraw();
+  })();
+}
+function kgDrawBoard(list) {
+  const C = RR.Carrom, cv = $('kgCanvas'), ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, C.W, C.H);
+  ctx.fillStyle = '#c8924f'; ctx.fillRect(0, 0, C.W, C.H);
+  ctx.strokeStyle = '#7a4f22'; ctx.lineWidth = 3; ctx.strokeRect(2, 2, C.W - 4, C.H - 4);
+  // 底線
+  ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(60,30,10,.5)';
+  [C.BASE_Y[0], C.BASE_Y[1]].forEach(function (y) { ctx.beginPath(); ctx.moveTo(60, y); ctx.lineTo(C.W - 60, y); ctx.stroke(); });
+  // 洞
+  ctx.fillStyle = '#1e120a';
+  C.POCKETS.forEach(function (p) { ctx.beginPath(); ctx.arc(p[0], p[1], C.POCKET_R, 0, Math.PI * 2); ctx.fill(); });
+  // 棋子與射子
+  list.forEach(function (b) {
+    const isS = b.c === 's';
+    ctx.beginPath(); ctx.arc(b.x, b.y, isS ? C.STRIKER_R : C.PIECE_R, 0, Math.PI * 2);
+    ctx.fillStyle = b.c === 'r' ? '#c62828' : b.c === 'b' ? '#222' : '#f5f0e6';
+    ctx.fill(); ctx.strokeStyle = '#3a2412'; ctx.lineWidth = 2; ctx.stroke();
+  });
+}
+function kgDraw() {
+  if (!kgS) return;
+  const C = RR.Carrom;
+  const list = kgS.pieces.filter(function (p) { return p.alive; }).map(function (p) { return { x: p.x, y: p.y, c: p.c }; });
+  if (kgS.winner === null) {
+    const sx = Math.max(60, Math.min(C.W - 60, +$('kgX').value));
+    list.push({ x: sx, y: C.BASE_Y[kgS.turn], c: 's' });
+    const a = +$('kgAngle').value * Math.PI / 180, y0 = C.BASE_Y[kgS.turn], dy = kgS.turn === 0 ? -1 : 1;
+    kgDrawBoard(list);
+    const cv = $('kgCanvas').getContext('2d');
+    cv.strokeStyle = 'rgba(255,210,58,.8)'; cv.setLineDash([5, 5]); cv.beginPath(); cv.moveTo(sx, y0);
+    cv.lineTo(sx + Math.sin(a) * 90, y0 + dy * Math.cos(a) * 90); cv.stroke(); cv.setLineDash([]);
+  } else {
+    kgDrawBoard(list);
+  }
+  $('kgScore').textContent = '紅 ' + kgS.score[0] + '　黑 ' + kgS.score[1];
+  $('kgAngleVal').textContent = $('kgAngle').value + '°';
+  $('kgPowerVal').textContent = $('kgPower').value + '%';
+  $('kgFire').disabled = !!kgRaf || kgS.winner !== null;
+  const who = kgS.turn === 0 ? '紅方（下）' : '黑方（上）';
+  $('kgStatus').textContent = kgS.winner !== null ? kgS.msg : (kgRaf ? '棋子滑動中…' : (kgS.msg ? kgS.msg + '　' : '') + who + '射擊');
+}
 let rmDeadline = 0, rmTimer = null;
 const RM_TURN_MS = 60000;   // 每回合 1 分鐘
 function rmOpen() { show('scrRummi'); if (!rmS) rmS = RR.Rummi.start(); rmResetTurn(); rmStartTurn(); rmDraw(); if (!rmTimer) rmTimer = setInterval(rmTick, 1000); }
@@ -1721,11 +1779,11 @@ function recOptsOpen() {
   $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
 }
 /* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'c4', 'flight', 'pachi', 'plat', 'marble'] };
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'c4', 'flight', 'pachi', 'kangle', 'plat', 'marble'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', flight: '飛行棋', pachi: '彈珠台', plat: '跳關', marble: '彈珠' };
+const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', flight: '飛行棋', pachi: '彈珠台', kangle: '康樂球', plat: '跳關', marble: '彈珠' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
@@ -2549,6 +2607,11 @@ function bind() {
   $('c4Btn').addEventListener('click', c4Open);
   $('flightBtn').addEventListener('click', flOpen);
   $('pachiBtn').addEventListener('click', pcOpen);
+  $('kangleBtn').addEventListener('click', kgOpen);
+  $('kangleBack').addEventListener('click', showMenu);
+  $('kangleNew').addEventListener('click', kgNew);
+  $('kgFire').addEventListener('click', kgFire);
+  ['kgX', 'kgAngle', 'kgPower'].forEach(function (id) { $(id).addEventListener('input', kgDraw); });
   $('pachiBack').addEventListener('click', showMenu);
   $('pachiNew').addEventListener('click', pcNew);
   $('pcFire').addEventListener('click', pcFire);

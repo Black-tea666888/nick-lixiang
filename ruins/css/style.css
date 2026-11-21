@@ -1413,3 +1413,6 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .pcCtl { display: grid; gap: 6px; max-width: 300px; margin: 0 auto; font-size: 14px; }
 .pcCtl label { display: flex; align-items: center; gap: 6px; }
 .pcCtl input[type=range] { flex: 1; }
+
+/* 康樂球 */
+.kgCanvas { display: block; width: 100%; max-width: 360px; aspect-ratio: 1 / 1; margin: 8px auto; border-radius: 6px; box-sizing: border-box; }
