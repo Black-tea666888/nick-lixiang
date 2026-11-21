@@ -150,8 +150,10 @@
   function start(el, done) {
     stop();
     host = el; onDone = done; host.innerHTML = '';
-    cvs = document.createElement('canvas'); cvs.width = W; cvs.height = H; cvs.className = 'platCanvas marbleCanvas';
-    ctx = cvs.getContext('2d');
+    // 用較高解析度的畫布繪製（依螢幕像素比），放大顯示時字與線才不會糊；邏輯座標仍是 W×H
+    const k = Math.min(4, Math.max(2, (window.devicePixelRatio || 1) * 2));
+    cvs = document.createElement('canvas'); cvs.width = W * k; cvs.height = H * k; cvs.className = 'platCanvas marbleCanvas';
+    ctx = cvs.getContext('2d'); ctx.setTransform(k, 0, 0, k, 0, 0);
     host.appendChild(cvs);
     cvs.addEventListener('pointerdown', onDown);
     cvs.addEventListener('pointermove', onMove);
