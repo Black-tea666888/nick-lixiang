@@ -2116,11 +2116,15 @@ function showShot(e) {
   else from = new THREE.Vector3(e.x, e.ty || 1.25, e.z);
   const to = new THREE.Vector3(e.hx, e.mi >= 0 ? 1.4 : 1.2 + Math.random() * 0.4, e.hz);
   // 彈道：一條很細、很快消失的亮線（用細長方塊，手機上也看得到粗細）
-  const len = from.distanceTo(to), col = mine ? FX_COL[RR.Game.settings.fx | 0] || 0xfff1b0 : 0xfff1b0;
-  const tr = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, Math.max(0.1, len)), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
-  tr.position.copy(from).lerp(to, 0.5); tr.lookAt(to); scene.add(tr);
+  // 子彈：一小段亮光從槍口「飛」到目標（不是一條瞬間出現又消失的線），飛行中看得出是從槍口射出
+  const len = Math.max(0.01, from.distanceTo(to)), col = mine ? FX_COL[RR.Game.settings.fx | 0] || 0xfff1b0 : 0xfff1b0;
+  const dir = to.clone().sub(from).normalize(), SEG = 0.9, FLY = 110;
+  const tr = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, SEG), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+  scene.add(tr);
   const t0 = Date.now(), id = setInterval(function () {
-    const k = (Date.now() - t0) / 90; tr.material.opacity = Math.max(0, 0.85 - k);
+    const k = Math.min(1, (Date.now() - t0) / FLY), head = k * len, tail = Math.max(0, head - SEG), mid = (head + tail) / 2;
+    tr.position.copy(from).addScaledVector(dir, mid); tr.lookAt(to); tr.scale.z = Math.max(0.01, head - tail) / SEG;
+    tr.material.opacity = k < 0.7 ? 1 : Math.max(0, (1 - k) / 0.3);
     if (k >= 1) { clearInterval(id); scene.remove(tr); tr.geometry.dispose(); tr.material.dispose(); }
   }, 16);
   impactFx(to, e.mi >= 0 || !!e.pk);
