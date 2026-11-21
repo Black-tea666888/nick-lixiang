@@ -2506,6 +2506,40 @@ function makeItem(a) {
   mesh.position.set(a[0], 0.75, a[1]); scene.add(mesh);
   return { x: a[0], z: a[1], kind: a[2], value: a[3], taken: false, mesh: mesh, fx: rarFx(a[0], a[1], a[2]) };
 }
+/* 地圖陷阱：彈簧（綠色彈簧圈，踩到衝刺）、大坑（深色坑洞，踩到減速） */
+let trapMeshes = [];
+function clearTraps() { trapMeshes.forEach(function (m) { scene.remove(m); }); trapMeshes = []; }
+function buildTraps() {
+  clearTraps();
+  (view.traps || []).forEach(function (t) {
+    const g = new THREE.Group();
+    if (t[2] === 0) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.1, 8, 20), new THREE.MeshBasicMaterial({ color: 0x4ade80 }));
+      ring.rotation.x = Math.PI / 2; ring.position.y = 0.12; g.add(ring);
+      const coil = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.28, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0x86efac, wireframe: true }));
+      coil.position.y = 0.18; g.add(coil);
+    } else {
+      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.85, 24), new THREE.MeshBasicMaterial({ color: 0x1a120c }));
+      hole.rotation.x = -Math.PI / 2; hole.position.y = 0.03; g.add(hole);
+      const rim = new THREE.Mesh(new THREE.RingGeometry(0.85, 1.0, 24), new THREE.MeshBasicMaterial({ color: 0x8a6a4a, side: THREE.DoubleSide }));
+      rim.rotation.x = -Math.PI / 2; rim.position.y = 0.035; g.add(rim);
+    }
+    g.position.set(t[0], 0, t[1]); scene.add(g); trapMeshes.push(g);
+  });
+}
+/** 站在陷阱上的速度倍率：彈簧衝刺 1.2 秒（冷卻 1.5 秒），大坑減速。 */
+function trapMul(dt) {
+  if (!view.traps || !view.traps.length || me.riding || me.passenger || !me.alive) return 1;
+  me.springCd = Math.max(0, (me.springCd || 0) - dt); me.springT = Math.max(0, (me.springT || 0) - dt);
+  let m = 1;
+  view.traps.forEach(function (t) {
+    const d = Math.hypot(t[0] - me.x, t[1] - me.z);
+    if (t[2] === 0 && d < 1.0 && me.springCd <= 0) { me.springT = 1.2; me.springCd = 1.5; }
+    if (t[2] === 1 && d < 1.0) m *= 0.45;
+  });
+  if (me.springT > 0) m *= 1.8;
+  return m;
+}
 function itemVis(it, v) { it.mesh.visible = v; if (it.fx) it.fx.visible = v; }
 /* ---------- 每幀更新 ---------- */
 function updateMe(dt) {
@@ -2534,7 +2568,7 @@ function updateMe(dt) {
   else { me.stam = Math.min(1, me.stam + 0.28 * (myPet() === 4 ? 1.2 : 1) * (myC() === 7 ? 1.15 : 1) * dt); if (me.tired && me.stam > 0.2) me.tired = false; }
   if (me.rallyT > 0) me.rallyT -= dt;
   const speed0 = (wantRun ? 9.0 : 4.2) * (me.bagN ? 1 - 0.07 * me.bagN : 1.05) * CHAR_SPEED[myC()] * (myPet() === 1 ? 1.05 : 1) * (myEq(1) ? 1.06 : 1) * (iceNear() ? 0.75 : 1) * (me.rallyT > 0 ? 1.2 : 1);   // 靠近藍色（冰）怪物減速 25%
-  const speed = (view.mode === 'race' ? 11 : me.riding ? 11.5 * (iceNear() ? 0.75 : 1) : speed0) * (quakeT > 0 ? 0.6 : 1);   // 推車：固定高速、不受背包影響；地震時變慢
+  const speed = (view.mode === 'race' ? 11 : me.riding ? 11.5 * (iceNear() ? 0.75 : 1) : speed0) * (quakeT > 0 ? 0.6 : 1) * trapMul(dt);   // 推車：固定高速、不受背包影響；地震時變慢
   const sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   // 跳：耗 18% 體力，在空中時怪物抓不到；衝刺：往移動方向（沒動就往前）瞬間衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒
   if (me.riding) { jumpQ = false; dashQ = false; }   // 推車上不能跳、衝
@@ -2928,7 +2962,8 @@ RR.Game = {
   state: function () { const others = {}; view.players.forEach(function (p) { if (p.id !== myId) others[p.id] = [p.x, p.z, p.alive, !!(p.avatar && p.avatar.visible)]; }); return { phase: view.phase, alive: me.alive, x: me.x, z: me.z, others: others, spec: specId, players: view.players.size, items: view.items.length, monsters: view.monsters.filter(function (m) { return m.group.visible; }).length }; },
   setActive: function (b) {
     active = !!b;
-    document.body.classList.toggle('playing', active); if (!active) document.body.classList.remove('allowPortrait');   // 每局重新提醒轉橫式
+    document.body.classList.toggle('playing', active); if (!active) document.body.classList.remove('allowPortrait');
+    if (!active) { clearTraps(); view.traps = []; }   // 每局重新提醒轉橫式
     $('hud').classList.toggle('hide', !active);
     if (!active) {
       view.mode = 'coop';   // 離開對局：賽車 HUD（氮氣、復位、車況、道具）跟著收起來
@@ -2969,6 +3004,7 @@ RR.Game = {
     if (builtMap !== W.mapIndex || builtBase !== view.base || Object.keys(brokenVis).length) buildLevel();   // 前一天炸開的牆恢復原狀
     view.items.forEach(function (it) { scene.remove(it.mesh); if (it.fx) scene.remove(it.fx); });
     view.items = info.items.map(makeItem);
+    view.traps = info.traps || []; buildTraps();
     view.mode = info.mode || 'coop'; document.body.classList.toggle('td', view.mode === 'td'); syncTowers([]); view.td = null;
     buildRaceTrack(view.mode === 'race' ? (info.map || 0) : -1);
     if (view.mode === 'race') { me.spd = 0; me.boostT = 0; me.charge = 0; me.slideAng = 0; me.drifting = false; me.item = null; me.ckX = null; me.hp = 100; me.nitro = 0; me.nitroT = 0; me.pauseT = 0; me.hitCd = 0; }

@@ -556,6 +556,12 @@ Sim.prototype.startDay = function (day) {
     this.items.push({ x: r2(p[0] + (this.rng() - 0.5) * 2), z: r2(p[1] + (this.rng() - 0.5) * 2), kind: kind,
       value: Math.round((k.lo + this.rng() * (k.hi - k.lo)) / 5) * 5, taken: false });
   }
+  // 地圖陷阱：0 彈簧（踩到衝刺）、1 大坑（踩到減速）；每天 2 + 天數 個，不放在物品格上
+  this.traps = [];
+  if (!hunt && !br && this.mode !== 'race') {
+    const tn = Math.min(2 + day, Math.max(0, cands.length - count));
+    for (let i = 0; i < tn; i++) { const c = cands[count + i], p = center(c[0], c[1]); this.traps.push([r2(p[0]), r2(p[1]), i % 2]); }
+  }
   // 怪物：第 3 天起 2 隻，第 6 天起 3 隻
   const mc = br || td ? 0 : hunt ? Math.min(4, 1 + day) : day >= 6 ? 4 : day >= 3 ? 2 : 1;
   this.monsters = [];
@@ -609,7 +615,7 @@ Sim.prototype.dayInfo = function () {
   const spawns = {};
   this.players.forEach(function (p) { spawns[p.id] = [p.x, p.z]; });
   return { t: 'day', map: this.map, mode: this.mode, base: this.baseStyle, day: this.day, quota: this.quota, time: this.time, monsters: this.monsters.length,
-    items: this.items.map(function (i) { return [i.x, i.z, i.kind, i.value]; }), spawns: spawns, weather: this.weather || 0, zone: this.zone ? [this.zone.x, this.zone.z, this.zone.r0] : null };
+    items: this.items.map(function (i) { return [i.x, i.z, i.kind, i.value]; }), traps: this.traps || [], spawns: spawns, weather: this.weather || 0, zone: this.zone ? [this.zone.x, this.zone.z, this.zone.r0] : null };
 };
 Sim.prototype.toLobby = function () { this.phase = 'lobby'; this.day = 1; this.events = []; this.zone = null; this.players = this.players.filter(function (p) { return !p.ai; }); };
 
