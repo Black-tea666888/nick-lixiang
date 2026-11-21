@@ -1,0 +1,74 @@
+// 2048（無限板）：4×4 起步，往某一邊滑、貼到那一邊時自動多開一排，棋盤可以一直變大。
+// 紀錄板：本機前 10 名（分數、最大數字）。
+(function (g) {
+  'use strict';
+  const KEY = 'rr_2048_rec';
+  function empty(n) { const b = []; for (let r = 0; r < n; r++) b.push(new Array(n).fill(0)); return b; }
+  function addTile(b) {
+    const cells = [];
+    for (let r = 0; r < b.length; r++) for (let c = 0; c < b[r].length; c++) if (!b[r][c]) cells.push([r, c]);
+    if (!cells.length) return false;
+    const p = cells[Math.floor(Math.random() * cells.length)];
+    b[p[0]][p[1]] = Math.random() < 0.9 ? 2 : 4;
+    return true;
+  }
+  // 一排往左滑並合併（同一次滑動每個方塊只合併一次）
+  function slideRow(row) {
+    const v = row.filter(function (x) { return x; }), out = []; let gain = 0;
+    for (let i = 0; i < v.length; i++) {
+      if (i + 1 < v.length && v[i] === v[i + 1]) { out.push(v[i] * 2); gain += v[i] * 2; i++; }
+      else out.push(v[i]);
+    }
+    while (out.length < row.length) out.push(0);
+    return { row: out, gain: gain };
+  }
+  function transpose(b) { return b[0].map(function (_, c) { return b.map(function (r) { return r[c]; }); }); }
+  function reverseRows(b) { return b.map(function (r) { return r.slice().reverse(); }); }
+  function maxTile(b) { let m = 0; b.forEach(function (r) { r.forEach(function (x) { if (x > m) m = x; }); }); return m; }
+  function canMove(b) {
+    for (let r = 0; r < b.length; r++) for (let c = 0; c < b[r].length; c++) {
+      if (!b[r][c]) return true;
+      if (c + 1 < b[r].length && b[r][c] === b[r][c + 1]) return true;
+      if (r + 1 < b.length && b[r][c] === b[r + 1][c]) return true;
+    }
+    return false;
+  }
+  function start() {
+    const s = { board: empty(4), score: 0, over: false, moves: 0 };
+    addTile(s.board); addTile(s.board);
+    return s;
+  }
+  // dir: 'L' 'R' 'U' 'D'。回傳 { ok, state }；ok=false 表示這次滑不動
+  function move(state, dir) {
+    if (state.over) return { ok: false, state: state };
+    // 把四個方向都轉成「往左滑」來算：先轉置／反轉，滑完再轉回來
+    const flipIn = dir === 'R' || dir === 'D', tIn = dir === 'U' || dir === 'D';
+    let b = state.board.map(function (r) { return r.slice(); });
+    if (tIn) b = transpose(b);
+    if (flipIn) b = reverseRows(b);
+    let gain = 0;
+    b = b.map(function (r) { const s = slideRow(r); gain += s.gain; return s.row; });
+    if (flipIn) b = reverseRows(b);
+    if (tIn) b = transpose(b);
+    if (JSON.stringify(b) === JSON.stringify(state.board)) return { ok: false, state: state };
+    // 無限板：貼到哪一邊，那一邊就多開一排（之後還能往那邊滑）
+    if (dir === 'L' && b.some(function (r) { return r[0]; })) b.forEach(function (r) { r.unshift(0); });
+    if (dir === 'R' && b.some(function (r) { return r[r.length - 1]; })) b.forEach(function (r) { r.push(0); });
+    if (dir === 'U' && b[0].some(function (x) { return x; })) b.unshift(new Array(b[0].length).fill(0));
+    if (dir === 'D' && b[b.length - 1].some(function (x) { return x; })) b.push(new Array(b[0].length).fill(0));
+    addTile(b);
+    const next = { board: b, score: state.score + gain, over: false, moves: state.moves + 1 };
+    if (!canMove(b)) next.over = true;
+    return { ok: true, state: next };
+  }
+  function records() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+  function saveRecord(state) {
+    const list = records();
+    list.push({ score: state.score, max: maxTile(state.board), size: state.board.length, date: new Date().toISOString().slice(0, 10) });
+    list.sort(function (a, b) { return b.score - a.score; });
+    const top = list.slice(0, 10);
+    try { localStorage.setItem(KEY, JSON.stringify(top)); } catch (e) { /* 無法寫入就不記錄 */ }
+    return top;
+  }
+  g.G2048 = { start: start, move: move, records: records, saveRecord: saveRecord, maxTile: maxTile };
+})(window.RR = window.RR || {});

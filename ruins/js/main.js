@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v273', items: ['人在牆上超過 5 秒會跳出警告；跳關按鍵不再被遮住'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
+const UPD = { v: 'v275', items: ['小遊戲新增 2048（無限板）與紀錄板'] };
+const SCREENS = ['scr2048', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -1318,6 +1318,50 @@ let rmS = null, rmSel = {}, rmWT = [], rmLoose = [], rmBusy = false;
 const RM_CLS = ['c0', 'c1', 'c2', 'c3'];
 /* 五子棋（同機雙人） */
 let gmS = null;
+/* 2048（無限板） */
+let g2S = null;
+function g2Draw() {
+  const G = RR.G2048, bd = $('g2048Board'), s = g2S;
+  if (!bd || !s) return;
+  const n = s.board.length;
+  bd.style.gridTemplateColumns = 'repeat(' + n + ', 1fr)';
+  bd.innerHTML = '';
+  s.board.forEach(function (row) { row.forEach(function (v) {
+    const c = document.createElement('div');
+    c.className = 'g2Cell' + (v ? ' v' + Math.min(v, 2048) : '');
+    c.textContent = v ? String(v) : '';
+    bd.appendChild(c);
+  }); });
+  $('g2048Status').textContent = '分數 ' + s.score + '　最大 ' + G.maxTile(s.board) + (s.over ? '　遊戲結束' : '');
+  const rec = $('g2048Rec'); rec.innerHTML = '';
+  G.records().forEach(function (r) { const li = document.createElement('li'); li.textContent = r.date + '　' + r.score + ' 分　最大 ' + r.max + '　' + r.size + '×' + r.size; rec.appendChild(li); });
+  if (s.over && !s.saved) { s.saved = true; G.saveRecord(s); g2Draw(); }
+}
+function g2Move(d) {
+  if (!g2S) return;
+  const r = RR.G2048.move(g2S, d);
+  if (r.ok) { g2S = r.state; g2Draw(); }
+}
+function g2Open() { show('scr2048'); if (!g2S) g2S = RR.G2048.start(); g2Draw(); }
+function g2New() { g2S = RR.G2048.start(); g2Draw(); }
+document.addEventListener('keydown', function (e) {
+  const sc = $('scr2048');
+  if (!sc || sc.classList.contains('hide')) return;
+  const k = { ArrowLeft: 'L', ArrowRight: 'R', ArrowUp: 'U', ArrowDown: 'D' }[e.key];
+  if (k) { e.preventDefault(); g2Move(k); }
+});
+(function () {
+  let sx = 0, sy = 0, on = false;
+  const bd = document.getElementById('g2048Board');
+  if (!bd) return;
+  bd.addEventListener('pointerdown', function (e) { sx = e.clientX; sy = e.clientY; on = true; });
+  bd.addEventListener('pointerup', function (e) {
+    if (!on) return; on = false;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+    if (Math.abs(dx) > Math.abs(dy)) g2Move(dx > 0 ? 'R' : 'L'); else g2Move(dy > 0 ? 'D' : 'U');
+  });
+})();
 function gmOpen() { show('scrGomoku'); if (!gmS) gmS = RR.Gomoku.start(); gmDraw(); }
 function gmNew() { gmS = RR.Gomoku.start(); gmDraw(); }
 function gmTap(i) {
@@ -1780,7 +1824,7 @@ function recOptsOpen() {
   $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
 }
 /* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'c4', 'flight', 'pachi', 'kangle', 'plat', 'marble'] };
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'g2048', 'c4', 'flight', 'pachi', 'kangle', 'plat', 'marble'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
@@ -1796,6 +1840,7 @@ const CAS_HELP = {
   chess: '同一台裝置兩人輪流下棋。\n點選棋子再點目標格移動，把對方的王將死就獲勝。',
   xq: '同一台裝置兩人輪流下棋。\n點選棋子再點目標格移動，把對方的將軍死就獲勝。',
   rummi: '依拉密規則排出順子或同數字的組合，先出完手牌者獲勝。\n和電腦對戰；可以先摸牌或直接出牌。',
+  g2048: '滑動方向合併相同數字，拼越大分數越高。\n棋盤會隨著貼邊無限擴大，無法移動時結束，分數進紀錄板。',
   gomoku: '同一台裝置兩人輪流下子。\n先在橫、直、斜任一方向連成五子者獲勝。',
   c4: '同一台裝置兩人輪流投子，棋子會落到該欄最下方。\n先在橫、直、斜任一方向連成四子者獲勝。',
   flight: '2～4 人同一台裝置輪流。\n擲骰 6 點出發，沿路前進；踩到別人就把對方送回基地，先到終點者獲勝。',
@@ -2625,6 +2670,9 @@ function bind() {
   $('xqBtn').addEventListener('click', xqOpen);
   $('rummiBtn').addEventListener('click', rmOpen);
   $('gomokuBtn').addEventListener('click', gmOpen);
+  $('g2048Btn').addEventListener('click', g2Open);
+  $('g2048Back').addEventListener('click', showMenu);
+  $('g2048New').addEventListener('click', g2New);
   $('c4Btn').addEventListener('click', c4Open);
   $('flightBtn').addEventListener('click', flOpen);
   $('pachiBtn').addEventListener('click', pcOpen);
