@@ -933,6 +933,11 @@ function drawMini(L) {
   }
   // 自己（或觀戰對象）：箭頭指向面對的方向
   const fx = -Math.sin(L.yaw), fz = -Math.cos(L.yaw), x = L.x * k, y = L.z * k, s = MC * 0.75;
+  if (view.pad) {   // 傳送陣：青色脈動圓圈
+    const px = view.pad[0] * k, py = view.pad[1] * k, pr = MC * (0.9 + 0.25 * Math.sin(Date.now() / 200));
+    g.strokeStyle = '#66e0ff'; g.lineWidth = 2; g.beginPath(); g.arc(px, py, pr, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = 'rgba(102,224,255,0.35)'; g.beginPath(); g.arc(px, py, pr, 0, Math.PI * 2); g.fill();
+  }
   g.fillStyle = '#ffffff'; g.strokeStyle = '#000'; g.lineWidth = 1.5;
   g.beginPath();
   g.moveTo(x + fx * s, y + fz * s);
@@ -1795,6 +1800,28 @@ function applyWeather(w) {
   }
   const chip = $('wx'); chip.textContent = view.weather ? W.WEATHERS[view.weather] : ''; chip.classList.toggle('hide', !view.weather);
 }
+/** 傳送陣：大圓環 + 好幾道光柱從天上往下降落，遠遠就看得到。 */
+function makePadFx() {
+  const g = new THREE.Group();
+  const ring = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.4, 48), new THREE.MeshBasicMaterial({ color: 0x66e0ff, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.05; g.add(ring);
+  const bm = new THREE.MeshBasicMaterial({ color: 0x66e0ff, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
+  g.userData.beams = [];
+  for (let i = 0; i < 4; i++) {
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.6, 9, 14, 1, true), bm);
+    const a = i * Math.PI / 2 + 0.4, rr = 1.2;
+    b.position.set(Math.cos(a) * rr, 4.5, Math.sin(a) * rr); g.add(b); g.userData.beams.push(b);
+  }
+  g.userData.t = 0; scene.add(g); return g;
+}
+function tickPad(dt) {
+  if (!padMesh) return;
+  padMesh.userData.t += dt;
+  padMesh.userData.beams.forEach(function (b, i) {
+    const ph = (padMesh.userData.t * 0.6 + i * 0.25) % 1;   // 光柱由上往下降，循環
+    b.position.y = 9 - ph * 9; b.material.opacity = 0.15 + 0.3 * (1 - ph);
+  });
+}
 function tickWeather(dt) {
   if (rain) {
     const a = rain.geometry.attributes.position, storm = view.weather === 4;
@@ -2561,7 +2588,7 @@ function updateMe(dt) {
     if (dv > view.pz && dv > (W.BASE_R || 1.85)) { poisonT -= dt; if (poisonT <= 0) { poisonT = 3; toast('你在毒圈裡！往基地光圈跑'); } hurtFlash = Math.max(hurtFlash, 0.2); }
     else poisonT = 0;
   }
-  fpsWatch(dt); tickWeather(dt);
+  fpsWatch(dt); tickWeather(dt); tickPad(dt);
   if (view.zone && me.alive && Math.hypot(me.x - view.zone[0], me.z - view.zone[1]) > view.zr) { outT -= dt; if (outT <= 0) { outT = 2.5; toast('你在安全區外，正在扣血！往白圈裡跑'); Sfx.tone(300, 0.15, 'square', 0.08); } hurtFlash = Math.max(hurtFlash, 0.35); }
   if (gunMesh) { const kk = gunMesh.userData.kick || 0, tt = performance.now() / 1000, mv = (keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD || Math.abs(touch.jx) + Math.abs(touch.jy) > 0.1) ? 1 : 0.25;
     gunMesh.userData.kick = Math.max(0, kk - dt * 8); gunSway *= Math.max(0, 1 - dt * 6); gunMesh.position.set(-0.26 + gunSway + Math.sin(tt * 5) * 0.006 * mv, -0.27 + kk * 0.025 + Math.abs(Math.cos(tt * 5)) * 0.008 * mv, -0.5 + kk * 0.06); gunMesh.rotation.x = kk * 0.18; gunMesh.rotation.z = Math.sin(tt * 2.5) * 0.01 * mv; }
@@ -3016,12 +3043,10 @@ RR.Game = {
     const seatFree = !view.veh || !view.veh[2] || (view.veh[3] || []).length < 2;   // 沒人開車可以開；有人開車可以坐後座（最多 2 人）
     const nearV = view.veh && me.alive && (me.riding || me.passenger || (seatFree && Math.hypot(view.veh[0] - me.x, view.veh[1] - me.z) < 2.4));
     document.body.classList.toggle('nearveh', !!nearV); setIcon('veh', me.riding || me.passenger ? 'exit' : 'veh');
-    if (s.pad && !padMesh) {
-      padMesh = new THREE.Mesh(new THREE.RingGeometry(0.6, 1.0, 40), new THREE.MeshBasicMaterial({ color: 0x66e0ff, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
-      padMesh.rotation.x = -Math.PI / 2; padMesh.position.y = 0.05; scene.add(padMesh);
-    }
+    if (s.pad && !padMesh) padMesh = makePadFx();
+    view.pad = s.pad || null;
     view.pz = s.pz != null ? s.pz : null; setPoison(view.pz);
-    if (s.pad && padMesh) padMesh.position.set(s.pad[0], 0.05, s.pad[1]);
+    if (s.pad && padMesh) padMesh.position.set(s.pad[0], 0, s.pad[1]);
     if (!s.pad && padMesh) { scene.remove(padMesh); padMesh = null; }
     view.phase = s.ph; view.day = s.day; view.money = s.money; view.quota = s.quota; view.time = s.time;
     for (let i = 0; i < s.p.length; i++) {
