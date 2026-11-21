@@ -1380,3 +1380,14 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .gmCell.W::after { background: radial-gradient(circle at 35% 35%, #fff, #cfcfcf); }
 .gmCell.last::after { box-shadow: 0 0 0 2px #ffd23a; }
 .gmCell.win::after { box-shadow: 0 0 0 2px #3fae5a; }
+
+/* 四子連珠 */
+.c4Board { display: grid; grid-template-columns: repeat(7, 1fr); width: 100%; max-width: 360px; margin: 8px auto; padding: 6px; background: #2a5fb0; border: 2px solid #163a73; border-radius: 10px; box-sizing: border-box; gap: 4px; }
+.c4Col { display: flex; flex-direction: column; gap: 4px; padding: 0; border: none; background: transparent; cursor: pointer; }
+.c4Col:disabled { cursor: default; }
+.c4Slot { position: relative; display: block; aspect-ratio: 1 / 1; border-radius: 50%; background: #0f2a57; }
+.c4Slot.R, .c4Slot.Y { box-shadow: inset 0 2px 4px rgba(0, 0, 0, .35); }
+.c4Slot.R { background: radial-gradient(circle at 35% 35%, #ff8a80, #c62828); }
+.c4Slot.Y { background: radial-gradient(circle at 35% 35%, #fff59d, #f9a825); }
+.c4Slot.last { outline: 2px solid #fff; outline-offset: -2px; }
+.c4Slot.win { outline: 3px solid #3fae5a; outline-offset: -3px; }

@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v244', items: ['休閒模式新增「五子棋」（同機雙人，先連五子者勝）'] };
-const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku'];
+const UPD = { v: 'v245', items: ['休閒模式新增「四子連珠」（同機雙人，直橫斜先連四子者勝）'] };
+const SCREENS = ['scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -1345,6 +1345,41 @@ function gmDraw() {
   else msg = (gmS.turn === 'b' ? '黑方' : '白方') + '下子';
   $('gomokuStatus').textContent = msg;
 }
+/* 四子連珠（同機雙人） */
+let c4S = null;
+function c4Open() { show('scrC4'); if (!c4S) c4S = RR.Connect4.start(); c4Draw(); }
+function c4New() { c4S = RR.Connect4.start(); c4Draw(); }
+function c4Tap(col) {
+  const r = RR.Connect4.move(c4S, col);
+  if (r.ok) c4S = r.state;
+  c4Draw();
+}
+function c4Draw() {
+  const G = RR.Connect4, bd = $('c4Board');
+  bd.textContent = '';
+  const winSet = {};
+  if (c4S.win) c4S.win.line.forEach(function (i) { winSet[i] = 1; });
+  const full = c4S.win || c4S.draw;
+  for (let col = 0; col < G.COLS; col++) {
+    const colBtn = mk('button', 'c4Col', '');
+    colBtn.type = 'button';
+    colBtn.disabled = !!full || G.dropCell(c4S.b, col) < 0;
+    colBtn.setAttribute('aria-label', (col + 1) + '號欄');
+    for (let r = 0; r < G.ROWS; r++) {
+      const i = r * G.COLS + col, p = c4S.b[i];
+      const cls = 'c4Slot' + (p === 'r' ? ' R' : p === 'y' ? ' Y' : '') + (winSet[i] ? ' win' : '') + (c4S.last === i ? ' last' : '');
+      colBtn.appendChild(mk('span', cls, ''));
+    }
+    colBtn.addEventListener('click', (function (k) { return function () { c4Tap(k); }; })(col));
+    bd.appendChild(colBtn);
+  }
+  const st = G.status(c4S);
+  let msg;
+  if (st.k === 'win') msg = (st.winner === 'r' ? '紅方' : '黃方') + '連成四子，獲勝！';
+  else if (st.k === 'draw') msg = '棋盤下滿了，和局。';
+  else msg = (c4S.turn === 'r' ? '紅方' : '黃方') + '落子';
+  $('c4Status').textContent = msg;
+}
 let rmDeadline = 0, rmTimer = null;
 const RM_TURN_MS = 60000;   // 每回合 1 分鐘
 function rmOpen() { show('scrRummi'); if (!rmS) rmS = RR.Rummi.start(); rmResetTurn(); rmStartTurn(); rmDraw(); if (!rmTimer) rmTimer = setInterval(rmTick, 1000); }
@@ -1574,11 +1609,11 @@ function recOptsOpen() {
   $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
 }
 /* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'plat', 'marble'] };
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'c4', 'plat', 'marble'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', plat: '跳關', marble: '彈珠' };
+const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', plat: '跳關', marble: '彈珠' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 function refreshLobby() {
   const m = selMode();
@@ -2399,6 +2434,9 @@ function bind() {
   $('xqBtn').addEventListener('click', xqOpen);
   $('rummiBtn').addEventListener('click', rmOpen);
   $('gomokuBtn').addEventListener('click', gmOpen);
+  $('c4Btn').addEventListener('click', c4Open);
+  $('c4Back').addEventListener('click', showMenu);
+  $('c4New').addEventListener('click', c4New);
   $('gomokuBack').addEventListener('click', showMenu);
   $('gomokuNew').addEventListener('click', gmNew);
   $('rummiBack').addEventListener('click', showMenu);
