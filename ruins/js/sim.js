@@ -305,7 +305,15 @@ const MAPS = [
   ] }
 ];
 const CS = 4, WH = 3.6;
-const MON_SH = 40;   // 怪物護盾：傷害先扣護盾再扣血；5 秒沒被打就每秒回 10 點
+// 每日強化（關卡生存）：每天開始前三選一，同一項重複抽到會疊加層數
+const UPG = {
+  p: [{ id: 'coin', name: '金幣加成', desc: '擊倒怪物獲得金幣 +15%／層' }, { id: 'hp', name: '強化血量', desc: '最大血量 +20／層' }, { id: 'time', name: '延長時限', desc: '每天時間 +15 秒／層' }],
+  m: [{ id: 'hpdown', name: '怪物血量下降', desc: '怪物血量 -15%／層' }, { id: 'noarmor', name: '移除護甲', desc: '怪物沒有護盾' }, { id: 'slow', name: '怪物減速', desc: '怪物移速 -8%／層' }, { id: 'sight', name: '感知縮短', desc: '怪物感知距離 -15%／層' }]
+};
+const UPG_MODES = { coop: 1, hunt: 1, td: 1 };   // 有怪物的模式才有強化
+const MON_SH = 40;
+// 怪物血量／護盾（依強化調整）
+function monStats(up) { const lv = (up || {}).hpdown || 0, na = (up || {}).noarmor || 0; return { hp: Math.round(100 * Math.max(0.4, 1 - 0.15 * lv)), sh: na ? 0 : MON_SH }; }   // 怪物護盾：傷害先扣護盾再扣血；5 秒沒被打就每秒回 10 點
 function monHit(m, dmg) { m.shT = 0; const a = Math.min(m.sh || 0, dmg); m.sh = (m.sh || 0) - a; m.hp -= dmg - a; }
 // 賽車場地接在廢墟地圖後面（索引 RUIN_N 起）；其他模式只用廢墟地圖
 const RUIN_N = MAPS.length;
@@ -536,7 +544,10 @@ Sim.prototype.startDay = function (day) {
   if (this.mode === 'race' && this.map < RUIN_N) this.map = arenaIdx(this.map);   // 賽車一律用賽道場地
   this.map = setMap(this.map);
   const self = this, n = Math.max(1, this.players.length);
-  this.day = day; this.phase = 'play'; this.money = 0; this.time = DAY_TIME; this.pad = null;
+  this.day = day; this.phase = 'play'; this.money = 0; this.pad = null;
+  const U = this.upg || {};
+  this.time = DAY_TIME + 15 * (U.time || 0);   // 延長時限
+  this.pendingPick = (day > 1 && UPG_MODES[this.mode]) ? this.pickOptions() : null;   // 每天開始前三選一（有怪物的模式）
   this.boardPos = this._spotAt(VAN[0], VAN[1], 2.5, 4) || [VAN[0] + 2.5, VAN[1]];
   this.tt = newTT();
   this.trophy = this._spotAt(VAN[0], VAN[1], 12, 25);   // 搶獎盃：地圖上一座獎盃，按住 E 3 秒的人拿走
@@ -575,7 +586,7 @@ Sim.prototype.startDay = function (day) {
   for (let i = 0; i < mc; i++) {
     const mcell = MONSTER_CELLS[i] || floorCells[Math.floor(this.rng() * floorCells.length)];   // 地圖的怪物點不夠時，隨機放在地板上
     const p = center(mcell[0], mcell[1]);
-    this.monsters.push({ x: p[0], z: p[1], rot: 0, state: 'wander', path: null, goal: null, lost: 0, repath: 0, cool: 0, target: null, hp: 100, maxHp: 100, sh: MON_SH, shMax: MON_SH, shT: 0, dead: 0 });
+    this.monsters.push({ x: p[0], z: p[1], rot: 0, state: 'wander', path: null, goal: null, lost: 0, repath: 0, cool: 0, target: null, hp: monStats(this.upg).hp, maxHp: monStats(this.upg).hp, sh: monStats(this.upg).sh, shMax: monStats(this.upg).sh, shT: 0, dead: 0 });
   }
   if (hunt || br) this.trophy = null;
   this.chaseSpeed = Math.min(3.9 + 0.1 * (day - 1), 4.9);   // 跑步（9）一定甩得掉；走路（4.2）在後期甩不掉
@@ -736,7 +747,7 @@ Sim.prototype.shoot = function (id, yaw) {
       const m = this.monsters[hit]; hx = m.x; hz = m.z;
       if (hunt) {
         monHit(m, G.dmg * gem * fall); m.cool = 0.25;
-        if (m.hp <= 0) { kill = true; m.dead = td ? 1e9 : 3; m.idle = td; m.state = 'wander'; m.path = null; this.money += 50; p.earned += 50; p.mk = (p.mk || 0) + 1; }
+        if (m.hp <= 0) { kill = true; m.dead = td ? 1e9 : 3; m.idle = td; m.state = 'wander'; m.path = null; this.money += this._killGold(); p.earned += 50; p.mk = (p.mk || 0) + 1; }
         else if (!td) { m.state = 'chase'; m.target = p.id; m.goal = cellOf(p.x, p.z); m.lost = 0; m.repath = 0; }
       } else {
         m.cool = Math.max(m.cool || 0, G.stun + 0.2 * (p.gems ? p.gems[0] : 0));
@@ -884,6 +895,18 @@ Sim.prototype._respawn = function (m) {
 
 /** 近戰攻擊：前方 2.4 公尺、約 110 度扇形內最近的玩家。兩下致死。 */
 // 近戰打怪物（清剿／死守／回收）：前方扇形內最近的怪物，傷害先扣護盾；回收任務打中會暈
+Sim.prototype._killGold = function () { return Math.round(50 * (1 + 0.15 * ((this.upg || {}).coin || 0))); };
+Sim.prototype.pickOptions = function () {
+  const pool = UPG.p.concat(UPG.m), out = [];
+  while (out.length < 3 && pool.length) out.push(pool.splice(Math.floor(this.rng() * pool.length), 1)[0]);
+  return out;
+};
+Sim.prototype.applyUpgrade = function (id) {
+  if (!this.pendingPick || !this.pendingPick.some(function (o) { return o.id === id; })) return false;
+  this.upg = this.upg || {}; this.upg[id] = (this.upg[id] || 0) + 1; this.pendingPick = null;
+  if (id === 'hp') this.players.forEach(function (p) { p.hp = Math.min(p.hp + 20, maxHp(p) + 20); });
+  return true;
+};
 Sim.prototype._meleeMon = function (a, wf) {
   const fx = -Math.sin(a.yaw), fz = -Math.cos(a.yaw), dmg = wf ? wf.dmg : 50;
   let best = null, bd = wf ? wf.rng : 2.4;
@@ -900,7 +923,7 @@ Sim.prototype._meleeMon = function (a, wf) {
   const m = best, td = this.mode === 'td', hunt = this.mode === 'hunt' || td;
   monHit(m, 9999);   // 近戰一刀秒殺怪物（不論武器，護盾也擋不住）
   if (hunt) {
-    if (m.hp <= 0) { m.dead = td ? 1e9 : 3; m.idle = td; m.state = 'wander'; m.path = null; this.money += 50; a.earned += 50; a.mk = (a.mk || 0) + 1; }
+    if (m.hp <= 0) { m.dead = td ? 1e9 : 3; m.idle = td; m.state = 'wander'; m.path = null; this.money += this._killGold(); a.earned += 50; a.mk = (a.mk || 0) + 1; }
     else { m.cool = Math.max(m.cool || 0, 0.25); m.state = 'chase'; m.target = a.id; m.goal = cellOf(a.x, a.z); m.lost = 0; m.repath = 0; }
   } else {
     m.cool = Math.max(m.cool || 0, 1.5);
@@ -1126,7 +1149,7 @@ Sim.prototype._stepTD = function (dt) {
     if (best < 0) { t.cd = 0.2; return; }
     const m = self.monsters[best]; t.cd = 0.55; monHit(m, 25);
     let kill = false;
-    if (m.hp <= 0) { kill = true; m.idle = true; m.dead = 1e9; self.money += 50; }
+    if (m.hp <= 0) { kill = true; m.idle = true; m.dead = 1e9; self.money += self._killGold(); }
     self.events.push({ t: 'tshot', x: t.x, z: t.z, hx: r2(m.x), hz: r2(m.z), mi: best, kill: kill });
   });
   if (T.core <= 0) { this._end(false, 'core'); return; }
@@ -1138,8 +1161,8 @@ Sim.prototype._monster = function (m, mi, dt, alive) {
   if (m.cool > 0) { m.cool -= dt; return; }
   let best = null, bd = 1e9, bestSees = false;
   for (let i = 0; i < alive.length; i++) {
-    const wx = this.weather || 0, hf = WX_HEAR[wx];
-    const p = alive[i], d = Math.hypot(p.x - m.x, p.z - m.z) * (p.c === 5 ? 1.33 : 1) * (p.stealthT > 0 ? 2 : 1) * WX_SIGHT[wx];   // 紙箱人較難被發現；壞天氣怪物看不遠
+    const wx = this.weather || 0, hf = WX_HEAR[wx], sightMul = 1 / (1 - 0.15 * ((this.upg || {}).sight || 0));
+    const p = alive[i], d = Math.hypot(p.x - m.x, p.z - m.z) * (p.c === 5 ? 1.33 : 1) * (p.stealthT > 0 ? 2 : 1) * WX_SIGHT[wx] * sightMul;   // 紙箱人較難被發現；壞天氣怪物看不遠
     // 躲在櫃子旁（1.4 公尺內、沒有在跑）：怪物看不到，除非牠已經貼到 2.5 公尺內
     const hid = p.lk ? d > 1.0 : !p.run && d > 2.5 && LOCKERS.some(function (k) { return Math.hypot(k[0] - p.x, k[1] - p.z) < 1.4; });
     const inSmoke = (this.smokes || []).some(function (k) { return Math.hypot(k.x - p.x, k.z - p.z) < 3; });   // 站在煙裡怪物看不到
