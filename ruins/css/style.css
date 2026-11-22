@@ -1441,3 +1441,4 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .upgCard { display: grid; gap: 4px; text-align: left; padding: 12px; background: var(--haz, #f0c94a); color: var(--ink, #1b1b1b); border: 3px solid var(--ink, #1b1b1b); cursor: pointer; font: inherit; }
 .upgCard b { font-size: 16px; }
 .upgCard span { font-size: 13px; }
+.socAct { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
