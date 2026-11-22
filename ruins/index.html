@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=325" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=326" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -905,6 +905,7 @@
       <button class="icon" id="stDone" type="button" aria-label="返回">‹</button>
       <b class="dwTitle">個人戰績</b>
       <button class="btn hide" id="stAva" type="button" style="flex:none;font-size:13px;padding:8px 10px">換頭像</button>
+      <button class="btn" id="stCfgBtn" type="button" style="flex:none;font-size:13px;padding:8px 10px">自訂</button>
     </header>
     <div class="stHead" id="stHead"></div>
     <div class="mkTabs stTabs" id="stTabs" role="tablist"><button type="button" class="on" data-m="all">全部</button><button type="button" data-m="coop">回收</button><button type="button" data-m="hunt">清剿</button><button type="button" data-m="td">死守</button><button type="button" data-m="br">廢墟生存戰</button><button type="button" data-m="card">怪物卡牌</button></div>
@@ -913,6 +914,7 @@
   </div>
 </div>
 
+<div class="modal hide" id="stCfg"><div class="panel small tut"><h2>戰績頁顯示</h2><p>勾選要顯示的項目，取消勾選即隱藏。</p><div class="stCfgList" id="stCfgList"></div><div class="row"><button class="btn primary" id="stCfgOk" type="button">完成</button></div></div></div>
 <!-- 新手教學（第一次進遊戲時出現） -->
 <div class="modal hide" id="avaPick"><div class="panel small tut"><h2>選擇頭像</h2><div class="avaGrid" id="avaGrid"></div><div class="row"><label class="btn" for="avaFile" style="cursor:pointer">用我的照片</label><input id="avaFile" type="file" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0"><button class="btn" id="avaReset" type="button">恢復底色</button></div><div class="row"><button class="btn" id="avaClose" type="button">關閉</button></div></div></div>
 <div class="modal hide" id="raceOpts"><div class="panel small tut"><h2>賽車</h2><p>單人計時練習，或和朋友 1 對 1 比誰先跑完 3 圈。</p><div class="row"><button class="btn primary" id="raceSolo" type="button">單人練習</button></div><div class="duoNet"><button class="btn" id="raceDuelHost" type="button">建立雙人房間</button><div class="row join"><input id="raceDuelJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="raceDuelJoin" type="button">加入</button></div></div><div class="row"><button class="btn" id="raceOptsOk" type="button">關閉</button></div></div></div>
@@ -941,34 +943,34 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=325"></script>
-<script src="js/race_tracks.js?v=325"></script>
-<script src="js/race_arenas.js?v=325"></script>
-<script src="js/sim.js?v=325"></script>
-<script src="js/audio.js?v=325"></script>
-<script src="js/auth.js?v=325"></script>
-<script src="js/cloud.js?v=325"></script>
-<script src="js/net.js?v=325"></script>
-<script src="js/game.js?v=325"></script>
-<script src="js/minigames.js?v=325"></script>
-<script src="js/ar.js?v=325"></script>
-<script src="js/padnav.js?v=325"></script>
-<script src="js/cards.js?v=325"></script>
-<script src="js/chess.js?v=325"></script>
-<script src="js/chess_art.js?v=325"></script>
-<script src="js/xiangqi.js?v=325"></script>
-<script src="js/rummi.js?v=325"></script>
-<script src="js/gomoku.js?v=325"></script>
-<script src="js/blackjack.js?v=325"></script>
-<script src="js/g2048.js?v=325"></script>
-<script src="js/orb.js?v=325"></script>
-<script src="js/mahjong.js?v=325"></script>
-<script src="js/connect4.js?v=325"></script>
-<script src="js/flight.js?v=325"></script>
-<script src="js/pachinko.js?v=325"></script>
-<script src="js/carrom.js?v=325"></script>
-<script src="js/platform.js?v=325"></script>
-<script src="js/marble.js?v=325"></script>
-<script src="js/main.js?v=325"></script>
+<script src="js/config.js?v=326"></script>
+<script src="js/race_tracks.js?v=326"></script>
+<script src="js/race_arenas.js?v=326"></script>
+<script src="js/sim.js?v=326"></script>
+<script src="js/audio.js?v=326"></script>
+<script src="js/auth.js?v=326"></script>
+<script src="js/cloud.js?v=326"></script>
+<script src="js/net.js?v=326"></script>
+<script src="js/game.js?v=326"></script>
+<script src="js/minigames.js?v=326"></script>
+<script src="js/ar.js?v=326"></script>
+<script src="js/padnav.js?v=326"></script>
+<script src="js/cards.js?v=326"></script>
+<script src="js/chess.js?v=326"></script>
+<script src="js/chess_art.js?v=326"></script>
+<script src="js/xiangqi.js?v=326"></script>
+<script src="js/rummi.js?v=326"></script>
+<script src="js/gomoku.js?v=326"></script>
+<script src="js/blackjack.js?v=326"></script>
+<script src="js/g2048.js?v=326"></script>
+<script src="js/orb.js?v=326"></script>
+<script src="js/mahjong.js?v=326"></script>
+<script src="js/connect4.js?v=326"></script>
+<script src="js/flight.js?v=326"></script>
+<script src="js/pachinko.js?v=326"></script>
+<script src="js/carrom.js?v=326"></script>
+<script src="js/platform.js?v=326"></script>
+<script src="js/marble.js?v=326"></script>
+<script src="js/main.js?v=326"></script>
 </body>
 </html>

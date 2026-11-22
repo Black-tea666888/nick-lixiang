@@ -1546,3 +1546,8 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 @keyframes raceFx { from { box-shadow: 0 0 0 0 rgba(90, 200, 255, .9); } to { box-shadow: 0 0 0 16px rgba(90, 200, 255, 0); } }
 @keyframes raceJump { 0% { transform: translateY(0); } 40% { transform: translateY(-6px); } 100% { transform: none; } }
 @media (prefers-reduced-motion: reduce) { #raceNitro.raceFx, #raceStat.raceJump { animation: none; } }
+
+/* 戰績頁自訂：勾選清單 */
+.stCfgList { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.stCfgItem { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.stCfgItem input { width: 20px; height: 20px; }
