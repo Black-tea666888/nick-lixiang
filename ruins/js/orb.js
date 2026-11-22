@@ -11,7 +11,10 @@
     { name: '第 3 關', moves: 15, goal: 60 }
   ];
 
-  const rnd = function (n) { return Math.floor(Math.random() * n); };
+  // 雙人模式用同一組種子開局；沒有種子時用 Math.random（單機不受影響）
+  let R = Math.random;
+  function mulberry(seed) { let a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const rnd = function (n) { return Math.floor(R() * n); };
   const idx = function (c, r) { return r * COLS + c; };
 
   /** 產生一盤沒有開局連消的盤面 */
@@ -80,7 +83,8 @@
   }
 
   /** 新遊戲：關卡 0..2 */
-  function start(level) {
+  function start(level, seed) {
+    R = seed == null ? Math.random : mulberry(seed);
     const lv = LEVELS[level || 0];
     return { level: level || 0, board: newBoard(), movesLeft: lv.moves, goal: lv.goal, cleared: 0, score: 0, over: false, won: false };
   }

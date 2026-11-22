@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=300" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=301" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -391,6 +391,7 @@
       <button class="btn" id="orbNew" type="button">重新開始</button>
     </header>
     <p class="chessStatus" id="orbStatus" aria-live="polite"></p>
+    <div class="duoNet"><button class="btn" id="orbDuelHost" type="button">建立雙人房間</button><div class="row join"><input id="orbDuelJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="orbDuelJoin" type="button">加入</button></div><p class="note" id="orbDuelCode"></p><p class="note" id="orbDuelNote"></p><p class="chessStatus" id="orbDuelState"></p></div>
     <div class="orbBoard" id="orbBoard"></div>
     <p class="chessStatus" id="orbMsg" aria-live="polite"></p>
     <div class="col"><button class="btn primary hide" id="orbNext" type="button">下一關</button></div>
@@ -419,6 +420,7 @@
       <button class="btn" id="g2048New" type="button">重新開始</button>
     </header>
     <p class="chessStatus" id="g2048Status" aria-live="polite"></p>
+    <div class="duoNet"><button class="btn" id="g2048DuelHost" type="button">建立雙人房間</button><div class="row join"><input id="g2048DuelJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="g2048DuelJoin" type="button">加入</button></div><p class="note" id="g2048DuelCode"></p><p class="note" id="g2048DuelNote"></p><p class="chessStatus" id="g2048DuelState"></p></div>
     <div class="g2048Board" id="g2048Board"></div>
     <p class="ccEmpty">用方向鍵或在棋盤上滑動。貼到邊就會多開一排。</p>
     <h3 class="sec">紀錄板（前 10 名）</h3>
@@ -930,34 +932,34 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=300"></script>
-<script src="js/race_tracks.js?v=300"></script>
-<script src="js/race_arenas.js?v=300"></script>
-<script src="js/sim.js?v=300"></script>
-<script src="js/audio.js?v=300"></script>
-<script src="js/auth.js?v=300"></script>
-<script src="js/cloud.js?v=300"></script>
-<script src="js/net.js?v=300"></script>
-<script src="js/game.js?v=300"></script>
-<script src="js/minigames.js?v=300"></script>
-<script src="js/ar.js?v=300"></script>
-<script src="js/padnav.js?v=300"></script>
-<script src="js/cards.js?v=300"></script>
-<script src="js/chess.js?v=300"></script>
-<script src="js/chess_art.js?v=300"></script>
-<script src="js/xiangqi.js?v=300"></script>
-<script src="js/rummi.js?v=300"></script>
-<script src="js/gomoku.js?v=300"></script>
-<script src="js/blackjack.js?v=300"></script>
-<script src="js/g2048.js?v=300"></script>
-<script src="js/orb.js?v=300"></script>
-<script src="js/mahjong.js?v=300"></script>
-<script src="js/connect4.js?v=300"></script>
-<script src="js/flight.js?v=300"></script>
-<script src="js/pachinko.js?v=300"></script>
-<script src="js/carrom.js?v=300"></script>
-<script src="js/platform.js?v=300"></script>
-<script src="js/marble.js?v=300"></script>
-<script src="js/main.js?v=300"></script>
+<script src="js/config.js?v=301"></script>
+<script src="js/race_tracks.js?v=301"></script>
+<script src="js/race_arenas.js?v=301"></script>
+<script src="js/sim.js?v=301"></script>
+<script src="js/audio.js?v=301"></script>
+<script src="js/auth.js?v=301"></script>
+<script src="js/cloud.js?v=301"></script>
+<script src="js/net.js?v=301"></script>
+<script src="js/game.js?v=301"></script>
+<script src="js/minigames.js?v=301"></script>
+<script src="js/ar.js?v=301"></script>
+<script src="js/padnav.js?v=301"></script>
+<script src="js/cards.js?v=301"></script>
+<script src="js/chess.js?v=301"></script>
+<script src="js/chess_art.js?v=301"></script>
+<script src="js/xiangqi.js?v=301"></script>
+<script src="js/rummi.js?v=301"></script>
+<script src="js/gomoku.js?v=301"></script>
+<script src="js/blackjack.js?v=301"></script>
+<script src="js/g2048.js?v=301"></script>
+<script src="js/orb.js?v=301"></script>
+<script src="js/mahjong.js?v=301"></script>
+<script src="js/connect4.js?v=301"></script>
+<script src="js/flight.js?v=301"></script>
+<script src="js/pachinko.js?v=301"></script>
+<script src="js/carrom.js?v=301"></script>
+<script src="js/platform.js?v=301"></script>
+<script src="js/marble.js?v=301"></script>
+<script src="js/main.js?v=301"></script>
 </body>
 </html>
