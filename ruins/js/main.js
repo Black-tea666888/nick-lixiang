@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v333', items: ['模式選擇頁最下方新增「人數」（2～4 人，記住上次選的；飛行棋的人數選擇會預設它）', '模式選擇頁最下方新增「下載到手機」提醒（可關掉，之後不再出現）', '廢墟地圖統一成同一個大小（不足的地圖在上下補牆，玩家範圍不變）', '第 4 天起，每隔一隻怪物變成「無眼雕像」：有人在 15 公尺內看得到牠時就停住不動', '廢墟生存戰的補給箱拿走後 30 秒會在空地重新出現', '地圖可以切成「隨機」：每局開始時從廢墟地圖中抽一張（房主設定，循環到最後一張後切換）'] };
+const UPD = { v: 'v334', items: ['模式選擇頁最下方新增「人數」（2～4 人，記住上次選的；飛行棋的人數選擇會預設它）', '模式選擇頁最下方新增「下載到手機」提醒（可關掉，之後不再出現）', '廢墟地圖統一成同一個大小（不足的地圖在上下補牆，玩家範圍不變）', '第 4 天起，每隔一隻怪物變成「無眼雕像」：有人在 15 公尺內看得到牠時就停住不動', '廢墟生存戰的補給箱拿走後 30 秒會在空地重新出現', '地圖可以切成「隨機」：每局開始時從廢墟地圖中抽一張（房主設定，循環到最後一張後切換）'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -3997,7 +3997,7 @@ paintPeople();
 { const tb = document.getElementById('installTipBtn'), tx = document.getElementById('installTipX');
   if (tb) tb.addEventListener('click', function () {
     if (installEv) { installEv.prompt(); installEv.userChoice.finally(function () { installEv = null; hideInstallTip(true); }); return; }
-    const tp = document.querySelector('#installTip p'); if (tp) { tp.textContent = 'iPhone：用 Safari 點分享 →「加入主畫面」'; setTimeout(function () { tp.textContent = '下載到手機，用起來像 App，也收得到通知'; }, 4000); }
+    const tp = document.querySelector('#installTip p'); if (tp) { const keep = tp.innerHTML; tp.textContent = 'iPhone：用 Safari 點分享 →「加入主畫面」'; setTimeout(function () { tp.innerHTML = keep; }, 4000); }
   });
   if (tx) tx.addEventListener('click', function () { hideInstallTip(true); });
   if (/iphone|ipad|ipod/i.test(navigator.userAgent)) window.addEventListener('load', showInstallTip);
