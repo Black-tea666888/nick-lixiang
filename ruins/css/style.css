@@ -789,7 +789,7 @@ details.fold #missions, details.fold #accList, details.fold #gemList, details.fo
 .cc { width: 100%; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; min-height: 0; height: 100%; }
 .ccLog { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 10px; background: var(--steel); border: 2px solid var(--ink); border-radius: 4px; -webkit-overflow-scrolling: touch; }
 .ccLog > * { flex: none; }
-.ccEmpty { margin: auto 0; text-align: center; font-size: 15px; color: var(--chalk); }
+.ccEmpty { margin: auto 0; text-align: center; font-size: 15px; color: #fff; background: rgba(17, 20, 23, .72); border-radius: 6px; padding: 8px 12px; line-height: 1.6; }
 .ccLog > .btn { align-self: center; }
 .ccMsg { align-self: flex-start; max-width: 82%; padding: 7px 10px; font-size: 15px; line-height: 1.4; color: var(--ink); background: var(--kraft-l); border: 2px solid var(--ink); border-radius: 3px; word-break: break-word; }
 .ccMsg b { display: block; font-size: 13px; color: var(--bin); }
@@ -1300,8 +1300,8 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .mailItem.unread > b::before { content: '● '; color: #d9573a; }
 .mailBody { margin: 4px 0 0 16px; padding: 0; font-size: 14px; }
 /* 國際象棋 */
-.chessBoard { display: grid; grid-template-columns: repeat(8, 1fr); width: min(92vw, 420px); aspect-ratio: 1; margin: 8px auto; border: 3px solid var(--ink); }
-.chSq { position: relative; font-size: clamp(22px, 6vw, 36px); line-height: 1; padding: 0; border: 0; background: #e8d7b0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.chessBoard { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); width: min(92vw, 420px); aspect-ratio: 1; margin: 8px auto; border: 3px solid var(--ink); }
+.chSq { position: relative; min-width: 0; min-height: 0; overflow: hidden; font-size: clamp(22px, 6vw, 36px); line-height: 1; padding: 0; border: 0; background: #e8d7b0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .chSq.dk { background: #8a6a4a; }
 .chSq.sel { outline: 3px solid #f0c040; outline-offset: -3px; }
 .chSq.tgt::after { content: ''; position: absolute; width: 28%; aspect-ratio: 1; border-radius: 50%; background: rgba(240, 192, 64, .75); }
@@ -1429,7 +1429,8 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 
 /* 2048（無限板） */
 .g2048Board { display: grid; gap: 6px; width: min(92vw, 420px); aspect-ratio: 1; margin: 12px auto; touch-action: none; user-select: none; -webkit-user-select: none; }
-.g2Cell { display: grid; place-items: center; background: #2a2f3a; border: 3px solid #1d2b4a; font: 700 clamp(14px, 4vw, 26px)/1 system-ui, sans-serif; color: #1d2b4a; min-height: 0; }
+.g2Cell { min-width: 0; min-height: 0; overflow: hidden; white-space: nowrap; display: grid; place-items: center; background: #2a2f3a; border: 3px solid #1d2b4a; font: 700 clamp(14px, 4vw, 26px)/1 system-ui, sans-serif; color: #1d2b4a; min-height: 0; }
+.g2Cell.big { font-size: clamp(10px, 2.8vw, 19px); }
 .g2Cell.v2 { background: #fff3d1; } .g2Cell.v4 { background: #ffe0a3; } .g2Cell.v8 { background: #ffc27a; color: #fff; }
 .g2Cell.v16 { background: #ff9f5a; color: #fff; } .g2Cell.v32 { background: #ff7a6b; color: #fff; } .g2Cell.v64 { background: #ff5a4a; color: #fff; }
 .g2Cell.v128, .g2Cell.v256, .g2Cell.v512, .g2Cell.v1024, .g2Cell.v2048 { background: #ffd84a; color: #1d2b4a; }
@@ -1466,3 +1467,5 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .mjTile { min-width: 46px; height: 58px; padding: 0 4px; font-size: 14px; font-weight: 700; background: #f4f0e6; color: #1b1e21; border: 2px solid var(--ink); border-radius: 4px; }
 .mjTile:disabled { opacity: .55; }
 .mjAct { display: flex; gap: 8px; justify-content: center; }
+
+#casHelpB { color: #1b1e21; background: #fff7e0; border: 2px solid var(--ink); border-radius: 6px; padding: 10px 12px; font-size: 15px; font-weight: 600; line-height: 1.6; }
