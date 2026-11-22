@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v284', items: ['每個頁面左上角新增重置按鈕（⟳），卡住時重新整理'] };
+const UPD = { v: 'v285', items: ['除錯面板增加場景狀態、視窗大小與橫式提示狀態'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -3239,7 +3239,8 @@ if (/[?&]dbg=1/.test(location.search)) {
     setInterval(function () {
       d.textContent = 'ctl:' + canControl() + ' active:' + active + ' phase:' + view.phase + ' alive:' + me.alive + ' edit:' + editing +
         '\njoy:' + touch.joyId + ' j:' + touch.jx.toFixed(2) + ',' + touch.jy.toFixed(2) + ' look:' + touch.lookId +
-        '\npos:' + me.x.toFixed(2) + ',' + me.z.toFixed(2) + ' keys:' + Object.keys(keys).filter(function (k) { return keys[k]; }).join(' ');
+        '\npos:' + me.x.toFixed(2) + ',' + me.z.toFixed(2) + ' keys:' + Object.keys(keys).filter(function (k) { return keys[k]; }).join(' ') +
+        '\nready:' + ready + ' win:' + innerWidth + 'x' + innerHeight + ' rot:' + getComputedStyle($('rotateHint')).display + ' cls:' + document.body.className;
     }, 200);
   });
 }
