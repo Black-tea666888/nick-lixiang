@@ -1464,10 +1464,15 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .orbCell.o0 { background: #e0553a; } .orbCell.o1 { background: #3a8ee6; } .orbCell.o2 { background: #f2c230; }
 .orbCell.o3 { background: #4caf50; } .orbCell.o4 { background: #9c6bdc; } .orbCell.o5 { background: #f0f0f0; }
 
-.mjHand { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 10px auto; max-width: 560px; }
-.mjTile { min-width: 60px; height: 82px; padding: 0 6px; font-size: 20px; font-weight: 700; background: #f4f0e6; color: #1b1e21; border: 2px solid var(--ink); border-radius: 4px; }
+.mjHand { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 10px auto; max-width: 600px; padding: 14px 10px 12px; background: var(--steel-d); border: 3px solid var(--ink); box-shadow: 0 6px 0 var(--ink); }
+.mjTile { min-width: 64px; height: 92px; padding: 0 6px; font-size: 22px; font-weight: 800; background: #fbf8ef; color: #1b1e21; border: 2px solid var(--ink); border-bottom-width: 6px; border-radius: 6px; }
+.mjTile:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 4px; }
 .mjTile:disabled { opacity: .55; }
-.mjAct { display: flex; gap: 8px; justify-content: center; }
+.mjAct { display: flex; gap: 14px; justify-content: center; margin-top: 8px; }
+.mjAct .btn { width: 76px; height: 76px; border-radius: 50%; font-size: 22px; font-weight: 800; padding: 0; border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink); }
+.mjAct #mjRon { background: var(--haz); color: var(--ink); }
+.mjAct #mjPass { background: var(--chalk); color: var(--ink); }
+#mjStatus { display: inline-block; margin: 8px auto 0; padding: 6px 14px; background: var(--ink); color: var(--chalk); border-left: 6px solid var(--haz); font-weight: 700; }
 
 #casHelpB { color: #1b1e21; background: #fff7e0; border: 2px solid var(--ink); border-radius: 6px; padding: 10px 12px; font-size: 15px; font-weight: 600; line-height: 1.6; }
 
