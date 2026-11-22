@@ -193,12 +193,18 @@
     $('.cgPass').classList.toggle('hide', !(mine && G.drew));
     $('.cgMe').textContent = '你的手牌 ' + G.hands[0].length + ' 張' + (G.hands[0].length === 1 ? '・最後一張！' : '');
     const hand = $('.cgHand'); hand.textContent = '';
+    // 電腦版分成上下兩層，各自可以左右滑動；手機維持單排
+    const two = !!(window.matchMedia && window.matchMedia('(min-width: 700px)').matches);
+    const n = G.hands[0].length, split = two ? Math.ceil(n / 2) : n;
+    const rows = [document.createElement('div')];
+    if (two) rows.push(document.createElement('div'));
+    rows.forEach(function (r) { r.className = 'cgRow'; hand.appendChild(r); });
     G.hands[0].forEach(function (k, i) {
       const el = cardEl(k);
       const ok = mine && canPlay(k) && (!G.drew || i === G.drewIdx);
       el.classList.toggle('ok', ok); el.classList.toggle('dim', mine && !ok);
       el.addEventListener('click', function () { tapCard(i); });
-      hand.appendChild(el);
+      (i < split ? rows[0] : rows[1]).appendChild(el);
     });
   }
   function ensureDom() {
