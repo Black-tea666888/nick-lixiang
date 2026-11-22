@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v320', items: ['賽車新增雙人房：先到終點者勝，沒有 AI 車'] };
+const UPD = { v: 'v321', items: ['飛行棋新增線上對戰（2 人）：房主擲骰、走子並同步'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1580,7 +1580,21 @@ const XQW = { start: function () { return RR.Xiangqi.start(); }, move: function 
   const X = RR.Xiangqi, m = X.legalMoves(s, mv.from).filter(function (x) { return x.to === mv.to; })[0];
   return m ? { ok: true, state: X.apply(s, m) } : { ok: false };
 } };
+// 飛行棋線上（2 人）：房主跑骰子與走子，state 多一個 turn（= cur）給 DUO 共用的輪次判斷
+const FL_LIB = {
+  start: function () { const s = RR.Flight.start(2); s.turn = s.cur; return s; },
+  move: function (s, mv) {
+    if (!mv) return { ok: false };
+    let r = null;
+    if (mv.a === 'roll') r = RR.Flight.roll(s, function () { return 1 + Math.floor(Math.random() * 6); });
+    else if (mv.a === 'pick') r = RR.Flight.pick(s, mv.j | 0);
+    if (!r || r === s) return { ok: false };
+    r.turn = r.cur;
+    return { ok: true, state: r };
+  }
+};
 const DUO = {
+  fl: { key: 'flight', lib: function () { return FL_LIB; }, get: function () { return flS; }, set: function (v) { flS = v; }, draw: function () { flDraw(); }, hostSide: 0, guestSide: 1, hostName: '紅', guestName: '綠' },
   xq: { key: 'xq', lib: function () { return XQW; }, get: function () { return xqS; }, set: function (v) { xqS = v; }, draw: function () { xqDraw(); }, hostSide: 'r', guestSide: 'b', hostName: '紅', guestName: '黑' },
   gm: { key: 'gomoku', lib: function () { return RR.Gomoku; }, get: function () { return gmS; }, set: function (v) { gmS = v; }, draw: function () { gmDraw(); }, hostSide: 'b', guestSide: 'w', hostName: '黑', guestName: '白' },
   c4: { key: 'c4', lib: function () { return RR.Connect4; }, get: function () { return c4S; }, set: function (v) { c4S = v; }, draw: function () { c4Draw(); }, hostSide: 'r', guestSide: 'y', hostName: '紅', guestName: '黃' }
@@ -1720,10 +1734,11 @@ let flS = null, flShownRef = null, flPrevPl = null;
 const FL_COLS = ['紅', '藍', '綠', '黃'];
 const FL_CLS = ['c0', 'c1', 'c2', 'c3'];
 function flOpen() { show('scrFlight'); flDraw(); }
-function flSetup() { flS = null; flDraw(); }
-function flNew(n) { flS = RR.Flight.start(n); flDraw(); }
-function flRoll() { if (!flS) return; flS = RR.Flight.roll(flS, function () { return 1 + Math.floor(Math.random() * 6); }); flDraw(); }
-function flPick(j) { flS = RR.Flight.pick(flS, j); flDraw(); }
+function flSetup() { if (flOnline()) return; flS = null; flDraw(); }
+function flOnline() { return duo.on && duo.g === 'fl'; }
+function flNew(n) { if (flOnline()) return; flS = RR.Flight.start(n); flDraw(); }
+function flRoll() { if (!flS) return; if (flOnline()) { duoTap({ a: 'roll' }); return; } flS = RR.Flight.roll(flS, function () { return 1 + Math.floor(Math.random() * 6); }); flDraw(); }
+function flPick(j) { if (flOnline()) { duoTap({ a: 'pick', j: j }); return; } flS = RR.Flight.pick(flS, j); flDraw(); }
 function flPos(ring) {
   const a = -Math.PI / 2 + ring * 2 * Math.PI / RR.Flight.RING;
   return { x: 50 + 42 * Math.cos(a), y: 50 + 42 * Math.sin(a) };
@@ -2345,7 +2360,8 @@ const ROOM_GAMES = {
   gomoku: { open: function () { gmOpen(); }, host: function () { duoHostCreate('gm'); } },
   c4: { open: function () { c4Open(); }, host: function () { duoHostCreate('c4'); } },
   chess: { open: function () { chessOpen(); }, host: function () { chessHostCreate(); } },
-  xq: { open: function () { xqOpen(); }, host: function () { duoHostCreate('xq'); } }
+  xq: { open: function () { xqOpen(); }, host: function () { duoHostCreate('xq'); } },
+  flight: { open: function () { flOpen(); }, host: function () { duoHostCreate('fl'); } }
 };
 function roomOpen() {
   const list = $('roomList'); list.textContent = '';
@@ -3264,7 +3280,9 @@ function bind() {
   $('pcFire').addEventListener('click', pcFire);
   $('pcAngle').addEventListener('input', pcDraw);
   $('pcPower').addEventListener('input', pcDraw);
-  $('flightBack').addEventListener('click', showMenu);
+  $('flightBack').addEventListener('click', function () { if (flOnline()) flS = null; duoLeave(); showMenu(); });
+  $('flightHost').addEventListener('click', function () { duoHostCreate('fl'); });
+  $('flightJoin').addEventListener('click', function () { duoJoin('fl'); });
   $('flightNew').addEventListener('click', flSetup);
   $('flightRoll').addEventListener('click', flRoll);
   document.querySelectorAll('[data-flp]').forEach(function (b) { b.addEventListener('click', function () { flNew(+b.getAttribute('data-flp')); }); });
