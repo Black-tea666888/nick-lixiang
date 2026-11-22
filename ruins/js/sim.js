@@ -304,6 +304,13 @@ const MAPS = [
     '#####################'
   ] }
 ];
+// 地圖統一：廢墟地圖一律 21×15 格。不足 15 行的地圖在上下補一圈實心牆（玩家活動範圍不變）
+MAPS.forEach(function (mp) {
+  if (!mp.rows || mp.track) return;
+  const W0 = mp.rows[0].length;
+  let top = true;
+  while (mp.rows.length < 15) { const row = '#'.repeat(W0); if (top) mp.rows.unshift(row); else mp.rows.push(row); top = !top; }
+});
 const CS = 4, WH = 3.6;
 // 每日強化（關卡生存）：每天開始前三選一，同一項重複抽到會疊加層數
 const UPG = {
