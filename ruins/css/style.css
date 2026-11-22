@@ -1433,3 +1433,11 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .g2Cell.v16 { background: #ff9f5a; color: #fff; } .g2Cell.v32 { background: #ff7a6b; color: #fff; } .g2Cell.v64 { background: #ff5a4a; color: #fff; }
 .g2Cell.v128, .g2Cell.v256, .g2Cell.v512, .g2Cell.v1024, .g2Cell.v2048 { background: #ffd84a; color: #1d2b4a; }
 .g2048Rec { font-size: 15px; line-height: 1.8; padding-left: 1.4em; }
+
+/* 每日三選一強化 */
+.upgOv { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.6); padding: 16px; }
+.upgBox { width: min(92vw, 420px); background: var(--paper, #ddd0b4); color: var(--ink, #1b1b1b); border: 3px solid var(--ink, #1b1b1b); box-shadow: 0 8px 24px rgba(0,0,0,.45); padding: 16px; display: grid; gap: 10px; }
+.upgBox h2 { margin: 0; font-size: 18px; }
+.upgCard { display: grid; gap: 4px; text-align: left; padding: 12px; background: var(--haz, #f0c94a); color: var(--ink, #1b1b1b); border: 3px solid var(--ink, #1b1b1b); cursor: pointer; font: inherit; }
+.upgCard b { font-size: 16px; }
+.upgCard span { font-size: 13px; }
