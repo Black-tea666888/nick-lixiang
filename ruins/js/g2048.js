@@ -4,12 +4,14 @@
   'use strict';
   const KEY = 'rr_2048_rec';
   function empty(n) { const b = []; for (let r = 0; r < n; r++) b.push(new Array(n).fill(0)); return b; }
+  let R = Math.random;
+  function mulberry(seed) { let a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
   function addTile(b) {
     const cells = [];
     for (let r = 0; r < b.length; r++) for (let c = 0; c < b[r].length; c++) if (!b[r][c]) cells.push([r, c]);
     if (!cells.length) return false;
-    const p = cells[Math.floor(Math.random() * cells.length)];
-    b[p[0]][p[1]] = Math.random() < 0.9 ? 2 : 4;
+    const p = cells[Math.floor(R() * cells.length)];
+    b[p[0]][p[1]] = R() < 0.9 ? 2 : 4;
     return true;
   }
   // 一排往左滑並合併（同一次滑動每個方塊只合併一次）
@@ -33,7 +35,8 @@
     }
     return false;
   }
-  function start() {
+  function start(seed) {
+    R = seed == null ? Math.random : mulberry(seed);
     const s = { board: empty(4), score: 0, over: false, moves: 0 };
     addTile(s.board); addTile(s.board);
     return s;

@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v300', items: ['大廳「看過／線上人數」改為有色的黃底標籤'] };
+const UPD = { v: 'v301', items: ['轉珠、方塊合併新增雙人線上對戰：同一組盤面各玩各的，分數即時比較'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1418,6 +1418,7 @@ function g2Draw() {
   const rec = $('g2048Rec'); rec.innerHTML = '';
   G.records().forEach(function (r) { const li = document.createElement('li'); li.textContent = r.date + '　' + r.score + ' 分　最大 ' + r.max + '　' + r.size + '×' + r.size; rec.appendChild(li); });
   if (s.over && !s.saved) { s.saved = true; G.saveRecord(s); g2Draw(); }
+  if (duel.on && duel.g === 'g2048') duelSendProg();
 }
 function g2Move(d) {
   if (!g2S) return;
@@ -1440,8 +1441,76 @@ function bjDraw() {
   $('bjStatus').textContent = s.msg + '　戰績：勝 ' + s.w + ' / 負 ' + s.l + ' / 平 ' + s.t;
   $('bjDeal').disabled = playing; $('bjHit').disabled = !playing; $('bjStand').disabled = !playing;
 }
+/* 雙人對戰（轉珠、方塊合併）：房主決定種子，兩人用同一組種子開局、各玩各的盤面，分數即時同步 */
+const DUEL = {
+  orb: { key: 'orb', name: '轉珠', start: function (seed) { return RR.Orb.start(0, seed); }, get: function () { return orbS; }, set: function (v) { orbS = v; }, draw: function () { orbDraw(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.over; } },
+  g2048: { key: 'g2048', name: '方塊合併', start: function (seed) { return RR.G2048.start(seed); }, get: function () { return g2S; }, set: function (v) { g2S = v; }, draw: function () { g2Draw(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.over; } }
+};
+let duel = { on: false, host: false, g: null, guest: null, seed: 0, opp: null };
+function duelNote(msg) { const c = DUEL[duel.g]; if (!c) return; $(c.key + 'DuelNote').textContent = msg || ''; $(c.key + 'DuelCode').textContent = duel.on && duel.host ? '房間代碼：' + Net.code() : ''; }
+function duelShow() {
+  const c = DUEL[duel.g]; if (!c || !duel.on) return;
+  const s = c.get(); if (!s) return;
+  const me = c.score(s), mine = c.done(s), o = duel.opp;
+  let t = '你 ' + me + ' 分';
+  if (!o) t += '　等待對手…';
+  else {
+    t += '　對手 ' + o.score + ' 分';
+    if (mine && o.done) t += '　' + (me > o.score ? '你贏了！' : me < o.score ? '對手勝' : '平手');
+    else if (mine) t += '　已結束，等待對手';
+  }
+  $(c.key + 'DuelState').textContent = t;
+}
+function duelSendProg() {
+  if (!duel.on) return;
+  const c = DUEL[duel.g], s = c.get(); if (!s) return;
+  const msg = { t: 'duel_prog', g: duel.g, score: c.score(s), done: c.done(s) };
+  if (duel.host) { if (duel.guest) Net.sendTo(duel.guest, msg); } else Net.send(msg);
+  duelShow();
+}
+// 房主發新種子開新局（開始與重新開始都用這個）
+function duelStart(g) {
+  const c = DUEL[g]; duel.seed = (Math.random() * 0x7fffffff) | 0;
+  c.set(c.start(duel.seed)); duel.opp = null;
+  if (duel.guest) Net.sendTo(duel.guest, { t: 'duel_start', g: g, seed: duel.seed });
+  c.draw(); duelShow();
+}
+function duelNew(g) { if (!duel.host) { duelNote('請房主按「重新開始」。'); return; } duelStart(g); }
+function duelOnMsg(from, d) {
+  if (!d || typeof d !== 'object' || !duel.g) return;
+  if (duel.host) {
+    if (d.t === 'hi') {
+      if (!duel.guest) { duel.guest = from; Net.sendTo(from, { t: 'duel_start', g: duel.g, seed: duel.seed }); duelNote('對手已加入，雙方同時開始。'); duelSendProg(); }
+      else Net.sendTo(from, { t: 'no', why: 'full' });
+    } else if (d.t === 'duel_prog' && from === duel.guest && d.g === duel.g) { duel.opp = { score: Number(d.score) || 0, done: !!d.done }; duelShow(); }
+  } else if (d.t === 'duel_start' && d.g === duel.g) {
+    const c = DUEL[duel.g]; duel.seed = d.seed | 0; c.set(c.start(duel.seed)); duel.opp = null; c.draw(); duelNote('已開局，和房主用同一組盤面。'); duelSendProg();
+  } else if (d.t === 'duel_prog' && d.g === duel.g) { duel.opp = { score: Number(d.score) || 0, done: !!d.done }; duelShow(); }
+}
+function duelOnLeave() { duelNote(duel.host ? '對手已離開，等待新的對手加入。' : '房主已離開。'); if (duel.host) { duel.guest = null; duel.opp = null; duelShow(); } }
+function duelLeave() { if (duel.on) Net.leave(); duel = { on: false, host: false, g: null, guest: null, seed: 0, opp: null }; }
+function duelHostCreate(g) {
+  duelLeave(); duel.g = g; duelNote('建立房間中…');
+  Net.host(function (err) {
+    if (err) { duelNote('建立失敗，請稍後再試。'); return; }
+    duel = { on: true, host: true, g: g, guest: null, seed: 0, opp: null };
+    Net.on('msg', duelOnMsg); Net.on('leave', duelOnLeave);
+    duelStart(g); duelNote('等待對手加入。把代碼給對方，對方加入就會同時開局。');
+  });
+}
+function duelJoin(g) {
+  const k = DUEL[g].key, code = Net.normalizeCode($(k + 'DuelJoinCode').value);
+  if (code.length !== 5) { duel.g = g; duelNote('請輸入 5 碼房間代碼。'); return; }
+  duelLeave(); duel.g = g; duelNote('加入中…');
+  Net.join(code, { name: myName() }, function (err) {
+    if (err) { duelNote('加入失敗，請確認代碼。'); return; }
+    duel = { on: true, host: false, g: g, guest: null, seed: 0, opp: null };
+    Net.on('msg', duelOnMsg); Net.on('leave', duelOnLeave);
+    Net.send({ t: 'hi' }); duelNote('已加入，等待房主開局。');
+  });
+}
 function g2Open() { show('scr2048'); if (!g2S) g2S = RR.G2048.start(); g2Draw(); }
-function g2New() { g2S = RR.G2048.start(); g2Draw(); }
+function g2New() { if (duel.on && duel.g === 'g2048') return duelNew('g2048'); g2S = RR.G2048.start(); g2Draw(); }
 document.addEventListener('keydown', function (e) {
   const sc = $('scr2048');
   if (!sc || sc.classList.contains('hide')) return;
@@ -2014,7 +2083,7 @@ function recOptsOpen() {
 /* 轉珠（單人關卡）：畫面與拖動，規則在 orb.js */
 let orbS = null, orbDrag = null;
 function orbOpen() { show('scrOrb'); if (!orbS) orbS = window.RR.Orb.start(0); orbDraw(); }
-function orbNew(lv) { orbS = window.RR.Orb.start(lv); orbDraw(); }
+function orbNew(lv) { if (duel.on && duel.g === 'orb') return duelNew('orb'); orbS = window.RR.Orb.start(lv); orbDraw(); }
 function orbDraw() {
   const bd = document.getElementById('orbBoard'), s = orbS, L = window.RR.Orb.LEVELS[s.level];
   bd.innerHTML = '';
@@ -2024,6 +2093,7 @@ function orbDraw() {
     ? (s.won ? (s.level < 2 ? '過關！按「下一關」繼續。' : '全部通關！') : '步數用完，失敗。按「重新開始」再試一次。')
     : '拖動相鄰的珠子交換，連成 3 顆以上就會消除。';
   document.getElementById('orbNext').classList.toggle('hide', !(s.over && s.won && s.level < 2));
+  if (duel.on && duel.g === 'orb') duelSendProg();
 }
 function orbCellAt(e) {
   const bd = document.getElementById('orbBoard'), r = bd.getBoundingClientRect(), C = window.RR.Orb.COLS, R = window.RR.Orb.ROWS;
@@ -3009,13 +3079,17 @@ function bind() {
   $('mjNew').addEventListener('click', mjNew);
   $('mjRon').addEventListener('click', mjRon);
   $('mjPass').addEventListener('click', mjPass);
-  $('orbBack').addEventListener('click', showMenu);
+  $('orbBack').addEventListener('click', function () { duelLeave(); showMenu(); });
+  $('orbDuelHost').addEventListener('click', function () { duelHostCreate('orb'); });
+  $('orbDuelJoin').addEventListener('click', function () { duelJoin('orb'); });
   $('orbNew').addEventListener('click', function () { orbNew(orbS ? orbS.level : 0); });
   $('orbNext').addEventListener('click', function () { orbNew(orbS.level + 1); });
   { const bd = $('orbBoard');
     bd.addEventListener('pointerdown', orbPointer); bd.addEventListener('pointermove', orbPointer);
     bd.addEventListener('pointerup', orbBindUp); bd.addEventListener('pointercancel', orbBindUp); }
-  $('g2048Back').addEventListener('click', showMenu);
+  $('g2048Back').addEventListener('click', function () { duelLeave(); showMenu(); });
+  $('g2048DuelHost').addEventListener('click', function () { duelHostCreate('g2048'); });
+  $('g2048DuelJoin').addEventListener('click', function () { duelJoin('g2048'); });
   $('g2048New').addEventListener('click', g2New);
   $('c4Btn').addEventListener('click', c4Open);
   $('flightBtn').addEventListener('click', flOpen);
