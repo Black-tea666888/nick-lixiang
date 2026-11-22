@@ -2114,7 +2114,8 @@ const GUN_SND = [[0.09, 0.22, 520, 140], [0.22, 0.32, 220, 60], [0.07, 0.2, 620,
 function showShot(e) {
   const mine = e.id === myId, sy = Math.sin(me.yaw), cy = Math.cos(me.yaw);
   let from;
-  if (mine && gunMesh) { from = gunMesh.userData.muzzle.clone(); gunMesh.localToWorld(from); }
+  // 先更新槍與相機的世界矩陣，槍口位置才是這一刻的（否則會用上一幀的位置，彈道從錯的地方出發）
+  if (mine && gunMesh) { camera.updateMatrixWorld(true); from = gunMesh.userData.muzzle.clone(); gunMesh.localToWorld(from); }
   else from = new THREE.Vector3(e.x, e.ty || 1.25, e.z);
   const to = new THREE.Vector3(e.hx, e.mi >= 0 ? 1.4 : 1.2 + Math.random() * 0.4, e.hz);
   // 彈道：一條很細、很快消失的亮線（用細長方塊，手機上也看得到粗細）
