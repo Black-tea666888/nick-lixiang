@@ -547,7 +547,8 @@ Sim.prototype.startDay = function (day) {
   this.day = day; this.phase = 'play'; this.money = 0; this.pad = null;
   const U = this.upg || {};
   this.time = DAY_TIME + 15 * (U.time || 0);   // 延長時限
-  this.pendingPick = (day > 1 && UPG_MODES[this.mode]) ? this.pickOptions() : null;   // 每天開始前三選一（有怪物的模式）
+  if (day === 1) this.upg = {};   // 新一局才清空強化
+  this.pendingPick = null;   // 三選一在結算畫面產生（見 main.js upgShow）
   this.boardPos = this._spotAt(VAN[0], VAN[1], 2.5, 4) || [VAN[0] + 2.5, VAN[1]];
   this.tt = newTT();
   this.trophy = this._spotAt(VAN[0], VAN[1], 12, 25);   // 搶獎盃：地圖上一座獎盃，按住 E 3 秒的人拿走
