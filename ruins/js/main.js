@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v324', items: ['德國麻將新增線上對戰（2 人）', '德國麻將與中國麻將的牌面放大'] };
+const UPD = { v: 'v325', items: ['彈珠台與康樂球改成拖曳瞄準：往想去的方向拉，放開發射'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1863,15 +1863,34 @@ function pcNew() {
   if (pcOnline()) { if (duo.host) duoNew(); else duoNote('請房主按「重新開始」。'); return; }
   if (pcRaf) cancelAnimationFrame(pcRaf); pcRaf = 0; pcS = { balls: 30, won: 0, path: null, idx: 0, payout: 0, pocket: -1 }; pcDraw();
 }
-function pcFire() {
+// 拖曳瞄準：從發射點往想去的方向拉，距離就是力道，放開發射
+let pcAim = null, pcDragging = false;
+function pcPointer(ev) { const cv = $('pcCanvas'), r = cv.getBoundingClientRect(); return { x: (ev.clientX - r.left) * cv.width / r.width, y: (ev.clientY - r.top) * cv.height / r.height }; }
+function pcAimAt(p) {
+  const P = RR.Pachinko, dx = p.x - P.W / 2, dy = p.y - 14;
+  if (dy < 8) return null;
+  return { angle: Math.max(-0.45, Math.min(0.45, Math.atan2(dx, dy))), power: Math.max(0, Math.min(1, Math.hypot(dx, dy) / 180)) };
+}
+function pcCanShoot() {
+  if (pcOnline()) return !!pcOn && !pcA.path && !pcOn.over && pcOn.turn === (duo.host ? DUO.pc.hostSide : DUO.pc.guestSide);
+  return !!pcS && !pcS.path && pcS.balls > 0;
+}
+function pcPtrDown(ev) { if (!pcCanShoot()) return; pcDragging = true; ev.target.setPointerCapture(ev.pointerId); pcAim = pcAimAt(pcPointer(ev)); pcDraw(); }
+function pcPtrMove(ev) { if (!pcDragging) return; pcAim = pcAimAt(pcPointer(ev)); pcDraw(); }
+function pcPtrUp() {
+  if (!pcDragging) return;
+  pcDragging = false;
+  const aim = pcAim; pcAim = null;
+  if (aim && aim.power > 0.05) pcFire(aim.angle, aim.power); else pcDraw();
+}
+function pcFire(angle, power) {
   if (pcOnline()) {
     if (!pcOn || pcA.path || pcOn.over) return;
-    duoTap({ angle: +$('pcAngle').value * Math.PI / 180, power: +$('pcPower').value / 100 });
+    duoTap({ angle: angle, power: power });
     return;
   }
   if (!pcS || pcS.path || pcS.balls <= 0) return;
-  const deg = +$('pcAngle').value, pw = +$('pcPower').value / 100;
-  const r = RR.Pachinko.sim(deg * Math.PI / 180, pw, Math.random);
+  const r = RR.Pachinko.sim(angle, power, Math.random);
   pcS.balls--; pcS.path = r.path; pcS.idx = 0; pcS.payout = r.payout; pcS.pocket = r.pocket;
   pcStep();
 }
@@ -1911,10 +1930,11 @@ function pcDraw() {
   ctx.fillStyle = '#c9d6e3';
   P.pins().forEach(function (p) { ctx.beginPath(); ctx.arc(p.x, p.y, P.PIN_R, 0, Math.PI * 2); ctx.fill(); });
   // 發射軌跡提示：角度線
-  if (!an.path) {
-    const a = +$('pcAngle').value * Math.PI / 180;
-    ctx.strokeStyle = 'rgba(255,210,58,.7)'; ctx.setLineDash([4, 4]); ctx.beginPath();
-    ctx.moveTo(P.W / 2, 14); ctx.lineTo(P.W / 2 + Math.sin(a) * 70, 14 + Math.cos(a) * 70); ctx.stroke(); ctx.setLineDash([]);
+  if (!an.path && pcAim) {
+    const L = 40 + pcAim.power * 200;
+    ctx.strokeStyle = 'rgba(255,210,58,.95)'; ctx.setLineDash([5, 5]); ctx.lineWidth = 3; ctx.beginPath();
+    ctx.moveTo(P.W / 2, 14); ctx.lineTo(P.W / 2 + Math.sin(pcAim.angle) * L, 14 + Math.cos(pcAim.angle) * L); ctx.stroke(); ctx.setLineDash([]); ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(255,210,58,.95)'; ctx.beginPath(); ctx.arc(P.W / 2, 14, 6, 0, Math.PI * 2); ctx.fill();
   }
   // 球
   if (an.path) { const q = an.path[an.idx]; ctx.fillStyle = '#ffd23a'; ctx.beginPath(); ctx.arc(q.x, q.y, P.BALL_R, 0, Math.PI * 2); ctx.fill(); }
@@ -1952,7 +1972,7 @@ function pcDraw() {
   if (pcS.path) msg = '彈珠滾動中…';
   else if (pcS.balls <= 0) msg = '彈珠用完了，按「重新開始」再玩一次。';
   else if (pcS.pocket >= 0) msg = pcS.payout === 0 ? '沒有進袋，可惜。' : (pcS.pocket === 2 ? '大獎！' : '') + '回收 ' + pcS.payout + ' 顆';
-  else msg = '調整角度與力道，按發射。';
+  else msg = pcAim ? '力道 ' + Math.round(pcAim.power * 100) + '%，放開發射' : '在畫面上往想去的方向拉，放開發射。';
   $('pcStatus').textContent = msg;
 }
 /* 康樂球（桌上撞擊） */
@@ -1974,9 +1994,10 @@ function kgNew() {
   if (kgRaf) cancelAnimationFrame(kgRaf); kgRaf = 0; kgS = RR.Carrom.newGame(); kgDraw();
 }
 let kgFlash = [];
-function kgFire() {
+// 拖曳瞄準：在棋盤上往後（朝自己這邊）拉，射子從拉下的位置出發，往反方向射出，距離就是力道
+let kgAim = null, kgDragging = false, kgSx = 200;
+function kgShoot(mv) {
   if (!kgS || kgRaf || kgS.winner !== null) return;
-  const mv = { x: +$('kgX').value, angle: +$('kgAngle').value * Math.PI / 180, power: +$('kgPower').value / 100 };
   if (kgOnline()) {
     const mySide = duo.host ? DUO.kg.hostSide : DUO.kg.guestSide;
     if (kgS.turn !== mySide) { duoNote('還沒輪到你。'); return; }
@@ -2040,27 +2061,50 @@ function kgDrawBoard(list) {
   });
   kgFlash = kgFlash.filter(function (f) { return f.t > 0; });
 }
+function kgPointer(ev) { const cv = $('kgCanvas'), r = cv.getBoundingClientRect(); return { x: (ev.clientX - r.left) * cv.width / r.width, y: (ev.clientY - r.top) * cv.height / r.height }; }
+function kgAimAt(sx, p) {
+  const C = RR.Carrom, base = C.BASE_Y[kgS.turn], dirY = kgS.turn === 0 ? -1 : 1;
+  const Sx = sx - p.x, Sy = base - p.y;
+  if (dirY * Sy < 8) return null;
+  return { sx: sx, angle: Math.max(-0.698, Math.min(0.698, Math.atan2(Sx, dirY * Sy))), power: Math.max(0, Math.min(1, Math.hypot(Sx, Sy) / 170)) };
+}
+function kgCanShoot() {
+  if (!kgS || kgRaf || kgS.winner !== null) return false;
+  if (kgOnline()) return kgS.turn === (duo.host ? DUO.kg.hostSide : DUO.kg.guestSide);
+  return true;
+}
+function kgPtrDown(ev) {
+  if (!kgCanShoot()) return;
+  kgDragging = true; ev.target.setPointerCapture(ev.pointerId);
+  const p = kgPointer(ev); kgSx = Math.max(60, Math.min(RR.Carrom.W - 60, p.x));
+  kgAim = kgAimAt(kgSx, p); kgDraw();
+}
+function kgPtrMove(ev) { if (!kgDragging) return; kgAim = kgAimAt(kgSx, kgPointer(ev)); kgDraw(); }
+function kgPtrUp() {
+  if (!kgDragging) return;
+  kgDragging = false;
+  const aim = kgAim; kgAim = null;
+  if (aim && aim.power > 0.05) kgShoot({ x: aim.sx, angle: aim.angle, power: aim.power }); else kgDraw();
+}
 function kgDraw() {
   if (!kgS) return;
   const C = RR.Carrom;
   const list = kgS.pieces.filter(function (p) { return p.alive; }).map(function (p) { return { x: p.x, y: p.y, c: p.c }; });
   if (kgS.winner === null) {
-    const sx = Math.max(60, Math.min(C.W - 60, +$('kgX').value));
-    list.push({ x: sx, y: C.BASE_Y[kgS.turn], c: 's' });
-    const a = +$('kgAngle').value * Math.PI / 180, y0 = C.BASE_Y[kgS.turn], dy = kgS.turn === 0 ? -1 : 1;
+    const sx = kgAim ? kgAim.sx : kgSx, base = C.BASE_Y[kgS.turn], dirY = kgS.turn === 0 ? -1 : 1;
+    list.push({ x: sx, y: base, c: 's' });
     kgDrawBoard(list);
-    const cv = $('kgCanvas').getContext('2d');
-    cv.strokeStyle = 'rgba(255,210,58,.8)'; cv.setLineDash([5, 5]); cv.beginPath(); cv.moveTo(sx, y0);
-    cv.lineTo(sx + Math.sin(a) * 90, y0 + dy * Math.cos(a) * 90); cv.stroke(); cv.setLineDash([]);
+    if (kgAim) {
+      const cv = $('kgCanvas').getContext('2d'), L = 40 + kgAim.power * 200;
+      cv.strokeStyle = 'rgba(255,210,58,.95)'; cv.lineWidth = 3; cv.setLineDash([5, 5]); cv.beginPath(); cv.moveTo(sx, base);
+      cv.lineTo(sx + Math.sin(kgAim.angle) * L, base + dirY * Math.cos(kgAim.angle) * L); cv.stroke(); cv.setLineDash([]); cv.lineWidth = 1;
+    }
   } else {
     kgDrawBoard(list);
   }
   $('kgScore').textContent = '紅 ' + kgS.score[0] + '　黑 ' + kgS.score[1];
-  $('kgAngleVal').textContent = $('kgAngle').value + '°';
-  $('kgPowerVal').textContent = $('kgPower').value + '%';
-  $('kgFire').disabled = !!kgRaf || kgS.winner !== null;
   const who = kgS.turn === 0 ? '紅方（下）' : '黑方（上）';
-  $('kgStatus').textContent = kgS.winner !== null ? kgS.msg : (kgRaf ? '棋子滑動中…' : (kgS.msg ? kgS.msg + '　' : '') + who + '射擊');
+  $('kgStatus').textContent = kgS.winner !== null ? kgS.msg : (kgRaf ? '棋子滑動中…' : kgAim ? '力道 ' + Math.round(kgAim.power * 100) + '%，放開撞擊' : (kgS.msg ? kgS.msg + '　' : '') + who + '：在棋盤上往後拉，放開撞擊');
 }
 let rmDeadline = 0, rmTimer = null;
 const RM_TURN_MS = 60000;   // 每回合 1 分鐘
@@ -3439,13 +3483,16 @@ function bind() {
   $('kangleNew').addEventListener('click', kgNew);
   $('kgHost').addEventListener('click', function () { duoHostCreate('kg'); });
   $('kgJoin').addEventListener('click', function () { duoJoin('kg'); });
-  $('kgFire').addEventListener('click', kgFire);
-  ['kgX', 'kgAngle', 'kgPower'].forEach(function (id) { $(id).addEventListener('input', kgDraw); });
+  const kgCv = $('kgCanvas'); kgCv.style.touchAction = 'none';
+  kgCv.addEventListener('pointerdown', kgPtrDown); kgCv.addEventListener('pointermove', kgPtrMove);
+  kgCv.addEventListener('pointerup', kgPtrUp); kgCv.addEventListener('pointercancel', function () { kgDragging = false; kgAim = null; kgDraw(); });
   $('pachiBack').addEventListener('click', function () { if (pcOnline()) { pcOn = null; pcA = { path: null, idx: 0, fx: null }; } duoLeave(); showMenu(); });
   $('pachiNew').addEventListener('click', pcNew);
   $('pcHost').addEventListener('click', function () { pcSeenSeq = -1; duoHostCreate('pc'); });
   $('pcJoin').addEventListener('click', function () { pcSeenSeq = -1; duoJoin('pc'); });
-  $('pcFire').addEventListener('click', pcFire);
+  const pcCv = $('pcCanvas'); pcCv.style.touchAction = 'none';
+  pcCv.addEventListener('pointerdown', pcPtrDown); pcCv.addEventListener('pointermove', pcPtrMove);
+  pcCv.addEventListener('pointerup', pcPtrUp); pcCv.addEventListener('pointercancel', function () { pcDragging = false; pcAim = null; pcDraw(); });
   $('pcAngle').addEventListener('input', pcDraw);
   $('pcPower').addEventListener('input', pcDraw);
   $('flightBack').addEventListener('click', function () { if (flOnline()) flS = null; duoLeave(); showMenu(); });
