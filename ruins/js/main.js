@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v308', items: ['五子棋與四子連珠加入落子動畫，連線時閃爍標示'] };
+const UPD = { v: 'v309', items: ['西洋棋與中國象棋加入落子與吃子動畫'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1375,6 +1375,7 @@ function xqTap(i) {
 function xqDraw() {
   const X = RR.Xiangqi, s = xqS, st = X.status(s), bd = $('xqBoard');
   bd.textContent = '';
+  const xqFx = xqShownRef !== s ? boardDelta(xqPrevB, s.b) : null; xqShownRef = s; xqPrevB = s.b.slice();
   const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', '0 0 90 100'); svg.setAttribute('aria-hidden', 'true');
   const line = function (x1, y1, x2, y2) { const l = document.createElementNS(NS, 'line'); l.setAttribute('x1', x1); l.setAttribute('y1', y1); l.setAttribute('x2', x2); l.setAttribute('y2', y2); svg.appendChild(l); };
@@ -1392,7 +1393,8 @@ function xqDraw() {
   for (let i = 0; i < 90; i++) {
     const r = Math.floor(i / 9), c = i % 9, p = s.b[i];
     if (!p && !tg[i]) continue;
-    const cls = 'xqPt' + (p ? ' ' + (X.color(p) === 'r' ? 'r' : 'b') : ' dot') + (i === xqSel ? ' sel' : '') + (p && tg[i] ? ' cap' : '');
+    const fx = xqFx && xqFx.find(function (d) { return d.i === i; });
+    const cls = 'xqPt' + (p ? ' ' + (X.color(p) === 'r' ? 'r' : 'b') : ' dot') + (i === xqSel ? ' sel' : '') + (p && tg[i] ? ' cap' : '') + (fx && fx.to ? ' mv' : '');
     const b = mk('button', cls, p ? XQ_GLYPH[p] : '');
     b.type = 'button';
     b.style.left = (PX(c) / 90 * 100) + '%'; b.style.top = (PY(r) / 100 * 100) + '%';
@@ -2017,13 +2019,24 @@ function rmStatus() {
   else msg = (rmS.opened[0] ? '' : '你還沒破冰（需要 ' + X.OPEN_MIN + ' 點以上）。') + '輪到你出牌（剩 ' + Math.max(0, Math.ceil((rmDeadline - Date.now()) / 1000)) + ' 秒）';
   $('rummiStatus').textContent = msg;
 }
+/* 與上一次畫面的棋盤比較：只有一步棋的變化才回傳變動的格子（新棋子落點與被吃的格子） */
+function boardDelta(prev, cur) {
+  if (!prev) return null;
+  const changed = [];
+  for (let i = 0; i < cur.length; i++) if (prev[i] !== cur[i]) changed.push(i);
+  if (!changed.length || changed.length > 4) return null;
+  return changed.map(function (i) { return { i: i, to: !!cur[i], cap: !!prev[i] && prev[i] !== cur[i] }; });
+}
+let chShownRef = null, chPrevB = null, xqShownRef = null, xqPrevB = null;
 function chessDraw() {
   const C = RR.Chess, s = chessS, st = C.status(s), bd = $('chessBoard');
   bd.textContent = '';
+  const chFx = chShownRef !== s ? boardDelta(chPrevB, s.b) : null; chShownRef = s; chPrevB = s.b.slice();
   const tg = {}; chessMoves.forEach(function (m) { tg[m.to] = true; });
   for (let i = 0; i < 64; i++) {
     const r = Math.floor(i / 8), c = i % 8, p = s.b[i];
-    const cls = 'chSq' + ((r + c) % 2 ? ' dk' : '') + (i === chessSel ? ' sel' : '') + (tg[i] ? ' tgt' : '') + (p ? (C.color(p) === 'w' ? ' pw' : ' pb') : '');
+    const fx = chFx && chFx.find(function (d) { return d.i === i; });
+    const cls = 'chSq' + ((r + c) % 2 ? ' dk' : '') + (i === chessSel ? ' sel' : '') + (tg[i] ? ' tgt' : '') + (p ? (C.color(p) === 'w' ? ' pw' : ' pb') : '') + (fx && fx.to ? ' mv' : '') + (fx && fx.cap ? ' cap' : '');
     const sq = mk('button', cls, '');
     sq.type = 'button';
     if (p) sq.innerHTML = RR.ChessArt.svg(p);
