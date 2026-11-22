@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v278', items: ['每日三選一強化選擇畫面（主機端）'] };
+const UPD = { v: 'v279', items: ['拾荒團名單只顯示一次：管理按鈕放在排名列的分數前面'] };
 const SCREENS = ['scr2048', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -2470,26 +2470,25 @@ function renderSocial() {
         const roleOf = function (m) { return m.uid === info.clan.owner ? '團長' : deps.indexOf(m.uid) >= 0 ? '副團長' : '團員'; };
         const my = RR.Cloud.uid();
         const amDep = deps.indexOf(my) >= 0;
+        // 名單只出現一次：排名列上直接放管理按鈕（踢出、設副團長、轉移團長），放在分數前面
         socRows(info.members.map(function (m) { return Object.assign({}, m, { name: (m.name || '玩家') + ' 〔' + roleOf(m) + '〕' + (seenText(m.seen) ? '・' + seenText(m.seen) : '') }); }), function (v) { return v + ' 分'; }, '', function (r) {
           const m = info.members.find(function (x) { return x.uid === r.uid; });
-          if (!m || m.uid === info.clan.owner || m.uid === my || !(isLeader || amDep) || !(isLeader || deps.indexOf(m.uid) < 0)) return null;
-          const kb = mk('button', 'btn', '踢出'); kb.type = 'button'; kb.className = 'btn kickBtn';
-          kb.addEventListener('click', function (e) { e.stopPropagation(); ask('確定要把「' + (m.name || '玩家') + '」踢出拾荒團？', function () { C.kickMember(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); }); });
-          return kb;
-        });
-        if (isLeader || amDep) info.members.forEach(function (m) {
-          if (m.uid === info.clan.owner || m.uid === my) return;
-          const isDep = deps.indexOf(m.uid) >= 0, r = mk('div', 'srow');
-          r.appendChild(mk('span', 'nm', (m.name || '玩家') + ' · ' + roleOf(m) + (seenText(m.seen) ? ' · ' + seenText(m.seen) : '')));
+          if (!m || m.uid === info.clan.owner || m.uid === my || !(isLeader || amDep)) return null;
+          const isDep = deps.indexOf(m.uid) >= 0, box = mk('span', 'socAct', null);
           if (isLeader) {
             const bt = mk('button', 'btn', isDep ? '取消副團長' : '設為副團長'); bt.type = 'button';
-            bt.addEventListener('click', function () { C.setDeputy(m.uid, !isDep, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
-            r.appendChild(bt);
+            bt.addEventListener('click', function (e) { e.stopPropagation(); C.setDeputy(m.uid, !isDep, function (err) { if (err) say(C.message(err)); renderSocial(); }); });
+            box.appendChild(bt);
             const tb = mk('button', 'btn', '轉移團長'); tb.type = 'button';
-            tb.addEventListener('click', function () { ask('確定把團長轉給「' + (m.name || '玩家') + '」？你會變成團員。', function () { C.transferLeader(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); }); });
-            r.appendChild(tb);
+            tb.addEventListener('click', function (e) { e.stopPropagation(); ask('確定把團長轉給「' + (m.name || '玩家') + '」？你會變成團員。', function () { C.transferLeader(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); }); });
+            box.appendChild(tb);
           }
-          b.appendChild(r);
+          if (isLeader || !isDep) {
+            const kb = mk('button', 'btn kickBtn', '踢出'); kb.type = 'button';
+            kb.addEventListener('click', function (e) { e.stopPropagation(); ask('確定要把「' + (m.name || '玩家') + '」踢出拾荒團？', function () { C.kickMember(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); }); });
+            box.appendChild(kb);
+          }
+          return box;
         });
         const lv = mk('button', 'btn', '退出拾荒團'); lv.type = 'button'; lv.addEventListener('click', function () { C.leaveClan(function (err) { if (err) say(C.message(err)); renderSocial(); }); }); b.appendChild(lv);
       }
