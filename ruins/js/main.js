@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v321', items: ['飛行棋新增線上對戰（2 人）：房主擲骰、走子並同步'] };
+const UPD = { v: 'v322', items: ['康樂球新增線上對戰（2 人）', '修正飛行棋線上對戰：對手的擲骰與選飛機沒有送到房主的問題'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1595,6 +1595,7 @@ const FL_LIB = {
 };
 const DUO = {
   fl: { key: 'flight', lib: function () { return FL_LIB; }, get: function () { return flS; }, set: function (v) { flS = v; }, draw: function () { flDraw(); }, hostSide: 0, guestSide: 1, hostName: '紅', guestName: '綠' },
+  kg: { key: 'kg', lib: function () { return KG_LIB; }, get: function () { return kgS; }, set: function (v) { kgS = v; }, draw: function () { kgDraw(); }, hostSide: 0, guestSide: 1, hostName: '紅', guestName: '黑' },
   xq: { key: 'xq', lib: function () { return XQW; }, get: function () { return xqS; }, set: function (v) { xqS = v; }, draw: function () { xqDraw(); }, hostSide: 'r', guestSide: 'b', hostName: '紅', guestName: '黑' },
   gm: { key: 'gomoku', lib: function () { return RR.Gomoku; }, get: function () { return gmS; }, set: function (v) { gmS = v; }, draw: function () { gmDraw(); }, hostSide: 'b', guestSide: 'w', hostName: '黑', guestName: '白' },
   c4: { key: 'c4', lib: function () { return RR.Connect4; }, get: function () { return c4S; }, set: function (v) { c4S = v; }, draw: function () { c4Draw(); }, hostSide: 'r', guestSide: 'y', hostName: '紅', guestName: '黃' }
@@ -1632,7 +1633,7 @@ function duoOnMsg(from, d) {
     if (d.t === 'hi') {
       if (!duo.guest) { duo.guest = from; Net.sendTo(from, { t: 'duo', g: duo.g, s: DUO[duo.g].get() }); duoNote('對手已加入，' + DUO[duo.g].hostName + '方先走。'); }
       else Net.sendTo(from, { t: 'no', why: 'full' });
-    } else if (d.t === 'duo_mv' && from === duo.guest && d.g === duo.g) duoMove(d.mv && typeof d.mv === 'object' ? { from: d.mv.from | 0, to: d.mv.to | 0 } : Number(d.mv) | 0, DUO[duo.g].guestSide);
+    } else if (d.t === 'duo_mv' && from === duo.guest && d.g === duo.g) { if (duo.g === 'kg') return kgRemote(d.mv); duoMove(d.mv && typeof d.mv === 'object' ? Object.assign({}, d.mv, { from: d.mv.from | 0, to: d.mv.to | 0 }) : Number(d.mv) | 0, DUO[duo.g].guestSide); }
   } else if (d.t === 'duo' && d.g === duo.g) {
     DUO[duo.g].set(d.s); DUO[duo.g].draw();
     duoNote('你是' + DUO[duo.g].guestName + '方' + (d.s.turn === DUO[duo.g].guestSide ? '，輪到你。' : '，等房主下子。'));
@@ -1881,15 +1882,44 @@ function pcDraw() {
 }
 /* 康樂球（桌上撞擊） */
 let kgS = null, kgRaf = 0;
+// 康樂球線上（2 人）：棋子物理是確定性的，兩邊各自重算同一桿的畫面，房主的結果為準
+const KG_LIB = {
+  start: function () { return RR.Carrom.newGame(); },
+  move: function (s, mv) {
+    if (!mv || s.winner !== null) return { ok: false };
+    const r = RR.Carrom.shoot(s, +mv.x || 0, +mv.angle || 0, +mv.power || 0);
+    if (!r.frames.length) return { ok: false };
+    return { ok: true, state: r.state };
+  }
+};
+function kgOnline() { return duo.on && duo.g === 'kg'; }
 function kgOpen() { show('scrKangle'); if (!kgS) kgNew(); else kgDraw(); }
-function kgNew() { if (kgRaf) cancelAnimationFrame(kgRaf); kgRaf = 0; kgS = RR.Carrom.newGame(); kgDraw(); }
+function kgNew() {
+  if (kgOnline()) { if (duo.host) duoNew(); else duoNote('請房主按「重新開始」。'); return; }
+  if (kgRaf) cancelAnimationFrame(kgRaf); kgRaf = 0; kgS = RR.Carrom.newGame(); kgDraw();
+}
 let kgFlash = [];
 function kgFire() {
   if (!kgS || kgRaf || kgS.winner !== null) return;
-  const res = RR.Carrom.shoot(kgS, +$('kgX').value, +$('kgAngle').value * Math.PI / 180, +$('kgPower').value / 100);
+  const mv = { x: +$('kgX').value, angle: +$('kgAngle').value * Math.PI / 180, power: +$('kgPower').value / 100 };
+  if (kgOnline()) {
+    const mySide = duo.host ? DUO.kg.hostSide : DUO.kg.guestSide;
+    if (kgS.turn !== mySide) { duoNote('還沒輪到你。'); return; }
+    if (!duo.host) Net.send({ t: 'duo_mv', g: 'kg', mv: mv });   // 房主收到後會重算並同步結果
+  }
+  kgPlay(mv);
+}
+/** 房主收到客人的桿：只接受輪到客人時的合法桿，否則把目前狀態重送一次對齊 */
+function kgRemote(mv) {
+  if (!duo.host || kgRaf || !kgS || kgS.turn !== DUO.kg.guestSide || kgS.winner !== null || !mv || typeof mv !== 'object') { duoSend(); return; }
+  kgPlay({ x: +mv.x || 0, angle: +mv.angle || 0, power: +mv.power || 0 });
+}
+function kgPlay(mv) {
+  const res = RR.Carrom.shoot(kgS, mv.x, mv.angle, mv.power);
   const frames = res.frames;
   let i = 0;
-  if (!frames.length) { kgS = res.state; kgDraw(); return; }
+  const finish = function () { kgRaf = 0; kgFlash = []; kgS = res.state; if (duo.on && duo.host) duoSend(); kgDraw(); };
+  if (!frames.length) { finish(); return; }
   kgRaf = 1; kgFlash = [];
   kgDraw();
   const C = RR.Carrom;
@@ -1905,7 +1935,7 @@ function kgFire() {
       });
       kgDrawBoard(frames[i]); i++; kgRaf = requestAnimationFrame(tick); return;
     }
-    kgRaf = 0; kgFlash = []; kgS = res.state; kgDraw();
+    finish();
   })();
 }
 function kgDrawBoard(list) {
@@ -2361,7 +2391,8 @@ const ROOM_GAMES = {
   c4: { open: function () { c4Open(); }, host: function () { duoHostCreate('c4'); } },
   chess: { open: function () { chessOpen(); }, host: function () { chessHostCreate(); } },
   xq: { open: function () { xqOpen(); }, host: function () { duoHostCreate('xq'); } },
-  flight: { open: function () { flOpen(); }, host: function () { duoHostCreate('fl'); } }
+  flight: { open: function () { flOpen(); }, host: function () { duoHostCreate('fl'); } },
+  kangle: { open: function () { kgOpen(); }, host: function () { duoHostCreate('kg'); } }
 };
 function roomOpen() {
   const list = $('roomList'); list.textContent = '';
@@ -3271,8 +3302,10 @@ function bind() {
   $('flightBtn').addEventListener('click', flOpen);
   $('pachiBtn').addEventListener('click', pcOpen);
   $('kangleBtn').addEventListener('click', kgOpen);
-  $('kangleBack').addEventListener('click', showMenu);
+  $('kangleBack').addEventListener('click', function () { if (kgOnline()) kgS = null; duoLeave(); showMenu(); });
   $('kangleNew').addEventListener('click', kgNew);
+  $('kgHost').addEventListener('click', function () { duoHostCreate('kg'); });
+  $('kgJoin').addEventListener('click', function () { duoJoin('kg'); });
   $('kgFire').addEventListener('click', kgFire);
   ['kgX', 'kgAngle', 'kgPower'].forEach(function (id) { $(id).addEventListener('input', kgDraw); });
   $('pachiBack').addEventListener('click', showMenu);
