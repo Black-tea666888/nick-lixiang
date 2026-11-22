@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v332', items: ['模式選擇頁最下方新增「下載到手機」提醒（可關掉，之後不再出現）', '廢墟地圖統一成同一個大小（不足的地圖在上下補牆，玩家範圍不變）', '第 4 天起，每隔一隻怪物變成「無眼雕像」：有人在 15 公尺內看得到牠時就停住不動', '廢墟生存戰的補給箱拿走後 30 秒會在空地重新出現', '地圖可以切成「隨機」：每局開始時從廢墟地圖中抽一張（房主設定，循環到最後一張後切換）'] };
+const UPD = { v: 'v333', items: ['模式選擇頁最下方新增「人數」（2～4 人，記住上次選的；飛行棋的人數選擇會預設它）', '模式選擇頁最下方新增「下載到手機」提醒（可關掉，之後不再出現）', '廢墟地圖統一成同一個大小（不足的地圖在上下補牆，玩家範圍不變）', '第 4 天起，每隔一隻怪物變成「無眼雕像」：有人在 15 公尺內看得到牠時就停住不動', '廢墟生存戰的補給箱拿走後 30 秒會在空地重新出現', '地圖可以切成「隨機」：每局開始時從廢墟地圖中抽一張（房主設定，循環到最後一張後切換）'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1741,7 +1741,7 @@ let flS = null, flShownRef = null, flPrevPl = null;
 const FL_COLS = ['紅', '藍', '綠', '黃'];
 const FL_CLS = ['c0', 'c1', 'c2', 'c3'];
 function flOpen() { show('scrFlight'); flDraw(); }
-function flSetup() { if (flOnline()) return; flS = null; flDraw(); }
+function flSetup() { if (flOnline()) return; flS = null; flDraw(); paintPeople(); }
 function flOnline() { return duo.on && duo.g === 'fl'; }
 function flNew(n) { if (flOnline()) return; flS = RR.Flight.start(n); flDraw(); }
 function flRoll() { if (!flS) return; if (flOnline()) { duoTap({ a: 'roll' }); return; } flS = RR.Flight.roll(flS, function () { return 1 + Math.floor(Math.random() * 6); }); flDraw(); }
@@ -3987,9 +3987,13 @@ window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault()
 window.addEventListener('appinstalled', function () { installEv = null; const b = document.getElementById('installBtn'); if (b) b.classList.add('hide'); hideInstallTip(true); });
 // 模式選擇頁最下方的「下載到手機」提醒：安卓等 beforeinstallprompt；iPhone Safari 沒有該事件，改顯示加入主畫面的步驟
 function isStandaloneApp() { try { return !!(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)); } catch (e) { return false; } }
+function peopleN() { const n = parseInt(ls('rr_people') || '2', 10); return n >= 2 && n <= 4 ? n : 2; }   // 模式選擇頁的預設人數
+function paintPeople() { document.querySelectorAll('[data-hp]').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-hp') === peopleN()); }); document.querySelectorAll('[data-flp]').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-flp') === peopleN()); }); }
 function showInstallTip() { const t = $('installTip'); if (!t || ls('rr_tipX') === '1' || isStandaloneApp()) return; t.classList.remove('hide'); }
 function hideInstallTip(permanent) { const t = $('installTip'); if (t) t.classList.add('hide'); if (permanent) lsSet('rr_tipX', '1'); }
 
+document.querySelectorAll('[data-hp]').forEach(function (b) { b.addEventListener('click', function () { lsSet('rr_people', b.getAttribute('data-hp')); paintPeople(); }); });
+paintPeople();
 { const tb = document.getElementById('installTipBtn'), tx = document.getElementById('installTipX');
   if (tb) tb.addEventListener('click', function () {
     if (installEv) { installEv.prompt(); installEv.userChoice.finally(function () { installEv = null; hideInstallTip(true); }); return; }
