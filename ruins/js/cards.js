@@ -24,7 +24,9 @@
     wild: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18 6 7l4 5 2-7 2 7 4-5 2 11z"/><path d="M4 21h16"/></svg>',
     w4: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18 6 7l4 5 2-7 2 7 4-5 2 11z"/><path d="M4 21h16"/></svg>'
   };
-  let G = null, hooks = { award: function () { return ''; }, back: function () {}, sfx: function () {} }, root = null;
+  let G = null, hooks = { award: function () { return ''; }, back: function () {}, sfx: function () {}, send: function () {}, open: function () {} }, root = null;
+  // 雙人線上：房主跑完整規則（NET.host），對手只收到房主送來的畫面狀態，出牌／抽牌則回傳給房主
+  let NET = null;
   const $ = function (s) { return root.querySelector(s); };
 
   function newDeck() {
@@ -56,19 +58,21 @@
 
   /** 開一局：opts.opp 對手人數 1～3、opts.hand 起手張數 */
   function start(opts) {
-    const opp = Math.max(1, Math.min(3, (opts && opts.opp) | 0 || 3)), hand = (opts && opts.hand) | 0 || 7;
-    G = { deck: newDeck(), pile: [], hands: [], names: ['你'].concat(AI_NAMES.slice(0, opp)), turn: 0, dir: 1, color: 0, busy: false, drew: false, over: false, opts: { opp: opp, hand: hand }, log: '' };
+    const net = !!(opts && opts.net), opp = net ? 1 : Math.max(1, Math.min(3, (opts && opts.opp) | 0 || 3)), hand = (opts && opts.hand) | 0 || 7;
+    NET = net ? { host: true, ready: false } : null;
+    G = { deck: newDeck(), pile: [], hands: [], names: net ? ['你', '對手'] : ['你'].concat(AI_NAMES.slice(0, opp)), turn: 0, dir: 1, color: 0, busy: false, drew: false, over: false, winner: null, opts: { opp: opp, hand: hand, net: net }, log: '' };
     for (let i = 0; i <= opp; i++) G.hands.push([]);
     for (let r = 0; r < hand; r++) for (let i = 0; i <= opp; i++) G.hands[i].push(G.deck.pop());
     let first = G.deck.pop(); while (typeof first.v !== 'number') { G.deck.unshift(first); first = G.deck.pop(); }   // 第一張一定是數字牌
     G.pile.push(first); G.color = first.c;
     G.turn = Math.floor(Math.random() * (opp + 1));
-    sortHand(); ensureDom(); root.classList.remove('hide'); $('.cgEnd').classList.add('hide'); $('.cgPick').classList.add('hide');
+    G.hands.forEach(function (_, w) { sortHand(w); }); ensureDom(); root.classList.remove('hide'); $('.cgEnd').classList.add('hide'); $('.cgPick').classList.add('hide');
     say(G.turn === 0 ? '你先出牌' : G.names[G.turn] + ' 先出牌'); render();
-    if (G.turn !== 0) aiSoon();
+    if (isAI(G.turn)) aiSoon();
   }
-  function sortHand() { G.hands[0].sort(function (a, b) { return a.c - b.c || (typeof a.v === 'number' ? a.v : 20) - (typeof b.v === 'number' ? b.v : 20); }); }
-  function say(t) { G.log = t; const m = $('.cgMsg'); if (m) m.textContent = t; }
+  function isAI(w) { return w !== 0 && !NET; }
+  function sortHand(w) { const h = G.hands[w || 0]; h.sort(function (a, b) { return a.c - b.c || (typeof a.v === 'number' ? a.v : 20) - (typeof b.v === 'number' ? b.v : 20); }); }
+  function say(t) { if (G) G.log = t; const m = $('.cgMsg'); if (m) m.textContent = t; }
 
   /** 出牌（who 出 hand 裡第 idx 張），wc 是王者牌選的屬性 */
   function play(who, idx, wc) {
@@ -82,18 +86,19 @@
     if (k.v === 'rev') { if (G.hands.length === 2) skip = true; else G.dir = -G.dir; }
     if (k.v === 'skip') skip = true;
     let hitT = -1;
-    if (k.v === 'd2' || k.v === 'w4') { const tgt = next(who), n = k.v === 'd2' ? 2 : 4; hitT = tgt; G.hands[tgt].push.apply(G.hands[tgt], draw(n)); msg += '，' + (tgt === 0 ? '你' : G.names[tgt]) + ' 抽 ' + n + ' 張'; skip = true; if (tgt === 0) sortHand(); }
+    if (k.v === 'd2' || k.v === 'w4') { const tgt = next(who), n = k.v === 'd2' ? 2 : 4; hitT = tgt; G.hands[tgt].push.apply(G.hands[tgt], draw(n)); msg += '，' + (tgt === 0 ? '你' : G.names[tgt]) + ' 抽 ' + n + ' 張'; skip = true; sortHand(tgt); }
     G.turn = next(who, skip ? 2 : 1);
     G.fx = { land: true, hit: hitT, wild: k.c === 4 };
-    say(msg); render(); if (G.turn !== 0) aiSoon(); else if (!G.over) setTimeout(function () { if (G && G.turn === 0 && !G.over) say(G.log + '。輪到你'); }, 700);
+    say(msg); render(); if (isAI(G.turn)) aiSoon(); else if (!G.over) setTimeout(function () { if (G && G.turn === 0 && !G.over) say(G.log + '。輪到你'); }, 700);
   }
-  function pass(who) { G.drew = false; G.turn = next(who); render(); if (G.turn !== 0) aiSoon(); }
+  function pass(who) { G.drew = false; G.turn = next(who); render(); if (isAI(G.turn)) aiSoon(); }
   function end(winner) {
-    G.over = true; hooks.sfx(winner === 0 ? 'win' : 'lose');
+    G.over = true; G.winner = winner; hooks.sfx(winner === 0 ? 'win' : 'lose');
     const txt = hooks.award(winner === 0, G.hands.length - 1) || '';
     $('.cgEndT').textContent = winner === 0 ? '你贏了！' : G.names[winner] + ' 贏了';
     $('.cgEndS').textContent = txt;
     $('.cgEnd').classList.remove('hide');
+    netSync(null);
   }
 
   // ---------- 電腦 ----------
@@ -130,14 +135,26 @@
     const k = G.hands[0][i]; if (!canPlay(k)) { hooks.sfx('no'); say('這張不能出：要' + COL[G.color] + '屬性，或跟桌上同等級／同功能'); return; }
     if (G.drew && i !== G.drewIdx) { say('抽到的那張才可以出，或按「不出」'); return; }
     if (k.c === 4) { G.pickIdx = i; $('.cgPick').classList.remove('hide'); return; }
-    play(0, i);
+    doPlay(i, undefined);
+  }
+  // 出牌：房主（或單人）直接出；對手端只把動作送給房主，等房主回傳新畫面
+  function doPlay(i, wc) {
+    if (NET && !NET.host) { const k = G.hands[0][i]; G.busy = true; render(); netSend({ t: 'card_act', a: 'play', c: k.c, v: k.v, wc: wc }); return; }
+    play(0, i, wc);
   }
   function tapDraw() {
     if (!G || G.over || G.turn !== 0 || G.busy || G.drew) return;
-    const got = draw(1); if (!got.length) { pass(0); return; }
-    G.hands[0].push(got[0]); hooks.sfx('draw');
-    if (canPlay(got[0])) { G.drew = true; sortHand(); G.drewIdx = G.hands[0].indexOf(got[0]); say('抽到 ' + cardName(got[0]) + '，可以出，或按「不出」'); render(); }
-    else { sortHand(); say('抽到 ' + cardName(got[0]) + '，不能出，換下一位'); pass(0); }
+    if (NET && !NET.host) { G.busy = true; render(); netSend({ t: 'card_act', a: 'draw' }); return; }
+    drawFor(0);
+  }
+  // 抽一張（who 為座位）：抽到能出的可以馬上出，否則換下一位；對手抽牌不顯示牌名
+  function drawFor(who) {
+    if (!G || G.over || G.turn !== who || G.busy || G.drew) return;
+    const got = draw(1); if (!got.length) { pass(who); return; }
+    G.hands[who].push(got[0]); hooks.sfx('draw'); sortHand(who);
+    const mine = who === 0;
+    if (canPlay(got[0])) { G.drew = true; G.drewIdx = G.hands[who].indexOf(got[0]); say(mine ? '抽到 ' + cardName(got[0]) + '，可以出，或按「不出」' : '對手抽了一張，可以出，或按「不出」'); render(); }
+    else { say(mine ? '抽到 ' + cardName(got[0]) + '，不能出，換下一位' : '對手抽了一張，換下一位'); pass(who); }
   }
 
   // ---------- 畫面 ----------
@@ -155,7 +172,7 @@
   }
   function render() {
     if (!root || !G) return;
-    const fx = G.fx || {}; G.fx = null;
+    const fx = G.fx || {}; G.fx = null; netSync(fx);
     const opp = $('.cgOpps'); opp.textContent = '';
     for (let i = 1; i < G.hands.length; i++) {
       const o = document.createElement('div'); o.className = 'cgOpp' + (G.turn === i ? ' on' : '') + (G.hands[i].length === 1 ? ' last' : '') + (fx.hit === i ? ' hit' : '');
@@ -212,22 +229,94 @@
     document.body.appendChild(root);
     root.addEventListener('click', function (e) {
       const a = e.target.closest('[data-a]'); const pk = e.target.closest('.cgPickB');
-      if (pk) { $('.cgPick').classList.add('hide'); if (G.pickIdx != null) { const i = G.pickIdx; G.pickIdx = null; play(0, i, +pk.dataset.c); } return; }
+      if (pk) { $('.cgPick').classList.add('hide'); if (G.pickIdx != null) { const i = G.pickIdx; G.pickIdx = null; doPlay(i, +pk.dataset.c); } return; }
       if (!a) return;
       const act = a.dataset.a;
       if (act === 'back') { if (G && !G.over) { $('.cgAsk').classList.remove('hide'); return; } close(); }
       else if (act === 'askNo') $('.cgAsk').classList.add('hide');
       else if (act === 'askYes') { $('.cgAsk').classList.add('hide'); close(); }
       else if (act === 'back2') close();
-      else if (act === 'again') start(G.opts);
+      else if (act === 'again') { if (NET && !NET.host) { say('請房主再來一局'); return; } start(G.opts); }
       else if (act === 'pickNo') { $('.cgPick').classList.add('hide'); G.pickIdx = null; }
       else if (act === 'help') $('.cgHelp').classList.remove('hide');
       else if (act === 'helpNo') $('.cgHelp').classList.add('hide');
     });
     $('.cgDeck').addEventListener('click', tapDraw);
-    $('.cgPass').addEventListener('click', function () { if (G && G.turn === 0 && G.drew) { say('你不出，換下一位'); pass(0); } });
+    $('.cgPass').addEventListener('click', function () { if (G && G.turn === 0 && G.drew) { if (NET && !NET.host) { G.busy = true; render(); netSend({ t: 'card_act', a: 'pass' }); return; } say('你不出，換下一位'); pass(0); } });
   }
-  function close() { if (G) { clearTimeout(G.t); G.over = true; } if (root) root.classList.add('hide'); hooks.back(); }
+  function close() { if (G) { clearTimeout(G.t); G.over = true; } NET = null; if (root) root.classList.add('hide'); hooks.back(); }
+
+  // ---------- 雙人線上（房主為準）----------
+  function netSend(m) { hooks.send(m); }
+  // 房主把畫面狀態送給對手：只給對手自己的手牌，對手那邊只看得到張數
+  function netSync(fx) {
+    if (!NET || !NET.host || !NET.ready || !G) return;
+    const g = G, f = fx || g.fx || {};
+    netSend({
+      t: 'card_state', hand: g.hands[1].map(function (k) { return { c: k.c, v: k.v, wc: k.wc }; }),
+      oppN: g.hands[0].length, deckN: g.deck.length, top: top(), color: g.color,
+      turn: g.turn === 1 ? 0 : 1, drew: g.turn === 1 && !!g.drew, drewIdx: g.turn === 1 && g.drew ? g.drewIdx : -1,
+      over: !!g.over, win: !!g.over && g.winner === 1, log: g.log,
+      fx: { land: !!f.land, hit: f.hit === 1 ? 0 : f.hit === 0 ? 1 : -1, wild: !!f.wild }
+    });
+  }
+  // 房主：收到對手動作後依牌面身分找到那張牌再執行；不管成不成功都回傳一次畫面，讓對手解鎖
+  function netMsg(d) {
+    if (!NET && d.t === 'card_state') NET = { host: false, ready: false };
+    if (!NET) return;
+    if (!NET.host) { if (d.t === 'card_state') applyView(d); return; }
+    if (!G) return;
+    if (d.t !== 'card_act' || G.over || G.turn !== 1) { netSync(null); return; }
+    if (d.a === 'draw') drawFor(1);
+    else if (d.a === 'pass') { if (G.drew) { say('對手不出，換下一位'); pass(1); } }
+    else if (d.a === 'play') {
+      const h = G.hands[1], idx = [];
+      h.forEach(function (k, j) { if (k.c === d.c && k.v === d.v) idx.push(j); });
+      const i = G.drew && idx.indexOf(G.drewIdx) >= 0 ? G.drewIdx : idx[0];
+      if (i != null && i >= 0 && canPlay(h[i]) && !(G.drew && i !== G.drewIdx) && !(h[i].c === 4 && !(d.wc >= 0 && d.wc < 4))) {
+        play(1, i, h[i].c === 4 ? d.wc : undefined);
+      }
+    }
+    netSync(null);
+  }
+  // 對手：套用房主送來的畫面
+  function applyView(d) {
+    const was = G && G.over;
+    G = {
+      deck: new Array(d.deckN | 0), pile: [d.top], hands: [d.hand, new Array(d.oppN | 0).fill(null)],
+      names: ['你', '對手'], turn: d.turn, dir: 1, color: d.color, busy: false,
+      drew: !!d.drew, drewIdx: d.drewIdx, over: !!d.over, winner: d.win ? 0 : 1, log: d.log,
+      fx: d.fx, opts: { opp: 1, hand: 7, net: true }
+    };
+    ensureDom(); hooks.open(); root.classList.remove('hide'); $('.cgPick').classList.add('hide');
+    if (d.over && !was) {
+      hooks.sfx(d.win ? 'win' : 'lose');
+      const txt = hooks.award(!!d.win, 1) || '';
+      $('.cgEndT').textContent = d.win ? '你贏了！' : '對手贏了';
+      $('.cgEndS').textContent = txt;
+      $('.cgEnd').classList.remove('hide');
+    } else if (!d.over) $('.cgEnd').classList.add('hide');
+    say(d.log || '');
+    render();
+  }
+  // 雙人房間開局：房主開新局（等對手加入前不送畫面）；對手只進入等待畫面
+  function netStart(host, opts) {
+    ensureDom(); root.classList.remove('hide');
+    if (host) { start({ opp: 1, hand: (opts && opts.hand) || 7, net: true }); return G; }
+    NET = { host: false, ready: false }; G = null;
+    $('.cgEnd').classList.add('hide'); $('.cgPick').classList.add('hide');
+    say('等待房主開局');
+    return G;
+  }
+  function netReady() { if (NET && NET.host) { NET.ready = true; netSync(null); } }
+  // 對手離開：這局不算
+  function peerLeft() {
+    if (!G) return;
+    G.over = true; NET = null; clearTimeout(G.t);
+    $('.cgEndT').textContent = '對方離開了';
+    $('.cgEndS').textContent = '這局不算。';
+    $('.cgEnd').classList.remove('hide');
+  }
 
   ensureDom();
   RR.Cards = {
@@ -235,6 +324,10 @@
     hooks: function (h) { Object.keys(h).forEach(function (k) { hooks[k] = h[k]; }); },
     start: start,
     close: close,
+    netStart: netStart,
+    netReady: netReady,
+    netMsg: netMsg,
+    peerLeft: peerLeft,
     /** 測試用 */
     _state: function () { return G; }
   };

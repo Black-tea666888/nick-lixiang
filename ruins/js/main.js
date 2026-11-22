@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v318', items: ['麻將新增雙人線上對戰：同一副牌堆，比先胡（巡數少者勝）'] };
+const UPD = { v: 'v319', items: ['怪物卡牌新增雙人線上對戰：房主為準，對手只看得到自己的手牌'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1485,6 +1485,7 @@ const DUEL = {
   plat: { key: 'plat', name: '跳關', start: function () { return { score: 0, done: false, win: false, time: 0 }; }, get: function () { return platMine; }, set: function (v) { platMine = v; }, draw: function () { platRun(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.done; }, label: function (s) { return (s.win ? '過關 ' : '') + '齒輪 ' + s.score + '/12' + (s.win ? '　' + s.time.toFixed(1) + ' 秒' : ''); }, cmp: function (me, o) { if (me.win !== o.win) return me.win ? 1 : -1; if (me.win) return me.time < o.time ? 1 : me.time > o.time ? -1 : 0; return me.score > o.score ? 1 : me.score < o.score ? -1 : 0; } },
   bj: { key: 'bj', name: '21點', start: function (seed) { return RR.BJ.start(seed); }, get: function () { return bjS; }, set: function (v) { bjS = v; }, draw: function () { bjDraw(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.done; }, label: function (s) { return '勝 ' + s.score + ' 負 ' + s.time + ' / ' + RR.BJ.ROUNDS + ' 局'; }, cmp: function (me, o) { if (me.score !== o.score) return me.score > o.score ? 1 : -1; return o.time !== me.time ? (me.time < o.time ? 1 : -1) : 0; } },
   mj: { key: 'mj', name: '麻將', start: function (seed) { return mjDuelStart(seed); }, get: function () { return mjS; }, set: function (v) { mjS = v; }, draw: function () { mjDraw(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.done; }, label: function (s) { return s.win ? '胡了 第 ' + s.time + ' 巡' : s.done ? '未胡' : '第 ' + s.time + ' 巡'; }, cmp: function (me, o) { if (me.win !== o.win) return me.win ? 1 : -1; if (me.win && me.time !== o.time) return me.time < o.time ? 1 : -1; return 0; } },
+  card: { key: 'card', name: '怪物卡牌', start: function () { show('scrCard'); return RR.Cards.netStart(duel.host, { hand: cardOpts().hand }); }, get: function () { return RR.Cards._state(); }, set: function () {}, draw: function () { RR.Cards.netReady(); }, score: function (s) { return s && s.over && s.win ? 1 : 0; }, done: function (s) { return !!(s && s.over); }, label: function () { return ''; } },
   g2048: { key: 'g2048', name: '方塊合併', start: function (seed) { return RR.G2048.start(seed); }, get: function () { return g2S; }, set: function (v) { g2S = v; }, draw: function () { g2Draw(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.over; } }
 };
 let duel = { on: false, host: false, g: null, guest: null, seed: 0, opp: null };
@@ -1520,16 +1521,17 @@ function duelStart(g) {
 function duelNew(g) { if (!duel.host) { duelNote('請房主按「重新開始」。'); return; } duelStart(g); }
 function duelOnMsg(from, d) {
   if (!d || typeof d !== 'object' || !duel.g) return;
+  if (duel.g === 'card' && String(d.t).indexOf('card_') === 0) { RR.Cards.netMsg(d); return; }
   if (duel.host) {
     if (d.t === 'hi') {
-      if (!duel.guest) { duel.guest = from; Net.sendTo(from, { t: 'duel_start', g: duel.g, seed: duel.seed }); duelNote('對手已加入，雙方同時開始。'); duelSendProg(); }
+      if (!duel.guest) { duel.guest = from; Net.sendTo(from, { t: 'duel_start', g: duel.g, seed: duel.seed }); duelNote('對手已加入，雙方同時開始。'); duelSendProg(); if (duel.g === 'card') RR.Cards.netReady(); }
       else Net.sendTo(from, { t: 'no', why: 'full' });
     } else if (d.t === 'duel_prog' && from === duel.guest && d.g === duel.g) { duel.opp = { score: Number(d.score) || 0, done: !!d.done, win: !!d.win, time: Number(d.time) || 0 }; duelShow(); }
   } else if (d.t === 'duel_start' && d.g === duel.g) {
     const c = DUEL[duel.g]; duel.seed = d.seed | 0; c.set(c.start(duel.seed)); duel.opp = null; c.draw(); duelNote('已開局，和房主用同一組盤面。'); duelSendProg();
   } else if (d.t === 'duel_prog' && d.g === duel.g) { duel.opp = { score: Number(d.score) || 0, done: !!d.done, win: !!d.win, time: Number(d.time) || 0 }; duelShow(); }
 }
-function duelOnLeave() { duelNote(duel.host ? '對手已離開，等待新的對手加入。' : '房主已離開。'); if (duel.host) { duel.guest = null; duel.opp = null; duelShow(); } }
+function duelOnLeave() { if (duel.g === 'card') RR.Cards.peerLeft(); duelNote(duel.host ? '對手已離開，等待新的對手加入。' : '房主已離開。'); if (duel.host) { duel.guest = null; duel.opp = null; duelShow(); } }
 function duelLeave() { clearInterval(platTimer); clearInterval(marbleTimer); if (duel.g === 'bj') bjS = null; if (duel.g === 'mj') { clearTimeout(mjTimer); mjS = null; } if (duel.on) Net.leave(); duel = { on: false, host: false, g: null, guest: null, seed: 0, opp: null }; }
 function duelHostCreate(g) {
   duelLeave(); duel.g = g; duelNote('建立房間中…');
@@ -3156,9 +3158,13 @@ function bind() {
   $('goBtn').addEventListener('click', function () { const b = $('modeStrip').querySelector('[data-mode="' + selMode() + '"]'); if (b) $(b.dataset.go).click(); });
   $('mapChip').addEventListener('click', function () { if (selMode() === 'card') { cardOptsOpen(); return; } renderMapGrid(); show('scrMap'); });
   $('coOk').addEventListener('click', function () { $('cardOpts').classList.add('hide'); refreshLobby(); });
-  $('cardOpen').addEventListener('click', function () { show('scrCard'); RR.Cards.start(cardOpts()); });
+  $('cardOpen').addEventListener('click', function () { if (duel.on && duel.g === 'card') duelLeave(); show('scrCard'); RR.Cards.start(cardOpts()); });
+  $('cardDuelHost').addEventListener('click', function () { duelHostCreate('card'); });
+  $('cardDuelJoin').addEventListener('click', function () { duelJoin('card'); });
   RR.Cards.hooks({
-    back: showMenu,
+    back: function () { duelLeave(); showMenu(); },
+    open: function () { show('scrCard'); },
+    send: function (m) { if (duel.host) { if (duel.guest) Net.sendTo(duel.guest, m); } else Net.send(m); },
     sfx: function (k) { try { if (k === 'play') Sfx.tone(520, 0.05, 'square', 0.05, 700); else if (k === 'draw') Sfx.tone(330, 0.05, 'triangle', 0.05); else if (k === 'win') Sfx.tone(660, 0.25, 'triangle', 0.1, 1320); else if (k === 'lose') Sfx.tone(300, 0.3, 'sawtooth', 0.06, 150); else if (k === 'no') Sfx.tone(160, 0.08, 'square', 0.05); } catch (e) {} },
     award: function (win, opp) {
       const p = prog(), lv0 = levelOf(p.xp), coins = win ? 20 + opp * 10 : 5, xp = coins + 10;
