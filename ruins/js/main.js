@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v311', items: ['彈珠台加入落袋閃光、獲得顆數飄字與大獎粒子'] };
+const UPD = { v: 'v312', items: ['康樂球加入進洞閃光'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1849,17 +1849,29 @@ function pcDraw() {
 let kgS = null, kgRaf = 0;
 function kgOpen() { show('scrKangle'); if (!kgS) kgNew(); else kgDraw(); }
 function kgNew() { if (kgRaf) cancelAnimationFrame(kgRaf); kgRaf = 0; kgS = RR.Carrom.newGame(); kgDraw(); }
+let kgFlash = [];
 function kgFire() {
   if (!kgS || kgRaf || kgS.winner !== null) return;
   const res = RR.Carrom.shoot(kgS, +$('kgX').value, +$('kgAngle').value * Math.PI / 180, +$('kgPower').value / 100);
   const frames = res.frames;
   let i = 0;
   if (!frames.length) { kgS = res.state; kgDraw(); return; }
-  kgRaf = 1;
+  kgRaf = 1; kgFlash = [];
   kgDraw();
+  const C = RR.Carrom;
   (function tick() {
-    if (i < frames.length) { kgDrawBoard(frames[i]); i++; kgRaf = requestAnimationFrame(tick); return; }
-    kgRaf = 0; kgS = res.state; kgDraw();
+    if (i < frames.length) {
+      // 比對前後兩格：上一格在洞口附近、這一格找不到的棋子，就是剛進洞，在洞口閃一圈
+      if (i > 0) frames[i - 1].forEach(function (b) {
+        C.POCKETS.forEach(function (p) {
+          if (Math.hypot(b.x - p[0], b.y - p[1]) > C.POCKET_R * 1.8) return;
+          const still = frames[i].some(function (q) { return Math.hypot(q.x - b.x, q.y - b.y) < 14; });
+          if (!still) kgFlash.push({ x: p[0], y: p[1], t: 18 });
+        });
+      });
+      kgDrawBoard(frames[i]); i++; kgRaf = requestAnimationFrame(tick); return;
+    }
+    kgRaf = 0; kgFlash = []; kgS = res.state; kgDraw();
   })();
 }
 function kgDrawBoard(list) {
@@ -1880,6 +1892,14 @@ function kgDrawBoard(list) {
     ctx.fillStyle = b.c === 'r' ? '#c62828' : b.c === 'b' ? '#222' : '#f5f0e6';
     ctx.fill(); ctx.strokeStyle = '#3a2412'; ctx.lineWidth = 2; ctx.stroke();
   });
+  // 進洞閃光
+  kgFlash.forEach(function (f) {
+    const a = f.t / 18;
+    ctx.strokeStyle = 'rgba(255,210,58,' + a.toFixed(2) + ')'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(f.x, f.y, C.POCKET_R + (18 - f.t) * 1.2, 0, Math.PI * 2); ctx.stroke();
+    f.t--;
+  });
+  kgFlash = kgFlash.filter(function (f) { return f.t > 0; });
 }
 function kgDraw() {
   if (!kgS) return;
