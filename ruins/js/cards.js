@@ -81,8 +81,10 @@
     let skip = false;
     if (k.v === 'rev') { if (G.hands.length === 2) skip = true; else G.dir = -G.dir; }
     if (k.v === 'skip') skip = true;
-    if (k.v === 'd2' || k.v === 'w4') { const tgt = next(who), n = k.v === 'd2' ? 2 : 4; G.hands[tgt].push.apply(G.hands[tgt], draw(n)); msg += '，' + (tgt === 0 ? '你' : G.names[tgt]) + ' 抽 ' + n + ' 張'; skip = true; if (tgt === 0) sortHand(); }
+    let hitT = -1;
+    if (k.v === 'd2' || k.v === 'w4') { const tgt = next(who), n = k.v === 'd2' ? 2 : 4; hitT = tgt; G.hands[tgt].push.apply(G.hands[tgt], draw(n)); msg += '，' + (tgt === 0 ? '你' : G.names[tgt]) + ' 抽 ' + n + ' 張'; skip = true; if (tgt === 0) sortHand(); }
     G.turn = next(who, skip ? 2 : 1);
+    G.fx = { land: true, hit: hitT, wild: k.c === 4 };
     say(msg); render(); if (G.turn !== 0) aiSoon(); else if (!G.over) setTimeout(function () { if (G && G.turn === 0 && !G.over) say(G.log + '。輪到你'); }, 700);
   }
   function pass(who) { G.drew = false; G.turn = next(who); render(); if (G.turn !== 0) aiSoon(); }
@@ -153,17 +155,19 @@
   }
   function render() {
     if (!root || !G) return;
+    const fx = G.fx || {}; G.fx = null;
     const opp = $('.cgOpps'); opp.textContent = '';
     for (let i = 1; i < G.hands.length; i++) {
-      const o = document.createElement('div'); o.className = 'cgOpp' + (G.turn === i ? ' on' : '') + (G.hands[i].length === 1 ? ' last' : '');
+      const o = document.createElement('div'); o.className = 'cgOpp' + (G.turn === i ? ' on' : '') + (G.hands[i].length === 1 ? ' last' : '') + (fx.hit === i ? ' hit' : '');
       o.innerHTML = '<b></b><span class="cgBacks"></span><small></small>';
       o.querySelector('b').textContent = G.names[i];
       const bk = o.querySelector('.cgBacks'); for (let j = 0; j < Math.min(8, G.hands[i].length); j++) bk.appendChild(document.createElement('i'));
       o.querySelector('small').textContent = G.hands[i].length + ' 張' + (G.hands[i].length === 1 ? '・最後一張！' : '');
       opp.appendChild(o);
     }
-    const disc = $('.cgDisc'); disc.textContent = ''; disc.appendChild(cardEl(top()));
-    $('.cgCol').style.setProperty('--cc', COLC[G.color]); $('.cgCol b').textContent = COL[G.color];
+    const disc = $('.cgDisc'); disc.textContent = ''; const topEl = cardEl(top()); if (fx.land) topEl.classList.add('land'); disc.appendChild(topEl);
+    const colEl = $('.cgCol'); if (fx.wild) { colEl.classList.remove('pulse'); void colEl.offsetWidth; colEl.classList.add('pulse'); }
+    colEl.style.setProperty('--cc', COLC[G.color]); $('.cgCol b').textContent = COL[G.color];
     $('.cgDir').textContent = G.dir > 0 ? '順時針 ⟳' : '逆時針 ⟲';
     $('.cgDeckN').textContent = G.deck.length;
     const mine = G.turn === 0 && !G.busy && !G.over;

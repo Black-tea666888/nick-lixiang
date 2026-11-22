@@ -1500,3 +1500,12 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 @keyframes mjWin { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: none; } }
 @keyframes mjShake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 @media (prefers-reduced-motion: reduce) { .chessStatus.mjNew, #mjMsg.mjWin, #mjMsg.mjLose { animation: none; } }
+
+/* 怪物卡牌：出牌落地、被加牌時震動、萬用牌換色 */
+.cgCard.land { animation: cgLand .3s ease-out; }
+.cgOpp.hit { animation: cgHit .5s ease-out; }
+.cgCol.pulse { animation: cgPulse .45s ease-out; }
+@keyframes cgLand { from { transform: scale(1.25) rotate(-8deg); } to { transform: none; } }
+@keyframes cgHit { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes cgPulse { 0% { transform: scale(1.2); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cgCard.land, .cgOpp.hit, .cgCol.pulse { animation: none; } }
