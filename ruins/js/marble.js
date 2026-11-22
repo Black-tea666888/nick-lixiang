@@ -13,7 +13,7 @@
   }
   function reset(round, gears) {
     st = { blocks: [], balls: [], fireLeft: 0, fireT: 0, round: round || 1, gears: gears || 0, shots: SHOTS,
-      over: 0, won: false, msg: '', msgT: 0, parts: [], vx: 0, vy: 0, aimed: false };
+      over: 0, won: false, msg: '', msgT: 0, parts: [], rings: [], shake: 0, vx: 0, vy: 0, aimed: false };
     for (let r = 0; r < 3; r++) newRow(r);
     st.round = 1;
   }
@@ -28,6 +28,7 @@
   function endTurn() {
     // 下降一格，補新的一排
     st.blocks.forEach(function (b) { b.r++; });
+    st.shake = 12;
     st.round++;
     if (st.blocks.some(function (b) { return b.r >= LOSE_ROW; })) { st.over = 'lose'; return; }
     if (st.round > ROUNDS) { st.over = 'win'; st.won = true; return; }
@@ -49,9 +50,9 @@
         if (dx * dx + dy * dy < RAD * RAD) {
           if (Math.abs(dx) > Math.abs(dy)) ball.vx = dx > 0 ? Math.abs(ball.vx) : -Math.abs(ball.vx);
           else ball.vy = dy > 0 ? Math.abs(ball.vy) : -Math.abs(ball.vy);
-          b.hp--;
+          b.hp--; b.flash = 5;
           burst(ball.x, ball.y, '#ffe27a', 3);
-          if (b.hp <= 0) { st.blocks.splice(i, 1); st.gears++; burst(rx + rw / 2, ry + rh / 2, '#ff8a7a', 8); }
+          if (b.hp <= 0) { st.blocks.splice(i, 1); st.gears++; burst(rx + rw / 2, ry + rh / 2, '#ff8a7a', 8); st.rings.push({ x: rx + rw / 2, y: ry + rh / 2, r: 4, life: 16 }); }
           break;
         }
       }
@@ -61,6 +62,9 @@
   function step() {
     if (st.over) return;
     st.parts = st.parts.filter(function (q) { q.x += q.vx; q.y += q.vy; q.life--; return q.life > 0; });
+    st.rings = st.rings.filter(function (q) { q.r += 2.5; q.life--; return q.life > 0; });
+    st.blocks.forEach(function (b) { if (b.flash > 0) b.flash--; });
+    if (st.shake > 0) st.shake--;
     if (st.msgT > 0) st.msgT--;
     if (st.fireLeft > 0) {
       st.fireT--;
@@ -83,6 +87,9 @@
     const g = ctx;
     const grad = g.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, '#1d2f44'); grad.addColorStop(1, '#3d5a6e');
     g.fillStyle = grad; g.fillRect(0, 0, W, H);
+    // 方塊下降時畫面震動
+    g.save();
+    if (st.shake > 0) g.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
     g.fillStyle = '#e8e0c0'; g.font = '10px sans-serif'; g.textBaseline = 'top';
     g.fillText('回合 ' + st.round + '/' + ROUNDS + '　齒輪 ' + st.gears, 6, 6);
     g.fillStyle = 'rgba(255,255,255,.15)'; g.fillRect(0, LY + 10, W, 2);
@@ -90,6 +97,7 @@
       const x = bx(b), y = by(b), w = CW - 4, h = RH - 4;
       g.fillStyle = b.hp <= 2 ? '#8fb6a6' : (b.hp <= 5 ? '#c9a24b' : '#ff7a6b');
       g.fillRect(x, y, w, h);
+      if (b.flash > 0) { g.fillStyle = 'rgba(255,255,255,' + (b.flash / 5 * 0.7).toFixed(2) + ')'; g.fillRect(x, y, w, h); }
       g.fillStyle = '#1d2b33'; g.fillRect(x, y + h - 3, w, 3);
       g.fillStyle = '#fff'; g.font = 'bold 11px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText(String(b.hp), x + w / 2, y + h / 2 - 1); g.textAlign = 'left'; g.textBaseline = 'top';
@@ -101,6 +109,9 @@
     }
     st.balls.forEach(function (q) { g.fillStyle = '#f4fff9'; g.beginPath(); g.arc(q.x, q.y, RAD, 0, Math.PI * 2); g.fill(); });
     st.parts.forEach(function (q) { g.fillStyle = q.color; g.fillRect(q.x, q.y, 2, 2); });
+    // 方塊被打破時的擴散光環
+    st.rings.forEach(function (q) { g.strokeStyle = 'rgba(255,226,122,' + (q.life / 16).toFixed(2) + ')'; g.lineWidth = 2; g.beginPath(); g.arc(q.x, q.y, q.r, 0, Math.PI * 2); g.stroke(); });
+    g.restore();
     // 撿荒者（發射台）
     g.fillStyle = '#2bb3a3'; g.beginPath(); g.arc(LX, LY, 11, Math.PI, 0); g.fill();
     g.fillStyle = '#6b5a43'; g.fillRect(LX - 8, LY, 16, 9);
