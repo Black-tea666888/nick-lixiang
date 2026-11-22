@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=321" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=322" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -509,6 +509,7 @@
       <label>角度 <input type="range" id="kgAngle" min="-40" max="40" value="0"> <span id="kgAngleVal">0°</span></label>
       <label>力道 <input type="range" id="kgPower" min="0" max="100" value="60"> <span id="kgPowerVal">60%</span></label>
     </div>
+    <div class="duoNet"><button class="btn" id="kgHost" type="button">建立線上房間（2 人）</button><div class="row join"><input id="kgJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="kgJoin" type="button">加入</button></div><p class="note" id="kgCode"></p><p class="note" id="kgNetNote"></p></div>
     <p class="ccEmpty">比分：<b id="kgScore">紅 0　黑 0</b></p>
     <div class="flBtns"><button class="btn" id="kgFire" type="button">撞擊</button></div>
     <p class="ccEmpty">每人打入己方顏色棋子得 1 分並可再打一次；打入對方顏色棋子會放回中央並換人；射子落洞犯規。</p>
@@ -938,34 +939,34 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=321"></script>
-<script src="js/race_tracks.js?v=321"></script>
-<script src="js/race_arenas.js?v=321"></script>
-<script src="js/sim.js?v=321"></script>
-<script src="js/audio.js?v=321"></script>
-<script src="js/auth.js?v=321"></script>
-<script src="js/cloud.js?v=321"></script>
-<script src="js/net.js?v=321"></script>
-<script src="js/game.js?v=321"></script>
-<script src="js/minigames.js?v=321"></script>
-<script src="js/ar.js?v=321"></script>
-<script src="js/padnav.js?v=321"></script>
-<script src="js/cards.js?v=321"></script>
-<script src="js/chess.js?v=321"></script>
-<script src="js/chess_art.js?v=321"></script>
-<script src="js/xiangqi.js?v=321"></script>
-<script src="js/rummi.js?v=321"></script>
-<script src="js/gomoku.js?v=321"></script>
-<script src="js/blackjack.js?v=321"></script>
-<script src="js/g2048.js?v=321"></script>
-<script src="js/orb.js?v=321"></script>
-<script src="js/mahjong.js?v=321"></script>
-<script src="js/connect4.js?v=321"></script>
-<script src="js/flight.js?v=321"></script>
-<script src="js/pachinko.js?v=321"></script>
-<script src="js/carrom.js?v=321"></script>
-<script src="js/platform.js?v=321"></script>
-<script src="js/marble.js?v=321"></script>
-<script src="js/main.js?v=321"></script>
+<script src="js/config.js?v=322"></script>
+<script src="js/race_tracks.js?v=322"></script>
+<script src="js/race_arenas.js?v=322"></script>
+<script src="js/sim.js?v=322"></script>
+<script src="js/audio.js?v=322"></script>
+<script src="js/auth.js?v=322"></script>
+<script src="js/cloud.js?v=322"></script>
+<script src="js/net.js?v=322"></script>
+<script src="js/game.js?v=322"></script>
+<script src="js/minigames.js?v=322"></script>
+<script src="js/ar.js?v=322"></script>
+<script src="js/padnav.js?v=322"></script>
+<script src="js/cards.js?v=322"></script>
+<script src="js/chess.js?v=322"></script>
+<script src="js/chess_art.js?v=322"></script>
+<script src="js/xiangqi.js?v=322"></script>
+<script src="js/rummi.js?v=322"></script>
+<script src="js/gomoku.js?v=322"></script>
+<script src="js/blackjack.js?v=322"></script>
+<script src="js/g2048.js?v=322"></script>
+<script src="js/orb.js?v=322"></script>
+<script src="js/mahjong.js?v=322"></script>
+<script src="js/connect4.js?v=322"></script>
+<script src="js/flight.js?v=322"></script>
+<script src="js/pachinko.js?v=322"></script>
+<script src="js/carrom.js?v=322"></script>
+<script src="js/platform.js?v=322"></script>
+<script src="js/marble.js?v=322"></script>
+<script src="js/main.js?v=322"></script>
 </body>
 </html>
