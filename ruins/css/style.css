@@ -1552,3 +1552,10 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .stCfgList { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
 .stCfgItem { display: flex; align-items: center; gap: 8px; font-size: 15px; }
 .stCfgItem input { width: 20px; height: 20px; }
+
+/* 下載到手機提醒（模式選擇頁最下方） */
+.installTip { width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #fffaf0; border: 3px solid #5a4032; box-shadow: 6px 6px 0 #e3cdb8; text-align: left; }
+.installTip p { flex: 1; margin: 0; font-size: 14px; line-height: 1.5; color: #4a3428; }
+.itIco { font-size: 26px; }
+.itBtn { padding: 8px 16px; background: #e28aa0; color: #fff; border: 3px solid #5a4032; box-shadow: 3px 3px 0 #5a4032; font-size: 15px; cursor: pointer; }
+.itX { background: none; border: 0; font-size: 22px; color: #8a6f5f; cursor: pointer; padding: 0 4px; }
