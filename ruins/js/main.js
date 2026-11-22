@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v319', items: ['怪物卡牌新增雙人線上對戰：房主為準，對手只看得到自己的手牌'] };
+const UPD = { v: 'v320', items: ['賽車新增雙人房：先到終點者勝，沒有 AI 車'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1174,12 +1174,14 @@ function wireNet() {
 function micNotice() {
   if (!Voice.hasMic()) chatAdd(null, '麥克風預設關閉。要講話請在遊戲中按右上角「麥克風」。');
 }
-async function createRoom() {
+async function createRoom(gm) {
+  const race = gm === 'race';   // 賽車雙人房：先到終點者勝，沒有 AI 車
   Sfx.unlock(); wakeServer();
   await Voice.init(false);   // 不主動要求麥克風（會打斷 Discord 等其他通話）；要講話再按遊戲裡的「麥克風」
   connectRetry('建立房間中…', function (cb) { Net.host(cb); }, function () {
     S.mode = 'host'; S.myId = Net.id(); S.sim = new W.Sim();
     S.sim.map = myMap();
+    if (race) { S.sim.mode = 'race'; S.sim.raceAi = 0; }
     S.sim.addPlayer(S.myId, myName(), myLook());
     Game.setMe(S.myId); wireNet();
     enterRoom();
@@ -2467,7 +2469,7 @@ function tickLobby() {
   pv.textContent = '互相傷害：' + (S.pvp ? '開' : '關') + (S.mode === 'host' ? '' : '（房主設定）');
   pv.classList.toggle('off', !S.pvp);
   $('baseBtn').textContent = '基地：' + W.BASE_STYLES[S.base | 0].n + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
-  $('modeBtn').textContent = '模式：' + (S.gmode === 'td' ? '死守（守住回收車）' : S.gmode === 'hunt' ? '清剿（用槍打怪物）' : S.gmode === 'br' ? '廢墟生存戰（互相對戰，活到最後）' : '回收（撿廢料賣錢）') + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
+  $('modeBtn').textContent = '模式：' + (S.gmode === 'race' ? '賽車（先到終點者勝）' : S.gmode === 'td' ? '死守（守住回收車）' : S.gmode === 'hunt' ? '清剿（用槍打怪物）' : S.gmode === 'br' ? '廢墟生存戰（互相對戰，活到最後）' : '回收（撿廢料賣錢）') + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
   $('mapBtn').textContent = '地圖：' + W.MAPS[S.map || 0].name + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
 }
 // 新手教學：第一次開始遊戲時出現，之後可從「設定與說明」重看
@@ -3057,10 +3059,11 @@ function showResult(e) {
     const ts = e.win ? 1 + (e.core >= 70 ? 1 : 0) + (e.core >= 100 ? 1 : 0) : 0, sb2 = $('resStars'); sb2.textContent = '';
     for (let k = 0; k < 3; k++) { const x = document.createElement(k < ts ? 'span' : 'i'); x.textContent = '★'; sb2.appendChild(x); }
   }
-  if (e.why === 'race') {   // 賽車：完賽看用時，成績上傳排行榜（圈數榜、完賽時間榜）
-    $('resTitle').textContent = e.win ? '完賽！' : '比賽失敗';
-    $('resText').textContent = e.win && e.rr ? '用時 ' + e.rr.time.toFixed(1) + ' 秒（' + e.rr.laps + ' 圈）。' : '中途被淘汰。';
-    if (e.win && e.rr && RR.Cloud && RR.Cloud.ready()) { RR.Cloud.submit('race', e.rr.laps); RR.Cloud.submit('racet', 99999 - Math.floor(e.rr.time * 10)); }
+  if (e.why === 'race') {   // 賽車：完賽看用時，成績上傳排行榜（圈數榜、完賽時間榜）；雙人房只看誰先到
+    const duelRace = !solo && !!(e.rr && e.rr.id), rw = duelRace ? e.rr.id === S.myId : !!e.win;
+    $('resTitle').textContent = rw ? '完賽！' : duelRace ? '對手先到終點' : '比賽失敗';
+    $('resText').textContent = rw && e.rr ? '用時 ' + e.rr.time.toFixed(1) + ' 秒（' + e.rr.laps + ' 圈）。' : duelRace ? e.rr.name + ' 先完賽了。' : '中途被淘汰。';
+    if (solo && e.win && e.rr && RR.Cloud && RR.Cloud.ready()) { RR.Cloud.submit('race', e.rr.laps); RR.Cloud.submit('racet', 99999 - Math.floor(e.rr.time * 10)); }
   }
   const st = $('resStats'); st.textContent = '';
   if (!solo && e.stats) e.stats.forEach(function (p) {
@@ -3156,7 +3159,7 @@ function bind() {
   $('hubCas').addEventListener('click', function () { hubEnter('casual'); });
   $('lbHub').addEventListener('click', function () { show('scrHub'); });
   $('goBtn').addEventListener('click', function () { const b = $('modeStrip').querySelector('[data-mode="' + selMode() + '"]'); if (b) $(b.dataset.go).click(); });
-  $('mapChip').addEventListener('click', function () { if (selMode() === 'card') { cardOptsOpen(); return; } renderMapGrid(); show('scrMap'); });
+  $('mapChip').addEventListener('click', function () { if (selMode() === 'card') { cardOptsOpen(); return; } if (selMode() === 'race') { $('raceOpts').classList.remove('hide'); return; } renderMapGrid(); show('scrMap'); });
   $('coOk').addEventListener('click', function () { $('cardOpts').classList.add('hide'); refreshLobby(); });
   $('cardOpen').addEventListener('click', function () { if (duel.on && duel.g === 'card') duelLeave(); show('scrCard'); RR.Cards.start(cardOpts()); });
   $('cardDuelHost').addEventListener('click', function () { duelHostCreate('card'); });
@@ -3184,7 +3187,11 @@ function bind() {
   $('misBtn').addEventListener('click', function () { $('misModal').classList.remove('hide'); });
   $('misClose').addEventListener('click', function () { $('misModal').classList.add('hide'); });
   $('coinBtn').addEventListener('click', function () { $('wheelOpen').click(); });
-  $('createBtn').addEventListener('click', createRoom);
+  $('createBtn').addEventListener('click', function () { createRoom(); });
+  $('raceOptsOk').addEventListener('click', function () { $('raceOpts').classList.add('hide'); });
+  $('raceSolo').addEventListener('click', function () { $('raceOpts').classList.add('hide'); startSolo('race'); });
+  $('raceDuelHost').addEventListener('click', function () { $('raceOpts').classList.add('hide'); createRoom('race'); });
+  $('raceDuelJoin').addEventListener('click', function () { $('codeInput').value = $('raceDuelJoinCode').value; $('raceOpts').classList.add('hide'); joinRoom(); });
   $('joinBtn').addEventListener('click', joinRoom);
   $('codeInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') joinRoom(); });
   $('startBtn').addEventListener('click', function () { if (S.mode === 'host') hostStart(1); });
@@ -3196,7 +3203,7 @@ function bind() {
     hostBroadcast(rosterMsg()); tickLobby(); showMapName();
   });
   $('baseBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.base = ((S.base | 0) + 1) % W.BASE_STYLES.length; S.sim.baseStyle = S.base; hostBroadcast(rosterMsg()); tickLobby(); });
-  $('modeBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.mode = S.sim.mode === 'coop' ? 'hunt' : S.sim.mode === 'hunt' ? 'br' : S.sim.mode === 'br' ? 'td' : 'coop'; hostBroadcast(rosterMsg()); tickLobby(); });
+  $('modeBtn').addEventListener('click', function () { if (S.mode !== 'host' || S.sim.mode === 'race') return; S.sim.mode = S.sim.mode === 'coop' ? 'hunt' : S.sim.mode === 'hunt' ? 'br' : S.sim.mode === 'br' ? 'td' : 'coop'; hostBroadcast(rosterMsg()); tickLobby(); });
   $('brBtn').addEventListener('click', function () { startSolo('br'); });
   $('tdBtn').addEventListener('click', function () { startSolo('td'); });
   $('raceBtn').addEventListener('click', function () { startSolo('race'); });

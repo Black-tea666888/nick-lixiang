@@ -1408,7 +1408,7 @@ Sim.prototype._raceInit = function () {
     path.slice(0, -1).forEach(function (c) { route.push(center(c[0], c[1])); });
   }
   this.race.route = route;
-  const nAi = Math.max(1, Math.min(6, this.raceAi || 3));   // AI 賽車數量（1～6，預設 3）
+  const nAi = this.raceAi === 0 ? 0 : Math.max(1, Math.min(6, this.raceAi || 3));   // AI 賽車數量（0 = 雙人對決沒有 AI；其餘 1～6，預設 3）
   this.race.ai = Array.from({ length: nAi }, function (_, i) { const w = route[0] || [0, 0]; return { id: 'ai' + i, x: w[0] + i * 0.9, z: w[1], yaw: 0, k: 1, lap: 0, fin: 0, sp: 8.4 + i * 0.6 }; });
 };
 Sim.prototype._stepRace = function (dt, alive) {
@@ -1422,7 +1422,7 @@ Sim.prototype._stepRace = function (dt, alive) {
     if (Math.hypot(p.x - cp[0], p.z - cp[1]) < 2.6) {
       if (rc.next === 0) {
         rc.lap++; self.events.push({ t: 'lap', id: p.id, lap: rc.lap, time: R.t });
-        if (rc.lap >= R.laps) { rc.fin = R.t; self.raceRes = { time: R.t, laps: R.laps }; self._end(true, 'race'); return; }
+        if (rc.lap >= R.laps) { rc.fin = R.t; if (self.phase === 'play') { self.raceRes = { time: R.t, laps: R.laps, id: p.id, name: p.name }; self._end(true, 'race'); } return; }
       }
       rc.next = (rc.next + 1) % N;
     }
