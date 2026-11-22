@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v294', items: ['五子棋、四子連珠新增線上房間：建立房間或輸入代碼加入，和朋友對戰'] };
+const UPD = { v: 'v295', items: ['修正 21 點、方塊合併在休閒模式按開始沒反應的問題；休閒模式不再顯示主模式的地圖欄'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -2093,8 +2093,8 @@ const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'c
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { orb: '轉珠', mj: '麻將', coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', flight: '飛行棋', pachi: '彈珠台', kangle: '康樂球', plat: '跳關', marble: '彈珠' };
-function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
+const LOBBY_MODE = { bj: '21點', g2048: '方塊合併', orb: '轉珠', mj: '麻將', coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', flight: '飛行棋', pachi: '彈珠台', kangle: '康樂球', plat: '跳關', marble: '彈珠' };
+function selMode() { const m = ls('rr_mode') || 'coop'; if (LOBBY_MODE[m]) return m; return hubCat && HUB_CATS[hubCat] ? HUB_CATS[hubCat][0] : 'coop'; }   // 休閒分類下退回該分類第一個模式，不跳回組隊
 // 休閒模式的玩法說明（點大廳的「玩法說明」看）
 const CAS_HELP = {
   ar: '在迷宮裡找怪物，用 AR 相機抓住它。\n迷宮會隨機生成，找到出口或抓滿怪物即可過關。',
@@ -2125,6 +2125,7 @@ function refreshLobby() {
   $('startMode').textContent = LOBBY_MODE[m] + (m === 'coop' ? '：建立房間' : '');
   $('mapName').textContent = m === 'card' ? cardOptsText() : (W.MAPS[myMap()] || W.MAPS[0]).name;
   $('mapChip').querySelector('span').textContent = m === 'card' ? '玩法' : '地圖';
+  $('mapChip').classList.toggle('hide', hubCat === 'casual' && m !== 'card');   // 休閒模式不選地圖
   $('mapChip').classList.toggle('dim', m === 'ar');   // AR 不用選地圖；卡牌模式這格改成選玩法
   const look = myLook();
   $('lbName').textContent = W.CHARS[look.c] + '　' + (W.GUNS[look.gun] || W.GUNS[0]).name;
