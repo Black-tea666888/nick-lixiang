@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v297', items: ['休閒大廳新增「自訂房」：選遊戲後建立線上房間'] };
+const UPD = { v: 'v298', items: ['中國象棋新增線上房間（建立房間或輸入代碼加入）'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1344,14 +1344,18 @@ function chessTap(i) {
 let xqS = null, xqSel = -1, xqMoves = [];
 const XQ_GLYPH = { K: '帥', A: '仕', B: '相', N: '傌', R: '俥', C: '炮', P: '兵', k: '將', a: '士', b: '象', n: '馬', r: '車', c: '砲', p: '卒' };
 function xqOpen() { show('scrXq'); if (!xqS) xqS = RR.Xiangqi.start(); xqSel = -1; xqMoves = []; xqDraw(); }
-function xqNew() { xqS = RR.Xiangqi.start(); xqSel = -1; xqMoves = []; xqDraw(); }
+function xqNew() { if (duo.on && duo.g === 'xq') return duoNew(); xqS = RR.Xiangqi.start(); xqSel = -1; xqMoves = []; xqDraw(); }
 function xqTap(i) {
   const X = RR.Xiangqi, s = xqS, st = X.status(s);
   if (st.k === 'mate') return;
+  const online = duo.on && duo.g === 'xq', mySide = online ? (duo.host ? DUO.xq.hostSide : DUO.xq.guestSide) : s.turn;
   const hit = xqMoves.filter(function (m) { return m.to === i; });
-  if (hit.length) { xqS = X.apply(s, hit[0]); xqSel = -1; xqMoves = []; xqDraw(); return; }
+  if (hit.length) {
+    if (online) { const from = hit[0].from; xqSel = -1; xqMoves = []; duoTap({ from: from, to: i }); xqDraw(); return; }
+    xqS = X.apply(s, hit[0]); xqSel = -1; xqMoves = []; xqDraw(); return;
+  }
   const p = s.b[i];
-  if (p && X.color(p) === s.turn) { xqSel = i; xqMoves = X.legalMoves(s, i); }
+  if (p && X.color(p) === s.turn && X.color(p) === mySide) { xqSel = i; xqMoves = X.legalMoves(s, i); }
   else { xqSel = -1; xqMoves = []; }
   xqDraw();
 }
@@ -1457,7 +1461,12 @@ document.addEventListener('keydown', function (e) {
   });
 })();
 /* 五子棋、四子連珠的線上對戰：房主是權威，驗證移動後同步整盤；加入者按自己的顏色下子 */
+const XQW = { start: function () { return RR.Xiangqi.start(); }, move: function (s, mv) {
+  const X = RR.Xiangqi, m = X.legalMoves(s, mv.from).filter(function (x) { return x.to === mv.to; })[0];
+  return m ? { ok: true, state: X.apply(s, m) } : { ok: false };
+} };
 const DUO = {
+  xq: { key: 'xq', lib: function () { return XQW; }, get: function () { return xqS; }, set: function (v) { xqS = v; }, draw: function () { xqDraw(); }, hostSide: 'r', guestSide: 'b', hostName: '紅', guestName: '黑' },
   gm: { key: 'gomoku', lib: function () { return RR.Gomoku; }, get: function () { return gmS; }, set: function (v) { gmS = v; }, draw: function () { gmDraw(); }, hostSide: 'b', guestSide: 'w', hostName: '黑', guestName: '白' },
   c4: { key: 'c4', lib: function () { return RR.Connect4; }, get: function () { return c4S; }, set: function (v) { c4S = v; }, draw: function () { c4Draw(); }, hostSide: 'r', guestSide: 'y', hostName: '紅', guestName: '黃' }
 };
@@ -1494,7 +1503,7 @@ function duoOnMsg(from, d) {
     if (d.t === 'hi') {
       if (!duo.guest) { duo.guest = from; Net.sendTo(from, { t: 'duo', g: duo.g, s: DUO[duo.g].get() }); duoNote('對手已加入，' + DUO[duo.g].hostName + '方先走。'); }
       else Net.sendTo(from, { t: 'no', why: 'full' });
-    } else if (d.t === 'duo_mv' && from === duo.guest && d.g === duo.g) duoMove(Number(d.mv) | 0, DUO[duo.g].guestSide);
+    } else if (d.t === 'duo_mv' && from === duo.guest && d.g === duo.g) duoMove(d.mv && typeof d.mv === 'object' ? { from: d.mv.from | 0, to: d.mv.to | 0 } : Number(d.mv) | 0, DUO[duo.g].guestSide);
   } else if (d.t === 'duo' && d.g === duo.g) {
     DUO[duo.g].set(d.s); DUO[duo.g].draw();
     duoNote('你是' + DUO[duo.g].guestName + '方' + (d.s.turn === DUO[duo.g].guestSide ? '，輪到你。' : '，等房主下子。'));
@@ -2119,7 +2128,8 @@ const CAS_HELP = {
 const ROOM_GAMES = {
   gomoku: { open: function () { gmOpen(); }, host: function () { duoHostCreate('gm'); } },
   c4: { open: function () { c4Open(); }, host: function () { duoHostCreate('c4'); } },
-  chess: { open: function () { chessOpen(); }, host: function () { chessHostCreate(); } }
+  chess: { open: function () { chessOpen(); }, host: function () { chessHostCreate(); } },
+  xq: { open: function () { xqOpen(); }, host: function () { duoHostCreate('xq'); } }
 };
 function roomOpen() {
   const list = $('roomList'); list.textContent = '';
@@ -3038,7 +3048,9 @@ function bind() {
   $('rummiDraw').addEventListener('click', rmDrawTile);
   $('rummiUndo').addEventListener('click', rmUndo);
   $('rummiOk').addEventListener('click', rmConfirm);
-  $('xqBack').addEventListener('click', showMenu);
+  $('xqBack').addEventListener('click', function () { duoLeave(); showMenu(); });
+  $('xqHost').addEventListener('click', function () { duoHostCreate('xq'); });
+  $('xqJoin').addEventListener('click', function () { duoJoin('xq'); });
   $('xqNew').addEventListener('click', xqNew);
   $('platBtn').addEventListener('click', platOpen);
   $('marbleBtn').addEventListener('click', marbleOpen);
