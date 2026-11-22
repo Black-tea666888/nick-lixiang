@@ -1539,3 +1539,10 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .rsSet.rsNew { animation: rsNew .4s ease-out; }
 @keyframes rsNew { from { transform: scale(.8); box-shadow: 0 0 0 4px #ffd23a; } to { transform: none; box-shadow: none; } }
 @media (prefers-reduced-motion: reduce) { .rsSet.rsNew { animation: none; } }
+
+/* 賽車：氮氣啟動與彈跳台彈射 */
+#raceNitro.raceFx { animation: raceFx .5s ease-out; }
+#raceStat.raceJump { animation: raceJump .4s ease-out; }
+@keyframes raceFx { from { box-shadow: 0 0 0 0 rgba(90, 200, 255, .9); } to { box-shadow: 0 0 0 16px rgba(90, 200, 255, 0); } }
+@keyframes raceJump { 0% { transform: translateY(0); } 40% { transform: translateY(-6px); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { #raceNitro.raceFx, #raceStat.raceJump { animation: none; } }

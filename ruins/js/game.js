@@ -329,13 +329,15 @@ function raceTickRamps(dt) {
     if (me.vy !== 0 || me.y > groundAt(me.x, me.z) + 0.05) return;
     me.vy = (r.sc ? 11 : 6.5) * k; me.air2 = false;
     r.t = 1.5;
+    raceFxRestart(document.getElementById('raceStat'), 'raceJump');
     Sfx.tone(r.sc ? 380 : 600, 0.12, 'triangle', 0.08, r.sc ? 500 : 900);
   });
 }
 document.getElementById('raceNitro') && document.getElementById('raceNitro').addEventListener('click', function () { if (view.mode === 'race') raceNitro(); });
 document.getElementById('raceReset') && document.getElementById('raceReset').addEventListener('click', function () { if (view.mode === 'race' && me.alive) raceRespawn(false); });
 /* 氮氣：開滿（1 格）才能按，短暫衝到更高速 */
-function raceNitro() { if ((me.nitro || 0) >= 1 && !(me.nitroT > 0) && !(me.pauseT > 0)) { me.nitroT = 2.2; me.nitro = 0; Sfx.tone(300, 0.2, 'sawtooth', 0.06, 900); } }
+function raceFxRestart(el, cls) { if (!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+function raceNitro() { if ((me.nitro || 0) >= 1 && !(me.nitroT > 0) && !(me.pauseT > 0)) { me.nitroT = 2.2; me.nitro = 0; Sfx.tone(300, 0.2, 'sawtooth', 0.06, 900); raceFxRestart(document.getElementById('raceNitro'), 'raceFx'); } }
 /* 撞牆：車速大時扣車況、減速；車況 0 就爆炸，停 3 秒後強制復位 */
 function raceImpact(bx, bz, dx, dz) {
   const want = Math.hypot(dx, dz), got = Math.hypot(me.x - bx, me.z - bz);
