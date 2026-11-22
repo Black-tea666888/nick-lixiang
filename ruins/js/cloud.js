@@ -87,6 +87,7 @@ function joinRef(ref, cd, cb) {
     return userRef().set({ clan: ref.id, clanTag: cd.tag, clanName: cd.name }, { merge: true });
   }).then(function () { cb(null, { id: ref.id, tag: cd.tag, name: cd.name }); }).catch(fail(cb));
 }
+let siteHB = null;
 const PRESENCE_MODES = { marble: 1, plat: 1, chess: 1 };   // 休閒模式才顯示在玩人數
 const presenceT = {};
 const Cloud = {
@@ -231,6 +232,24 @@ const Cloud = {
     Promise.all(Object.keys(PRESENCE_MODES).map(function (m) {
       return db.collection('modeplay').doc(m).collection('players').where('seen', '>', cutoff).get().then(function (q) { out[m] = q.size; });
     })).then(function () { cb(null, out); }).catch(fail(cb));
+  },
+  /** 首頁底部資訊：每個分頁第一次載入記一次瀏覽，並開始「在線」心跳；cb(err, {views})（同分頁只記一次） */
+  siteVisit: function (cb) {
+    if (!Cloud.ready()) { if (cb) cb({ code: 'offline' }); return; }
+    const FV = window.firebase.firestore.FieldValue, ref = db.collection('stats').doc('site');
+    let first = false;
+    try { if (!sessionStorage.getItem('rr_visited')) { sessionStorage.setItem('rr_visited', '1'); first = true; } } catch (e) {}
+    if (uid && !siteHB) {
+      const beat = function () { if (!document.hidden && uid) db.collection('online').doc(uid).set({ seen: Date.now() }).catch(function () {}); };
+      beat(); siteHB = setInterval(beat, 60000);
+    }
+    const p = first ? ref.set({ views: FV.increment(1) }, { merge: true }) : Promise.resolve();
+    p.then(function () { return ref.get(); }).then(function (s) { if (cb) cb(null, { views: (s.data() || {}).views | 0 }); }).catch(fail(cb));
+  },
+  /** cb(err, n)：最近 3 分鐘內有心跳的人數 */
+  siteOnline: function (cb) {
+    if (!Cloud.ready()) { if (cb) cb({ code: 'offline' }); return; }
+    db.collection('online').where('seen', '>', Date.now() - 180000).get().then(function (q) { if (cb) cb(null, q.size); }).catch(fail(cb));
   },
   /** 即時訂閱公開房間：只留 2.5 分鐘內有更新、還沒滿的房間 */
   roomsWatch: function (onRows) {
