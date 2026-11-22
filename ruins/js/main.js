@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v310', items: ['飛行棋加入移動與被吃的特效'] };
+const UPD = { v: 'v311', items: ['彈珠台加入落袋閃光、獲得顆數飄字與大獎粒子'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1788,7 +1788,15 @@ function pcStep() {
   pcRaf = 0;
   pcS.balls += pcS.payout; pcS.won += pcS.payout;
   pcS.path = null;
+  // 落袋特效：袋子閃光、飄出獲得的顆數，大獎多噴粒子
+  const P = RR.Pachinko, pw = P.W / P.PAYOUT.length, cx = pcS.pocket * pw + pw / 2, parts = [];
+  for (let i = 0; i < (pcS.pocket === 2 ? 26 : 12); i++) parts.push({ x: cx, y: P.H - 36, vx: (Math.random() - 0.5) * 3.2, vy: -Math.random() * 3.6 - 1, life: 30 + Math.random() * 14 });
+  pcS.fx = { pocket: pcS.pocket, payout: pcS.payout, t: 44, parts: parts, jackpot: pcS.pocket === 2 };
+  pcDraw(); pcFxRun();
+}
+function pcFxRun() {
   pcDraw();
+  if (pcS && pcS.fx && pcS.fx.t > 0) requestAnimationFrame(pcFxRun);
 }
 function pcDraw() {
   const P = RR.Pachinko, cv = $('pcCanvas'), ctx = cv.getContext('2d');
@@ -1813,6 +1821,18 @@ function pcDraw() {
   }
   // 球
   if (pcS.path) { const q = pcS.path[pcS.idx]; ctx.fillStyle = '#ffd23a'; ctx.beginPath(); ctx.arc(q.x, q.y, P.BALL_R, 0, Math.PI * 2); ctx.fill(); }
+  // 落袋特效
+  const fx = pcS.fx;
+  if (fx && fx.t > 0) {
+    const pw = P.W / P.PAYOUT.length, a = fx.t / 44;
+    ctx.fillStyle = 'rgba(255,240,150,' + (a * 0.6).toFixed(2) + ')';
+    ctx.fillRect(fx.pocket * pw + 2, P.H - 36, pw - 4, 34);
+    ctx.fillStyle = 'rgba(255,210,58,' + a.toFixed(2) + ')'; ctx.font = 'bold ' + (fx.jackpot ? 18 : 14) + 'px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('+' + fx.payout, fx.pocket * pw + pw / 2, P.H - 52 - (44 - fx.t) * 0.6);
+    ctx.textAlign = 'left';
+    fx.parts.forEach(function (q) { q.x += q.vx; q.y += q.vy; q.vy += 0.15; q.life--; if (q.life > 0) { ctx.fillStyle = 'rgba(255,226,122,' + Math.max(0, q.life / 40).toFixed(2) + ')'; ctx.fillRect(q.x, q.y, 3, 3); } });
+    fx.t--;
+  }
   $('pcBalls').textContent = pcS.balls;
   $('pcWon').textContent = pcS.won;
   $('pcAngleVal').textContent = $('pcAngle').value + '°';
