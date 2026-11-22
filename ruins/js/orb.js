@@ -55,9 +55,10 @@
 
   /** 消除 + 掉落補位，回傳這一輪的連鎖資訊 */
   function resolve(b) {
-    let cleared = 0, combos = 0;
+    let cleared = 0, combos = 0, hits = null;
     let m = findMatches(b);
     while (m.length) {
+      if (!hits) hits = m.slice();
       combos++;
       cleared += m.length;
       m.forEach(function (i) { b[i] = -1; });
@@ -70,7 +71,7 @@
       }
       m = findMatches(b);
     }
-    return { cleared: cleared, combos: combos };
+    return { cleared: cleared, combos: combos, hits: hits || [] };
   }
 
   /** 交換兩顆相鄰珠子；有消除才算一步（沒有就還原） */

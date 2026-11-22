@@ -1429,7 +1429,7 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 
 /* 2048（無限板） */
 .g2048Board { display: grid; gap: 6px; width: min(92vw, 420px); aspect-ratio: 1; margin: 12px auto; touch-action: none; user-select: none; -webkit-user-select: none; }
-.g2Cell { min-width: 0; min-height: 0; overflow: hidden; white-space: nowrap; display: grid; place-items: center; background: #2a2f3a; border: 3px solid #1d2b4a; font: 700 clamp(14px, 4vw, 26px)/1 system-ui, sans-serif; color: #1d2b4a; min-height: 0; }
+.g2Cell { position: relative; min-width: 0; min-height: 0; overflow: hidden; white-space: nowrap; display: grid; place-items: center; background: #2a2f3a; border: 3px solid #1d2b4a; font: 700 clamp(14px, 4vw, 26px)/1 system-ui, sans-serif; color: #1d2b4a; min-height: 0; }
 .g2Cell.big { font-size: clamp(10px, 2.8vw, 19px); }
 .g2Cell.v2 { background: #fff3d1; } .g2Cell.v4 { background: #ffe0a3; } .g2Cell.v8 { background: #ffc27a; color: #fff; }
 .g2Cell.v16 { background: #ff9f5a; color: #fff; } .g2Cell.v32 { background: #ff7a6b; color: #fff; } .g2Cell.v64 { background: #ff5a4a; color: #fff; }
@@ -1458,7 +1458,7 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 /* 全頁重置按鈕：左上角，卡住時按一下重新整理 */
 .resetBtn { position: fixed; top: 50%; left: 2px; transform: translateY(-50%); z-index: 200; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #1b1b1b; background: rgba(244,236,216,.92); color: #1b1b1b; font-size: 18px; font-weight: 900; line-height: 1; padding: 0; cursor: pointer; opacity: .85; }
 
-.orbBoard { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; width: min(92vw, 420px, calc((100vh - 170px) * 1.2)); aspect-ratio: 6 / 5; margin: 10px auto; padding: 6px; background: #15181b; border: 3px solid var(--ink); border-radius: 6px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.orbBoard { position: relative; display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; width: min(92vw, 420px, calc((100vh - 170px) * 1.2)); aspect-ratio: 6 / 5; margin: 10px auto; padding: 6px; background: #15181b; border: 3px solid var(--ink); border-radius: 6px; touch-action: none; user-select: none; -webkit-user-select: none; }
 .orbCell { border-radius: 50%; box-shadow: inset -3px -3px 0 rgba(0,0,0,.35), inset 3px 3px 0 rgba(255,255,255,.25); }
 .orbCell.o0 { background: #e0553a; } .orbCell.o1 { background: #3a8ee6; } .orbCell.o2 { background: #f2c230; }
 .orbCell.o3 { background: #4caf50; } .orbCell.o4 { background: #9c6bdc; } .orbCell.o5 { background: #f0f0f0; }
@@ -1469,3 +1469,18 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .mjAct { display: flex; gap: 8px; justify-content: center; }
 
 #casHelpB { color: #1b1e21; background: #fff7e0; border: 2px solid var(--ink); border-radius: 6px; padding: 10px 12px; font-size: 15px; font-weight: 600; line-height: 1.6; }
+
+/* 合成與出現特效 */
+.g2Cell.mg { animation: g2Merge .26s ease-out; }
+.g2Cell.mg::after { content: ''; position: absolute; inset: 0; background: #fff; animation: g2Flash .35s ease-out forwards; pointer-events: none; }
+.g2Cell.sp { animation: g2Spawn .18s ease-out; }
+@keyframes g2Merge { 0% { transform: scale(.85); } 50% { transform: scale(1.14); } 100% { transform: none; } }
+@keyframes g2Flash { from { opacity: .8; } to { opacity: 0; } }
+@keyframes g2Spawn { from { transform: scale(.25); opacity: .4; } to { transform: none; opacity: 1; } }
+.orbCell.hit { animation: orbHit .36s ease-out; }
+.orbCell.fall { animation: orbFall .28s ease-out; }
+@keyframes orbHit { 0% { transform: scale(.4); filter: brightness(1.7); } 60% { transform: scale(1.14); } 100% { transform: none; } }
+@keyframes orbFall { from { transform: translateY(-60%); } to { transform: none; } }
+.orbBanner { position: absolute; left: 50%; top: 50%; z-index: 2; pointer-events: none; font: 900 clamp(22px, 7vw, 40px)/1 system-ui, sans-serif; color: #fff; white-space: nowrap; text-shadow: 0 3px 0 #15181b, 0 0 14px rgba(255, 220, 90, .9); animation: orbBanner .9s ease-out forwards; }
+@keyframes orbBanner { 0% { transform: translate(-50%, -50%) scale(.4); opacity: 0; } 25% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; } 70% { transform: translate(-50%, -50%); opacity: 1; } 100% { transform: translate(-50%, -75%); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .g2Cell.mg, .g2Cell.sp, .g2Cell.mg::after, .orbCell.hit, .orbCell.fall, .orbBanner { animation: none; } }
