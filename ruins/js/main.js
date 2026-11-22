@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v293', items: ['休閒模式新增「麻將」：十六張對電腦，湊成 5 組加 1 對即胡'] };
+const UPD = { v: 'v294', items: ['五子棋、四子連珠新增線上房間：建立房間或輸入代碼加入，和朋友對戰'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1456,9 +1456,77 @@ document.addEventListener('keydown', function (e) {
     if (Math.abs(dx) > Math.abs(dy)) g2Move(dx > 0 ? 'R' : 'L'); else g2Move(dy > 0 ? 'D' : 'U');
   });
 })();
+/* 五子棋、四子連珠的線上對戰：房主是權威，驗證移動後同步整盤；加入者按自己的顏色下子 */
+const DUO = {
+  gm: { key: 'gomoku', lib: function () { return RR.Gomoku; }, get: function () { return gmS; }, set: function (v) { gmS = v; }, draw: function () { gmDraw(); }, hostSide: 'b', guestSide: 'w', hostName: '黑', guestName: '白' },
+  c4: { key: 'c4', lib: function () { return RR.Connect4; }, get: function () { return c4S; }, set: function (v) { c4S = v; }, draw: function () { c4Draw(); }, hostSide: 'r', guestSide: 'y', hostName: '紅', guestName: '黃' }
+};
+let duo = { on: false, host: false, g: null, guest: null };
+function duoNote(msg) {
+  const c = DUO[duo.g]; if (!c) return;
+  $(c.key + 'NetNote').textContent = msg || '';
+  $(c.key + 'Code').textContent = duo.on && duo.host ? '房間代碼：' + Net.code() : '';
+}
+function duoSend() { if (duo.host && duo.guest) Net.sendTo(duo.guest, { t: 'duo', g: duo.g, s: DUO[duo.g].get() }); }
+function duoMove(mv, side) {
+  const c = DUO[duo.g], s = c.get();
+  if (!s || s.turn !== side) return;
+  const r = c.lib().move(s, mv);
+  if (!r.ok) return;
+  c.set(r.state); duoSend(); c.draw();
+}
+// 回傳 true 表示已交給線上流程處理（不走本機下子）
+function duoTap(mv) {
+  if (!duo.on) return false;
+  const c = DUO[duo.g], mySide = duo.host ? c.hostSide : c.guestSide;
+  if (c.get().turn !== mySide) { duoNote('還沒輪到你。'); return true; }
+  if (duo.host) duoMove(mv, mySide); else Net.send({ t: 'duo_mv', g: duo.g, mv: mv });
+  return true;
+}
+function duoNew() {
+  const c = DUO[duo.g];
+  if (!duo.host) { duoNote('請房主按「重新開始」。'); return; }
+  c.set(c.lib().start()); duoSend(); c.draw();
+}
+function duoOnMsg(from, d) {
+  if (!d || typeof d !== 'object' || !duo.g) return;
+  if (duo.host) {
+    if (d.t === 'hi') {
+      if (!duo.guest) { duo.guest = from; Net.sendTo(from, { t: 'duo', g: duo.g, s: DUO[duo.g].get() }); duoNote('對手已加入，' + DUO[duo.g].hostName + '方先走。'); }
+      else Net.sendTo(from, { t: 'no', why: 'full' });
+    } else if (d.t === 'duo_mv' && from === duo.guest && d.g === duo.g) duoMove(Number(d.mv) | 0, DUO[duo.g].guestSide);
+  } else if (d.t === 'duo' && d.g === duo.g) {
+    DUO[duo.g].set(d.s); DUO[duo.g].draw();
+    duoNote('你是' + DUO[duo.g].guestName + '方' + (d.s.turn === DUO[duo.g].guestSide ? '，輪到你。' : '，等房主下子。'));
+  }
+}
+function duoOnLeave() { duoNote(duo.host ? '對手已離開，等待新的對手加入。' : '房主已離開。'); if (duo.host) duo.guest = null; }
+function duoLeave() { if (duo.on) Net.leave(); duo = { on: false, host: false, g: null, guest: null }; }
+function duoHostCreate(g) {
+  duoLeave(); duo.g = g; duoNote('建立房間中…');
+  Net.host(function (err) {
+    if (err) { duoNote('建立失敗，請稍後再試。'); return; }
+    duo = { on: true, host: true, g: g, guest: null };
+    Net.on('msg', duoOnMsg); Net.on('leave', duoOnLeave);
+    DUO[g].set(DUO[g].lib().start()); DUO[g].draw();
+    duoNote('等待對手加入（你是' + DUO[g].hostName + '方）。把代碼給對方。');
+  });
+}
+function duoJoin(g) {
+  const k = DUO[g].key, code = Net.normalizeCode($(k + 'JoinCode').value);
+  if (code.length !== 5) { duo.g = g; duoNote('請輸入 5 碼房間代碼。'); return; }
+  duoLeave(); duo.g = g; duoNote('加入中…');
+  Net.join(code, { name: myName() }, function (err) {
+    if (err) { duoNote('加入失敗，請確認代碼。'); return; }
+    duo = { on: true, host: false, g: g, guest: null };
+    Net.on('msg', duoOnMsg); Net.on('leave', duoOnLeave);
+    Net.send({ t: 'hi' }); duoNote('已加入，等待房主同步棋盤。');
+  });
+}
 function gmOpen() { show('scrGomoku'); if (!gmS) gmS = RR.Gomoku.start(); gmDraw(); }
-function gmNew() { gmS = RR.Gomoku.start(); gmDraw(); }
+function gmNew() { if (duo.on && duo.g === 'gm') return duoNew(); gmS = RR.Gomoku.start(); gmDraw(); }
 function gmTap(i) {
+  if (duo.on && duo.g === 'gm') { duoTap(i); return; }
   const r = RR.Gomoku.move(gmS, i);
   if (r.ok) gmS = r.state;
   gmDraw();
@@ -1487,8 +1555,9 @@ function gmDraw() {
 /* 四子連珠（同機雙人） */
 let c4S = null;
 function c4Open() { show('scrC4'); if (!c4S) c4S = RR.Connect4.start(); c4Draw(); }
-function c4New() { c4S = RR.Connect4.start(); c4Draw(); }
+function c4New() { if (duo.on && duo.g === 'c4') return duoNew(); c4S = RR.Connect4.start(); c4Draw(); }
 function c4Tap(col) {
+  if (duo.on && duo.g === 'c4') { duoTap(col); return; }
   const r = RR.Connect4.move(c4S, col);
   if (r.ok) c4S = r.state;
   c4Draw();
@@ -2918,9 +2987,13 @@ function bind() {
   $('flightNew').addEventListener('click', flSetup);
   $('flightRoll').addEventListener('click', flRoll);
   document.querySelectorAll('[data-flp]').forEach(function (b) { b.addEventListener('click', function () { flNew(+b.getAttribute('data-flp')); }); });
-  $('c4Back').addEventListener('click', showMenu);
+  $('c4Back').addEventListener('click', function () { duoLeave(); showMenu(); });
+  $('c4Host').addEventListener('click', function () { duoHostCreate('c4'); });
+  $('c4Join').addEventListener('click', function () { duoJoin('c4'); });
   $('c4New').addEventListener('click', c4New);
-  $('gomokuBack').addEventListener('click', showMenu);
+  $('gomokuBack').addEventListener('click', function () { duoLeave(); showMenu(); });
+  $('gomokuHost').addEventListener('click', function () { duoHostCreate('gm'); });
+  $('gomokuJoin').addEventListener('click', function () { duoJoin('gm'); });
   $('gomokuNew').addEventListener('click', gmNew);
   $('rummiBack').addEventListener('click', showMenu);
   $('rummiNew').addEventListener('click', rmNewGame);
