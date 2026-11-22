@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v296', items: ['休閒模式的「設定」改為休閒專用：音效、背景音樂、FPS 與玩法說明'] };
+const UPD = { v: 'v297', items: ['休閒大廳新增「自訂房」：選遊戲後建立線上房間'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -2115,6 +2115,29 @@ const CAS_HELP = {
   pachi: '調整角度與力道發射彈珠。\n彈珠落進中間的袋子就是大獎，落在其他地方則依分數計算。',
   kangle: '在桌上用球撞擊，兩人輪流。\n先把自己的 8 顆球打進洞者獲勝。',
 };
+// 自訂房：共用的選遊戲面板；有線上房間的遊戲直接建房，其餘先說明
+const ROOM_GAMES = {
+  gomoku: { open: function () { gmOpen(); }, host: function () { duoHostCreate('gm'); } },
+  c4: { open: function () { c4Open(); }, host: function () { duoHostCreate('c4'); } },
+  chess: { open: function () { chessOpen(); }, host: function () { chessHostCreate(); } }
+};
+function roomOpen() {
+  const list = $('roomList'); list.textContent = '';
+  HUB_CATS.casual.forEach(function (m) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn';
+    b.textContent = LOBBY_MODE[m] + (ROOM_GAMES[m] ? '' : '（暫不支援）');
+    b.addEventListener('click', function () { roomPick(m); });
+    list.appendChild(b);
+  });
+  $('roomNote').textContent = '選一個遊戲建立線上房間，把代碼給朋友就能一起玩。';
+  $('roomM').classList.remove('hide');
+}
+function roomPick(m) {
+  const g = ROOM_GAMES[m];
+  if (!g) { $('roomNote').textContent = LOBBY_MODE[m] + ' 還沒有線上房間，目前可以先同機玩。'; return; }
+  $('roomM').classList.add('hide');
+  g.open(); g.host();
+}
 function casSetOpen() {
   $('casSfx').value = $('setSfx').value; $('casMusic').value = $('setMusic').value; $('casFps').checked = ls('rr_fps') === '1';
   $('casSetM').classList.remove('hide');
@@ -2125,7 +2148,8 @@ function refreshLobby() {
   Array.prototype.forEach.call($('modeStrip').children, function (b) { const on = b.dataset.mode === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
   Array.prototype.forEach.call($('modeStrip').children, function (b) { b.classList.toggle('hide', !!hubCat && HUB_CATS[hubCat].indexOf(b.dataset.mode) < 0); });
   $('optChip').classList.toggle('hide', m !== 'coop');
-  $('casHelp').classList.toggle('hide', hubCat !== 'casual'); $('optName').textContent = recText();
+  $('casHelp').classList.toggle('hide', hubCat !== 'casual');
+  $('roomOpen').classList.toggle('hide', hubCat !== 'casual'); $('optName').textContent = recText();
   $('startMode').textContent = LOBBY_MODE[m] + (m === 'coop' ? '：建立房間' : '');
   $('mapName').textContent = m === 'card' ? cardOptsText() : (W.MAPS[myMap()] || W.MAPS[0]).name;
   $('mapChip').querySelector('span').textContent = m === 'card' ? '玩法' : '地圖';
@@ -2897,6 +2921,8 @@ function bind() {
   $('casHelp').addEventListener('click', function () { const k = selMode(); $('casHelpT').textContent = LOBBY_MODE[k] + '玩法'; $('casHelpB').textContent = CAS_HELP[k] || '這個模式的說明還沒寫好。'; $('casHelpM').classList.remove('hide'); });
   $('casHelpX').addEventListener('click', function () { $('casHelpM').classList.add('hide'); });
   // 休閒設定：只放休閒相關項目，音量與 FPS 和主設定共用同一組儲存值
+  $('roomOpen').addEventListener('click', roomOpen);
+  $('roomX').addEventListener('click', function () { $('roomM').classList.add('hide'); });
   $('casSetX').addEventListener('click', function () { $('casSetM').classList.add('hide'); });
   $('casSetHelp').addEventListener('click', function () { $('casSetM').classList.add('hide'); $('casHelp').click(); });
   $('casSfx').addEventListener('input', function () { $('setSfx').value = $('casSfx').value; Sfx.setVolume(parseFloat($('casSfx').value)); lsSet('rr_sfx', $('casSfx').value); });

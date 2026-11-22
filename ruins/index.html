@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=296" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=297" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -111,6 +111,7 @@
     <button class="mcard hubCard casual" id="hubCas" type="button"><b>休閒模式</b><span>AR 抓怪、怪物卡牌、賽車</span></button>
   </div>
 </div>
+<div class="modal hide" id="roomM"><div class="panel small tut"><h2>自訂房：選擇遊戲</h2><p class="note" id="roomNote">選一個遊戲建立線上房間，把代碼給朋友就能一起玩。</p><div class="col" id="roomList"></div><div class="row"><button class="btn primary" id="roomX" type="button">關閉</button></div></div></div>
 <div class="modal hide" id="casSetM"><div class="panel small tut"><h2>休閒設定</h2>
 <label class="field">音效音量<input id="casSfx" type="range" min="0" max="1" step="0.05"></label>
 <label class="field">背景音樂<input id="casMusic" type="range" min="0" max="1" step="0.05"></label>
@@ -134,6 +135,7 @@
       <div class="lbIcons">
         <button class="icon" id="marketOpen" type="button" aria-label="聊天與組隊">聊天</button>
         <button class="icon" id="socialOpen" type="button">社群<i class="badge hide" id="socBadge"></i></button>
+        <button class="icon hide" id="roomOpen" type="button">自訂房</button>
         <button class="icon hide" id="casHelp" type="button">玩法說明</button>
         <button class="icon" id="helpBtn" type="button" aria-label="設定與說明">設定</button>
         <button class="icon" id="moreBtn" type="button" aria-label="更多" aria-haspopup="true">更多<i class="badge hide" id="moreBadge"></i></button>
@@ -927,34 +929,34 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=296"></script>
-<script src="js/race_tracks.js?v=296"></script>
-<script src="js/race_arenas.js?v=296"></script>
-<script src="js/sim.js?v=296"></script>
-<script src="js/audio.js?v=296"></script>
-<script src="js/auth.js?v=296"></script>
-<script src="js/cloud.js?v=296"></script>
-<script src="js/net.js?v=296"></script>
-<script src="js/game.js?v=296"></script>
-<script src="js/minigames.js?v=296"></script>
-<script src="js/ar.js?v=296"></script>
-<script src="js/padnav.js?v=296"></script>
-<script src="js/cards.js?v=296"></script>
-<script src="js/chess.js?v=296"></script>
-<script src="js/chess_art.js?v=296"></script>
-<script src="js/xiangqi.js?v=296"></script>
-<script src="js/rummi.js?v=296"></script>
-<script src="js/gomoku.js?v=296"></script>
-<script src="js/blackjack.js?v=296"></script>
-<script src="js/g2048.js?v=296"></script>
-<script src="js/orb.js?v=296"></script>
-<script src="js/mahjong.js?v=296"></script>
-<script src="js/connect4.js?v=296"></script>
-<script src="js/flight.js?v=296"></script>
-<script src="js/pachinko.js?v=296"></script>
-<script src="js/carrom.js?v=296"></script>
-<script src="js/platform.js?v=296"></script>
-<script src="js/marble.js?v=296"></script>
-<script src="js/main.js?v=296"></script>
+<script src="js/config.js?v=297"></script>
+<script src="js/race_tracks.js?v=297"></script>
+<script src="js/race_arenas.js?v=297"></script>
+<script src="js/sim.js?v=297"></script>
+<script src="js/audio.js?v=297"></script>
+<script src="js/auth.js?v=297"></script>
+<script src="js/cloud.js?v=297"></script>
+<script src="js/net.js?v=297"></script>
+<script src="js/game.js?v=297"></script>
+<script src="js/minigames.js?v=297"></script>
+<script src="js/ar.js?v=297"></script>
+<script src="js/padnav.js?v=297"></script>
+<script src="js/cards.js?v=297"></script>
+<script src="js/chess.js?v=297"></script>
+<script src="js/chess_art.js?v=297"></script>
+<script src="js/xiangqi.js?v=297"></script>
+<script src="js/rummi.js?v=297"></script>
+<script src="js/gomoku.js?v=297"></script>
+<script src="js/blackjack.js?v=297"></script>
+<script src="js/g2048.js?v=297"></script>
+<script src="js/orb.js?v=297"></script>
+<script src="js/mahjong.js?v=297"></script>
+<script src="js/connect4.js?v=297"></script>
+<script src="js/flight.js?v=297"></script>
+<script src="js/pachinko.js?v=297"></script>
+<script src="js/carrom.js?v=297"></script>
+<script src="js/platform.js?v=297"></script>
+<script src="js/marble.js?v=297"></script>
+<script src="js/main.js?v=297"></script>
 </body>
 </html>
