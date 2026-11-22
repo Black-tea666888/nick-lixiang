@@ -1559,3 +1559,10 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .itIco { font-size: 26px; }
 .itBtn { padding: 8px 16px; background: #e28aa0; color: #fff; border: 3px solid #5a4032; box-shadow: 3px 3px 0 #5a4032; font-size: 15px; cursor: pointer; }
 .itX { background: none; border: 0; font-size: 22px; color: #8a6f5f; cursor: pointer; padding: 0 4px; }
+
+/* 模式選擇頁：人數（預設房間人數） */
+.peopleRow { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; background: #fffaf0; border: 3px solid #5a4032; box-shadow: 6px 6px 0 #e3cdb8; }
+.peopleRow > span { font-size: 15px; color: #4a3428; }
+.peopleBtns { display: flex; gap: 8px; }
+.peopleBtns .btn.on { background: #e28aa0; color: #fff; }
+.flSetupBtns .btn.on { background: #e28aa0; color: #fff; }
