@@ -1518,3 +1518,12 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 @keyframes gmDrop { from { transform: scale(1.6); opacity: .2; } to { transform: none; opacity: 1; } }
 @keyframes lineBlink { from { transform: none; } to { transform: scale(1.1); } }
 @media (prefers-reduced-motion: reduce) { .c4Slot.drop, .gmCell.drop::after, .c4Slot.win, .gmCell.win { animation: none; } }
+
+/* 西洋棋與中國象棋：落子與吃子 */
+.chSq.mv { animation: chMv .3s ease-out; }
+.chSq.cap svg { animation: chCap .35s ease-out; }
+.xqPt.mv { animation: xqMv .3s ease-out; }
+@keyframes chMv { from { background-color: rgba(255, 226, 122, .9); } to { background-color: rgba(255, 226, 122, 0); } }
+@keyframes chCap { 25% { transform: translateX(-4px) rotate(-4deg); } 75% { transform: translateX(4px) rotate(4deg); } }
+@keyframes xqMv { from { scale: 1.35; } to { scale: 1; } }
+@media (prefers-reduced-motion: reduce) { .chSq.mv, .chSq.cap svg, .xqPt.mv { animation: none; } }
