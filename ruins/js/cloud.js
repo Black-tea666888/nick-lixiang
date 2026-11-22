@@ -125,7 +125,14 @@ const Cloud = {
       const snap = r[0], sv = r[1], local = H.prog();
       me = snap.exists ? snap.data() : {};
       // 頭像以雲端為準：換手機登入後，底色與照片會跟著過來
-      if (me.av !== undefined || me.avImg !== undefined) { try { if (me.av) localStorage.setItem('rr_avatar', me.av); else localStorage.removeItem('rr_avatar'); if (me.avImg) localStorage.setItem('rr_avatar_img', me.avImg); else localStorage.removeItem('rr_avatar_img'); } catch (e) {} }
+      // 這台裝置還沒有自己的頭像或暱稱時才採用雲端的（避免剛換的頭像被舊資料蓋掉）；暱稱同理
+      try {
+        if (!localStorage.getItem('rr_avatar') && !localStorage.getItem('rr_avatar_img')) {
+          if (me.av) localStorage.setItem('rr_avatar', me.av);
+          if (me.avImg) localStorage.setItem('rr_avatar_img', me.avImg);
+        }
+        if (!localStorage.getItem('rr_nick') && me.name && !/^訪客/.test(me.name)) localStorage.setItem('rr_nick', me.name);
+      } catch (e) {}
       let raw = (sv && sv.exists) ? sv.data().prog : me.prog;   // 舊版進度還在 users 文件裡時也讀得到
       let remote = null; try { remote = raw ? JSON.parse(raw) : null; } catch (e) {}
       // 進度以經驗值高的為準（換手機、清資料後能拿回來）

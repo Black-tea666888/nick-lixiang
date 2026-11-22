@@ -72,11 +72,23 @@ RR.Auth = {
     let provider;
     try { provider = makeProvider(name); } catch (e) { return Promise.reject(e); }
     // 不再改用整頁跳轉：iPhone Safari 會把跳轉前的 sessionStorage 隔離，回來時出現「missing initial state」錯誤頁
-    return auth.signInWithPopup(provider).catch(function (e) {
+    const cur = auth.currentUser;
+    const fail = function (e) {
       const c = e && e.code;
       if (c === 'auth/popup-blocked' || c === 'auth/operation-not-supported-in-this-environment') throw { code: 'rr/popup-blocked' };
       throw e;
-    });
+    };
+    // 訪客（匿名帳號）登入 Google 時改用「連結」：保留原本的 uid，戰隊、好友、進度才不會跑掉
+    if (cur && cur.isAnonymous) {
+      return cur.linkWithPopup(provider).then(function (r) { fbUser = r.user; build(); return r; }).catch(function (e) {
+        if (e && e.code === 'auth/credential-already-in-use' && e.credential) {
+          // 這個 Google 帳號以前就登入過：直接切換到那個帳號（這次的訪客進度留在訪客 uid）
+          return auth.signInWithCredential(e.credential);
+        }
+        return fail(e);
+      });
+    }
+    return auth.signInWithPopup(provider).catch(fail);
   },
   /** 加到主畫面（獨立視窗）時，Firebase 的彈窗與跳轉登入在 iPhone 上都會失敗；改用 Google 官方按鈕拿 ID token 再交給 Firebase */
   standalone: function () { try { return !!(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)); } catch (e) { return false; } },
