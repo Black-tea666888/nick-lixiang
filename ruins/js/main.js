@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v279', items: ['拾荒團名單只顯示一次：管理按鈕放在排名列的分數前面'] };
+const UPD = { v: 'v280', items: ['國際象棋新增連線房間（建立房間、用代碼加入）'] };
 const SCREENS = ['scr2048', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1269,9 +1269,70 @@ function platOpen() {
 }
 function chessOpen() { show('scrChess'); pres('chess', true); if (!chessS) chessS = RR.Chess.start(); chessSel = -1; chessMoves = []; chessDraw(); }
 function chessNew() { chessS = RR.Chess.start(); chessSel = -1; chessMoves = []; chessDraw(); }
+/* 連線對戰：房主執白，加入者執黑；房主是權威，移動由房主驗證後同步整盤 */
+let chessNet = { on: false, host: false, side: 'w', guest: null };
+function chessNetUI(msg) { $('chessNetNote').textContent = msg || ''; $('chessCode').textContent = chessNet.on && chessNet.host ? '房間代碼：' + Net.code() : ''; }
+function chessNetLeave() { if (chessNet.on) Net.leave(); chessNet = { on: false, host: false, side: 'w', guest: null }; chessNetUI(''); }
+function chessHostMove(from, to, who) {
+  const C = RR.Chess;
+  if (chessS.turn !== who || C.status(chessS).k === 'mate' || C.status(chessS).k === 'stale') return;
+  const m = C.legalMoves(chessS, from).filter(function (x) { return x.to === to; })[0];
+  if (!m) return;
+  chessS = C.apply(chessS, m); chessSel = -1; chessMoves = [];
+  if (chessNet.guest) Net.sendTo(chessNet.guest, { t: 'chess', s: chessS });
+  chessDraw();
+}
+function chessNetOnMsg(from, d) {
+  if (!d || typeof d !== 'object') return;
+  if (chessNet.host) {
+    if (d.t === 'hi') {
+      if (!chessNet.guest) chessNet.guest = from;
+      if (chessNet.guest === from) { Net.sendTo(from, { t: 'chess', s: chessS }); chessNetUI('對手已加入，白方先走。'); }
+      else Net.sendTo(from, { t: 'no', why: 'full' });
+    } else if (d.t === 'mv' && from === chessNet.guest) chessHostMove(d.from | 0, d.to | 0, 'b');
+  } else if (d.t === 'chess') {
+    chessS = d.s; chessSel = -1; chessMoves = []; chessDraw();
+    chessNetUI('你是黑方' + (chessS.turn === 'b' ? '，輪到你。' : '，等白方走。'));
+  }
+}
+function chessNetOnLeave() { if (chessNet.host) { chessNet.guest = null; chessNetUI('對手已離開，等待新的對手加入。'); } else { chessNetUI('房主已離開。'); } }
+function chessHostCreate() {
+  chessNetLeave(); chessNetUI('建立房間中…');
+  Net.host(function (err) {
+    if (err) { chessNetUI('建立失敗，請稍後再試。'); return; }
+    chessNet = { on: true, host: true, side: 'w', guest: null };
+    Net.on('msg', chessNetOnMsg); Net.on('leave', chessNetOnLeave);
+    chessNetUI('等待對手加入（你是白方）。把代碼給對方。');
+  });
+}
+function chessJoin() {
+  const code = Net.normalizeCode($('chessJoinCode').value);
+  if (code.length !== 5) { chessNetUI('請輸入 5 碼房間代碼。'); return; }
+  chessNetLeave(); chessNetUI('加入中…');
+  Net.join(code, { name: myName() }, function (err) {
+    if (err) { chessNetUI('加入失敗，請確認代碼。'); return; }
+    chessNet = { on: true, host: false, side: 'b', guest: null };
+    Net.on('msg', chessNetOnMsg); Net.on('leave', chessNetOnLeave);
+    Net.send({ t: 'hi' }); chessNetUI('已加入，等待房主同步棋盤。');
+  });
+}
+function chessTapNet(i) {
+  const C = RR.Chess, s = chessS, me = chessNet.side;
+  if (s.turn !== me) return;
+  const hit = chessMoves.filter(function (m) { return m.to === i; });
+  if (hit.length) {
+    const from = hit[0].from; chessSel = -1; chessMoves = [];
+    if (chessNet.host) chessHostMove(from, i, 'w'); else Net.send({ t: 'mv', from: from, to: i });
+    chessDraw(); return;
+  }
+  const p = s.b[i];
+  if (p && C.color(p) === me) { chessSel = i; chessMoves = C.legalMoves(s, i); } else { chessSel = -1; chessMoves = []; }
+  chessDraw();
+}
 function chessTap(i) {
   const C = RR.Chess, s = chessS, st = C.status(s);
   if (st.k === 'mate' || st.k === 'stale') return;
+  if (chessNet.on) return chessTapNet(i);
   const hit = chessMoves.filter(function (m) { return m.to === i; });
   if (hit.length) { chessS = C.apply(s, hit[0]); chessSel = -1; chessMoves = []; chessDraw(); return; }
   const p = s.b[i];
@@ -2724,8 +2785,10 @@ function bind() {
   $('marbleBtn').addEventListener('click', marbleOpen);
   $('marbleBack').addEventListener('click', function () { RR.Marble.stop(); show('scrHub'); });
   $('platBack').addEventListener('click', function () { RR.Plat.stop(); show('scrHub'); });
-  $('chessBack').addEventListener('click', showMenu);
-  $('chessNew').addEventListener('click', chessNew);
+  $('chessBack').addEventListener('click', function () { chessNetLeave(); showMenu(); });
+  $('chessNew').addEventListener('click', function () { if (chessNet.on && !chessNet.host) { chessNetUI('連線中由房主重新開始。'); return; } chessNew(); if (chessNet.host && chessNet.guest) Net.sendTo(chessNet.guest, { t: 'chess', s: chessS }); });
+  $('chessHost').addEventListener('click', chessHostCreate);
+  $('chessJoin').addEventListener('click', chessJoin);
   $('huntBtn').addEventListener('click', function () { startSolo('hunt'); });
   $('pvpBtn').addEventListener('click', function () { if (S.mode !== 'host') return; S.sim.pvp = !S.sim.pvp; hostBroadcast(rosterMsg()); tickLobby(); });
   $('lobbyMic').addEventListener('click', function () { if (Voice.hasMic()) Voice.setMuted(!Voice.isMuted()); else say('沒有麥克風權限。請在瀏覽器允許麥克風後，重新進入房間。'); tickLobby(); });
