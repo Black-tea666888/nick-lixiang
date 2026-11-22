@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v322', items: ['康樂球新增線上對戰（2 人）', '修正飛行棋線上對戰：對手的擲骰與選飛機沒有送到房主的問題'] };
+const UPD = { v: 'v323', items: ['彈珠台新增線上對戰（2 人輪流，各 15 顆）'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1596,6 +1596,7 @@ const FL_LIB = {
 const DUO = {
   fl: { key: 'flight', lib: function () { return FL_LIB; }, get: function () { return flS; }, set: function (v) { flS = v; }, draw: function () { flDraw(); }, hostSide: 0, guestSide: 1, hostName: '紅', guestName: '綠' },
   kg: { key: 'kg', lib: function () { return KG_LIB; }, get: function () { return kgS; }, set: function (v) { kgS = v; }, draw: function () { kgDraw(); }, hostSide: 0, guestSide: 1, hostName: '紅', guestName: '黑' },
+  pc: { key: 'pc', lib: function () { return PC_LIB; }, get: function () { return pcOn; }, set: function (v) { pcOn = v; }, draw: function () { pcDraw(); }, hostSide: 0, guestSide: 1, hostName: '紅', guestName: '黑' },
   xq: { key: 'xq', lib: function () { return XQW; }, get: function () { return xqS; }, set: function (v) { xqS = v; }, draw: function () { xqDraw(); }, hostSide: 'r', guestSide: 'b', hostName: '紅', guestName: '黑' },
   gm: { key: 'gomoku', lib: function () { return RR.Gomoku; }, get: function () { return gmS; }, set: function (v) { gmS = v; }, draw: function () { gmDraw(); }, hostSide: 'b', guestSide: 'w', hostName: '黑', guestName: '白' },
   c4: { key: 'c4', lib: function () { return RR.Connect4; }, get: function () { return c4S; }, set: function (v) { c4S = v; }, draw: function () { c4Draw(); }, hostSide: 'r', guestSide: 'y', hostName: '紅', guestName: '黃' }
@@ -1807,9 +1808,64 @@ function flDraw() {
 }
 /* 彈珠台 */
 let pcS = null, pcRaf = 0;
+// 彈珠台線上（2 人輪流，各 15 顆）：房主依 seed 算出彈道，兩邊用同一個 seed 重播，狀態以房主為準
+const PC_LIB = {
+  start: function () { return { turn: 0, balls: [15, 15], won: [0, 0], seq: 0, last: null, over: false, msg: '' }; },
+  move: function (s, mv) {
+    if (!mv || s.over || s.balls[s.turn] <= 0) return { ok: false };
+    const angle = Math.max(-0.45, Math.min(0.45, +mv.angle || 0)), power = Math.max(0, Math.min(1, +mv.power || 0));
+    const seed = (Math.random() * 0x7fffffff) | 0;
+    const r = RR.Pachinko.sim(angle, power, pcRng(seed));
+    const me = s.turn, balls = s.balls.slice(), won = s.won.slice();
+    balls[me] += r.payout - 1; won[me] += r.payout;
+    const over = balls[0] <= 0 && balls[1] <= 0;
+    const next = balls[1 - me] > 0 ? 1 - me : me;
+    let msg = (me === 0 ? '紅方' : '黑方') + (r.payout ? '回收 ' + r.payout + ' 顆' : '沒有進袋');
+    if (over) msg = '彈珠用完了，' + (won[0] === won[1] ? '平手。' : (won[0] > won[1] ? '紅方' : '黑方') + '回收較多，獲勝！');
+    return { ok: true, state: { turn: next, balls: balls, won: won, seq: s.seq + 1, last: { seed: seed, angle: angle, power: power }, over: over, msg: msg } };
+  }
+};
+function pcRng(seed) {
+  let a = seed >>> 0;
+  return function () { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+let pcOn = null, pcA = { path: null, idx: 0, fx: null }, pcSeenSeq = -1;
+function pcOnline() { return duo.on && duo.g === 'pc'; }
+function pcSyncOnline() {
+  if (pcOn.seq === pcSeenSeq) return;
+  const first = pcSeenSeq === -1;
+  pcSeenSeq = pcOn.seq;
+  if (!first && pcOn.last) pcStartAnim(pcOn.last);
+}
+function pcStartAnim(last) {
+  if (pcRaf) cancelAnimationFrame(pcRaf);
+  const r = RR.Pachinko.sim(last.angle, last.power, pcRng(last.seed));
+  pcA = { path: r.path, idx: 0, fx: null, payout: r.payout, pocket: r.pocket };
+  pcRaf = requestAnimationFrame(pcAStep);
+}
+function pcAStep() {
+  if (!pcA.path) { pcRaf = 0; return; }
+  pcA.idx = Math.min(pcA.path.length - 1, pcA.idx + 3);
+  pcDraw();
+  if (pcA.idx < pcA.path.length - 1) { pcRaf = requestAnimationFrame(pcAStep); return; }
+  pcRaf = 0; pcA.path = null;
+  const P = RR.Pachinko, pw = P.W / P.PAYOUT.length, cx = pcA.pocket * pw + pw / 2, parts = [];
+  for (let i = 0; i < (pcA.pocket === 2 ? 26 : 12); i++) parts.push({ x: cx, y: P.H - 36, vx: (Math.random() - 0.5) * 3.2, vy: -Math.random() * 3.6 - 1, life: 30 + Math.random() * 14 });
+  pcA.fx = { pocket: pcA.pocket, payout: pcA.payout, t: 44, parts: parts, jackpot: pcA.pocket === 2 };
+  pcDraw(); pcAFxRun();
+}
+function pcAFxRun() { pcDraw(); if (pcA.fx && pcA.fx.t > 0) requestAnimationFrame(pcAFxRun); }
 function pcOpen() { show('scrPachi'); if (!pcS) pcNew(); else pcDraw(); }
-function pcNew() { if (pcRaf) cancelAnimationFrame(pcRaf); pcRaf = 0; pcS = { balls: 30, won: 0, path: null, idx: 0, payout: 0, pocket: -1 }; pcDraw(); }
+function pcNew() {
+  if (pcOnline()) { if (duo.host) duoNew(); else duoNote('請房主按「重新開始」。'); return; }
+  if (pcRaf) cancelAnimationFrame(pcRaf); pcRaf = 0; pcS = { balls: 30, won: 0, path: null, idx: 0, payout: 0, pocket: -1 }; pcDraw();
+}
 function pcFire() {
+  if (pcOnline()) {
+    if (!pcOn || pcA.path || pcOn.over) return;
+    duoTap({ angle: +$('pcAngle').value * Math.PI / 180, power: +$('pcPower').value / 100 });
+    return;
+  }
   if (!pcS || pcS.path || pcS.balls <= 0) return;
   const deg = +$('pcAngle').value, pw = +$('pcPower').value / 100;
   const r = RR.Pachinko.sim(deg * Math.PI / 180, pw, Math.random);
@@ -1835,6 +1891,9 @@ function pcFxRun() {
 }
 function pcDraw() {
   const P = RR.Pachinko, cv = $('pcCanvas'), ctx = cv.getContext('2d');
+  const online = pcOnline() && !!pcOn;
+  if (online) pcSyncOnline();
+  const an = online ? pcA : pcS;
   ctx.clearRect(0, 0, P.W, P.H);
   ctx.fillStyle = '#1b2a3a'; ctx.fillRect(0, 0, P.W, P.H);
   // 袋子
@@ -1849,15 +1908,15 @@ function pcDraw() {
   ctx.fillStyle = '#c9d6e3';
   P.pins().forEach(function (p) { ctx.beginPath(); ctx.arc(p.x, p.y, P.PIN_R, 0, Math.PI * 2); ctx.fill(); });
   // 發射軌跡提示：角度線
-  if (!pcS.path) {
+  if (!an.path) {
     const a = +$('pcAngle').value * Math.PI / 180;
     ctx.strokeStyle = 'rgba(255,210,58,.7)'; ctx.setLineDash([4, 4]); ctx.beginPath();
     ctx.moveTo(P.W / 2, 14); ctx.lineTo(P.W / 2 + Math.sin(a) * 70, 14 + Math.cos(a) * 70); ctx.stroke(); ctx.setLineDash([]);
   }
   // 球
-  if (pcS.path) { const q = pcS.path[pcS.idx]; ctx.fillStyle = '#ffd23a'; ctx.beginPath(); ctx.arc(q.x, q.y, P.BALL_R, 0, Math.PI * 2); ctx.fill(); }
+  if (an.path) { const q = an.path[an.idx]; ctx.fillStyle = '#ffd23a'; ctx.beginPath(); ctx.arc(q.x, q.y, P.BALL_R, 0, Math.PI * 2); ctx.fill(); }
   // 落袋特效
-  const fx = pcS.fx;
+  const fx = an.fx;
   if (fx && fx.t > 0) {
     const pw = P.W / P.PAYOUT.length, a = fx.t / 44;
     ctx.fillStyle = 'rgba(255,240,150,' + (a * 0.6).toFixed(2) + ')';
@@ -1867,6 +1926,19 @@ function pcDraw() {
     ctx.textAlign = 'left';
     fx.parts.forEach(function (q) { q.x += q.vx; q.y += q.vy; q.vy += 0.15; q.life--; if (q.life > 0) { ctx.fillStyle = 'rgba(255,226,122,' + Math.max(0, q.life / 40).toFixed(2) + ')'; ctx.fillRect(q.x, q.y, 3, 3); } });
     fx.t--;
+  }
+  if (online) {
+    $('pcBalls').textContent = '紅 ' + pcOn.balls[0] + '　黑 ' + pcOn.balls[1];
+    $('pcWon').textContent = '紅 ' + pcOn.won[0] + '　黑 ' + pcOn.won[1];
+    $('pcAngleVal').textContent = $('pcAngle').value + '°';
+    $('pcPowerVal').textContent = $('pcPower').value + '%';
+    $('pcFire').disabled = !!an.path || pcOn.over || pcOn.turn !== (duo.host ? DUO.pc.hostSide : DUO.pc.guestSide);
+    let msg;
+    if (an.path) msg = '彈珠滾動中…';
+    else if (pcOn.over) msg = pcOn.msg;
+    else msg = (pcOn.turn === 0 ? '紅方' : '黑方') + '發射' + (pcOn.msg ? '　' + pcOn.msg : '');
+    $('pcStatus').textContent = msg;
+    return;
   }
   $('pcBalls').textContent = pcS.balls;
   $('pcWon').textContent = pcS.won;
@@ -2392,7 +2464,8 @@ const ROOM_GAMES = {
   chess: { open: function () { chessOpen(); }, host: function () { chessHostCreate(); } },
   xq: { open: function () { xqOpen(); }, host: function () { duoHostCreate('xq'); } },
   flight: { open: function () { flOpen(); }, host: function () { duoHostCreate('fl'); } },
-  kangle: { open: function () { kgOpen(); }, host: function () { duoHostCreate('kg'); } }
+  kangle: { open: function () { kgOpen(); }, host: function () { duoHostCreate('kg'); } },
+  pachi: { open: function () { pcOpen(); }, host: function () { pcSeenSeq = -1; duoHostCreate('pc'); } }
 };
 function roomOpen() {
   const list = $('roomList'); list.textContent = '';
@@ -3308,8 +3381,10 @@ function bind() {
   $('kgJoin').addEventListener('click', function () { duoJoin('kg'); });
   $('kgFire').addEventListener('click', kgFire);
   ['kgX', 'kgAngle', 'kgPower'].forEach(function (id) { $(id).addEventListener('input', kgDraw); });
-  $('pachiBack').addEventListener('click', showMenu);
+  $('pachiBack').addEventListener('click', function () { if (pcOnline()) { pcOn = null; pcA = { path: null, idx: 0, fx: null }; } duoLeave(); showMenu(); });
   $('pachiNew').addEventListener('click', pcNew);
+  $('pcHost').addEventListener('click', function () { pcSeenSeq = -1; duoHostCreate('pc'); });
+  $('pcJoin').addEventListener('click', function () { pcSeenSeq = -1; duoJoin('pc'); });
   $('pcFire').addEventListener('click', pcFire);
   $('pcAngle').addEventListener('input', pcDraw);
   $('pcPower').addEventListener('input', pcDraw);
