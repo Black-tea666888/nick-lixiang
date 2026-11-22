@@ -818,6 +818,23 @@ Sim.prototype._stepBR = function (dt, alive) {
   // 毒圈傷害隨縮小進度提高：圈外每秒 5 點，縮到最小時 25 點
   const prog = Math.max(0, Math.min(1, (z.r0 - z.r) / Math.max(1, z.r0 - 5)));
   const zoneDps = 5 + 20 * prog;
+  // 補給箱重生：拿走後 30 秒，在離玩家較遠的空地重新出現
+  for (let i = 0; i < this.items.length; i++) {
+    const it = this.items[i];
+    if (!it.taken || !(it.rt > 0)) continue;
+    it.rt -= dt; if (it.rt > 0) continue;
+    it.rt = 0;
+    let spot = null;
+    for (let t = 0; t < 30 && !spot; t++) {
+      const fc = floorCells[Math.floor(this.rng() * floorCells.length)], c = center(fc[0], fc[1]);
+      let ok = true;
+      for (let k = 0; k < alive.length && ok; k++) if (Math.hypot(alive[k].x - c[0], alive[k].z - c[1]) < 12) ok = false;
+      if (ok) spot = c;
+    }
+    if (!spot) { it.rt = 2; continue; }   // 找不到空地就 2 秒後再試
+    it.x = spot[0]; it.z = spot[1]; it.taken = false;
+    this.events.push({ t: 'drop', list: [[i, it.x, it.z]] });
+  }
   for (let k = 0; k < alive.length; k++) {
     const p = alive[k];
     if (!p.alive) continue;
@@ -829,7 +846,7 @@ Sim.prototype._stepBR = function (dt, alive) {
       if (it.kind === 20) { if (p.hp >= (p.armor ? 150 : 100)) continue; p.hp = Math.min(p.armor ? 150 : 100, p.hp + 40); }
       else if (it.kind === 21) { p.armor = true; p.hp = Math.min(150, p.hp + 50); }
       else p.boost = true;
-      it.taken = true; this.events.push({ t: 'loot', id: p.id, k: it.kind, hp: Math.round(p.hp) });
+      it.taken = true; it.rt = 30; this.events.push({ t: 'loot', id: p.id, k: it.kind, hp: Math.round(p.hp) });
     }
     if (p.ai) this._bot(p, dt, alive);
   }
