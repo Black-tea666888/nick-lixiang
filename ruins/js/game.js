@@ -2352,8 +2352,17 @@ function bindInput() {
   const enableTouch = function () { document.body.classList.add('touch'); };
   if (('ontouchstart' in window) || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)) enableTouch();
   window.addEventListener('touchstart', enableTouch, { passive: true });
+  // 手指已經離開但沒收到結束事件時（例如手指先放在按鈕上再離開），搖桿／視角會被「卡住」，之後的觸控全都進不來；
+  // 每次有新觸控時，先用 e.touches（目前所有還在按著的手指）把已經不存在的 id 清掉
+  const dropStaleTouch = function (e) {
+    const alive = {};
+    for (let i = 0; i < e.touches.length; i++) alive[e.touches[i].identifier] = true;
+    if (touch.joyId !== null && !alive[touch.joyId]) { touch.joyId = null; touch.jx = touch.jy = 0; $('joy').style.display = $('knob').style.display = 'none'; }
+    if (touch.lookId !== null && !alive[touch.lookId]) touch.lookId = null;
+  };
   canvas.addEventListener('touchstart', function (e) {
     e.preventDefault();
+    dropStaleTouch(e);
     if (active && view.phase === 'play' && !me.alive) { nextSpec(); return; }
     if (!canControl()) return;
     for (let i = 0; i < e.changedTouches.length; i++) {
@@ -2390,6 +2399,9 @@ function bindInput() {
     }
   };
   canvas.addEventListener('touchend', touchEnd); canvas.addEventListener('touchcancel', touchEnd);
+  // 整個頁面也聽一次結束事件：手指如果在別的元素上放開，canvas 收不到，這裡負責清掉
+  window.addEventListener('touchend', dropStaleTouch, { passive: true });
+  window.addEventListener('touchcancel', dropStaleTouch, { passive: true });
   const runBtn = $('run');
   // 跑步鍵：按住跑；點一下切換「自動連續跑」（再點一下關掉）
   let runDownT = 0;
