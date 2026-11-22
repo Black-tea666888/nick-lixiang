@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v280', items: ['國際象棋新增連線房間（建立房間、用代碼加入）'] };
+const UPD = { v: 'v281', items: ['新增除錯面板（網址加 ?dbg=1），用來查無法移動的原因'] };
 const SCREENS = ['scr2048', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -3207,3 +3207,17 @@ window.addEventListener('appinstalled', function () { installEv = null; const b 
 if ('serviceWorker' in navigator && location.protocol === 'https:') window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
 { const bt = document.getElementById('boot'); if (bt) { bt.classList.add('gone'); setTimeout(function () { bt.remove(); }, 400); } }
 })();
+
+/* 除錯面板：網址加 ?dbg=1 會在左下角顯示搖桿與角色狀態（回報「動不了」時用） */
+if (/[?&]dbg=1/.test(location.search)) {
+  window.addEventListener('load', function () {
+    const d = document.createElement('pre');
+    d.style.cssText = 'position:fixed;left:4px;bottom:4px;z-index:99;background:rgba(0,0,0,.75);color:#7f7;font:11px/1.3 monospace;padding:4px 6px;margin:0;pointer-events:none;white-space:pre';
+    document.body.appendChild(d);
+    setInterval(function () {
+      d.textContent = 'ctl:' + canControl() + ' active:' + active + ' phase:' + view.phase + ' alive:' + me.alive + ' edit:' + editing +
+        '\njoy:' + touch.joyId + ' j:' + touch.jx.toFixed(2) + ',' + touch.jy.toFixed(2) + ' look:' + touch.lookId +
+        '\npos:' + me.x.toFixed(2) + ',' + me.z.toFixed(2) + ' keys:' + Object.keys(keys).filter(function (k) { return keys[k]; }).join(' ');
+    }, 200);
+  });
+}
