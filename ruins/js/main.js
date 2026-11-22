@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v302', items: ['跳關新增雙人線上對戰：同一張地圖比齒輪與通關時間；修正過關提示金幣顯示錯誤'] };
+const UPD = { v: 'v303', items: ['轉珠消除加入珠子爆開與連鎖字樣，方塊合併加入合成閃光與新方塊出現動畫'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1415,15 +1415,16 @@ const RM_CLS = ['c0', 'c1', 'c2', 'c3'];
 let gmS = null;
 /* 2048（無限板） */
 let g2S = null;
-function g2Draw() {
+function g2Draw(fx) {
   const G = RR.G2048, bd = $('g2048Board'), s = g2S;
   if (!bd || !s) return;
   const n = s.board.length;
   bd.style.gridTemplateColumns = 'repeat(' + n + ', minmax(0, 1fr))'; bd.style.gridTemplateRows = 'repeat(' + n + ', minmax(0, 1fr))';
   bd.innerHTML = '';
-  s.board.forEach(function (row) { row.forEach(function (v) {
+  s.board.forEach(function (row, r) { row.forEach(function (v, c_) {
     const c = document.createElement('div');
-    c.className = 'g2Cell' + (v ? ' v' + Math.min(v, 2048) : '') + (String(v).length >= 4 ? ' big' : '');
+    c.className = 'g2Cell' + (v ? ' v' + Math.min(v, 2048) : '') + (String(v).length >= 4 ? ' big' : '')
+      + (fx && fx.m[r][c_] ? ' mg' : '') + (fx && fx.s[r][c_] ? ' sp' : '');
     c.textContent = v ? String(v) : '';
     bd.appendChild(c);
   }); });
@@ -1436,7 +1437,7 @@ function g2Draw() {
 function g2Move(d) {
   if (!g2S) return;
   const r = RR.G2048.move(g2S, d);
-  if (r.ok) { g2S = r.state; g2Draw(); }
+  if (r.ok) { g2S = r.state; g2Draw(r.fx); }
 }
 /* 21 點（撲克牌，單人對莊家） */
 let bjS = null;
@@ -2099,10 +2100,16 @@ function recOptsOpen() {
 let orbS = null, orbDrag = null;
 function orbOpen() { show('scrOrb'); if (!orbS) orbS = window.RR.Orb.start(0); orbDraw(); }
 function orbNew(lv) { if (duel.on && duel.g === 'orb') return duelNew('orb'); orbS = window.RR.Orb.start(lv); orbDraw(); }
-function orbDraw() {
+function orbDraw(fx) {
   const bd = document.getElementById('orbBoard'), s = orbS, L = window.RR.Orb.LEVELS[s.level];
   bd.innerHTML = '';
-  for (let i = 0; i < s.board.length; i++) { const c = document.createElement('div'); c.className = 'orbCell o' + s.board[i]; bd.appendChild(c); }
+  for (let i = 0; i < s.board.length; i++) {
+    const c = document.createElement('div');
+    const hit = fx && fx.hits && fx.hits.indexOf(i) >= 0, moved = fx && fx.prev && fx.prev[i] !== s.board[i];
+    c.className = 'orbCell o' + s.board[i] + (hit ? ' hit' : moved ? ' fall' : '');
+    bd.appendChild(c);
+  }
+  if (fx && fx.combos >= 2) { const b = document.createElement('div'); b.className = 'orbBanner'; b.textContent = '連鎖 ×' + fx.combos; bd.appendChild(b); }
   document.getElementById('orbStatus').textContent = L.name + '　步數 ' + s.movesLeft + '　消除 ' + s.cleared + ' / ' + s.goal + '　分數 ' + s.score;
   document.getElementById('orbMsg').textContent = s.over
     ? (s.won ? (s.level < 2 ? '過關！按「下一關」繼續。' : '全部通關！') : '步數用完，失敗。按「重新開始」再試一次。')
@@ -2121,7 +2128,8 @@ function orbPointer(e) {
   const i = orbCellAt(e); if (i == null) return;
   if (e.type === 'pointerdown') { orbDrag = i; return; }
   if (orbDrag == null || i === orbDrag) return;
-  if (window.RR.Orb.move(orbS, orbDrag, i)) { orbDrag = i; orbDraw(); }
+  const prev = orbS.board.slice(), res = window.RR.Orb.move(orbS, orbDrag, i);
+  if (res) { orbDrag = i; orbDraw({ prev: prev, hits: res.hits, combos: res.combos }); }
 }
 function orbBindUp() { orbDrag = null; }
 
