@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v316', items: ['彈珠新增雙人線上對戰：同一組方塊布局，比回合數與齒輪'] };
+const UPD = { v: 'v317', items: ['21點新增雙人線上對戰：同一副牌順序，各打 5 局比勝場'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1454,7 +1454,7 @@ function g2Move(d) {
 }
 /* 21 點（撲克牌，單人對莊家） */
 let bjS = null;
-function bjOpen() { show('scrBj'); if (!bjS) bjS = RR.BJ.start(); bjDraw(); }
+function bjOpen() { show('scrBj'); if (!bjS || (bjS.limit && !(duel.on && duel.g === 'bj'))) bjS = RR.BJ.start(); bjDraw(); }
 function bjCardEl(c, hidden) {
   const el = mk('span', 'bjCard' + (c.s === '♥' || c.s === '♦' ? ' red' : ''), null);
   el.textContent = hidden ? '？' : c.r + c.s;
@@ -1475,13 +1475,15 @@ function bjDraw() {
   t.appendChild(pRow);
   bjPrev = { d: s.dealer.length, p: s.player.length, play: playing };
   $('bjStatus').textContent = s.msg + '　戰績：勝 ' + s.w + ' / 負 ' + s.l + ' / 平 ' + s.t;
-  $('bjDeal').disabled = playing; $('bjHit').disabled = !playing; $('bjStand').disabled = !playing;
+  $('bjDeal').disabled = playing || !!s.done; $('bjHit').disabled = !playing; $('bjStand').disabled = !playing;
+  if (duel.on && duel.g === 'bj') duelSendProg();
 }
 /* 雙人對戰（轉珠、方塊合併）：房主決定種子，兩人用同一組種子開局、各玩各的盤面，分數即時同步 */
 const DUEL = {
   orb: { key: 'orb', name: '轉珠', start: function (seed) { return RR.Orb.start(0, seed); }, get: function () { return orbS; }, set: function (v) { orbS = v; }, draw: function () { orbDraw(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.over; } },
   marble: { key: 'marble', name: '彈珠', start: function () { return { score: 0, done: false, win: false, time: 1 }; }, get: function () { return marbleMine; }, set: function (v) { marbleMine = v; }, draw: function () { marbleRun(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.done; }, label: function (s) { return (s.win ? '撐住了 ' : '') + '第 ' + s.time + ' 回合 齒輪 ' + s.score; }, cmp: function (me, o) { if (me.win !== o.win) return me.win ? 1 : -1; if (!me.win && me.time !== o.time) return me.time > o.time ? 1 : -1; if (me.score !== o.score) return me.score > o.score ? 1 : -1; return 0; } },
   plat: { key: 'plat', name: '跳關', start: function () { return { score: 0, done: false, win: false, time: 0 }; }, get: function () { return platMine; }, set: function (v) { platMine = v; }, draw: function () { platRun(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.done; }, label: function (s) { return (s.win ? '過關 ' : '') + '齒輪 ' + s.score + '/12' + (s.win ? '　' + s.time.toFixed(1) + ' 秒' : ''); }, cmp: function (me, o) { if (me.win !== o.win) return me.win ? 1 : -1; if (me.win) return me.time < o.time ? 1 : me.time > o.time ? -1 : 0; return me.score > o.score ? 1 : me.score < o.score ? -1 : 0; } },
+  bj: { key: 'bj', name: '21點', start: function (seed) { return RR.BJ.start(seed); }, get: function () { return bjS; }, set: function (v) { bjS = v; }, draw: function () { bjDraw(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.done; }, label: function (s) { return '勝 ' + s.score + ' 負 ' + s.time + ' / ' + RR.BJ.ROUNDS + ' 局'; }, cmp: function (me, o) { if (me.score !== o.score) return me.score > o.score ? 1 : -1; return o.time !== me.time ? (me.time < o.time ? 1 : -1) : 0; } },
   g2048: { key: 'g2048', name: '方塊合併', start: function (seed) { return RR.G2048.start(seed); }, get: function () { return g2S; }, set: function (v) { g2S = v; }, draw: function () { g2Draw(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.over; } }
 };
 let duel = { on: false, host: false, g: null, guest: null, seed: 0, opp: null };
@@ -1527,7 +1529,7 @@ function duelOnMsg(from, d) {
   } else if (d.t === 'duel_prog' && d.g === duel.g) { duel.opp = { score: Number(d.score) || 0, done: !!d.done, win: !!d.win, time: Number(d.time) || 0 }; duelShow(); }
 }
 function duelOnLeave() { duelNote(duel.host ? '對手已離開，等待新的對手加入。' : '房主已離開。'); if (duel.host) { duel.guest = null; duel.opp = null; duelShow(); } }
-function duelLeave() { clearInterval(platTimer); clearInterval(marbleTimer); if (duel.on) Net.leave(); duel = { on: false, host: false, g: null, guest: null, seed: 0, opp: null }; }
+function duelLeave() { clearInterval(platTimer); clearInterval(marbleTimer); if (duel.g === 'bj') bjS = null; if (duel.on) Net.leave(); duel = { on: false, host: false, g: null, guest: null, seed: 0, opp: null }; }
 function duelHostCreate(g) {
   duelLeave(); duel.g = g; duelNote('建立房間中…');
   Net.host(function (err) {
@@ -3200,7 +3202,10 @@ function bind() {
     if (r && REOPEN[r]) REOPEN[r]();
   }, 300);
   $('bjBtn').addEventListener('click', bjOpen);
-  $('bjBack').addEventListener('click', showMenu);
+  $('bjBack').addEventListener('click', function () { duelLeave(); showMenu(); });
+  $('bjDuelHost').addEventListener('click', function () { duelHostCreate('bj'); });
+  $('bjDuelJoin').addEventListener('click', function () { duelJoin('bj'); });
+  $('bjNew').addEventListener('click', function () { if (duel.on && duel.g === 'bj') return duelNew('bj'); bjS = RR.BJ.start(); bjDraw(); });
   $('bjDeal').addEventListener('click', function () { bjS = RR.BJ.deal(bjS); bjDraw(); });
   $('bjHit').addEventListener('click', function () { bjS = RR.BJ.hit(bjS); bjDraw(); });
   $('bjStand').addEventListener('click', function () { bjS = RR.BJ.stand(bjS); bjDraw(); });
