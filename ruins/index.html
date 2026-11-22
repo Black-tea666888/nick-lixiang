@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=324" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=325" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -487,13 +487,13 @@
     </header>
     <p class="chessStatus" id="pcStatus" aria-live="polite"></p>
     <canvas class="pcCanvas" id="pcCanvas" width="300" height="400" aria-label="彈珠台球場"></canvas>
-    <div class="pcCtl">
+    <div class="pcCtl hide">
       <label>角度 <input type="range" id="pcAngle" min="-25" max="25" value="0"> <span id="pcAngleVal">0°</span></label>
       <label>力道 <input type="range" id="pcPower" min="0" max="100" value="60"> <span id="pcPowerVal">60%</span></label>
     </div>
     <div class="duoNet"><button class="btn" id="pcHost" type="button">建立線上房間（2 人）</button><div class="row join"><input id="pcJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="pcJoin" type="button">加入</button></div><p class="note" id="pcCode"></p><p class="note" id="pcNetNote"></p></div>
     <p class="ccEmpty">剩餘彈珠 <b id="pcBalls">30</b>　回收 <b id="pcWon">0</b></p>
-    <div class="flBtns"><button class="btn" id="pcFire" type="button">發射</button></div>
+    <div class="flBtns hide"><button class="btn" id="pcFire" type="button">發射</button></div>
   </div>
 </div>
 <div class="screen hide" id="scrKangle">
@@ -505,14 +505,14 @@
     </header>
     <p class="chessStatus" id="kgStatus" aria-live="polite"></p>
     <canvas class="kgCanvas" id="kgCanvas" width="400" height="400" aria-label="康樂球棋盤"></canvas>
-    <div class="pcCtl">
+    <div class="pcCtl hide">
       <label>射子位置 <input type="range" id="kgX" min="60" max="340" value="200"></label>
       <label>角度 <input type="range" id="kgAngle" min="-40" max="40" value="0"> <span id="kgAngleVal">0°</span></label>
       <label>力道 <input type="range" id="kgPower" min="0" max="100" value="60"> <span id="kgPowerVal">60%</span></label>
     </div>
     <div class="duoNet"><button class="btn" id="kgHost" type="button">建立線上房間（2 人）</button><div class="row join"><input id="kgJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="kgJoin" type="button">加入</button></div><p class="note" id="kgCode"></p><p class="note" id="kgNetNote"></p></div>
     <p class="ccEmpty">比分：<b id="kgScore">紅 0　黑 0</b></p>
-    <div class="flBtns"><button class="btn" id="kgFire" type="button">撞擊</button></div>
+    <div class="flBtns hide"><button class="btn" id="kgFire" type="button">撞擊</button></div>
     <p class="ccEmpty">每人打入己方顏色棋子得 1 分並可再打一次；打入對方顏色棋子會放回中央並換人；射子落洞犯規。</p>
   </div>
 </div>
@@ -941,34 +941,34 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=324"></script>
-<script src="js/race_tracks.js?v=324"></script>
-<script src="js/race_arenas.js?v=324"></script>
-<script src="js/sim.js?v=324"></script>
-<script src="js/audio.js?v=324"></script>
-<script src="js/auth.js?v=324"></script>
-<script src="js/cloud.js?v=324"></script>
-<script src="js/net.js?v=324"></script>
-<script src="js/game.js?v=324"></script>
-<script src="js/minigames.js?v=324"></script>
-<script src="js/ar.js?v=324"></script>
-<script src="js/padnav.js?v=324"></script>
-<script src="js/cards.js?v=324"></script>
-<script src="js/chess.js?v=324"></script>
-<script src="js/chess_art.js?v=324"></script>
-<script src="js/xiangqi.js?v=324"></script>
-<script src="js/rummi.js?v=324"></script>
-<script src="js/gomoku.js?v=324"></script>
-<script src="js/blackjack.js?v=324"></script>
-<script src="js/g2048.js?v=324"></script>
-<script src="js/orb.js?v=324"></script>
-<script src="js/mahjong.js?v=324"></script>
-<script src="js/connect4.js?v=324"></script>
-<script src="js/flight.js?v=324"></script>
-<script src="js/pachinko.js?v=324"></script>
-<script src="js/carrom.js?v=324"></script>
-<script src="js/platform.js?v=324"></script>
-<script src="js/marble.js?v=324"></script>
-<script src="js/main.js?v=324"></script>
+<script src="js/config.js?v=325"></script>
+<script src="js/race_tracks.js?v=325"></script>
+<script src="js/race_arenas.js?v=325"></script>
+<script src="js/sim.js?v=325"></script>
+<script src="js/audio.js?v=325"></script>
+<script src="js/auth.js?v=325"></script>
+<script src="js/cloud.js?v=325"></script>
+<script src="js/net.js?v=325"></script>
+<script src="js/game.js?v=325"></script>
+<script src="js/minigames.js?v=325"></script>
+<script src="js/ar.js?v=325"></script>
+<script src="js/padnav.js?v=325"></script>
+<script src="js/cards.js?v=325"></script>
+<script src="js/chess.js?v=325"></script>
+<script src="js/chess_art.js?v=325"></script>
+<script src="js/xiangqi.js?v=325"></script>
+<script src="js/rummi.js?v=325"></script>
+<script src="js/gomoku.js?v=325"></script>
+<script src="js/blackjack.js?v=325"></script>
+<script src="js/g2048.js?v=325"></script>
+<script src="js/orb.js?v=325"></script>
+<script src="js/mahjong.js?v=325"></script>
+<script src="js/connect4.js?v=325"></script>
+<script src="js/flight.js?v=325"></script>
+<script src="js/pachinko.js?v=325"></script>
+<script src="js/carrom.js?v=325"></script>
+<script src="js/platform.js?v=325"></script>
+<script src="js/marble.js?v=325"></script>
+<script src="js/main.js?v=325"></script>
 </body>
 </html>
