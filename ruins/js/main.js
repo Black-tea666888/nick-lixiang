@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v276', items: ['每天開始前可以三選一強化（有怪物的模式）'] };
+const UPD = { v: 'v277', items: ['踢出按鈕移到分數前面；頂部黃色提示條確保會自動收起'] };
 const SCREENS = ['scr2048', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -666,12 +666,13 @@ function invPickOpen() {
 }
 setInterval(invRender, 1000);
 
-let bannerT = null;
+let bannerT = null, bannerEnd = 0, bannerWatch = null;
 function bannerShow(title, sub) {
   const el = $('banner'); el.querySelector('b').textContent = title; el.querySelector('span').textContent = sub || '';
   el.classList.add('show'); clearTimeout(bannerT); bannerT = setTimeout(bannerHide, 10000);
+  bannerEnd = Date.now() + 10000; clearInterval(bannerWatch); bannerWatch = setInterval(function () { if (Date.now() >= bannerEnd) bannerHide(); }, 500);   // 手機背景節流時仍會在期限後收起
 }
-function bannerHide() { clearTimeout(bannerT); $('banner').classList.remove('show'); }
+function bannerHide() { clearTimeout(bannerT); clearInterval(bannerWatch); bannerWatch = null; $('banner').classList.remove('show'); }
 function mkFillSelect() {
   const sel = $('mkItem'), list = tradeables(prog());
   sel.textContent = '';
@@ -2212,7 +2213,7 @@ function socSelect(opts, val, onChange) {
   const sel = mk('select'); opts.forEach(function (o) { const x = mk('option', null, o[1]); x.value = o[0]; sel.appendChild(x); }); sel.value = val;
   sel.addEventListener('change', function () { onChange(sel.value); }); return sel;
 }
-function socRows(rows, unit, emptyText) {
+function socRows(rows, unit, emptyText, act) {
   const b = $('socBody'), my = RR.Cloud.uid();
   if (!rows.length) { socNote(emptyText || '還沒有人上榜，快去拿第一名。'); return; }
   rows.forEach(function (r, i) {
@@ -2220,6 +2221,7 @@ function socRows(rows, unit, emptyText) {
     statsLink(row, r.uid, r.name);
     row.appendChild(mk('span', 'rk', String(i + 1)));
     const nm = mk('span', 'nm', r.name || '玩家'); if (r.clan) nm.appendChild(mk('small', null, ' [' + r.clan + ']')); row.appendChild(nm);
+    const ab = act ? act(r) : null; if (ab) row.appendChild(ab);   // 操作按鈕放在分數前面
     row.appendChild(mk('span', 'sc', unit(r.score | 0))); b.appendChild(row);
   });
 }
@@ -2450,9 +2452,15 @@ function renderSocial() {
         { const cc = mk('button', 'btn primary', '打開拾荒團聊天'); cc.type = 'button'; cc.style.width = '100%'; cc.style.margin = '6px 0 10px'; cc.addEventListener('click', function () { $('scrSocial').classList.add('hide'); renderSocial.token = null; clanFrom = 'social'; clanOpen(); }); b.appendChild(cc); }
         const isLeader = info.clan.owner === RR.Cloud.uid(), deps = info.clan.deputies || [];
         const roleOf = function (m) { return m.uid === info.clan.owner ? '團長' : deps.indexOf(m.uid) >= 0 ? '副團長' : '團員'; };
-        socRows(info.members.map(function (m) { return Object.assign({}, m, { name: (m.name || '玩家') + ' 〔' + roleOf(m) + '〕' + (seenText(m.seen) ? '・' + seenText(m.seen) : '') }); }), function (v) { return v + ' 分'; });
         const my = RR.Cloud.uid();
         const amDep = deps.indexOf(my) >= 0;
+        socRows(info.members.map(function (m) { return Object.assign({}, m, { name: (m.name || '玩家') + ' 〔' + roleOf(m) + '〕' + (seenText(m.seen) ? '・' + seenText(m.seen) : '') }); }), function (v) { return v + ' 分'; }, '', function (r) {
+          const m = info.members.find(function (x) { return x.uid === r.uid; });
+          if (!m || m.uid === info.clan.owner || m.uid === my || !(isLeader || amDep) || !(isLeader || deps.indexOf(m.uid) < 0)) return null;
+          const kb = mk('button', 'btn', '踢出'); kb.type = 'button'; kb.className = 'btn kickBtn';
+          kb.addEventListener('click', function (e) { e.stopPropagation(); ask('確定要把「' + (m.name || '玩家') + '」踢出拾荒團？', function () { C.kickMember(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); }); });
+          return kb;
+        });
         if (isLeader || amDep) info.members.forEach(function (m) {
           if (m.uid === info.clan.owner || m.uid === my) return;
           const isDep = deps.indexOf(m.uid) >= 0, r = mk('div', 'srow');
@@ -2464,11 +2472,6 @@ function renderSocial() {
             const tb = mk('button', 'btn', '轉移團長'); tb.type = 'button';
             tb.addEventListener('click', function () { ask('確定把團長轉給「' + (m.name || '玩家') + '」？你會變成團員。', function () { C.transferLeader(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); }); });
             r.appendChild(tb);
-          }
-          if (isLeader || !isDep) {
-            const kb = mk('button', 'btn', '踢出'); kb.type = 'button';
-            kb.addEventListener('click', function () { ask('確定要把「' + (m.name || '玩家') + '」踢出拾荒團？', function () { C.kickMember(m.uid, function (err) { if (err) say(C.message(err)); renderSocial(); }); }); });
-            r.appendChild(kb);
           }
           b.appendChild(r);
         });
