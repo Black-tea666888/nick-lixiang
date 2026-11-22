@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v284', items: ['每個頁面左上角新增重置按鈕（⟳），卡住時重新整理'] };
+const UPD = { v: 'v286', items: ['重置按鈕移到左側中間，重新整理後停留在同一頁'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -2766,7 +2766,17 @@ function bind() {
   $('xqBtn').addEventListener('click', xqOpen);
   $('rummiBtn').addEventListener('click', rmOpen);
   $('gomokuBtn').addEventListener('click', gmOpen);
-  $('hardReset').addEventListener('click', function () { location.reload(); });   // 任何頁面卡住都可以重新整理
+  // 重置：重新整理，但停留在同一個頁面（能重新打開的頁面才還原，對局中的頁面回到大廳）
+  const REOPEN = { scr2048: function () { g2Open(); }, scrBj: function () { bjOpen(); }, scrChess: function () { chessOpen(); }, scrXq: function () { xqOpen(); } };
+  $('hardReset').addEventListener('click', function () {
+    const cur = SCREENS.filter(function (s) { const el = $(s); return el && !el.classList.contains('hide'); })[0];
+    try { if (cur) sessionStorage.setItem('rr_restore', cur); } catch (e) {}
+    location.reload();
+  });
+  setTimeout(function () {
+    let r = null; try { r = sessionStorage.getItem('rr_restore'); sessionStorage.removeItem('rr_restore'); } catch (e) {}
+    if (r && REOPEN[r]) REOPEN[r]();
+  }, 300);
   $('bjBtn').addEventListener('click', bjOpen);
   $('bjBack').addEventListener('click', showMenu);
   $('bjDeal').addEventListener('click', function () { bjS = RR.BJ.deal(bjS); bjDraw(); });
