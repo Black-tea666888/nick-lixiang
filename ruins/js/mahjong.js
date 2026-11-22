@@ -13,10 +13,11 @@
   function tileName(t) { return NAMES[t]; }
 
   // 4 張 × 34 種 → 洗牌
-  function newWall() {
+  function mulberry(seed) { let a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function newWall(rnd) {
     const w = [];
     for (let t = 0; t < 34; t++) for (let k = 0; k < 4; k++) w.push(t);
-    for (let i = w.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const x = w[i]; w[i] = w[j]; w[j] = x; }
+    for (let i = w.length - 1; i > 0; i--) { const j = Math.floor((rnd || Math.random)() * (i + 1)); const x = w[i]; w[i] = w[j]; w[j] = x; }
     return w;
   }
 
@@ -49,11 +50,12 @@
     return false;
   }
 
-  function newGame() {
-    const wall = newWall();
+  // 給種子（雙人）時兩人拿到同一副牌堆；turns 記錄自己摸牌的巡數，用來比先胡快慢
+  function newGame(seed) {
+    const wall = newWall(seed == null ? null : mulberry(seed));
     const you = [], cpu = [];
     for (let i = 0; i < HAND; i++) { you.push(wall.pop()); cpu.push(wall.pop()); }
-    const s = { wall, hand: { you, cpu }, discards: [], last: null, over: false, winner: null, draw: false };
+    const s = { wall, hand: { you, cpu }, discards: [], last: null, over: false, winner: null, draw: false, turns: 1 };
     drawTile(s, 'you');
     if (winning(you)) { s.over = true; s.winner = 'you'; }
     return s;

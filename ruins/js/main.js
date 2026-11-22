@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v317', items: ['21點新增雙人線上對戰：同一副牌順序，各打 5 局比勝場'] };
+const UPD = { v: 'v318', items: ['麻將新增雙人線上對戰：同一副牌堆，比先胡（巡數少者勝）'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1484,6 +1484,7 @@ const DUEL = {
   marble: { key: 'marble', name: '彈珠', start: function () { return { score: 0, done: false, win: false, time: 1 }; }, get: function () { return marbleMine; }, set: function (v) { marbleMine = v; }, draw: function () { marbleRun(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.done; }, label: function (s) { return (s.win ? '撐住了 ' : '') + '第 ' + s.time + ' 回合 齒輪 ' + s.score; }, cmp: function (me, o) { if (me.win !== o.win) return me.win ? 1 : -1; if (!me.win && me.time !== o.time) return me.time > o.time ? 1 : -1; if (me.score !== o.score) return me.score > o.score ? 1 : -1; return 0; } },
   plat: { key: 'plat', name: '跳關', start: function () { return { score: 0, done: false, win: false, time: 0 }; }, get: function () { return platMine; }, set: function (v) { platMine = v; }, draw: function () { platRun(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.done; }, label: function (s) { return (s.win ? '過關 ' : '') + '齒輪 ' + s.score + '/12' + (s.win ? '　' + s.time.toFixed(1) + ' 秒' : ''); }, cmp: function (me, o) { if (me.win !== o.win) return me.win ? 1 : -1; if (me.win) return me.time < o.time ? 1 : me.time > o.time ? -1 : 0; return me.score > o.score ? 1 : me.score < o.score ? -1 : 0; } },
   bj: { key: 'bj', name: '21點', start: function (seed) { return RR.BJ.start(seed); }, get: function () { return bjS; }, set: function (v) { bjS = v; }, draw: function () { bjDraw(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.done; }, label: function (s) { return '勝 ' + s.score + ' 負 ' + s.time + ' / ' + RR.BJ.ROUNDS + ' 局'; }, cmp: function (me, o) { if (me.score !== o.score) return me.score > o.score ? 1 : -1; return o.time !== me.time ? (me.time < o.time ? 1 : -1) : 0; } },
+  mj: { key: 'mj', name: '麻將', start: function (seed) { return mjDuelStart(seed); }, get: function () { return mjS; }, set: function (v) { mjS = v; }, draw: function () { mjDraw(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.done; }, label: function (s) { return s.win ? '胡了 第 ' + s.time + ' 巡' : s.done ? '未胡' : '第 ' + s.time + ' 巡'; }, cmp: function (me, o) { if (me.win !== o.win) return me.win ? 1 : -1; if (me.win && me.time !== o.time) return me.time < o.time ? 1 : -1; return 0; } },
   g2048: { key: 'g2048', name: '方塊合併', start: function (seed) { return RR.G2048.start(seed); }, get: function () { return g2S; }, set: function (v) { g2S = v; }, draw: function () { g2Draw(); }, score: function (s) { return s.score; }, done: function (s) { return !!s.over; } }
 };
 let duel = { on: false, host: false, g: null, guest: null, seed: 0, opp: null };
@@ -1529,7 +1530,7 @@ function duelOnMsg(from, d) {
   } else if (d.t === 'duel_prog' && d.g === duel.g) { duel.opp = { score: Number(d.score) || 0, done: !!d.done, win: !!d.win, time: Number(d.time) || 0 }; duelShow(); }
 }
 function duelOnLeave() { duelNote(duel.host ? '對手已離開，等待新的對手加入。' : '房主已離開。'); if (duel.host) { duel.guest = null; duel.opp = null; duelShow(); } }
-function duelLeave() { clearInterval(platTimer); clearInterval(marbleTimer); if (duel.g === 'bj') bjS = null; if (duel.on) Net.leave(); duel = { on: false, host: false, g: null, guest: null, seed: 0, opp: null }; }
+function duelLeave() { clearInterval(platTimer); clearInterval(marbleTimer); if (duel.g === 'bj') bjS = null; if (duel.g === 'mj') { clearTimeout(mjTimer); mjS = null; } if (duel.on) Net.leave(); duel = { on: false, host: false, g: null, guest: null, seed: 0, opp: null }; }
 function duelHostCreate(g) {
   duelLeave(); duel.g = g; duelNote('建立房間中…');
   Net.host(function (err) {
@@ -2245,10 +2246,15 @@ function mjNew() {
   if (mjS.over) mjTurn = 'end';
   mjDraw();
 }
+// 雙人時的開局：同一副牌堆，各自對電腦打，先胡者勝（胡得快的優先）
+function mjDuelStart(seed) {
+  clearTimeout(mjTimer); const s = window.RR.Mj.newGame(seed); mjTurn = s.over ? 'end' : 'you'; return s;
+}
 function mjEnd() { mjTurn = 'end'; mjDraw(); }
 function mjDraw() {
   const M = window.RR.Mj, s = mjS;
   s.hand.you.sort(function (a, b) { return a - b; });
+  s.score = s.over && s.winner === 'you' ? 1 : 0; s.win = s.over && s.winner === 'you'; s.time = s.turns; s.done = !!s.over;
   const hd = document.getElementById('mjHand'); hd.innerHTML = '';
   s.hand.you.forEach(function (t, i) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'mjTile';
@@ -2275,6 +2281,7 @@ function mjDraw() {
     mjLastMsg = msg; mEl.classList.remove('mjWin', 'mjLose');
     if (msg) fxRestart(mEl, s.winner === 'you' ? 'mjWin' : 'mjLose');
   }
+  if (duel.on && duel.g === 'mj') duelSendProg();
 }
 function mjPlay(i) {
   const M = window.RR.Mj, s = mjS;
@@ -2296,6 +2303,7 @@ function mjCpuTurn() {
 function mjYouDraw() {
   const M = window.RR.Mj, s = mjS;
   if (!M.drawTile(s, 'you')) { mjEnd(); return; }
+  s.turns++;
   if (M.winning(s.hand.you)) { s.over = true; s.winner = 'you'; mjEnd(); return; }
   mjTurn = 'you'; mjDraw();
 }
@@ -3212,8 +3220,10 @@ function bind() {
   $('g2048Btn').addEventListener('click', g2Open);
   $('orbBtn').addEventListener('click', orbOpen);
   $('mjBtn').addEventListener('click', mjOpen);
-  $('mjBack').addEventListener('click', function () { clearTimeout(mjTimer); showMenu(); });
-  $('mjNew').addEventListener('click', mjNew);
+  $('mjBack').addEventListener('click', function () { clearTimeout(mjTimer); duelLeave(); showMenu(); });
+  $('mjNew').addEventListener('click', function () { if (duel.on && duel.g === 'mj') return duelNew('mj'); mjNew(); });
+  $('mjDuelHost').addEventListener('click', function () { duelHostCreate('mj'); });
+  $('mjDuelJoin').addEventListener('click', function () { duelJoin('mj'); });
   $('mjRon').addEventListener('click', mjRon);
   $('mjPass').addEventListener('click', mjPass);
   $('orbBack').addEventListener('click', function () { duelLeave(); showMenu(); });
