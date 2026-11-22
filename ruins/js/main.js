@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v305', items: ['彈珠加入方塊受擊閃光、破壞光環與下降震動'] };
+const UPD = { v: 'v306', items: ['麻將打牌有提示動畫，胡牌與放銃有結算特效'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -2144,6 +2144,9 @@ function orbBindUp() { orbDrag = null; }
 
 /* 麻將（對電腦）：畫面與流程，規則在 mahjong.js。mjTurn：you 出牌、cpu 電腦回合、ron 可胡或過、end 結束 */
 let mjS = null, mjTurn = 'you', mjTimer = null;
+let mjPrevD = 0, mjLastMsg = '';
+/* 重新觸發一次 CSS 動畫 */
+function fxRestart(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
 function mjOpen() { show('scrMj'); if (!mjS) mjNew(); else mjDraw(); }
 function mjNew() {
   clearTimeout(mjTimer); mjS = window.RR.Mj.newGame(); mjTurn = 'you';
@@ -2162,8 +2165,10 @@ function mjDraw() {
     hd.appendChild(b);
   });
   document.getElementById('mjCpu').textContent = '電腦手牌 ' + s.hand.cpu.length + ' 張　牌堆剩 ' + s.wall.length + ' 張';
-  document.getElementById('mjDiscards').textContent = s.discards.length
+  const dEl = document.getElementById('mjDiscards');
+  dEl.textContent = s.discards.length
     ? '最近打出：' + s.discards.slice(-12).map(M.tileName).join('、') : '尚無人打牌';
+  if (s.discards.length !== mjPrevD) { mjPrevD = s.discards.length; fxRestart(dEl, 'mjNew'); }
   document.getElementById('mjStatus').textContent = mjTurn === 'you' ? '請出一張牌'
     : mjTurn === 'cpu' ? '電腦思考中…' : mjTurn === 'ron' ? '電腦打出 ' + M.tileName(s.last.tile) + '，要胡嗎？' : '';
   document.getElementById('mjRon').classList.toggle('hide', mjTurn !== 'ron');
@@ -2172,7 +2177,12 @@ function mjDraw() {
   if (s.over && s.winner === 'you') msg = '你胡了！';
   else if (s.over && s.winner === 'cpu') msg = '電腦胡了';
   else if (s.over && s.draw) msg = '牌堆空了，流局';
-  document.getElementById('mjMsg').textContent = msg;
+  const mEl = document.getElementById('mjMsg');
+  mEl.textContent = msg;
+  if (msg !== mjLastMsg) {
+    mjLastMsg = msg; mEl.classList.remove('mjWin', 'mjLose');
+    if (msg) fxRestart(mEl, s.winner === 'you' ? 'mjWin' : 'mjLose');
+  }
 }
 function mjPlay(i) {
   const M = window.RR.Mj, s = mjS;

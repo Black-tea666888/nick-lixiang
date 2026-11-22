@@ -1491,3 +1491,12 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 @keyframes bjIn { from { transform: translateY(-24px) rotate(-6deg) scale(.8); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes bjFlip { 0% { transform: rotateY(90deg); } 100% { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .bjCard.bjIn, .bjCard.bjFlip { animation: none; } }
+
+/* 麻將：打牌與結算 */
+.chessStatus.mjNew { animation: mjNew .35s ease-out; }
+#mjMsg.mjWin { animation: mjWin .6s ease-out; color: #ffd84a; font-size: 1.2em; font-weight: 900; text-shadow: 0 2px 0 #15181b, 0 0 12px rgba(255, 216, 74, .8); }
+#mjMsg.mjLose { animation: mjShake .4s ease-out; }
+@keyframes mjNew { from { transform: translateY(-4px); opacity: .2; } to { transform: none; opacity: 1; } }
+@keyframes mjWin { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: none; } }
+@keyframes mjShake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@media (prefers-reduced-motion: reduce) { .chessStatus.mjNew, #mjMsg.mjWin, #mjMsg.mjLose { animation: none; } }
