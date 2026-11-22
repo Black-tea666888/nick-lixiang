@@ -1534,3 +1534,8 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 @keyframes flMv { from { scale: 1.6; } to { scale: 1; } }
 @keyframes flBoom { from { scale: .3; opacity: 1; } to { scale: 2; opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .flTok.mv, .flBoom { animation: none; } }
+
+/* 德國麻將：新組成的牌組 */
+.rsSet.rsNew { animation: rsNew .4s ease-out; }
+@keyframes rsNew { from { transform: scale(.8); box-shadow: 0 0 0 4px #ffd23a; } to { transform: none; box-shadow: none; } }
+@media (prefers-reduced-motion: reduce) { .rsSet.rsNew { animation: none; } }
