@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v307', items: ['怪物卡牌加入出牌落地、加牌震動與萬用牌換色動畫'] };
+const UPD = { v: 'v308', items: ['五子棋與四子連珠加入落子動畫，連線時閃爍標示'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1637,11 +1637,12 @@ function gmTap(i) {
 function gmDraw() {
   const G = RR.Gomoku, bd = $('gomokuBoard');
   bd.textContent = '';
+  const gmFresh = gmShownRef !== gmS; gmShownRef = gmS;
   const winSet = {};
   if (gmS.win) gmS.win.line.forEach(function (i) { winSet[i] = 1; });
   for (let i = 0; i < G.N * G.N; i++) {
     const p = gmS.b[i];
-    const cls = 'gmCell' + (p === 'b' ? ' B' : p === 'w' ? ' W' : '') + (winSet[i] ? ' win' : '') + (gmS.last === i ? ' last' : '');
+    const cls = 'gmCell' + (p === 'b' ? ' B' : p === 'w' ? ' W' : '') + (winSet[i] ? ' win' : '') + (gmS.last === i ? ' last' : '') + (gmFresh && gmS.last === i ? ' drop' : '');
     const cell = mk('button', cls, '');
     cell.type = 'button';
     cell.setAttribute('aria-label', (Math.floor(i / G.N) + 1) + '列' + (i % G.N + 1) + '行' + (p ? (p === 'b' ? '黑子' : '白子') : '空'));
@@ -1665,9 +1666,11 @@ function c4Tap(col) {
   if (r.ok) c4S = r.state;
   c4Draw();
 }
+let c4ShownRef = null, gmShownRef = null;
 function c4Draw() {
   const G = RR.Connect4, bd = $('c4Board');
   bd.textContent = '';
+  const c4Fresh = c4ShownRef !== c4S; c4ShownRef = c4S;   // 新的一步才播放落子動畫
   const winSet = {};
   if (c4S.win) c4S.win.line.forEach(function (i) { winSet[i] = 1; });
   const full = c4S.win || c4S.draw;
@@ -1678,7 +1681,7 @@ function c4Draw() {
     colBtn.setAttribute('aria-label', (col + 1) + '號欄');
     for (let r = 0; r < G.ROWS; r++) {
       const i = r * G.COLS + col, p = c4S.b[i];
-      const cls = 'c4Slot' + (p === 'r' ? ' R' : p === 'y' ? ' Y' : '') + (winSet[i] ? ' win' : '') + (c4S.last === i ? ' last' : '');
+      const cls = 'c4Slot' + (p === 'r' ? ' R' : p === 'y' ? ' Y' : '') + (winSet[i] ? ' win' : '') + (c4S.last === i ? ' last' : '') + (c4Fresh && c4S.last === i ? ' drop' : '');
       colBtn.appendChild(mk('span', cls, ''));
     }
     colBtn.addEventListener('click', (function (k) { return function () { c4Tap(k); }; })(col));
