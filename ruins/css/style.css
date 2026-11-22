@@ -1444,3 +1444,11 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .socAct { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .chessNet { display: grid; gap: 8px; margin: 8px 0; }
 .chessNet input { text-transform: uppercase; }
+
+/* 21 點 */
+.bjTable { display: grid; gap: 14px; margin: 12px auto; width: min(92vw, 420px); }
+.bjRow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bjRow b { width: 100%; font-size: 16px; }
+.bjCard { min-width: 56px; padding: 14px 8px; text-align: center; font-size: 20px; font-weight: 900; background: #f4ecd8; color: #1b1b1b; border: 3px solid #1b1b1b; border-radius: 4px; }
+.bjCard.red { color: #b3261e; }
+.bjBar { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 8px 0 14px; }

@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v282', items: ['手機遊玩只能橫式：移除「這局先用直式」，提示改為請用橫式遊玩'] };
-const SCREENS = ['scr2048', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
+const UPD = { v: 'v283', items: ['休閒模式新增 21 點（撲克牌，單人對莊家）'] };
+const SCREENS = ['scrBj', 'scr2048', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -1420,6 +1420,22 @@ function g2Move(d) {
   const r = RR.G2048.move(g2S, d);
   if (r.ok) { g2S = r.state; g2Draw(); }
 }
+/* 21 點（撲克牌，單人對莊家） */
+let bjS = null;
+function bjOpen() { show('scrBj'); if (!bjS) bjS = RR.BJ.start(); bjDraw(); }
+function bjCardEl(c, hidden) {
+  const el = mk('span', 'bjCard' + (c.s === '♥' || c.s === '♦' ? ' red' : ''), null);
+  el.textContent = hidden ? '？' : c.r + c.s;
+  return el;
+}
+function bjDraw() {
+  const B = RR.BJ, s = bjS, t = $('bjTable'), playing = s.phase === 'play';
+  t.textContent = '';
+  const dRow = mk('div', 'bjRow', null); dRow.appendChild(mk('b', null, '莊家 ' + (playing ? '' : B.value(s.dealer)))); s.dealer.forEach(function (c, i) { dRow.appendChild(bjCardEl(c, playing && i === 1)); }); t.appendChild(dRow);
+  const pRow = mk('div', 'bjRow', null); pRow.appendChild(mk('b', null, '你 ' + (s.player.length ? B.value(s.player) : ''))); s.player.forEach(function (c) { pRow.appendChild(bjCardEl(c, false)); }); t.appendChild(pRow);
+  $('bjStatus').textContent = s.msg + '　戰績：勝 ' + s.w + ' / 負 ' + s.l + ' / 平 ' + s.t;
+  $('bjDeal').disabled = playing; $('bjHit').disabled = !playing; $('bjStand').disabled = !playing;
+}
 function g2Open() { show('scr2048'); if (!g2S) g2S = RR.G2048.start(); g2Draw(); }
 function g2New() { g2S = RR.G2048.start(); g2Draw(); }
 document.addEventListener('keydown', function (e) {
@@ -1902,7 +1918,7 @@ function recOptsOpen() {
   $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
 }
 /* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'g2048', 'c4', 'flight', 'pachi', 'kangle', 'plat', 'marble'] };
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'bj', 'g2048', 'c4', 'flight', 'pachi', 'kangle', 'plat', 'marble'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
@@ -1918,6 +1934,7 @@ const CAS_HELP = {
   chess: '同一台裝置兩人輪流下棋。\n點選棋子再點目標格移動，把對方的王將死就獲勝。',
   xq: '同一台裝置兩人輪流下棋。\n點選棋子再點目標格移動，把對方的將軍死就獲勝。',
   rummi: '依拉密規則排出順子或同數字的組合，先出完手牌者獲勝。\n和電腦對戰；可以先摸牌或直接出牌。',
+  bj: '每人發兩張牌，點數盡量接近 21 但不能超過。\nJ、Q、K 是 10 點，A 是 1 或 11。莊家點數低於 17 會補牌。',
   g2048: '滑動方向合併相同數字，拼越大分數越高。\n棋盤會隨著貼邊無限擴大，無法移動時結束，分數進紀錄板。',
   gomoku: '同一台裝置兩人輪流下子。\n先在橫、直、斜任一方向連成五子者獲勝。',
   c4: '同一台裝置兩人輪流投子，棋子會落到該欄最下方。\n先在橫、直、斜任一方向連成四子者獲勝。',
@@ -2749,6 +2766,11 @@ function bind() {
   $('xqBtn').addEventListener('click', xqOpen);
   $('rummiBtn').addEventListener('click', rmOpen);
   $('gomokuBtn').addEventListener('click', gmOpen);
+  $('bjBtn').addEventListener('click', bjOpen);
+  $('bjBack').addEventListener('click', showMenu);
+  $('bjDeal').addEventListener('click', function () { bjS = RR.BJ.deal(bjS); bjDraw(); });
+  $('bjHit').addEventListener('click', function () { bjS = RR.BJ.hit(bjS); bjDraw(); });
+  $('bjStand').addEventListener('click', function () { bjS = RR.BJ.stand(bjS); bjDraw(); });
   $('g2048Btn').addEventListener('click', g2Open);
   $('g2048Back').addEventListener('click', showMenu);
   $('g2048New').addEventListener('click', g2New);
