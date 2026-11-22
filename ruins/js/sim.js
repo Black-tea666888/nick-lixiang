@@ -587,7 +587,7 @@ Sim.prototype.startDay = function (day) {
   for (let i = 0; i < mc; i++) {
     const mcell = MONSTER_CELLS[i] || floorCells[Math.floor(this.rng() * floorCells.length)];   // 地圖的怪物點不夠時，隨機放在地板上
     const p = center(mcell[0], mcell[1]);
-    this.monsters.push({ x: p[0], z: p[1], rot: 0, state: 'wander', path: null, goal: null, lost: 0, repath: 0, cool: 0, target: null, hp: monStats(this.upg).hp, maxHp: monStats(this.upg).hp, sh: monStats(this.upg).sh, shMax: monStats(this.upg).sh, shT: 0, dead: 0 });
+    this.monsters.push({ statue: day >= 4 && i % 2 === 1, x: p[0], z: p[1], rot: 0, state: 'wander', path: null, goal: null, lost: 0, repath: 0, cool: 0, target: null, hp: monStats(this.upg).hp, maxHp: monStats(this.upg).hp, sh: monStats(this.upg).sh, shMax: monStats(this.upg).sh, shT: 0, dead: 0 });
   }
   if (hunt || br) this.trophy = null;
   this.chaseSpeed = Math.min(3.9 + 0.1 * (day - 1), 4.9);   // 跑步（9）一定甩得掉；走路（4.2）在後期甩不掉
@@ -1177,6 +1177,8 @@ Sim.prototype._stepTD = function (dt) {
 Sim.prototype._monster = function (m, mi, dt, alive) {
   if (m.dead > 0) { m.dead -= dt; if (m.dead <= 0) this._respawn(m); return; }
   if (m.cool > 0) { m.cool -= dt; return; }
+  // 無眼雕像（第 4 天起，每隔一隻）：只要有人在 15 公尺內看得到牠，就停在原地不動；沒人看就照常追人
+  if (m.statue && alive.some(function (p) { return p.alive && Math.hypot(p.x - m.x, p.z - m.z) < 15 && los(m.x, m.z, p.x, p.z); })) return;
   let best = null, bd = 1e9, bestSees = false;
   for (let i = 0; i < alive.length; i++) {
     const wx = this.weather || 0, hf = WX_HEAR[wx], sightMul = 1 / (1 - 0.15 * ((this.upg || {}).sight || 0));
