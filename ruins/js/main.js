@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v323', items: ['彈珠台新增線上對戰（2 人輪流，各 15 顆）'] };
+const UPD = { v: 'v324', items: ['德國麻將新增線上對戰（2 人）', '德國麻將與中國麻將的牌面放大'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1426,6 +1426,7 @@ function xqDraw() {
  * rmLoose 是從桌上拉起來、還沒放回去的散牌。 */
 let rmS = null, rmSel = {}, rmWT = [], rmLoose = [], rmBusy = false;
 const RM_CLS = ['c0', 'c1', 'c2', 'c3'];
+const RM_DUO_LIB = { start: function () { return RR.Rummi.start(undefined, 2); }, move: function () { return { ok: false }; } };
 /* 五子棋（同機雙人） */
 let gmS = null;
 /* 2048（無限板） */
@@ -1597,6 +1598,7 @@ const DUO = {
   fl: { key: 'flight', lib: function () { return FL_LIB; }, get: function () { return flS; }, set: function (v) { flS = v; }, draw: function () { flDraw(); }, hostSide: 0, guestSide: 1, hostName: '紅', guestName: '綠' },
   kg: { key: 'kg', lib: function () { return KG_LIB; }, get: function () { return kgS; }, set: function (v) { kgS = v; }, draw: function () { kgDraw(); }, hostSide: 0, guestSide: 1, hostName: '紅', guestName: '黑' },
   pc: { key: 'pc', lib: function () { return PC_LIB; }, get: function () { return pcOn; }, set: function (v) { pcOn = v; }, draw: function () { pcDraw(); }, hostSide: 0, guestSide: 1, hostName: '紅', guestName: '黑' },
+  rm: { key: 'rm', lib: function () { return RM_DUO_LIB; }, get: function () { return rmS; }, set: function (v) { rmS = v; }, draw: function () { if (duo.host) rmBusy = false; rmResetTurn(); rmStartTurn(); rmDraw(); }, view: function (s) { return rmViewFor(s); }, noNote: true, hostSide: 0, guestSide: 1, hostName: '先手', guestName: '後手' },
   xq: { key: 'xq', lib: function () { return XQW; }, get: function () { return xqS; }, set: function (v) { xqS = v; }, draw: function () { xqDraw(); }, hostSide: 'r', guestSide: 'b', hostName: '紅', guestName: '黑' },
   gm: { key: 'gomoku', lib: function () { return RR.Gomoku; }, get: function () { return gmS; }, set: function (v) { gmS = v; }, draw: function () { gmDraw(); }, hostSide: 'b', guestSide: 'w', hostName: '黑', guestName: '白' },
   c4: { key: 'c4', lib: function () { return RR.Connect4; }, get: function () { return c4S; }, set: function (v) { c4S = v; }, draw: function () { c4Draw(); }, hostSide: 'r', guestSide: 'y', hostName: '紅', guestName: '黃' }
@@ -1607,7 +1609,8 @@ function duoNote(msg) {
   $(c.key + 'NetNote').textContent = msg || '';
   $(c.key + 'Code').textContent = duo.on && duo.host ? '房間代碼：' + Net.code() : '';
 }
-function duoSend() { if (duo.host && duo.guest) Net.sendTo(duo.guest, { t: 'duo', g: duo.g, s: DUO[duo.g].get() }); }
+function duoView(s) { const c = DUO[duo.g]; return c.view ? c.view(s) : s; }
+function duoSend() { if (duo.host && duo.guest) Net.sendTo(duo.guest, { t: 'duo', g: duo.g, s: duoView(DUO[duo.g].get()) }); }
 function duoMove(mv, side) {
   const c = DUO[duo.g], s = c.get();
   if (!s || s.turn !== side) return;
@@ -1632,12 +1635,12 @@ function duoOnMsg(from, d) {
   if (!d || typeof d !== 'object' || !duo.g) return;
   if (duo.host) {
     if (d.t === 'hi') {
-      if (!duo.guest) { duo.guest = from; Net.sendTo(from, { t: 'duo', g: duo.g, s: DUO[duo.g].get() }); duoNote('對手已加入，' + DUO[duo.g].hostName + '方先走。'); }
+      if (!duo.guest) { duo.guest = from; Net.sendTo(from, { t: 'duo', g: duo.g, s: duoView(DUO[duo.g].get()) }); duoNote('對手已加入，' + DUO[duo.g].hostName + '方先走。'); }
       else Net.sendTo(from, { t: 'no', why: 'full' });
-    } else if (d.t === 'duo_mv' && from === duo.guest && d.g === duo.g) { if (duo.g === 'kg') return kgRemote(d.mv); duoMove(d.mv && typeof d.mv === 'object' ? Object.assign({}, d.mv, { from: d.mv.from | 0, to: d.mv.to | 0 }) : Number(d.mv) | 0, DUO[duo.g].guestSide); }
+    } else if (d.t === 'duo_mv' && from === duo.guest && d.g === duo.g) { if (duo.g === 'kg') return kgRemote(d.mv); if (duo.g === 'rm') return rmRemote(d.mv); duoMove(d.mv && typeof d.mv === 'object' ? Object.assign({}, d.mv, { from: d.mv.from | 0, to: d.mv.to | 0 }) : Number(d.mv) | 0, DUO[duo.g].guestSide); }
   } else if (d.t === 'duo' && d.g === duo.g) {
     DUO[duo.g].set(d.s); DUO[duo.g].draw();
-    duoNote('你是' + DUO[duo.g].guestName + '方' + (d.s.turn === DUO[duo.g].guestSide ? '，輪到你。' : '，等房主下子。'));
+    if (!DUO[duo.g].noNote) duoNote('你是' + DUO[duo.g].guestName + '方' + (d.s.turn === DUO[duo.g].guestSide ? '，輪到你。' : '，等房主下子。'));
   }
 }
 function duoOnLeave() { duoNote(duo.host ? '對手已離開，等待新的對手加入。' : '房主已離開。'); if (duo.host) duo.guest = null; }
@@ -2065,6 +2068,10 @@ function rmOpen() { show('scrRummi'); if (!rmS) rmS = RR.Rummi.start(); rmResetT
 function rmStartTurn() { rmDeadline = Date.now() + RM_TURN_MS; }
 /** 每秒檢查：時間到就結束這回合（桌面亂了抽 3 張懲罰，沒動就抽 1 張） */
 function rmTick() {
+  if (rmOnline()) {
+    if (!duo.host || !rmS || rmS.over || rmBusy) return;
+    if (rmS.turn === 1 && Date.now() >= rmDeadline) { const r = RR.Rummi.draw(rmS, 1); if (r.ok) rmS = r.state; rmHostAfter(); return; }   // 客人超時就替他抽一張
+  }
   if (!rmS || rmS.over || rmS.turn !== 0 || rmBusy) return;
   const left = Math.ceil((rmDeadline - Date.now()) / 1000);
   if (left > 0) { rmStatus(); return; }   // 只更新文字，不重建牌面，免得點擊被吃掉
@@ -2074,7 +2081,7 @@ function rmTick() {
   const r = dirty ? RR.Rummi.penalty(rmS, 0) : RR.Rummi.draw(rmS, 0);
   if (r.ok) { rmS = r.state; rmResetTurn(); rmAfter(); }
 }
-function rmNewGame() { rmS = RR.Rummi.start(); rmBusy = false; rmResetTurn(); rmStartTurn(); rmDraw(); }
+function rmNewGame() { if (rmOnline()) { if (duo.host) duoNew(); else duoNote('請房主按「重新開始」。'); return; } rmS = RR.Rummi.start(); rmBusy = false; rmResetTurn(); rmStartTurn(); rmDraw(); }
 function rmCopyTable() { return rmS.table.map(function (ts) { return ts.slice(); }); }
 function rmResetTurn() { rmSel = {}; rmWT = rmCopyTable(); rmLoose = []; }
 function rmIdSet(list) { const o = {}; list.forEach(function (t) { o[t.id] = 1; }); return o; }
@@ -2128,12 +2135,20 @@ function rmUndo() { if (rmBusy) return; rmResetTurn(); rmDraw(); }
 function rmDrawTile() {
   if (rmBusy || rmS.turn !== 0) return;
   if (rmDirty()) { mtoast('先出牌或復原，再抽牌', 'bad'); return; }
+  if (rmOnline() && !duo.host) { rmBusy = true; rmNetSend({ a: 'draw' }); rmDraw(); return; }
   const r = RR.Rummi.draw(rmS, 0);
   if (r.ok) { rmS = r.state; rmResetTurn(); rmAfter(); }
 }
 function rmConfirm() {
   if (rmBusy || rmS.turn !== 0) return;
   if (rmLoose.length) { mtoast('還有散牌沒放上桌', 'bad'); return; }
+  if (rmOnline() && !duo.host) {
+    const local = rmS.opened[0] ? RR.Rummi.rearrange(rmS, 0, rmWT, rmHandUsed()) : RR.Rummi.play(rmS, 0, rmAddedSets(), []);
+    if (!local.ok) { mtoast(local.why, 'bad'); return; }
+    rmNetSend(rmS.opened[0] ? { a: 'rearrange', table: rmWT, fromHand: rmHandUsed() } : { a: 'play', sets: rmAddedSets() });
+    rmBusy = true; rmDraw();
+    return;
+  }
   const r = rmS.opened[0]
     ? RR.Rummi.rearrange(rmS, 0, rmWT, rmHandUsed())
     : RR.Rummi.play(rmS, 0, rmAddedSets(), []);
@@ -2153,7 +2168,51 @@ function rmHandUsed() {
   return out;
 }
 /** 玩家出完或抽完牌之後：遊戲結束就結算，否則讓電腦依序走 */
+// 德國麻將線上（2 人）：房主持有完整牌局（牌庫與兩人手牌），客人只拿到自己的手牌與對手張數。
+// 客人送出動作（抽牌、出牌、整理桌面），房主驗證後套用並同步畫面；客人端的 seat 以 0 顯示（你），對手為 1。
+function rmOnline() { return duo.on && duo.g === 'rm'; }
+function rmHidden(n, pre) { const out = []; for (let i = 0; i < n; i++) out.push({ id: pre + i, color: 0, num: 1, joker: false, hidden: true }); return out; }
+/** 房主的完整狀態 → 客人看到的版本（座位換成客人為 0） */
+function rmViewFor(s) {
+  return {
+    deck: rmHidden(s.deck.length, 'd'),
+    hands: [s.hands[1].slice(), s.over ? s.hands[0].slice() : rmHidden(s.hands[0].length, 'h')],
+    table: s.table,
+    opened: [s.opened[1], s.opened[0]],
+    turn: s.turn === 1 ? 0 : 1, over: s.over, winner: s.winner < 0 ? -1 : (s.winner === 1 ? 0 : 1), pass: s.pass, log: s.log
+  };
+}
+function rmNetSend(mv) { Net.send({ t: 'duo_mv', g: 'rm', mv: mv }); }
+/** 房主：客人送來的牌必須是房主這邊看過的牌，用 id 對回原本的牌物件 */
+function rmResolveList(list) {
+  if (!Array.isArray(list)) return null;
+  const pool = {};
+  rmS.hands[1].forEach(function (t) { pool[t.id] = t; });
+  rmS.table.forEach(function (ts) { ts.forEach(function (t) { pool[t.id] = t; }); });
+  const out = [];
+  for (let i = 0; i < list.length; i++) { const t = list[i] && pool[list[i].id]; if (!t) return null; out.push(t); }
+  return out;
+}
+/** 房主：套用客人的一步（失敗也同步一次，讓客人回到正確的畫面） */
+function rmRemote(mv) {
+  if (!duo.host || !rmS || rmS.over || rmS.turn !== 1 || !mv || typeof mv !== 'object') { duoSend(); return; }
+  const X = RR.Rummi;
+  let r = null;
+  try {
+    if (mv.a === 'draw') r = X.draw(rmS, 1);
+    else if (mv.a === 'play') { const sets = Array.isArray(mv.sets) ? mv.sets.map(rmResolveList) : null; if (sets && sets.every(Boolean)) r = X.play(rmS, 1, sets, []); }
+    else if (mv.a === 'rearrange') {
+      const tbl = Array.isArray(mv.table) ? mv.table.map(rmResolveList) : null, fromHand = rmResolveList(mv.fromHand);
+      if (tbl && tbl.every(Boolean) && fromHand) r = X.rearrange(rmS, 1, tbl, fromHand);
+    }
+  } catch (e) { r = null; }
+  if (r && r.ok) rmS = r.state;
+  rmHostAfter();
+}
+/** 房主：每次狀態改變後重置本回合的暫存、重算時間並同步給客人 */
+function rmHostAfter() { rmResetTurn(); rmStartTurn(); rmDraw(); duoSend(); }
 function rmAfter() {
+  if (rmOnline()) { rmHostAfter(); return; }
   if (rmS.over) { rmDraw(); return; }
   if (rmS.turn !== 0) { rmAi(); return; }
   rmStartTurn(); rmDraw();
@@ -2208,7 +2267,7 @@ function rmDraw() {
   rmStatus();
 }
 function rmStatus() {
-  const X = RR.Rummi, names = ['你', '電腦一', '電腦二'];
+  const X = RR.Rummi, names = rmOnline() ? ['你', '對手'] : ['你', '電腦一', '電腦二'];
   let msg;
   if (rmS.over) {
     const sc = X.score(rmS);
@@ -2465,7 +2524,8 @@ const ROOM_GAMES = {
   xq: { open: function () { xqOpen(); }, host: function () { duoHostCreate('xq'); } },
   flight: { open: function () { flOpen(); }, host: function () { duoHostCreate('fl'); } },
   kangle: { open: function () { kgOpen(); }, host: function () { duoHostCreate('kg'); } },
-  pachi: { open: function () { pcOpen(); }, host: function () { pcSeenSeq = -1; duoHostCreate('pc'); } }
+  pachi: { open: function () { pcOpen(); }, host: function () { pcSeenSeq = -1; duoHostCreate('pc'); } },
+  rummi: { open: function () { rmOpen(); }, host: function () { duoHostCreate('rm'); } }
 };
 function roomOpen() {
   const list = $('roomList'); list.textContent = '';
@@ -3402,7 +3462,9 @@ function bind() {
   $('gomokuHost').addEventListener('click', function () { duoHostCreate('gm'); });
   $('gomokuJoin').addEventListener('click', function () { duoJoin('gm'); });
   $('gomokuNew').addEventListener('click', gmNew);
-  $('rummiBack').addEventListener('click', showMenu);
+  $('rummiBack').addEventListener('click', function () { if (rmOnline()) rmS = null; duoLeave(); showMenu(); });
+  $('rmHost').addEventListener('click', function () { duoHostCreate('rm'); });
+  $('rmJoin').addEventListener('click', function () { duoJoin('rm'); });
   $('rummiNew').addEventListener('click', rmNewGame);
   $('rummiMake').addEventListener('click', rmMakeSet);
   $('rummiDraw').addEventListener('click', rmDrawTile);
