@@ -1553,16 +1553,20 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .stCfgItem { display: flex; align-items: center; gap: 8px; font-size: 15px; }
 .stCfgItem input { width: 20px; height: 20px; }
 
-/* 下載到手機提醒（模式選擇頁最下方） */
-.installTip { width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #fffaf0; border: 3px solid #5a4032; box-shadow: 6px 6px 0 #e3cdb8; text-align: left; }
-.installTip p { flex: 1; margin: 0; font-size: 14px; line-height: 1.5; color: #4a3428; }
-.itIco { font-size: 26px; }
-.itBtn { padding: 8px 16px; background: #e28aa0; color: #fff; border: 3px solid #5a4032; box-shadow: 3px 3px 0 #5a4032; font-size: 15px; cursor: pointer; }
-.itX { background: none; border: 0; font-size: 22px; color: #8a6f5f; cursor: pointer; padding: 0 4px; }
-
-/* 模式選擇頁：人數（預設房間人數） */
-.peopleRow { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; background: #fffaf0; border: 3px solid #5a4032; box-shadow: 6px 6px 0 #e3cdb8; }
-.peopleRow > span { font-size: 15px; color: #4a3428; }
-.peopleBtns { display: flex; gap: 8px; }
-.peopleBtns .btn.on { background: #e28aa0; color: #fff; }
-.flSetupBtns .btn.on { background: #e28aa0; color: #fff; }
+/* 模式選擇頁底部：人數分段、裝到手機的工單卡（回收桶藍＋警示黃條紋，和其他面板區分） */
+.hubExtra { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.peopleRow { width: 100%; background: var(--bin-d); color: var(--chalk); border: 3px solid var(--ink); border-top: 0; box-shadow: 0 6px 0 var(--ink); }
+.peopleRow::before { content: ""; display: block; height: 10px; background: repeating-linear-gradient(-45deg, var(--haz) 0 12px, var(--ink) 12px 24px); }
+.peopleRow .pr-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px 12px; }
+.peopleRow > .pr-in > span { font-size: 15px; font-weight: 800; letter-spacing: .04em; }
+.peopleBtns { display: flex; gap: 0; border: 2px solid var(--chalk); }
+.peopleBtns .btn { min-height: 40px; padding: 6px 14px; background: transparent; color: var(--chalk); border: 0; box-shadow: none; font-size: 15px; }
+.peopleBtns .btn + .btn { border-left: 2px solid var(--chalk); }
+.peopleBtns .btn.on { background: var(--haz); color: var(--ink); }
+.installTip { width: 100%; background: var(--steel); color: var(--chalk); border: 3px dashed var(--chalk); padding: 12px 14px; display: flex; align-items: center; gap: 12px; text-align: left; }
+.installTip p { flex: 1; margin: 0; font-size: 14px; line-height: 1.55; }
+.installTip p b { display: block; font-size: 16px; color: var(--haz); }
+.itIco { font-size: 24px; }
+.itBtn { min-height: 40px; padding: 6px 14px; background: var(--haz); color: var(--ink); border: 2px solid var(--ink); font-weight: 800; font-size: 15px; cursor: pointer; }
+.itX { background: none; border: 0; color: var(--chalk); font-size: 14px; text-decoration: underline; cursor: pointer; padding: 4px; }
+.flSetupBtns .btn.on { background: var(--haz); color: var(--ink); }
