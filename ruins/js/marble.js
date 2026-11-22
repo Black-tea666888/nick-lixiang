@@ -6,10 +6,13 @@
   const LX = 160, LY = 446, SHOTS = 5, SPEED = 5.5, RAD = 3.5, FIRE_GAP = 6, MAXR = 10;
   let st = null, raf = 0, last = 0, acc = 0, host = null, cvs = null, ctx = null, onDone = null, endTimer = 0;
   let pointer = null, dragging = false;
+  // 方塊布局用的亂數（雙人時兩人用同一個種子，布局才會一樣）；彈跳粒子仍用一般亂數
+  let layoutR = Math.random;
+  function mulberry(seed) { let a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
-  function hpFor(round) { return 1 + Math.floor(round / 2) + (Math.random() < 0.25 ? 1 : 0); }
+  function hpFor(round) { return 1 + Math.floor(round / 2) + (layoutR() < 0.25 ? 1 : 0); }
   function newRow(r) {
-    for (let c = 0; c < COLS; c++) if (Math.random() < 0.6) st.blocks.push({ c: c, r: r, hp: hpFor(st.round) });
+    for (let c = 0; c < COLS; c++) if (layoutR() < 0.6) st.blocks.push({ c: c, r: r, hp: hpFor(st.round) });
   }
   function reset(round, gears) {
     st = { blocks: [], balls: [], fireLeft: 0, fireT: 0, round: round || 1, gears: gears || 0, shots: SHOTS,
@@ -158,8 +161,9 @@
     raf = requestAnimationFrame(loop);
   }
 
-  function start(el, done) {
+  function start(el, done, seed) {
     stop();
+    layoutR = seed == null ? Math.random : mulberry(seed);
     host = el; onDone = done; host.innerHTML = '';
     // 用較高解析度的畫布繪製（依螢幕像素比），放大顯示時字與線才不會糊；邏輯座標仍是 W×H
     const k = Math.min(4, Math.max(2, (window.devicePixelRatio || 1) * 2));
@@ -178,7 +182,7 @@
     clearTimeout(endTimer); endTimer = 0; dragging = false; pointer = null;
     if (host) host.innerHTML = '';
   }
-  function state() { return st ? { round: st.round, gears: st.gears, over: st.over, balls: st.balls.length, blocks: st.blocks.length } : null; }
+  function state() { return st ? { round: Math.min(st.round, ROUNDS), gears: st.gears, over: st.over, won: st.won, balls: st.balls.length, blocks: st.blocks.length } : null; }
 
   root.RR = root.RR || {};
   root.RR.Marble = { start: start, stop: stop, state: state };
