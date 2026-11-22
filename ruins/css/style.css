@@ -1553,20 +1553,19 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .stCfgItem { display: flex; align-items: center; gap: 8px; font-size: 15px; }
 .stCfgItem input { width: 20px; height: 20px; }
 
-/* 模式選擇頁底部：人數分段、裝到手機的工單卡（回收桶藍＋警示黃條紋，和其他面板區分） */
-.hubExtra { width: 100%; display: flex; flex-direction: column; gap: 10px; }
-.peopleRow { width: 100%; background: var(--bin-d); color: var(--chalk); border: 3px solid var(--ink); border-top: 0; box-shadow: 0 6px 0 var(--ink); }
-.peopleRow::before { content: ""; display: block; height: 10px; background: repeating-linear-gradient(-45deg, var(--haz) 0 12px, var(--ink) 12px 24px); }
-.peopleRow .pr-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px 12px; }
-.peopleRow > .pr-in > span { font-size: 15px; font-weight: 800; letter-spacing: .04em; }
-.peopleBtns { display: flex; gap: 0; border: 2px solid var(--chalk); }
-.peopleBtns .btn { min-height: 40px; padding: 6px 14px; background: transparent; color: var(--chalk); border: 0; box-shadow: none; font-size: 15px; }
-.peopleBtns .btn + .btn { border-left: 2px solid var(--chalk); }
-.peopleBtns .btn.on { background: var(--haz); color: var(--ink); }
-.installTip { width: 100%; background: var(--steel); color: var(--chalk); border: 3px dashed var(--chalk); padding: 12px 14px; display: flex; align-items: center; gap: 12px; text-align: left; }
+/* 模式選擇頁底部：深色鐵板條，底邊警示條紋（不用奶油底、不用圓角卡） */
+.hubExtra { width: 100%; display: flex; flex-direction: column; gap: 0; }
+.peopleRow, .installTip { width: 100%; background: var(--steel-d); color: var(--chalk); border: 0; border-top: 3px solid var(--haz); position: relative; }
+.peopleRow::after, .installTip::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: repeating-linear-gradient(45deg, var(--haz) 0 10px, var(--steel-d) 10px 20px); }
+.peopleRow .pr-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px 18px; }
+.peopleRow > .pr-in > span { font-size: 15px; font-weight: 800; letter-spacing: .08em; }
+.peopleBtns { display: flex; }
+.peopleBtns .btn { min-height: 40px; min-width: 52px; padding: 6px 10px; background: transparent; color: var(--chalk); border: 2px solid var(--chalk); font-size: 15px; margin-left: -2px; }
+.peopleBtns .btn.on { background: var(--haz); color: var(--ink); border-color: var(--haz); position: relative; z-index: 1; }
+.installTip { display: flex; align-items: center; gap: 12px; padding: 12px 14px 18px; text-align: left; }
 .installTip p { flex: 1; margin: 0; font-size: 14px; line-height: 1.55; }
 .installTip p b { display: block; font-size: 16px; color: var(--haz); }
 .itIco { font-size: 24px; }
-.itBtn { min-height: 40px; padding: 6px 14px; background: var(--haz); color: var(--ink); border: 2px solid var(--ink); font-weight: 800; font-size: 15px; cursor: pointer; }
+.itBtn { min-height: 40px; padding: 6px 14px; background: var(--haz); color: var(--ink); border: 0; font-weight: 800; font-size: 15px; cursor: pointer; }
 .itX { background: none; border: 0; color: var(--chalk); font-size: 14px; text-decoration: underline; cursor: pointer; padding: 4px; }
 .flSetupBtns .btn.on { background: var(--haz); color: var(--ink); }
