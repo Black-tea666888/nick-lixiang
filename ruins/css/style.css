@@ -1461,3 +1461,8 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .orbCell { border-radius: 50%; box-shadow: inset -3px -3px 0 rgba(0,0,0,.35), inset 3px 3px 0 rgba(255,255,255,.25); }
 .orbCell.o0 { background: #e0553a; } .orbCell.o1 { background: #3a8ee6; } .orbCell.o2 { background: #f2c230; }
 .orbCell.o3 { background: #4caf50; } .orbCell.o4 { background: #9c6bdc; } .orbCell.o5 { background: #f0f0f0; }
+
+.mjHand { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 10px auto; max-width: 560px; }
+.mjTile { min-width: 46px; height: 58px; padding: 0 4px; font-size: 14px; font-weight: 700; background: #f4f0e6; color: #1b1e21; border: 2px solid var(--ink); border-radius: 4px; }
+.mjTile:disabled { opacity: .55; }
+.mjAct { display: flex; gap: 8px; justify-content: center; }

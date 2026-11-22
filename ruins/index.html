@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=292" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=293" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -158,6 +158,7 @@
         <button class="mcard" type="button" data-mode="bj" data-go="bjBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="11" height="15" rx="1.5"/><path d="M9 9h11v12H9z"/></svg><b>21點</b></button>
         <button class="mcard" type="button" data-mode="g2048" data-go="g2048Btn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg><b>方塊合併</b><span>滑動合併數字，棋盤會無限擴大</span></button>
         <button class="mcard" type="button" data-mode="orb" data-go="orbBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="4"/><circle cx="16" cy="16" r="4"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/></svg><b>轉珠</b><span>拖動珠子連成 3 顆消除，步數內達標</span></button>
+        <button class="mcard" type="button" data-mode="mj" data-go="mjBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 9h8M8 13h8M8 17h4"/></svg><b>麻將</b><span>和電腦對戰的十六張麻將，先胡者獲勝</span></button>
         <button class="mcard" type="button" data-mode="c4" data-go="c4Btn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.6"/><circle cx="12" cy="8" r="1.6"/><circle cx="16" cy="8" r="1.6"/><circle cx="8" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="16" cy="16" r="1.6"/></svg><b>四子連珠</b><span>同機兩人，先連四子者勝</span></button>
         <button class="mcard" type="button" data-mode="flight" data-go="flightBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l18-7-7 18-2-8z"/></svg><b>飛行棋</b><span>2～4 人同機，擲 6 出發，吃子送回基地</span></button>
         <button class="mcard" type="button" data-mode="pachi" data-go="pachiBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><circle cx="9" cy="9" r="1.3"/><circle cx="13" cy="12" r="1.3"/><circle cx="9" cy="15" r="1.3"/><path d="M12 19v-2"/></svg><b>彈珠台</b><span>調整角度與力道發射，落進中間袋子為大獎</span></button>
@@ -175,7 +176,7 @@
     </footer>
     <div id="raceHud" class="hide"></div>
     <div class="siteBar hide" id="siteBar" aria-live="polite"></div>
-    <div class="hide" id="modeHidden"><button id="bjBtn" type="button" tabindex="-1">21點</button><button id="orbBtn" type="button" tabindex="-1">轉珠</button><button id="chessBtn" type="button" tabindex="-1">國際象棋</button><button id="xqBtn" type="button" tabindex="-1">中國象棋</button><button id="rummiBtn" type="button" tabindex="-1">德國麻將</button><button id="g2048Btn" type="button" tabindex="-1">2048</button><button id="gomokuBtn" type="button" tabindex="-1">五子棋</button><button id="c4Btn" type="button" tabindex="-1">四子連珠</button><button id="flightBtn" type="button" tabindex="-1">飛行棋</button><button id="pachiBtn" type="button" tabindex="-1">彈珠台</button><button id="kangleBtn" type="button" tabindex="-1">康樂球</button><button id="platBtn" type="button" tabindex="-1">跳關</button><button id="marbleBtn" type="button" tabindex="-1">彈珠</button><button id="arOpen" type="button" tabindex="-1">AR 實境</button><button id="createBtn" type="button" tabindex="-1">組隊回收</button><button id="soloBtn" type="button" tabindex="-1">單人拾荒</button><button id="huntBtn" type="button" tabindex="-1">清剿行動</button><button id="tdBtn" type="button" tabindex="-1">死守回收車</button><button id="brBtn" type="button" tabindex="-1">廢墟生存戰</button><button id="cardOpen" type="button" tabindex="-1">怪物卡牌</button><button id="raceBtn" type="button" tabindex="-1">賽車</button></div>
+    <div class="hide" id="modeHidden"><button id="bjBtn" type="button" tabindex="-1">21點</button><button id="orbBtn" type="button" tabindex="-1">轉珠</button><button id="mjBtn" type="button" tabindex="-1">麻將</button><button id="chessBtn" type="button" tabindex="-1">國際象棋</button><button id="xqBtn" type="button" tabindex="-1">中國象棋</button><button id="rummiBtn" type="button" tabindex="-1">德國麻將</button><button id="g2048Btn" type="button" tabindex="-1">2048</button><button id="gomokuBtn" type="button" tabindex="-1">五子棋</button><button id="c4Btn" type="button" tabindex="-1">四子連珠</button><button id="flightBtn" type="button" tabindex="-1">飛行棋</button><button id="pachiBtn" type="button" tabindex="-1">彈珠台</button><button id="kangleBtn" type="button" tabindex="-1">康樂球</button><button id="platBtn" type="button" tabindex="-1">跳關</button><button id="marbleBtn" type="button" tabindex="-1">彈珠</button><button id="arOpen" type="button" tabindex="-1">AR 實境</button><button id="createBtn" type="button" tabindex="-1">組隊回收</button><button id="soloBtn" type="button" tabindex="-1">單人拾荒</button><button id="huntBtn" type="button" tabindex="-1">清剿行動</button><button id="tdBtn" type="button" tabindex="-1">死守回收車</button><button id="brBtn" type="button" tabindex="-1">廢墟生存戰</button><button id="cardOpen" type="button" tabindex="-1">怪物卡牌</button><button id="raceBtn" type="button" tabindex="-1">賽車</button></div>
   </div>
 </div>
 
@@ -386,6 +387,21 @@
     <div class="orbBoard" id="orbBoard"></div>
     <p class="chessStatus" id="orbMsg" aria-live="polite"></p>
     <div class="col"><button class="btn primary hide" id="orbNext" type="button">下一關</button></div>
+  </div>
+</div>
+<div class="screen hide" id="scrMj">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="mjBack" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">麻將</b>
+      <button class="btn" id="mjNew" type="button">重新開始</button>
+    </header>
+    <p class="chessStatus" id="mjCpu" aria-live="polite"></p>
+    <p class="chessStatus" id="mjDiscards"></p>
+    <div class="mjHand" id="mjHand"></div>
+    <p class="chessStatus" id="mjStatus" aria-live="polite"></p>
+    <div class="col mjAct"><button class="btn primary hide" id="mjRon" type="button">胡</button><button class="btn hide" id="mjPass" type="button">過</button></div>
+    <p class="chessStatus" id="mjMsg" aria-live="polite"></p>
   </div>
 </div>
 <div class="screen hide" id="scr2048">
@@ -904,33 +920,34 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=292"></script>
-<script src="js/race_tracks.js?v=292"></script>
-<script src="js/race_arenas.js?v=292"></script>
-<script src="js/sim.js?v=292"></script>
-<script src="js/audio.js?v=292"></script>
-<script src="js/auth.js?v=292"></script>
-<script src="js/cloud.js?v=292"></script>
-<script src="js/net.js?v=292"></script>
-<script src="js/game.js?v=292"></script>
-<script src="js/minigames.js?v=292"></script>
-<script src="js/ar.js?v=292"></script>
-<script src="js/padnav.js?v=292"></script>
-<script src="js/cards.js?v=292"></script>
-<script src="js/chess.js?v=292"></script>
-<script src="js/chess_art.js?v=292"></script>
-<script src="js/xiangqi.js?v=292"></script>
-<script src="js/rummi.js?v=292"></script>
-<script src="js/gomoku.js?v=292"></script>
-<script src="js/blackjack.js?v=292"></script>
-<script src="js/g2048.js?v=292"></script>
-<script src="js/orb.js?v=292"></script>
-<script src="js/connect4.js?v=292"></script>
-<script src="js/flight.js?v=292"></script>
-<script src="js/pachinko.js?v=292"></script>
-<script src="js/carrom.js?v=292"></script>
-<script src="js/platform.js?v=292"></script>
-<script src="js/marble.js?v=292"></script>
-<script src="js/main.js?v=292"></script>
+<script src="js/config.js?v=293"></script>
+<script src="js/race_tracks.js?v=293"></script>
+<script src="js/race_arenas.js?v=293"></script>
+<script src="js/sim.js?v=293"></script>
+<script src="js/audio.js?v=293"></script>
+<script src="js/auth.js?v=293"></script>
+<script src="js/cloud.js?v=293"></script>
+<script src="js/net.js?v=293"></script>
+<script src="js/game.js?v=293"></script>
+<script src="js/minigames.js?v=293"></script>
+<script src="js/ar.js?v=293"></script>
+<script src="js/padnav.js?v=293"></script>
+<script src="js/cards.js?v=293"></script>
+<script src="js/chess.js?v=293"></script>
+<script src="js/chess_art.js?v=293"></script>
+<script src="js/xiangqi.js?v=293"></script>
+<script src="js/rummi.js?v=293"></script>
+<script src="js/gomoku.js?v=293"></script>
+<script src="js/blackjack.js?v=293"></script>
+<script src="js/g2048.js?v=293"></script>
+<script src="js/orb.js?v=293"></script>
+<script src="js/mahjong.js?v=293"></script>
+<script src="js/connect4.js?v=293"></script>
+<script src="js/flight.js?v=293"></script>
+<script src="js/pachinko.js?v=293"></script>
+<script src="js/carrom.js?v=293"></script>
+<script src="js/platform.js?v=293"></script>
+<script src="js/marble.js?v=293"></script>
+<script src="js/main.js?v=293"></script>
 </body>
 </html>

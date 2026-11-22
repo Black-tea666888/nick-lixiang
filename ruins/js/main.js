@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v292', items: ['休閒模式新增「轉珠」：拖動珠子連成 3 顆消除，步數內達標，共三關'] };
-const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
+const UPD = { v: 'v293', items: ['休閒模式新增「麻將」：十六張對電腦，湊成 5 組加 1 對即胡'] };
+const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -1962,11 +1962,69 @@ function orbPointer(e) {
 }
 function orbBindUp() { orbDrag = null; }
 
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'bj', 'g2048', 'orb', 'c4', 'flight', 'pachi', 'kangle', 'plat', 'marble'] };
+/* 麻將（對電腦）：畫面與流程，規則在 mahjong.js。mjTurn：you 出牌、cpu 電腦回合、ron 可胡或過、end 結束 */
+let mjS = null, mjTurn = 'you', mjTimer = null;
+function mjOpen() { show('scrMj'); if (!mjS) mjNew(); else mjDraw(); }
+function mjNew() {
+  clearTimeout(mjTimer); mjS = window.RR.Mj.newGame(); mjTurn = 'you';
+  if (mjS.over) mjTurn = 'end';
+  mjDraw();
+}
+function mjEnd() { mjTurn = 'end'; mjDraw(); }
+function mjDraw() {
+  const M = window.RR.Mj, s = mjS;
+  s.hand.you.sort(function (a, b) { return a - b; });
+  const hd = document.getElementById('mjHand'); hd.innerHTML = '';
+  s.hand.you.forEach(function (t, i) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'mjTile';
+    b.textContent = M.tileName(t); b.disabled = mjTurn !== 'you' || s.over;
+    b.addEventListener('click', function () { mjPlay(i); });
+    hd.appendChild(b);
+  });
+  document.getElementById('mjCpu').textContent = '電腦手牌 ' + s.hand.cpu.length + ' 張　牌堆剩 ' + s.wall.length + ' 張';
+  document.getElementById('mjDiscards').textContent = s.discards.length
+    ? '最近打出：' + s.discards.slice(-12).map(M.tileName).join('、') : '尚無人打牌';
+  document.getElementById('mjStatus').textContent = mjTurn === 'you' ? '請出一張牌'
+    : mjTurn === 'cpu' ? '電腦思考中…' : mjTurn === 'ron' ? '電腦打出 ' + M.tileName(s.last.tile) + '，要胡嗎？' : '';
+  document.getElementById('mjRon').classList.toggle('hide', mjTurn !== 'ron');
+  document.getElementById('mjPass').classList.toggle('hide', mjTurn !== 'ron');
+  let msg = '';
+  if (s.over && s.winner === 'you') msg = '你胡了！';
+  else if (s.over && s.winner === 'cpu') msg = '電腦胡了';
+  else if (s.over && s.draw) msg = '牌堆空了，流局';
+  document.getElementById('mjMsg').textContent = msg;
+}
+function mjPlay(i) {
+  const M = window.RR.Mj, s = mjS;
+  if (mjTurn !== 'you' || s.over) return;
+  const t = M.discard(s, 'you', i);
+  if (M.canRon(s)) { M.ron(s); mjEnd(); return; }   // 電腦能胡
+  mjTurn = 'cpu'; mjDraw();
+  mjTimer = setTimeout(mjCpuTurn, 700);
+}
+function mjCpuTurn() {
+  const M = window.RR.Mj, s = mjS;
+  if (s.over) return;
+  if (!M.drawTile(s, 'cpu')) { mjEnd(); return; }
+  if (M.winning(s.hand.cpu)) { s.over = true; s.winner = 'cpu'; mjEnd(); return; }
+  M.discard(s, 'cpu', M.aiChoose(s.hand.cpu));
+  if (M.canRon(s)) { mjTurn = 'ron'; mjDraw(); return; }
+  mjYouDraw();
+}
+function mjYouDraw() {
+  const M = window.RR.Mj, s = mjS;
+  if (!M.drawTile(s, 'you')) { mjEnd(); return; }
+  if (M.winning(s.hand.you)) { s.over = true; s.winner = 'you'; mjEnd(); return; }
+  mjTurn = 'you'; mjDraw();
+}
+function mjRon() { window.RR.Mj.ron(mjS); mjEnd(); }
+function mjPass() { if (mjTurn !== 'ron') return; mjYouDraw(); }
+
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'bj', 'g2048', 'orb', 'mj', 'c4', 'flight', 'pachi', 'kangle', 'plat', 'marble'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { orb: '轉珠', coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', flight: '飛行棋', pachi: '彈珠台', kangle: '康樂球', plat: '跳關', marble: '彈珠' };
+const LOBBY_MODE = { orb: '轉珠', mj: '麻將', coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', flight: '飛行棋', pachi: '彈珠台', kangle: '康樂球', plat: '跳關', marble: '彈珠' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 // 休閒模式的玩法說明（點大廳的「玩法說明」看）
 const CAS_HELP = {
@@ -1979,6 +2037,7 @@ const CAS_HELP = {
   xq: '同一台裝置兩人輪流下棋。\n點選棋子再點目標格移動，把對方的將軍死就獲勝。',
   rummi: '依拉密規則排出順子或同數字的組合，先出完手牌者獲勝。\n和電腦對戰；可以先摸牌或直接出牌。',
   bj: '每人發兩張牌，點數盡量接近 21 但不能超過。\nJ、Q、K 是 10 點，A 是 1 或 11。莊家點數低於 17 會補牌。',
+  mj: '和電腦對戰的十六張麻將（不含花牌、不吃不碰）。你先摸成 17 張，湊成 5 組加 1 對即胡，可自摸或胡電腦打出的牌；先胡者獲勝。',
   orb: '拖動相鄰的珠子交換，連成 3 顆以上就會消除，珠子會掉落補位，連鎖越多分數越高。每關有步數上限，在步數內消除目標顆數就過關。',
   g2048: '滑動方向合併相同數字，拼越大分數越高。\n棋盤會隨著貼邊無限擴大，無法移動時結束，分數進紀錄板。',
   gomoku: '同一台裝置兩人輪流下子。\n先在橫、直、斜任一方向連成五子者獲勝。',
@@ -2812,7 +2871,7 @@ function bind() {
   $('rummiBtn').addEventListener('click', rmOpen);
   $('gomokuBtn').addEventListener('click', gmOpen);
   // 重置：重新整理，但停留在同一個頁面（能重新打開的頁面才還原，對局中的頁面回到大廳）
-  const REOPEN = { scrOrb: function () { orbOpen(); }, scr2048: function () { g2Open(); }, scrBj: function () { bjOpen(); }, scrChess: function () { chessOpen(); }, scrXq: function () { xqOpen(); } };
+  const REOPEN = { scrMj: function () { mjOpen(); }, scrOrb: function () { orbOpen(); }, scr2048: function () { g2Open(); }, scrBj: function () { bjOpen(); }, scrChess: function () { chessOpen(); }, scrXq: function () { xqOpen(); } };
   $('hardReset').addEventListener('click', function () {
     const cur = SCREENS.filter(function (s) { const el = $(s); return el && !el.classList.contains('hide'); })[0];
     try { if (cur) sessionStorage.setItem('rr_restore', cur); } catch (e) {}
@@ -2829,6 +2888,11 @@ function bind() {
   $('bjStand').addEventListener('click', function () { bjS = RR.BJ.stand(bjS); bjDraw(); });
   $('g2048Btn').addEventListener('click', g2Open);
   $('orbBtn').addEventListener('click', orbOpen);
+  $('mjBtn').addEventListener('click', mjOpen);
+  $('mjBack').addEventListener('click', function () { clearTimeout(mjTimer); showMenu(); });
+  $('mjNew').addEventListener('click', mjNew);
+  $('mjRon').addEventListener('click', mjRon);
+  $('mjPass').addEventListener('click', mjPass);
   $('orbBack').addEventListener('click', showMenu);
   $('orbNew').addEventListener('click', function () { orbNew(orbS ? orbS.level : 0); });
   $('orbNext').addEventListener('click', function () { orbNew(orbS.level + 1); });
