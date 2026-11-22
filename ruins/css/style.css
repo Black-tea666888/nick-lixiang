@@ -1442,3 +1442,5 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .upgCard b { font-size: 16px; }
 .upgCard span { font-size: 13px; }
 .socAct { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.chessNet { display: grid; gap: 8px; margin: 8px 0; }
+.chessNet input { text-transform: uppercase; }
