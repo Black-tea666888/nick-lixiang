@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v303', items: ['轉珠消除加入珠子爆開與連鎖字樣，方塊合併加入合成閃光與新方塊出現動畫'] };
+const UPD = { v: 'v304', items: ['21 點加入發牌與翻牌動畫'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1447,11 +1447,20 @@ function bjCardEl(c, hidden) {
   el.textContent = hidden ? '？' : c.r + c.s;
   return el;
 }
+let bjPrev = { d: 0, p: 0, play: false };
 function bjDraw() {
   const B = RR.BJ, s = bjS, t = $('bjTable'), playing = s.phase === 'play';
   t.textContent = '';
-  const dRow = mk('div', 'bjRow', null); dRow.appendChild(mk('b', null, '莊家 ' + (playing ? '' : B.value(s.dealer)))); s.dealer.forEach(function (c, i) { dRow.appendChild(bjCardEl(c, playing && i === 1)); }); t.appendChild(dRow);
-  const pRow = mk('div', 'bjRow', null); pRow.appendChild(mk('b', null, '你 ' + (s.player.length ? B.value(s.player) : ''))); s.player.forEach(function (c) { pRow.appendChild(bjCardEl(c, false)); }); t.appendChild(pRow);
+  // 只有新發的牌播放發牌動畫；莊家暗牌在這一局結束時翻開
+  const fromD = s.dealer.length < bjPrev.d ? 0 : bjPrev.d, fromP = s.player.length < bjPrev.p ? 0 : bjPrev.p;
+  const flipD = bjPrev.play && !playing;
+  const dRow = mk('div', 'bjRow', null); dRow.appendChild(mk('b', null, '莊家 ' + (playing ? '' : B.value(s.dealer))));
+  s.dealer.forEach(function (c, i) { const el = bjCardEl(c, playing && i === 1); if (i >= fromD) el.classList.add('bjIn'); if (flipD && i === 1) el.classList.add('bjFlip'); dRow.appendChild(el); });
+  t.appendChild(dRow);
+  const pRow = mk('div', 'bjRow', null); pRow.appendChild(mk('b', null, '你 ' + (s.player.length ? B.value(s.player) : '')));
+  s.player.forEach(function (c, i) { const el = bjCardEl(c, false); if (i >= fromP) el.classList.add('bjIn'); pRow.appendChild(el); });
+  t.appendChild(pRow);
+  bjPrev = { d: s.dealer.length, p: s.player.length, play: playing };
   $('bjStatus').textContent = s.msg + '　戰績：勝 ' + s.w + ' / 負 ' + s.l + ' / 平 ' + s.t;
   $('bjDeal').disabled = playing; $('bjHit').disabled = !playing; $('bjStand').disabled = !playing;
 }

@@ -1484,3 +1484,10 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .orbBanner { position: absolute; left: 50%; top: 50%; z-index: 2; pointer-events: none; font: 900 clamp(22px, 7vw, 40px)/1 system-ui, sans-serif; color: #fff; white-space: nowrap; text-shadow: 0 3px 0 #15181b, 0 0 14px rgba(255, 220, 90, .9); animation: orbBanner .9s ease-out forwards; }
 @keyframes orbBanner { 0% { transform: translate(-50%, -50%) scale(.4); opacity: 0; } 25% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; } 70% { transform: translate(-50%, -50%); opacity: 1; } 100% { transform: translate(-50%, -75%); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .g2Cell.mg, .g2Cell.sp, .g2Cell.mg::after, .orbCell.hit, .orbCell.fall, .orbBanner { animation: none; } }
+
+/* 21 點：發牌與翻牌 */
+.bjCard.bjIn { animation: bjIn .3s ease-out both; }
+.bjCard.bjFlip { animation: bjFlip .45s ease-out; }
+@keyframes bjIn { from { transform: translateY(-24px) rotate(-6deg) scale(.8); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes bjFlip { 0% { transform: rotateY(90deg); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .bjCard.bjIn, .bjCard.bjFlip { animation: none; } }
