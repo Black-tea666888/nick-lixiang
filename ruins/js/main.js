@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v325', items: ['彈珠台與康樂球改成拖曳瞄準：往想去的方向拉，放開發射'] };
+const UPD = { v: 'v326', items: ['戰績頁可以自訂要顯示的欄位與總覽數字'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -2822,24 +2822,56 @@ function stHeadDraw(pf, mine) {
   const st = pf.st || {};
   if (st.games) { const t = mk('div', 'stTot'); t.appendChild(mk('span', null, '總場數 ' + (st.games | 0))); t.appendChild(mk('span', null, '勝率 ' + Math.round((st.wins | 0) / Math.max(1, st.games) * 100) + '%')); t.appendChild(mk('span', null, '擊倒 ' + (st.mk | 0))); h.appendChild(t); }
 }
+// 戰績頁自訂：可以隱藏不想看的欄位與總覽數字（結果欄一定顯示），存在 rr_stats_hide
+const ST_SUMS = [['games', '場數'], ['winrate', '勝率'], ['kills', '擊倒'], ['mvp', 'MVP']];
+const ST_HIDABLE = [['score', '分數'], ['kd', '擊倒/倒下'], ['mode', '模式'], ['games', '場數（總覽）'], ['winrate', '勝率（總覽）'], ['kills', '擊倒（總覽）'], ['mvp', 'MVP（總覽）']];
+function stHidden() { let a = []; try { a = JSON.parse(ls('rr_stats_hide') || '[]'); } catch (e) {} return Array.isArray(a) ? a : []; }
+function stCfgOpen() {
+  const hid = stHidden(), box = $('stCfgList'); box.textContent = '';
+  ST_HIDABLE.forEach(function (x) {
+    const lb = mk('label', 'stCfgItem'), cb = mk('input', null, '');
+    cb.type = 'checkbox'; cb.checked = hid.indexOf(x[0]) < 0;
+    cb.addEventListener('change', function () {
+      const cur = stHidden().filter(function (k) { return k !== x[0]; });
+      if (!cb.checked) cur.push(x[0]);
+      lsSet('rr_stats_hide', JSON.stringify(cur)); stDraw();
+    });
+    lb.appendChild(cb); lb.appendChild(mk('span', null, x[1]));
+    box.appendChild(lb);
+  });
+  $('stCfg').classList.remove('hide');
+}
 function stDraw() {
   Array.prototype.forEach.call(document.querySelectorAll('#stTabs button'), function (b) { b.classList.toggle('on', b.dataset.m === stMode); });
   const rows = stRows.filter(function (r) { return stMode === 'all' || r.mode === stMode; }), list = $('stList'), sum = $('stSum');
+  const hid = stHidden();
   list.textContent = ''; sum.textContent = '';
   const w = rows.filter(function (r) { return r.win; }).length, k = rows.reduce(function (s, r) { return s + (r.kills | 0); }, 0), mvp = rows.filter(function (r) { return r.mvp; }).length;
-  [['場數', rows.length], ['勝率', rows.length ? Math.round(w / rows.length * 100) + '%' : '—'], ['擊倒', k], ['MVP', mvp]].forEach(function (x) { const c = mk('div'); c.appendChild(mk('b', null, String(x[1]))); c.appendChild(mk('span', null, x[0])); sum.appendChild(c); });
+  const vals = { games: ['場數', rows.length], winrate: ['勝率', rows.length ? Math.round(w / rows.length * 100) + '%' : '—'], kills: ['擊倒', k], mvp: ['MVP', mvp] };
+  const sums = ST_SUMS.filter(function (x) { return hid.indexOf(x[0]) < 0; });
+  sum.style.gridTemplateColumns = 'repeat(' + Math.max(1, sums.length) + ', 1fr)';
+  sums.forEach(function (x) { const v = vals[x[0]]; const c = mk('div'); c.appendChild(mk('b', null, String(v[1]))); c.appendChild(mk('span', null, v[0])); sum.appendChild(c); });
   if (!rows.length) { list.appendChild(mk('p', 'ccEmpty', stMode === 'all' ? '還沒有戰績。打完一局就會記錄在這裡。' : '這個模式還沒有戰績。')); return; }
-  const head = mk('div', 'stRow stTh'); ['結果', '分數', '擊倒/倒下', '模式'].forEach(function (t) { head.appendChild(mk('span', null, t)); }); list.appendChild(head);
+  const cols = [['res', '結果', '1.1fr']];
+  if (hid.indexOf('score') < 0) cols.push(['score', '分數', '.8fr']);
+  if (hid.indexOf('kd') < 0) cols.push(['kd', '擊倒/倒下', '.9fr']);
+  if (hid.indexOf('mode') < 0) cols.push(['mode', '模式', '1.6fr']);
+  const tpl = cols.map(function (c) { return c[2]; }).join(' ');
+  const head = mk('div', 'stRow stTh'); head.style.gridTemplateColumns = tpl;
+  cols.forEach(function (c) { head.appendChild(mk('span', null, c[1])); }); list.appendChild(head);
   rows.forEach(function (r) {
-    const row = mk('div', 'stRow' + (r.win ? ' win' : ''));
+    const row = mk('div', 'stRow' + (r.win ? ' win' : '')); row.style.gridTemplateColumns = tpl;
+    const cell = {};
     const res = mk('span', 'stRes'); res.appendChild(mk('b', null, r.mode === 'br' ? '第 ' + (r.rank || '?') + ' 名' : r.win ? '勝利' : '失敗'));
     if (r.mvp) res.appendChild(mk('i', 'stMvp', 'MVP'));
-    row.appendChild(res);
-    row.appendChild(mk('span', 'stNum', String(r.score | 0)));
-    row.appendChild(mk('span', 'stNum', (r.kills | 0) + ' / ' + (r.deaths | 0)));
+    cell.res = res;
+    cell.score = mk('span', 'stNum', String(r.score | 0));
+    cell.kd = mk('span', 'stNum', (r.kills | 0) + ' / ' + (r.deaths | 0));
     const md = mk('span', 'stMode'); md.appendChild(mk('b', null, (MODE_NAME[r.mode] || r.mode) + (r.mode !== 'br' ? '・第 ' + (r.day | 0) + (r.mode === 'coop' ? ' 天' : ' 關') : '')));
     const d = new Date(r.t || 0); md.appendChild(mk('small', null, (r.map ? r.map + '　' : '') + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')));
-    row.appendChild(md); list.appendChild(row);
+    cell.mode = md;
+    cols.forEach(function (c) { row.appendChild(cell[c[0]]); });
+    list.appendChild(row);
   });
 }
 /** 讓名字或頭像可以點：打開那個人的戰績 */
@@ -3836,6 +3868,8 @@ function bind() {
   $('avatar').addEventListener('click', function () { statsOpen(); });
   $('stAva').addEventListener('click', function () { avaDraw(); $('avaPick').classList.remove('hide'); });
   $('stDone').addEventListener('click', function () { $('scrStats').classList.add('hide'); stUid = null; });
+  $('stCfgBtn').addEventListener('click', stCfgOpen);
+  $('stCfgOk').addEventListener('click', function () { $('stCfg').classList.add('hide'); });
   Array.prototype.forEach.call(document.querySelectorAll('#stTabs button'), function (b) { b.addEventListener('click', function () { stMode = b.dataset.m; stDraw(); }); });
   $('avaClose').addEventListener('click', function () { $('avaPick').classList.add('hide'); });
   // 本機照片：縮成 64×64 存在這台裝置，不上傳
