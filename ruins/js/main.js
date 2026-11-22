@@ -5,8 +5,8 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v291', items: ['修正角色無法移動、地圖空白（牆上警告的變數順序錯誤）'] };
-const SCREENS = ['scrBj', 'scr2048', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
+const UPD = { v: 'v292', items: ['休閒模式新增「轉珠」：拖動珠子連成 3 顆消除，步數內達標，共三關'] };
+const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
   ['鼓舞', '6 公尺內隊友移動加速 5 秒', '均衡型'],
@@ -1932,11 +1932,41 @@ function recOptsOpen() {
   $('roDays').onclick = function (e) { const b = e.target.closest('[data-v]'); if (!b) return; lsSet('rr_days', b.dataset.v); mark(); refreshLobby(); };
 }
 /* ---------- 大廳分類：主玩法（多人） / 休閒模式（AR、卡牌） ---------- */
-const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'bj', 'g2048', 'c4', 'flight', 'pachi', 'kangle', 'plat', 'marble'] };
+
+/* 轉珠（單人關卡）：畫面與拖動，規則在 orb.js */
+let orbS = null, orbDrag = null;
+function orbOpen() { show('scrOrb'); if (!orbS) orbS = window.RR.Orb.start(0); orbDraw(); }
+function orbNew(lv) { orbS = window.RR.Orb.start(lv); orbDraw(); }
+function orbDraw() {
+  const bd = document.getElementById('orbBoard'), s = orbS, L = window.RR.Orb.LEVELS[s.level];
+  bd.innerHTML = '';
+  for (let i = 0; i < s.board.length; i++) { const c = document.createElement('div'); c.className = 'orbCell o' + s.board[i]; bd.appendChild(c); }
+  document.getElementById('orbStatus').textContent = L.name + '　步數 ' + s.movesLeft + '　消除 ' + s.cleared + ' / ' + s.goal + '　分數 ' + s.score;
+  document.getElementById('orbMsg').textContent = s.over
+    ? (s.won ? (s.level < 2 ? '過關！按「下一關」繼續。' : '全部通關！') : '步數用完，失敗。按「重新開始」再試一次。')
+    : '拖動相鄰的珠子交換，連成 3 顆以上就會消除。';
+  document.getElementById('orbNext').classList.toggle('hide', !(s.over && s.won && s.level < 2));
+}
+function orbCellAt(e) {
+  const bd = document.getElementById('orbBoard'), r = bd.getBoundingClientRect(), C = window.RR.Orb.COLS, R = window.RR.Orb.ROWS;
+  const c = Math.floor((e.clientX - r.left) / (r.width / C)), rr = Math.floor((e.clientY - r.top) / (r.height / R));
+  if (c < 0 || c >= C || rr < 0 || rr >= R) return null;
+  return rr * C + c;
+}
+function orbPointer(e) {
+  if (!orbS || orbS.over) return;
+  const i = orbCellAt(e); if (i == null) return;
+  if (e.type === 'pointerdown') { orbDrag = i; return; }
+  if (orbDrag == null || i === orbDrag) return;
+  if (window.RR.Orb.move(orbS, orbDrag, i)) { orbDrag = i; orbDraw(); }
+}
+function orbBindUp() { orbDrag = null; }
+
+const HUB_CATS = { main: ['coop', 'solo', 'hunt', 'td', 'br'], casual: ['ar', 'card', 'race', 'chess', 'xq', 'rummi', 'gomoku', 'bj', 'g2048', 'orb', 'c4', 'flight', 'pachi', 'kangle', 'plat', 'marble'] };
 let hubCat = null;
 function hubEnter(cat) { hubCat = cat; if (HUB_CATS[cat].indexOf(selMode()) < 0) lsSet('rr_mode', HUB_CATS[cat][0]); show('scrMenu'); refreshLobby(); }
 // 大廳：選模式（卡片只選取）、開始鍵顯示模式與地圖、中間的角色
-const LOBBY_MODE = { coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', flight: '飛行棋', pachi: '彈珠台', kangle: '康樂球', plat: '跳關', marble: '彈珠' };
+const LOBBY_MODE = { orb: '轉珠', coop: '組隊回收', solo: '單人拾荒', hunt: '清剿行動', td: '死守回收車', br: '廢墟生存戰', ar: 'AR 實境', card: '怪物卡牌', race: '賽車', chess: '國際象棋', xq: '中國象棋', rummi: '德國麻將', gomoku: '五子棋', c4: '四子連珠', flight: '飛行棋', pachi: '彈珠台', kangle: '康樂球', plat: '跳關', marble: '彈珠' };
 function selMode() { const m = ls('rr_mode') || 'coop'; return LOBBY_MODE[m] ? m : 'coop'; }
 // 休閒模式的玩法說明（點大廳的「玩法說明」看）
 const CAS_HELP = {
@@ -1949,6 +1979,7 @@ const CAS_HELP = {
   xq: '同一台裝置兩人輪流下棋。\n點選棋子再點目標格移動，把對方的將軍死就獲勝。',
   rummi: '依拉密規則排出順子或同數字的組合，先出完手牌者獲勝。\n和電腦對戰；可以先摸牌或直接出牌。',
   bj: '每人發兩張牌，點數盡量接近 21 但不能超過。\nJ、Q、K 是 10 點，A 是 1 或 11。莊家點數低於 17 會補牌。',
+  orb: '拖動相鄰的珠子交換，連成 3 顆以上就會消除，珠子會掉落補位，連鎖越多分數越高。每關有步數上限，在步數內消除目標顆數就過關。',
   g2048: '滑動方向合併相同數字，拼越大分數越高。\n棋盤會隨著貼邊無限擴大，無法移動時結束，分數進紀錄板。',
   gomoku: '同一台裝置兩人輪流下子。\n先在橫、直、斜任一方向連成五子者獲勝。',
   c4: '同一台裝置兩人輪流投子，棋子會落到該欄最下方。\n先在橫、直、斜任一方向連成四子者獲勝。',
@@ -2781,7 +2812,7 @@ function bind() {
   $('rummiBtn').addEventListener('click', rmOpen);
   $('gomokuBtn').addEventListener('click', gmOpen);
   // 重置：重新整理，但停留在同一個頁面（能重新打開的頁面才還原，對局中的頁面回到大廳）
-  const REOPEN = { scr2048: function () { g2Open(); }, scrBj: function () { bjOpen(); }, scrChess: function () { chessOpen(); }, scrXq: function () { xqOpen(); } };
+  const REOPEN = { scrOrb: function () { orbOpen(); }, scr2048: function () { g2Open(); }, scrBj: function () { bjOpen(); }, scrChess: function () { chessOpen(); }, scrXq: function () { xqOpen(); } };
   $('hardReset').addEventListener('click', function () {
     const cur = SCREENS.filter(function (s) { const el = $(s); return el && !el.classList.contains('hide'); })[0];
     try { if (cur) sessionStorage.setItem('rr_restore', cur); } catch (e) {}
@@ -2797,6 +2828,13 @@ function bind() {
   $('bjHit').addEventListener('click', function () { bjS = RR.BJ.hit(bjS); bjDraw(); });
   $('bjStand').addEventListener('click', function () { bjS = RR.BJ.stand(bjS); bjDraw(); });
   $('g2048Btn').addEventListener('click', g2Open);
+  $('orbBtn').addEventListener('click', orbOpen);
+  $('orbBack').addEventListener('click', showMenu);
+  $('orbNew').addEventListener('click', function () { orbNew(orbS ? orbS.level : 0); });
+  $('orbNext').addEventListener('click', function () { orbNew(orbS.level + 1); });
+  { const bd = $('orbBoard');
+    bd.addEventListener('pointerdown', orbPointer); bd.addEventListener('pointermove', orbPointer);
+    bd.addEventListener('pointerup', orbBindUp); bd.addEventListener('pointercancel', orbBindUp); }
   $('g2048Back').addEventListener('click', showMenu);
   $('g2048New').addEventListener('click', g2New);
   $('c4Btn').addEventListener('click', c4Open);

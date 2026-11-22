@@ -1456,3 +1456,8 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 
 /* 全頁重置按鈕：左上角，卡住時按一下重新整理 */
 .resetBtn { position: fixed; top: 50%; left: 2px; transform: translateY(-50%); z-index: 200; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #1b1b1b; background: rgba(244,236,216,.92); color: #1b1b1b; font-size: 18px; font-weight: 900; line-height: 1; padding: 0; cursor: pointer; opacity: .85; }
+
+.orbBoard { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; width: min(92vw, 420px, calc((100vh - 170px) * 1.2)); aspect-ratio: 6 / 5; margin: 10px auto; padding: 6px; background: #15181b; border: 3px solid var(--ink); border-radius: 6px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.orbCell { border-radius: 50%; box-shadow: inset -3px -3px 0 rgba(0,0,0,.35), inset 3px 3px 0 rgba(255,255,255,.25); }
+.orbCell.o0 { background: #e0553a; } .orbCell.o1 { background: #3a8ee6; } .orbCell.o2 { background: #f2c230; }
+.orbCell.o3 { background: #4caf50; } .orbCell.o4 { background: #9c6bdc; } .orbCell.o5 { background: #f0f0f0; }
