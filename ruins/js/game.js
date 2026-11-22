@@ -2604,10 +2604,10 @@ function updateMe(dt) {
   if (editing) { dx = 0; dz = 0; }   // 調整按鈕位置時不移動
   const bx0 = me.x, bz0 = me.z;
   // 人在牆上（怪物打不到）超過 5 秒就跳警告，離開牆頂就重算
-  if (onTop && me.alive) { me.wallT = (me.wallT || 0) + dt; if (me.wallT > 5 && !me.wallWarned) { me.wallWarned = true; toast('‼️ 你在牆上太久了！快下來，不然會被發現', 'bad'); Sfx.tone(180, 0.25, 'square', 0.1); } }
-  else { me.wallT = 0; me.wallWarned = false; }
   const inS = hitSolid(me.x, me.z, me.y);   // 萬一已經卡在擺設裡就放行，讓玩家走得出來
   const onTop = me.y >= WH - 0.25 && (W.isWall(Math.floor(me.x / CS), Math.floor(me.z / CS)) || W.blocked(me.x, me.z, 1.1));   // 在牆頂（或牆邊起跳上牆）才可以走過牆；空中飄在空地上不行
+  if (onTop && me.alive) { me.wallT = (me.wallT || 0) + dt; if (me.wallT > 5 && !me.wallWarned) { me.wallWarned = true; toast('‼️ 你在牆上太久了！快下來，不然會被發現', 'bad'); Sfx.tone(180, 0.25, 'square', 0.1); } }
+  else { me.wallT = 0; me.wallWarned = false; }
   const inW = W.blocked(me.x, me.z, R);   // 萬一掉進牆體裡（例如從牆頂墜落），放行讓玩家走出來
   if ((onTop || inW || !W.blocked(me.x + dx, me.z, R)) && (inS || !hitSolid(me.x + dx, me.z, me.y))) me.x += dx;
   if ((onTop || inW || !W.blocked(me.x, me.z + dz, R)) && (inS || !hitSolid(me.x, me.z + dz, me.y))) me.z += dz;
@@ -2874,6 +2874,12 @@ function frame(nowMs) {
 RR.Game = {
   /** 正在遊戲中、可以控制角色（手把選單用來判斷要不要接管） */
   controlling: function () { return canControl(); },
+  /** 除錯面板用：目前的遊戲狀態（game.js 是獨立範圍，外面讀不到這些變數） */
+  debugState: function () {
+    return { ctl: canControl(), active: active, phase: view.phase, alive: me.alive, edit: editing, ready: ready,
+      joy: touch.joyId, j: [touch.jx, touch.jy], look: touch.lookId, pos: [me.x, me.z],
+      keys: Object.keys(keys).filter(function (k) { return keys[k]; }) };
+  },
   buildMonster: buildMonster,   // AR 抓怪借用怪物模型
   KEY_ACTIONS: KEY_ACTIONS,
   /** 目前每個動作綁的按鍵（預設按鍵 → 實際按鍵） */

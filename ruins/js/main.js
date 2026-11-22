@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v290', items: ['修正搖桿有時卡住、角色無法移動的問題'] };
+const UPD = { v: 'v291', items: ['修正角色無法移動、地圖空白（牆上警告的變數順序錯誤）'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -3261,10 +3261,11 @@ if (/[?&]dbg=1/.test(location.search)) {
     d.style.cssText = 'position:fixed;left:4px;bottom:4px;z-index:99;background:rgba(0,0,0,.75);color:#7f7;font:11px/1.3 monospace;padding:4px 6px;margin:0;pointer-events:none;white-space:pre';
     document.body.appendChild(d);
     setInterval(function () {
-      d.textContent = 'ctl:' + canControl() + ' active:' + active + ' phase:' + view.phase + ' alive:' + me.alive + ' edit:' + editing +
-        '\njoy:' + touch.joyId + ' j:' + touch.jx.toFixed(2) + ',' + touch.jy.toFixed(2) + ' look:' + touch.lookId +
-        '\npos:' + me.x.toFixed(2) + ',' + me.z.toFixed(2) + ' keys:' + Object.keys(keys).filter(function (k) { return keys[k]; }).join(' ') +
-        '\nready:' + ready + ' win:' + innerWidth + 'x' + innerHeight + ' rot:' + getComputedStyle($('rotateHint')).display + ' cls:' + document.body.className;
+      const g = window.RR.Game.debugState(), rh = document.getElementById('rotateHint');
+      d.textContent = 'ctl:' + g.ctl + ' active:' + g.active + ' phase:' + g.phase + ' alive:' + g.alive + ' edit:' + g.edit +
+        '\njoy:' + g.joy + ' j:' + g.j[0].toFixed(2) + ',' + g.j[1].toFixed(2) + ' look:' + g.look +
+        '\npos:' + g.pos[0].toFixed(2) + ',' + g.pos[1].toFixed(2) + ' keys:' + g.keys.join(' ') +
+        '\nready:' + g.ready + ' win:' + innerWidth + 'x' + innerHeight + ' rot:' + (rh ? getComputedStyle(rh).display : '-') + ' cls:' + document.body.className;
     }, 200);
   });
 }
