@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v312', items: ['康樂球加入進洞閃光'] };
+const UPD = { v: 'v313', items: ['德國麻將新組成的牌組有出現動畫'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -2032,12 +2032,17 @@ function rmAi() {
   };
   setTimeout(step, 500);
 }
+let rmPrevSetKeys = [];
 function rmDraw() {
   const X = RR.Rummi, bd = $('rummiTable'), hd = $('rummiHand');
+  // 桌上新組成的牌組（玩家或電腦）播放出現動畫
+  const setKeys = rmWT.map(function (ts) { return ts.map(function (t) { return t.id; }).sort().join(','); });
+  const newSet = setKeys.map(function (k) { return rmPrevSetKeys.indexOf(k) < 0; });
+  rmPrevSetKeys = setKeys;
   const mine = rmS.turn === 0 && !rmS.over && !rmBusy;
   bd.textContent = '';
   rmWT.forEach(function (ts, i) {
-    const set = mk('button', 'rsSet', '');
+    const set = mk('button', 'rsSet' + (newSet[i] ? ' rsNew' : ''), '');
     set.type = 'button';
     ts.forEach(function (t) {
       const b = rmTileBtn(t);
