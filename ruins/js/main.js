@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v327', items: ['電腦版卡牌的手牌分成上下兩層，各自可以左右滑動'] };
+const UPD = { v: 'v328', items: ['地圖可以切成「隨機」：每局開始時從廢墟地圖中抽一張（房主設定，循環到最後一張後切換）'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -944,6 +944,8 @@ function progOnResult(e, stars) {
   return '金幣 +' + coins + '，經驗 +' + xp + (bonus ? '，每日任務完成 +' + bonus : '') + (bagUp ? '，解鎖' + bagUp + '（背包 +1 格）' : '') + lvUp;
 }
 function myMap() { const m = parseInt(ls('rr_map') || '0', 10) || 0; return m >= 0 && m < W.RUIN_N ? m : 0; }
+function randMapOn() { return ls('rr_randmap') === '1'; }
+function pickRuinMap() { return randMapOn() ? Math.floor(Math.random() * W.RUIN_N) : myMap(); }   // 隨機地圖：每局開始時抽一張廢墟地圖
 function rosterEntry(id) { for (let i = 0; i < S.roster.length; i++) if (S.roster[i].id === id) return S.roster[i]; return null; }
 
 // 單機小遊戲的金幣：每天最多 60
@@ -1020,7 +1022,7 @@ function dispatch(msg) {
   if (!msg || typeof msg !== 'object') return;
   switch (msg.t) {
     case 'roster':
-      S.roster = msg.players || []; S.hostId = msg.hostId; S.pvp = msg.pvp !== false; S.map = msg.map || 0; S.gmode = msg.mode || 'coop'; S.base = msg.base | 0;
+      S.roster = msg.players || []; S.hostId = msg.hostId; S.pvp = msg.pvp !== false; S.map = msg.map || 0; S.randMap = !!msg.randMap; S.gmode = msg.mode || 'coop'; S.base = msg.base | 0;
       if (!document.body.classList.contains('playing')) Game.showMap(S.map);
       Game.setRoster(S.roster); renderLobby(msg.code); voiceSync();
       break;
@@ -1076,7 +1078,7 @@ function voiceSync() {
 }
 
 /* ---------- 房主端 ---------- */
-function rosterMsg() { return { t: 'roster', code: Net.code(), hostId: S.myId, pvp: S.sim.pvp, map: S.sim.map, mode: S.sim.mode, base: S.base | 0, players: S.sim.roster() }; }
+function rosterMsg() { return { t: 'roster', code: Net.code(), hostId: S.myId, pvp: S.sim.pvp, map: S.sim.map, randMap: randMapOn(), mode: S.sim.mode, base: S.base | 0, players: S.sim.roster() }; }
 function flushEvents() { const evs = S.sim.events.splice(0); for (let i = 0; i < evs.length; i++) hostBroadcast({ t: 'ev', e: evs[i] }); }
 function hostRemove(id) {
   const p = S.sim && S.sim.player(id);
@@ -1112,7 +1114,7 @@ function startSolo(gmode) {
   Sfx.unlock();
   S.mode = 'solo'; S.myId = 'me'; S.sim = new W.Sim(); S.sim.mode = gmode === 'hunt' || gmode === 'br' || gmode === 'td' || gmode === 'race' ? gmode : 'coop'; S.gmode = S.sim.mode; S.base = 0;
   document.body.classList.add('solo');
-  S.sim.map = gmode === 'race' ? W.arenaIdx(Math.floor(Math.random() * W.ARENA_N)) : myMap();   // 賽車：隨機一座賽道場地
+  S.sim.map = gmode === 'race' ? W.arenaIdx(Math.floor(Math.random() * W.ARENA_N)) : pickRuinMap();   // 賽車：隨機一座賽道場地
   S.sim.raceAi = Math.max(1, Math.min(6, +ls('rr_raceai') || 3));
   S.sim.addPlayer('me', myName(), myLook());
   Game.setMe('me');
@@ -1180,7 +1182,7 @@ async function createRoom(gm) {
   await Voice.init(false);   // 不主動要求麥克風（會打斷 Discord 等其他通話）；要講話再按遊戲裡的「麥克風」
   connectRetry('建立房間中…', function (cb) { Net.host(cb); }, function () {
     S.mode = 'host'; S.myId = Net.id(); S.sim = new W.Sim();
-    S.sim.map = myMap();
+    S.sim.map = race ? 0 : pickRuinMap();
     if (race) { S.sim.mode = 'race'; S.sim.raceAi = 0; }
     S.sim.addPlayer(S.myId, myName(), myLook());
     Game.setMe(S.myId); wireNet();
@@ -2694,7 +2696,7 @@ function tickLobby() {
   pv.classList.toggle('off', !S.pvp);
   $('baseBtn').textContent = '基地：' + W.BASE_STYLES[S.base | 0].n + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
   $('modeBtn').textContent = '模式：' + (S.gmode === 'race' ? '賽車（先到終點者勝）' : S.gmode === 'td' ? '死守（守住回收車）' : S.gmode === 'hunt' ? '清剿（用槍打怪物）' : S.gmode === 'br' ? '廢墟生存戰（互相對戰，活到最後）' : '回收（撿廢料賣錢）') + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
-  $('mapBtn').textContent = '地圖：' + W.MAPS[S.map || 0].name + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
+  $('mapBtn').textContent = '地圖：' + (S.gmode !== 'race' && (S.mode === 'host' ? randMapOn() : S.randMap) ? '隨機（每局抽一張）' : W.MAPS[S.map || 0].name) + (S.mode === 'host' ? '（點擊切換）' : '（房主設定）');
 }
 // 新手教學：第一次開始遊戲時出現，之後可從「設定與說明」重看
 const TUT = [
@@ -3455,6 +3457,8 @@ function bind() {
   $('mapBtn').addEventListener('click', function () {
     if (S.mode !== 'host') return;
     if (S.sim.mode === 'race') S.sim.map = W.arenaNext(S.sim.map);   // 賽車：只在賽道場地間切換
+    else if (randMapOn()) { lsSet('rr_randmap', '0'); S.sim.map = 0; lsSet('rr_map', '0'); }
+    else if (S.sim.map >= W.RUIN_N - 1) { lsSet('rr_randmap', '1'); S.sim.map = Math.floor(Math.random() * W.RUIN_N); }   // 循環到最後一張後切成隨機
     else { S.sim.map = (S.sim.map + 1) % W.RUIN_N; lsSet('rr_map', String(S.sim.map)); }
     hostBroadcast(rosterMsg()); tickLobby(); showMapName();
   });
