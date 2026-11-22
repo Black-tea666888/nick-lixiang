@@ -3249,7 +3249,8 @@ if (/[?&]dbg=1/.test(location.search)) {
     setInterval(function () {
       d.textContent = 'ctl:' + canControl() + ' active:' + active + ' phase:' + view.phase + ' alive:' + me.alive + ' edit:' + editing +
         '\njoy:' + touch.joyId + ' j:' + touch.jx.toFixed(2) + ',' + touch.jy.toFixed(2) + ' look:' + touch.lookId +
-        '\npos:' + me.x.toFixed(2) + ',' + me.z.toFixed(2) + ' keys:' + Object.keys(keys).filter(function (k) { return keys[k]; }).join(' ');
+        '\npos:' + me.x.toFixed(2) + ',' + me.z.toFixed(2) + ' keys:' + Object.keys(keys).filter(function (k) { return keys[k]; }).join(' ') +
+        '\nready:' + ready + ' win:' + innerWidth + 'x' + innerHeight + ' rot:' + getComputedStyle($('rotateHint')).display + ' cls:' + document.body.className;
     }, 200);
   });
 }
