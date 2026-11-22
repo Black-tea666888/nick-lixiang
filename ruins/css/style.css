@@ -1452,3 +1452,6 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .bjCard { min-width: 56px; padding: 14px 8px; text-align: center; font-size: 20px; font-weight: 900; background: #f4ecd8; color: #1b1b1b; border: 3px solid #1b1b1b; border-radius: 4px; }
 .bjCard.red { color: #b3261e; }
 .bjBar { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 8px 0 14px; }
+
+/* 全頁重置按鈕：左上角，卡住時按一下重新整理 */
+.resetBtn { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 4px); left: 4px; z-index: 200; width: 34px; height: 34px; border-radius: 50%; border: 2px solid #1b1b1b; background: rgba(244,236,216,.92); color: #1b1b1b; font-size: 18px; font-weight: 900; line-height: 1; padding: 0; cursor: pointer; opacity: .85; }
