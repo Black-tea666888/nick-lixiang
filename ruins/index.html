@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=295" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=296" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -111,6 +111,11 @@
     <button class="mcard hubCard casual" id="hubCas" type="button"><b>休閒模式</b><span>AR 抓怪、怪物卡牌、賽車</span></button>
   </div>
 </div>
+<div class="modal hide" id="casSetM"><div class="panel small tut"><h2>休閒設定</h2>
+<label class="field">音效音量<input id="casSfx" type="range" min="0" max="1" step="0.05"></label>
+<label class="field">背景音樂<input id="casMusic" type="range" min="0" max="1" step="0.05"></label>
+<label class="field">顯示 FPS（卡頓時回報用）<input id="casFps" type="checkbox"></label>
+<div class="row"><button class="btn" id="casSetHelp" type="button">玩法說明</button><button class="btn primary" id="casSetX" type="button">完成</button></div></div></div>
 <div class="modal hide" id="casHelpM"><div class="panel small tut"><h2 id="casHelpT"></h2><p id="casHelpB" style="white-space:pre-line;text-align:left"></p><div class="row"><button class="btn primary" id="casHelpX" type="button">知道了</button></div></div></div>
 <div class="modal hide" id="recOpts"><div class="panel small tut"><h2>回收任務：難度與天數</h2><p>難度（目標金額與怪物速度）</p><div class="row optRow" id="roDiff"><button class="btn" type="button" data-v="easy">簡單</button><button class="btn" type="button" data-v="normal">標準</button><button class="btn" type="button" data-v="hard">困難</button></div><p>天數（0＝無限天）</p><div class="row optRow" id="roDays"><button class="btn" type="button" data-v="0">無限天</button><button class="btn" type="button" data-v="7">7 天</button><button class="btn" type="button" data-v="14">14 天</button></div><div class="row"><button class="btn primary" id="roOk" type="button">確定</button></div></div></div>
 <div class="screen hide" id="scrMenu">
@@ -922,34 +927,34 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=295"></script>
-<script src="js/race_tracks.js?v=295"></script>
-<script src="js/race_arenas.js?v=295"></script>
-<script src="js/sim.js?v=295"></script>
-<script src="js/audio.js?v=295"></script>
-<script src="js/auth.js?v=295"></script>
-<script src="js/cloud.js?v=295"></script>
-<script src="js/net.js?v=295"></script>
-<script src="js/game.js?v=295"></script>
-<script src="js/minigames.js?v=295"></script>
-<script src="js/ar.js?v=295"></script>
-<script src="js/padnav.js?v=295"></script>
-<script src="js/cards.js?v=295"></script>
-<script src="js/chess.js?v=295"></script>
-<script src="js/chess_art.js?v=295"></script>
-<script src="js/xiangqi.js?v=295"></script>
-<script src="js/rummi.js?v=295"></script>
-<script src="js/gomoku.js?v=295"></script>
-<script src="js/blackjack.js?v=295"></script>
-<script src="js/g2048.js?v=295"></script>
-<script src="js/orb.js?v=295"></script>
-<script src="js/mahjong.js?v=295"></script>
-<script src="js/connect4.js?v=295"></script>
-<script src="js/flight.js?v=295"></script>
-<script src="js/pachinko.js?v=295"></script>
-<script src="js/carrom.js?v=295"></script>
-<script src="js/platform.js?v=295"></script>
-<script src="js/marble.js?v=295"></script>
-<script src="js/main.js?v=295"></script>
+<script src="js/config.js?v=296"></script>
+<script src="js/race_tracks.js?v=296"></script>
+<script src="js/race_arenas.js?v=296"></script>
+<script src="js/sim.js?v=296"></script>
+<script src="js/audio.js?v=296"></script>
+<script src="js/auth.js?v=296"></script>
+<script src="js/cloud.js?v=296"></script>
+<script src="js/net.js?v=296"></script>
+<script src="js/game.js?v=296"></script>
+<script src="js/minigames.js?v=296"></script>
+<script src="js/ar.js?v=296"></script>
+<script src="js/padnav.js?v=296"></script>
+<script src="js/cards.js?v=296"></script>
+<script src="js/chess.js?v=296"></script>
+<script src="js/chess_art.js?v=296"></script>
+<script src="js/xiangqi.js?v=296"></script>
+<script src="js/rummi.js?v=296"></script>
+<script src="js/gomoku.js?v=296"></script>
+<script src="js/blackjack.js?v=296"></script>
+<script src="js/g2048.js?v=296"></script>
+<script src="js/orb.js?v=296"></script>
+<script src="js/mahjong.js?v=296"></script>
+<script src="js/connect4.js?v=296"></script>
+<script src="js/flight.js?v=296"></script>
+<script src="js/pachinko.js?v=296"></script>
+<script src="js/carrom.js?v=296"></script>
+<script src="js/platform.js?v=296"></script>
+<script src="js/marble.js?v=296"></script>
+<script src="js/main.js?v=296"></script>
 </body>
 </html>

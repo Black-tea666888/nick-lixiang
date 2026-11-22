@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v295', items: ['修正 21 點、方塊合併在休閒模式按開始沒反應的問題；休閒模式不再顯示主模式的地圖欄'] };
+const UPD = { v: 'v296', items: ['休閒模式的「設定」改為休閒專用：音效、背景音樂、FPS 與玩法說明'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -2115,6 +2115,10 @@ const CAS_HELP = {
   pachi: '調整角度與力道發射彈珠。\n彈珠落進中間的袋子就是大獎，落在其他地方則依分數計算。',
   kangle: '在桌上用球撞擊，兩人輪流。\n先把自己的 8 顆球打進洞者獲勝。',
 };
+function casSetOpen() {
+  $('casSfx').value = $('setSfx').value; $('casMusic').value = $('setMusic').value; $('casFps').checked = ls('rr_fps') === '1';
+  $('casSetM').classList.remove('hide');
+}
 function refreshLobby() {
   const m = selMode();
   $('scrMenu').classList.toggle('casualLobby', hubCat === 'casual');   // 休閒模式：隱藏主玩法的角色、抽獎、市集等
@@ -2892,6 +2896,12 @@ function bind() {
   $('roOk').addEventListener('click', function () { $('recOpts').classList.add('hide'); refreshLobby(); });
   $('casHelp').addEventListener('click', function () { const k = selMode(); $('casHelpT').textContent = LOBBY_MODE[k] + '玩法'; $('casHelpB').textContent = CAS_HELP[k] || '這個模式的說明還沒寫好。'; $('casHelpM').classList.remove('hide'); });
   $('casHelpX').addEventListener('click', function () { $('casHelpM').classList.add('hide'); });
+  // 休閒設定：只放休閒相關項目，音量與 FPS 和主設定共用同一組儲存值
+  $('casSetX').addEventListener('click', function () { $('casSetM').classList.add('hide'); });
+  $('casSetHelp').addEventListener('click', function () { $('casSetM').classList.add('hide'); $('casHelp').click(); });
+  $('casSfx').addEventListener('input', function () { $('setSfx').value = $('casSfx').value; Sfx.setVolume(parseFloat($('casSfx').value)); lsSet('rr_sfx', $('casSfx').value); });
+  $('casMusic').addEventListener('input', function () { $('setMusic').value = $('casMusic').value; RR.Music.setVolume(parseFloat($('casMusic').value)); lsSet('rr_music', $('casMusic').value); });
+  $('casFps').addEventListener('change', function () { $('setFps').checked = $('casFps').checked; lsSet('rr_fps', $('casFps').checked ? '1' : '0'); Game.settings.showFps = $('casFps').checked; });
   $('hubMain').addEventListener('click', function () { hubEnter('main'); });
   $('hubCas').addEventListener('click', function () { hubEnter('casual'); });
   $('lbHub').addEventListener('click', function () { show('scrHub'); });
@@ -3296,7 +3306,7 @@ function bind() {
   const helpList = function () { $('helpTopic').classList.add('hide'); document.querySelector('#scrHelp .helpBody').classList.remove('hide'); };
   const helpOpen = function () { helpList(); $('scrHelp').classList.remove('hide'); $('scrHelp').scrollTop = 0; try { if (document.exitPointerLock) document.exitPointerLock(); } catch (e) {} };
   const helpClose = function () { if (!$('helpTopic').classList.contains('hide')) { helpList(); return; } $('scrHelp').classList.add('hide'); };
-  $('helpBtn').addEventListener('click', helpOpen);
+  $('helpBtn').addEventListener('click', function () { if (hubCat === 'casual') casSetOpen(); else helpOpen(); });
   $('hudHelp').addEventListener('click', helpOpen);
   $('helpDone').addEventListener('click', helpClose);
   $('helpBack').addEventListener('click', helpList);
