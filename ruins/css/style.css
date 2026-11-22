@@ -1509,3 +1509,12 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 @keyframes cgHit { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 @keyframes cgPulse { 0% { transform: scale(1.2); } 100% { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .cgCard.land, .cgOpp.hit, .cgCol.pulse { animation: none; } }
+
+/* 五子棋與四子連珠：落子與連線 */
+.c4Slot.drop { animation: c4Drop .4s cubic-bezier(.3, 1.3, .5, 1); }
+.gmCell.drop::after { animation: gmDrop .3s ease-out; }
+.c4Slot.win, .gmCell.win { animation: lineBlink .6s ease-in-out 3 alternate; }
+@keyframes c4Drop { from { transform: translateY(-160%); } to { transform: none; } }
+@keyframes gmDrop { from { transform: scale(1.6); opacity: .2; } to { transform: none; opacity: 1; } }
+@keyframes lineBlink { from { transform: none; } to { transform: scale(1.1); } }
+@media (prefers-reduced-motion: reduce) { .c4Slot.drop, .gmCell.drop::after, .c4Slot.win, .gmCell.win { animation: none; } }
