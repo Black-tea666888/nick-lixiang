@@ -1527,3 +1527,10 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 @keyframes chCap { 25% { transform: translateX(-4px) rotate(-4deg); } 75% { transform: translateX(4px) rotate(4deg); } }
 @keyframes xqMv { from { scale: 1.35; } to { scale: 1; } }
 @media (prefers-reduced-motion: reduce) { .chSq.mv, .chSq.cap svg, .xqPt.mv { animation: none; } }
+
+/* 飛行棋：移動與被吃 */
+.flTok.mv { animation: flMv .35s ease-out; }
+.flBoom { position: absolute; width: 16%; aspect-ratio: 1; margin: -8% 0 0 -8%; border-radius: 50%; border: 3px solid #ffd23a; box-sizing: border-box; pointer-events: none; animation: flBoom .5s ease-out forwards; }
+@keyframes flMv { from { scale: 1.6; } to { scale: 1; } }
+@keyframes flBoom { from { scale: .3; opacity: 1; } to { scale: 2; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .flTok.mv, .flBoom { animation: none; } }

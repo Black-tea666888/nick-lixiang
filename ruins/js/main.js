@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v309', items: ['西洋棋與中國象棋加入落子與吃子動畫'] };
+const UPD = { v: 'v310', items: ['飛行棋加入移動與被吃的特效'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1697,7 +1697,7 @@ function c4Draw() {
   $('c4Status').textContent = msg;
 }
 /* 飛行棋（同機 2～4 人） */
-let flS = null;
+let flS = null, flShownRef = null, flPrevPl = null;
 const FL_COLS = ['紅', '藍', '綠', '黃'];
 const FL_CLS = ['c0', 'c1', 'c2', 'c3'];
 function flOpen() { show('scrFlight'); flDraw(); }
@@ -1721,16 +1721,33 @@ function flDraw() {
     dot.style.left = pt.x + '%'; dot.style.top = pt.y + '%';
     ring.appendChild(dot);
   }
+  // 比對上一次的棋子位置：只有一兩步的變化才播放移動與被吃的效果
+  const fresh = flShownRef !== flS, prev = fresh ? flPrevPl : null;
+  let moves = [], boom = [];
+  if (prev && prev.length === flS.n) {
+    for (let q = 0; q < flS.n; q++) for (let j = 0; j < 4; j++) {
+      const a = prev[q][j], b = flS.pl[q][j];
+      if (a !== b) { if (b >= 0 && b <= 50) moves.push(q + ':' + j); if (a >= 0 && a <= 50 && b === -1) boom.push({ col: flS.col[q], p: a, q: q }); }
+    }
+  }
+  if (moves.length + boom.length > 3) moves = [], boom = [];
+  flShownRef = flS; flPrevPl = flS.pl.map(function (r) { return r.slice(); });
   // 飛機：依位置放在環上（跑道上的才放）
   for (let q = 0; q < flS.n; q++) {
     for (let j = 0; j < 4; j++) {
       const p = flS.pl[q][j];
       if (p < 0 || p > 50) continue;
-      const pt = flPos(F.ringOf(flS.col[q], p)), tok = mk('span', 'flTok ' + FL_CLS[flS.col[q]], '');
+      const pt = flPos(F.ringOf(flS.col[q], p)), tok = mk('span', 'flTok ' + FL_CLS[flS.col[q]] + (moves.indexOf(q + ':' + j) >= 0 ? ' mv' : ''), '');
       tok.style.left = pt.x + '%'; tok.style.top = pt.y + '%';
       ring.appendChild(tok);
     }
   }
+  // 被吃掉的棋子：在原位置閃一圈
+  boom.forEach(function (d) {
+    const pt = flPos(F.ringOf(d.col, d.p)), e = mk('span', 'flBoom', '');
+    e.style.left = pt.x + '%'; e.style.top = pt.y + '%';
+    ring.appendChild(e);
+  });
   // 玩家面板
   const list = $('flPlayers');
   list.textContent = '';
