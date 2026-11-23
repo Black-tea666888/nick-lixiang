@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v337', items: ['中國象棋：棋盤會轉向，自己的棋在下方（線上照自己的方，同機雙人下完一步轉到對手面前）', '麻將：手牌放大並加上底板，胡／過改成大圓鈕，狀態列做成上方資訊條'].concat(['模式選擇頁最下方新增「人數」（2～4 人，記住上次選的；飛行棋的人數選擇會預設它）', '模式選擇頁最下方新增「下載到手機」提醒（可關掉，之後不再出現）', '廢墟地圖統一成同一個大小（不足的地圖在上下補牆，玩家範圍不變）', '第 4 天起，每隔一隻怪物變成「無眼雕像」：有人在 15 公尺內看得到牠時就停住不動', '廢墟生存戰的補給箱拿走後 30 秒會在空地重新出現', '地圖可以切成「隨機」：每局開始時從廢墟地圖中抽一張（房主設定，循環到最後一張後切換）']) };
+const UPD = { v: 'v338', items: ['象棋（國際／中國）：對手離開後房號會換成新的隨機代碼', '中國象棋：棋盤會轉向，自己的棋在下方（線上照自己的方，同機雙人下完一步轉到對手面前）', '麻將：手牌放大並加上底板，胡／過改成大圓鈕，狀態列做成上方資訊條'].concat(['模式選擇頁最下方新增「人數」（2～4 人，記住上次選的；飛行棋的人數選擇會預設它）', '模式選擇頁最下方新增「下載到手機」提醒（可關掉，之後不再出現）', '廢墟地圖統一成同一個大小（不足的地圖在上下補牆，玩家範圍不變）', '第 4 天起，每隔一隻怪物變成「無眼雕像」：有人在 15 公尺內看得到牠時就停住不動', '廢墟生存戰的補給箱拿走後 30 秒會在空地重新出現', '地圖可以切成「隨機」：每局開始時從廢墟地圖中抽一張（房主設定，循環到最後一張後切換）']) };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1323,7 +1323,7 @@ function chessNetOnMsg(from, d) {
     chessNetUI('你是黑方' + (chessS.turn === 'b' ? '，輪到你。' : '，等白方走。'));
   }
 }
-function chessNetOnLeave() { if (chessNet.host) { chessNet.guest = null; chessNetUI('對手已離開，等待新的對手加入。'); } else { chessNetUI('房主已離開。'); } }
+function chessNetOnLeave() { if (chessNet.host) { chessNetUI('對手已離開，換新房號中…'); chessHostCreate(); } else { chessNetUI('房主已離開。'); } }
 function chessHostCreate() {
   chessNetLeave(); chessNetUI('建立房間中…');
   Net.host(function (err) {
@@ -1648,7 +1648,7 @@ function duoOnMsg(from, d) {
     if (!DUO[duo.g].noNote) duoNote('你是' + DUO[duo.g].guestName + '方' + (d.s.turn === DUO[duo.g].guestSide ? '，輪到你。' : '，等房主下子。'));
   }
 }
-function duoOnLeave() { duoNote(duo.host ? '對手已離開，等待新的對手加入。' : '房主已離開。'); if (duo.host) duo.guest = null; }
+function duoOnLeave() { if (duo.host && duo.g === 'xq') { duoNote('對手已離開，換新房號中…'); duoHostCreate('xq'); return; } duoNote(duo.host ? '對手已離開，等待新的對手加入。' : '房主已離開。'); if (duo.host) duo.guest = null; }
 function duoLeave() { if (duo.on) Net.leave(); duo = { on: false, host: false, g: null, guest: null }; }
 function duoHostCreate(g) {
   duoLeave(); duo.g = g; duoNote('建立房間中…');
