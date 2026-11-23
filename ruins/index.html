@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>廢墟回收隊</title>
+<meta name="description" content="最多 4 人的 3D 合作恐怖遊戲：潛入廢墟撿廢料、躲怪物、用近距離語音合作。">
+<meta name="theme-color" content="#0b1020">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="廢墟回收隊">
+<style>html:not(.css) body{visibility:hidden}</style>
+<link rel="stylesheet" href="css/style.css?v=339" onload="document.documentElement.classList.add('css')">
+<script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
+</head>
+<body>
+<button class="resetBtn" id="hardReset" type="button" aria-label="重置頁面" title="卡住時按這裡重新整理">⟳</button>
+<div id="boot"><div class="bootIn"><b>廢墟回收隊</b><i class="spin"></i><small id="bootTxt">載入中…</small></div></div>
+<canvas id="c"></canvas>
+<div id="vig" aria-hidden="true"></div>
+<div id="vig"></div>
+<div id="flash"></div>
+<div class="rotateHint" id="rotateHint" role="dialog" aria-label="請轉成橫式"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M3 13a9 9 0 0 0 7 8.5M21 11a9 9 0 0 0-7-8.5"/><path d="M8 20l2 1.6-1.5 2"/></svg><b>本局請用橫式遊玩</b><span>手機請轉成橫向，畫面比較大、按鍵比較好按。轉成橫向後會自動開始。</span></div>
+
+<!-- 遊戲中介面 -->
+<div id="hud" class="hide">
+  <div id="hudTop">
+    <div>第 <b id="day">1</b> 天　<span id="moneyLbl">收入</span> <b id="money">$0</b> / <span id="quota">$0</span><div id="qbar"><i id="qfill"></i></div><span class="bagrow">背包 <b id="bag">0</b> / <span id="bagCap">3</span> <span id="pips"><i></i><i></i><i></i><i></i></span>　子彈 <b id="ammo">6</b>　炸藥 <b id="bombs">∞</b></span></div>
+    <div class="r">剩餘時間<br><b id="timer">4:00</b></div>
+  </div>
+  <div id="compass"><span id="arrow">▲</span><em>回收車</em></div>
+  <div id="plist"></div>
+  <canvas id="mini" aria-label="小地圖"></canvas>
+  <div id="hudBtns">
+    <button id="hudMore" type="button" aria-label="選單" aria-expanded="false">≡</button>
+    <button id="micBtn" type="button">麥克風</button>
+    <button id="chatBtn" type="button">聊天</button>
+    <div id="hudMenu" class="hide">
+      <p id="pauseTag" class="hide">已暫停</p>
+      <button id="hudResume" type="button">繼續遊戲</button>
+      <button id="miniBtn" type="button">小遊戲</button>
+      <button id="hudGear" type="button">背包</button>
+      <button id="hudHelp" type="button">說明</button>
+      <button id="leaveBtn" type="button">離開</button>
+    </div>
+  </div>
+  <div id="spec" class="hide">觀戰中：<b id="specName"></b>（點畫面切換）</div>
+  <div id="floats"></div>
+  <div id="wx" class="hide"></div>
+  <div id="lkView" class="hide" aria-hidden="true"></div>
+  <div id="hideTag" class="hide">躲藏中，怪物看不到你</div>
+  <div id="warn">怪物發現你了，快跑</div>
+  <div id="toast"></div>
+  <div id="hp"><i id="hpBar"></i></div>
+  <div id="stam"><i id="stamBar"></i></div>
+  <div id="joy"></div><div id="knob"></div>
+  <button id="run" type="button">跑</button>
+  <button id="atk" type="button">打</button>
+  <button id="gun" type="button">槍</button>
+  <button id="swap" type="button" aria-label="切換槍與近戰">↻</button>
+  <button id="reload" type="button" aria-label="換彈">換彈</button>
+  <button id="wsw" type="button" aria-label="換武器">換武器</button>
+  <button id="uav" type="button" class="hide" aria-label="無人機偵察">偵</button>
+  <button id="air" type="button" class="hide" aria-label="空中掃射">空</button>
+  <button id="tower" type="button">塔</button>
+  <button id="bomb" type="button">炸</button>
+  <button id="veh" type="button">車</button>
+  <button id="jump" type="button">跳</button>
+  <button id="dash" type="button">衝</button>
+  <button id="rescue" type="button">救</button>
+  <button id="locker" type="button">櫃</button>
+  <button id="smoke" type="button">煙</button>
+  <button id="scope" type="button" class="hide">鏡</button>
+  <button id="skill" type="button">技</button>
+</div>
+
+<!-- 聊天框（大廳與遊戲中共用） -->
+<div id="chat" class="hide">
+  <div id="chatLog"></div>
+  <form id="chatForm" autocomplete="off">
+    <input id="chatInput" type="text" maxlength="80" placeholder="輸入訊息…" enterkeyhint="send">
+    <button type="submit">送出</button>
+  </form>
+</div>
+
+<!-- 登入 -->
+<div class="screen" id="scrLogin">
+  <div class="panel">
+    <h1>廢墟回收隊</h1>
+    <div class="sub">1–4 人合作恐怖，近距離語音</div>
+    <div class="col">
+      <button class="btn prov" data-provider="google" type="button">使用 Google 登入</button>
+      <button class="btn prov" data-provider="apple" type="button">使用 Apple 登入</button>
+      <button class="btn prov" data-provider="line" type="button">使用 LINE 登入</button>
+      <button class="btn prov" data-provider="facebook" type="button">使用 Facebook 登入</button>
+      <button class="btn primary" id="guestBtn" type="button">訪客登入</button>
+    </div>
+    <p class="note" id="loginNote"></p>
+  </div>
+</div>
+
+<!-- 主選單（大廳） -->
+<div class="screen hide" id="scrHub">
+  <div class="hubBox">
+    <h2 class="hubTitle">選擇玩法</h2>
+    <button class="mcard hubCard" id="hubMain" type="button"><b>主玩法</b><span>多人回收、清剿、死守、生存戰</span></button>
+    <button class="mcard hubCard casual" id="hubCas" type="button"><b>休閒模式</b><span>AR 抓怪、怪物卡牌、賽車</span></button>
+  </div>
+  <div class="hubExtra">
+  <div class="peopleRow" id="peopleRow"><div class="pr-in"><span>每場幾個人</span><div class="peopleBtns" id="peopleBtns"><button class="btn" type="button" data-hp="2">2</button><button class="btn" type="button" data-hp="3">3</button><button class="btn" type="button" data-hp="4">4</button></div></div></div>
+  <div class="installTip hide" id="installTip" role="status"><span class="itIco" aria-hidden="true">📲</span><p><b>把廢墟隊裝進手機</b>開起來像原生 App，有事也會跳通知</p><button class="itBtn" id="installTipBtn" type="button">安裝</button><button class="itX" id="installTipX" type="button">略過</button></div>
+</div>
+</div>
+<div class="modal hide" id="roomM"><div class="panel small tut"><h2>自訂房：選擇遊戲</h2><p class="note" id="roomNote">選一個遊戲建立線上房間，把代碼給朋友就能一起玩。</p><div class="col" id="roomList"></div><div class="row"><button class="btn primary" id="roomX" type="button">關閉</button></div></div></div>
+<div class="modal hide" id="casSetM"><div class="panel small tut"><h2>休閒設定</h2>
+<label class="field">音效音量<input id="casSfx" type="range" min="0" max="1" step="0.05"></label>
+<label class="field">背景音樂<input id="casMusic" type="range" min="0" max="1" step="0.05"></label>
+<label class="field">顯示 FPS（卡頓時回報用）<input id="casFps" type="checkbox"></label>
+<div class="row"><button class="btn" id="casSetHelp" type="button">玩法說明</button><button class="btn primary" id="casSetX" type="button">完成</button></div></div></div>
+<div class="modal hide" id="casHelpM"><div class="panel small tut"><h2 id="casHelpT"></h2><p id="casHelpB" style="white-space:pre-line;text-align:left"></p><div class="row"><button class="btn primary" id="casHelpX" type="button">知道了</button></div></div></div>
+<div class="modal hide" id="recOpts"><div class="panel small tut"><h2>回收任務：難度與天數</h2><p>難度（目標金額與怪物速度）</p><div class="row optRow" id="roDiff"><button class="btn" type="button" data-v="easy">簡單</button><button class="btn" type="button" data-v="normal">標準</button><button class="btn" type="button" data-v="hard">困難</button></div><p>天數（0＝無限天）</p><div class="row optRow" id="roDays"><button class="btn" type="button" data-v="0">無限天</button><button class="btn" type="button" data-v="7">7 天</button><button class="btn" type="button" data-v="14">14 天</button></div><div class="row"><button class="btn primary" id="roOk" type="button">確定</button></div></div></div>
+<div class="screen hide" id="scrMenu">
+  <div class="lb">
+    <header class="lbTop">
+      <button class="btn lbHubB" id="lbHub" type="button" aria-label="回到分類">‹<small>分類</small></button>
+      <div class="topbar lbId">
+        <button class="avatar" id="avatar" type="button" aria-label="更換頭像顏色"></button>
+        <div class="who">
+          <label class="nickRow"><input id="nick" type="text" maxlength="12" aria-label="暱稱（點一下改名）" placeholder="輸入你的名字" enterkeyhint="done"><span class="pen" id="nickPen" aria-hidden="true">改名</span></label>
+          <button class="lvBtn" id="lvInfoBtn" type="button" aria-label="等級獎勵"><span class="stats"><span>等級<b id="lvTag">Lv.1</b></span><span>背包<b id="bagTag">普通</b></span><span>最佳<b id="best">0</b>天</span><i class="lvQ" id="lvDot">›</i></span>
+          <span id="xpBar"><i id="xpFill"></i></span></button>
+        </div>
+      </div>
+      <button class="lbCoin" id="coinBtn" type="button" aria-label="金幣，點一下去抽獎機"><span>金幣</span><b id="coinTag">0</b><i>+</i></button>
+      <div class="lbIcons">
+        <button class="icon" id="marketOpen" type="button" aria-label="聊天與組隊">聊天</button>
+        <button class="icon" id="socialOpen" type="button">社群<i class="badge hide" id="socBadge"></i></button>
+        <button class="icon hide" id="roomOpen" type="button">自訂房</button>
+        <button class="icon hide" id="casHelp" type="button">玩法說明</button>
+        <button class="icon" id="helpBtn" type="button" aria-label="設定與說明">設定</button>
+        <button class="icon" id="moreBtn" type="button" aria-label="更多" aria-haspopup="true">更多<i class="badge hide" id="moreBadge"></i></button>
+      </div>
+      <div class="moreMenu hide" id="moreMenu" role="menu"><i class="badge hide" id="ccBadge" style="display:none"></i><button class="mItem" id="misBtn" type="button">每日任務 <small id="fsMis">0 / 3 完成</small></button><button class="mItem" id="miniInfoBtn" type="button">小遊戲</button><button class="mItem" id="joinOpen" type="button">用房間代碼加入</button><button class="mItem" id="logoutBtn" type="button">登出 <small id="whoProv"></small></button></div>
+    </header>
+    <nav class="lbSide" aria-label="功能">
+      <button class="tile big" id="pickBtn" type="button"><span class="tag">出戰角色</span><b id="pickSum"></b></button>
+      <button class="tile" id="gearOpen" type="button"><b>裝備與寶石</b><span>配件、寶石升級</span></button>
+      <button class="tile hot" id="wheelOpen" type="button"><b>回收抽獎機</b><span>每天免費一次</span></button>
+      <button class="tile" id="shopOpen" type="button"><b>市集</b><span id="shopSub">每日精選、免費補給</span></button>
+      <button class="tile" id="exOpen" type="button"><b>交易所</b><span>世界頻道、玩家掛單</span></button>
+    </nav>
+    <div class="lbStage"><canvas id="lobbyChar" width="300" height="380" aria-hidden="true"></canvas><div class="lbName" id="lbName"></div></div>
+    <footer class="lbBottom">
+      <div class="modeStrip" id="modeStrip" role="radiogroup" aria-label="選擇模式">
+        <button class="mcard" type="button" data-mode="coop" data-go="createBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c0-4 2.5-6 5-6s5 2 5 6M11 20c0-4 2.5-6 5-6s5 2 5 6"/></svg><b>組隊回收</b><span>建房邀 3 位隊友</span></button>
+        <button class="mcard" type="button" data-mode="solo" data-go="soloBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21c0-5 3-8 7-8s7 3 7 8"/></svg><b>單人拾荒</b><span>自己練習回收</span></button>
+        <button class="mcard" type="button" data-mode="ar" data-go="arOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><circle cx="12" cy="12" r="3.5"/></svg><b>AR 實境</b><span>抓怪・迷宮</span></button>
+        <button class="mcard" type="button" data-mode="race" data-go="raceBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16l3-6h8l4 3v3H3z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg><b>賽車</b><span>廢墟賽道計時跑圈</span></button>
+        <button class="mcard" type="button" data-mode="marble" data-go="marbleBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="9" cy="10" r="1.6"/><circle cx="15" cy="10" r="1.6"/></svg><b>彈珠</b><span>拖曳瞄準，彈珠打怪物方塊</span><i class="mpc" data-pc="marble"></i></button>
+        <button class="mcard" type="button" data-mode="plat" data-go="platBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="14" width="18" height="3"/><rect x="8" y="8" width="5" height="3"/><circle cx="17" cy="6" r="2"/></svg><b>跳關</b><span>橫向跳關，踩敵人、吃金幣</span><i class="mpc" data-pc="plat"></i></button>
+        <button class="mcard" type="button" data-mode="chess" data-go="chessBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 20h6M12 4a2.5 2.5 0 0 0-2 4l-1 2h6l-1-2a2.5 2.5 0 0 0-2-4zM8 16h8l-1-4H9z"/></svg><b>國際象棋</b><span>同機兩人對弈</span><i class="mpc" data-pc="chess"></i></button>
+        <button class="mcard" type="button" data-mode="xq" data-go="xqBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><path d="M9.5 12h5M12 9.5v5"/></svg><b>中國象棋</b><span>同機兩人對弈</span><i class="mpc" data-pc="xq"></i></button>
+        <button class="mcard" type="button" data-mode="rummi" data-go="rummiBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="7" height="11" rx="1.2"/><rect x="8" y="8" width="7" height="11" rx="1.2"/><path d="M11 12h2"/></svg><b>德國麻將</b><span>拉密規則，和電腦對戰</span></button>
+        <button class="mcard" type="button" data-mode="gomoku" data-go="gomokuBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16M4 12h16M4 16h16M8 4v16M12 4v16M16 4v16"/><circle cx="8" cy="8" r="2.2" fill="currentColor"/><circle cx="12" cy="12" r="2.2"/></svg><b>五子棋</b><span>同機兩人，先連五子者勝</span></button>
+        <button class="mcard" type="button" data-mode="bj" data-go="bjBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="11" height="15" rx="1.5"/><path d="M9 9h11v12H9z"/></svg><b>21點</b></button>
+        <button class="mcard" type="button" data-mode="g2048" data-go="g2048Btn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg><b>方塊合併</b><span>滑動合併數字，棋盤會無限擴大</span></button>
+        <button class="mcard" type="button" data-mode="orb" data-go="orbBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="4"/><circle cx="16" cy="16" r="4"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/></svg><b>轉珠</b><span>拖動珠子連成 3 顆消除，步數內達標</span></button>
+        <button class="mcard" type="button" data-mode="mj" data-go="mjBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 9h8M8 13h8M8 17h4"/></svg><b>麻將</b><span>和電腦對戰的十六張麻將，先胡者獲勝</span></button>
+        <button class="mcard" type="button" data-mode="c4" data-go="c4Btn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.6"/><circle cx="12" cy="8" r="1.6"/><circle cx="16" cy="8" r="1.6"/><circle cx="8" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="16" cy="16" r="1.6"/></svg><b>四子連珠</b><span>同機兩人，先連四子者勝</span></button>
+        <button class="mcard" type="button" data-mode="flight" data-go="flightBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l18-7-7 18-2-8z"/></svg><b>飛行棋</b><span>2～4 人同機，擲 6 出發，吃子送回基地</span></button>
+        <button class="mcard" type="button" data-mode="pachi" data-go="pachiBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><circle cx="9" cy="9" r="1.3"/><circle cx="13" cy="12" r="1.3"/><circle cx="9" cy="15" r="1.3"/><path d="M12 19v-2"/></svg><b>彈珠台</b><span>調整角度與力道發射，落進中間袋子為大獎</span></button>
+        <button class="mcard" type="button" data-mode="kangle" data-go="kangleBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1.5"/><circle cx="12" cy="12" r="5"/><circle cx="7" cy="7" r="1.6"/><circle cx="17" cy="17" r="1.6"/></svg><b>康樂球</b><span>桌上撞擊，兩人輪流，先打完己方 8 顆者勝</span></button>
+        <button class="mcard" type="button" data-mode="card" data-go="cardOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="11" height="15" rx="1.5" transform="rotate(-10 8 13)"/><rect x="10" y="3" width="11" height="15" rx="1.5"/><path d="M13 12l2-3 2 3-2 3z"/></svg><b>怪物卡牌</b><span>出牌對戰電腦</span></button>
+        <button class="mcard" type="button" data-mode="hunt" data-go="huntBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><b>清剿行動</b><span>拿槍清剿怪物</span></button>
+        <button class="mcard" type="button" data-mode="td" data-go="tdBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V9l6-5 6 5v12z"/><path d="M10 21v-5h4v5M9 11h6"/></svg><b>死守回收車</b><span>守住回收車</span></button>
+        <button class="mcard" type="button" data-mode="br" data-go="brBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-dasharray="3 2.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg><b>廢墟生存戰</b><span>6 人混戰</span></button>
+      </div>
+      <div class="startBox">
+        <button class="mapChip" id="mapChip" type="button"><span>地圖</span><b id="mapName">廢棄設施</b></button>
+        <button class="mapChip hide" id="optChip" type="button"><span>難度</span><b id="optName">標準・無限天</b></button>
+        <button class="startBtn" id="goBtn" type="button"><small id="startMode">組隊回收</small><b>開始</b></button>
+      </div>
+    </footer>
+    <div id="raceHud" class="hide"></div>
+    <div class="siteBar hide" id="siteBar" aria-live="polite"></div>
+    <div class="hide" id="modeHidden"><button id="bjBtn" type="button" tabindex="-1">21點</button><button id="orbBtn" type="button" tabindex="-1">轉珠</button><button id="mjBtn" type="button" tabindex="-1">麻將</button><button id="chessBtn" type="button" tabindex="-1">國際象棋</button><button id="xqBtn" type="button" tabindex="-1">中國象棋</button><button id="rummiBtn" type="button" tabindex="-1">德國麻將</button><button id="g2048Btn" type="button" tabindex="-1">2048</button><button id="gomokuBtn" type="button" tabindex="-1">五子棋</button><button id="c4Btn" type="button" tabindex="-1">四子連珠</button><button id="flightBtn" type="button" tabindex="-1">飛行棋</button><button id="pachiBtn" type="button" tabindex="-1">彈珠台</button><button id="kangleBtn" type="button" tabindex="-1">康樂球</button><button id="platBtn" type="button" tabindex="-1">跳關</button><button id="marbleBtn" type="button" tabindex="-1">彈珠</button><button id="arOpen" type="button" tabindex="-1">AR 實境</button><button id="createBtn" type="button" tabindex="-1">組隊回收</button><button id="soloBtn" type="button" tabindex="-1">單人拾荒</button><button id="huntBtn" type="button" tabindex="-1">清剿行動</button><button id="tdBtn" type="button" tabindex="-1">死守回收車</button><button id="brBtn" type="button" tabindex="-1">廢墟生存戰</button><button id="cardOpen" type="button" tabindex="-1">怪物卡牌</button><button id="raceBtn" type="button" tabindex="-1">賽車</button></div>
+  </div>
+</div>
+
+<!-- 加入房間 -->
+<div class="modal hide" id="joinModal"><div class="panel small">
+  <b class="mTitle">用房間代碼加入</b>
+  <p class="note">向房主要 5 碼代碼。</p>
+  <div class="row join"><input id="codeInput" type="text" maxlength="5" autocapitalize="characters" autocomplete="off"><button class="btn primary" id="joinBtn" type="button">加入</button></div>
+  <div class="col"><button class="btn" id="joinClose" type="button">取消</button></div>
+</div></div>
+<div class="modal hide" id="invPick"><div class="panel small">
+  <b class="mTitle">邀請朋友加入</b>
+  <div id="invList"></div>
+  <div class="col"><button class="btn" id="invPickClose" type="button">關閉</button></div>
+</div></div>
+<!-- 每日任務 -->
+<div class="modal hide" id="misModal"><div class="panel small">
+  <b class="mTitle">每日任務</b>
+  <div id="missions"></div>
+  <div class="col"><button class="btn" id="misClose" type="button">關閉</button></div>
+</div></div>
+<!-- 選地圖 -->
+<div class="screen hide" id="scrMap">
+  <div class="panel lobby">
+    <div class="topbar"><button class="icon" id="mapDone" type="button" aria-label="返回">‹</button><div class="who"><b class="ttl">選地圖</b></div></div>
+    <div class="mapGrid" id="mapGrid"></div>
+    <div class="col"><button class="btn" id="tierInfoMap" type="button">段位與輪換說明</button><button class="btn primary" id="mapOk" type="button">確定</button></div>
+  </div>
+</div>
+
+<!-- 段位與地圖輪換說明（浮層） -->
+<div class="screen hide" id="scrTier">
+  <div class="panel lobby">
+    <div class="topbar"><button class="icon" id="tierDone" type="button" aria-label="返回">‹</button><div class="who"><b class="ttl">段位與輪換說明</b></div></div>
+    <div id="tierBody"></div>
+  </div>
+</div>
+
+<!-- 角色與地圖選擇 -->
+<div class="screen hide" id="scrPick">
+  <div class="panel lobby">
+    <div class="topbar">
+      <button class="icon" id="pickDone" type="button" aria-label="返回">‹</button>
+      <div class="who"><b class="ttl">角色與地圖</b></div>
+    </div>
+    <div class="stage">
+      <canvas id="lookPrev" width="150" height="170"></canvas>
+      <div class="info">
+        <b id="cName"></b>
+        <div><span class="tag">技能</span> <b id="cSkill"></b></div>
+        <p class="note" id="cDesc"></p>
+        <p class="note" id="cAttr"></p>
+      </div>
+    </div>
+    <details class="fold" data-fold="char"><summary><b>角色</b><em id="fsChar"></em></summary>
+      <div class="cards c3" id="cGrid"></div>
+    </details>
+    <details class="fold" data-fold="arms"><summary><b>武器</b><em id="fsArms"></em></summary>
+      <div class="sec">近戰攻擊物</div>
+      <div class="cards c3" id="wGrid"></div>
+      <div class="sec">槍</div>
+      <div class="gunPick"><div id="gCats"></div><div id="gStats"></div></div>
+      <div class="hide" id="gGrid"></div>
+      <div class="sec">槍枝造型（抽獎機取得）</div>
+      <div class="cards c3" id="gsGrid"></div>
+    </details>
+    <details class="fold" data-fold="look"><summary><b>外觀</b><em id="fsLook"></em></summary>
+      <div class="sec">頭飾（用金幣解鎖）　金幣 <b id="coinTag2">0</b></div>
+      <div class="cards c3" id="hGrid"></div>
+      <div class="sec">服裝（抽獎機取得）</div>
+      <div class="cards c3" id="oGrid"></div>
+      <div class="sec">寵物（抽獎機取得，有加成）</div>
+      <div class="cards c3" id="petGrid"></div>
+    </details>
+    <details class="fold" data-fold="fx"><summary><b>特效造型</b><em id="fsFx"></em></summary>
+      <div class="sec">回收品造型</div>
+      <div class="cards c3" id="isGrid"></div>
+      <div class="sec">怪物造型</div>
+      <div class="cards c3" id="msGrid"></div>
+      <div class="sec">彈道特效</div>
+      <div class="cards c3" id="fxGrid"></div>
+    </details>
+    <div class="col"><button class="btn" id="wheelOpen2" type="button">去抽獎機抽造型</button>
+      <button class="btn primary" id="pickOk" type="button">確定</button></div>
+  </div>
+</div>
+
+<!-- 造型抽獎機 -->
+<div class="screen hide" id="scrWheel">
+  <div class="dw">
+    <header class="dwTop">
+      <button class="icon" id="wheelDone" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle" id="mName">綜合機</b>
+      <div class="lbCoin dwCoin"><span>金幣</span><b id="coinTag3">0</b></div>
+    </header>
+    <div class="tabs dwTabs" id="wheelSel" role="tablist"></div>
+    <div class="dwBoard">
+      <div class="dwGrid" id="dwGrid"></div>
+    </div>
+    <aside class="dwView" aria-live="polite">
+      <canvas id="dwCanvas" width="320" height="220" aria-hidden="true"></canvas>
+      <div class="dwIcon" id="dwIcon"></div>
+      <div class="dwInfo"><span class="dwKind" id="dwKind"></span><b id="dwName"></b><p id="dwDesc"></p></div>
+    </aside>
+    <footer class="dwFoot">
+      <label class="dwSkip"><input type="checkbox" id="dwSkip"><span>跳過動畫</span></label>
+      <button class="startBtn dwGo" id="wheelSpin" type="button"><small id="mCost">一次 50 金幣</small><b>抽一次</b></button>
+      <button class="btn hide" id="wheelWear" type="button">去換上</button>
+    </footer>
+    <p class="dwNote">每格機率相同（12.5%）。抽到已經有的會換成 25 金幣。</p>
+  </div>
+</div>
+
+<div class="screen hide" id="scrLevel">
+  <div class="lvs">
+    <header class="dwTop">
+      <button class="icon" id="lvsDone" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">等級獎勵</b>
+      <button class="btn lvsHelp" id="lvsHelp" type="button">怎麼升級</button>
+    </header>
+    <section class="lvsView" aria-live="polite">
+      <div class="lvsArt"><canvas id="lvsCanvas" width="320" height="220" aria-hidden="true"></canvas><div class="dwIcon lvsIcon" id="lvsIcon"></div></div>
+      <div class="lvsInfo"><span class="dwKind" id="lvsKind"></span><b id="lvsName"></b><p id="lvsDesc"></p><button class="startBtn lvsGet" id="lvsGet" type="button"><b>領取</b></button></div>
+    </section>
+    <div class="lvsMe"><b id="lvsLv">Lv.1</b><span id="lvsXp"></span><button class="btn primary" id="lvsAll" type="button">全部領取</button></div>
+    <div class="lvsTrack" id="lvsTrack"><div class="lvsBar"><i id="lvsFill"></i></div><div class="lvsCards" id="lvsCards"></div></div>
+  </div>
+</div>
+<div id="scopeFx" aria-hidden="true"></div>
+<div id="aim" class="hide" aria-hidden="true"><i></i><b></b></div>
+<div id="mtoast" role="status"></div>
+<div id="banner" role="status" aria-live="polite"><b></b><span></span></div>
+<button class="btn primary hide" id="raceUse" type="button" style="position:fixed;right:12px;bottom:18px;z-index:40">無道具</button>
+<button class="btn primary hide" id="raceNitro" type="button" style="position:fixed;right:12px;bottom:70px;z-index:40">氮氣 0%</button>
+<button class="btn hide" id="raceReset" type="button" style="position:fixed;right:12px;bottom:122px;z-index:40">復位（R）</button>
+<div class="hide" id="raceStat" style="position:fixed;left:12px;bottom:18px;z-index:40;background:rgba(0,0,0,.45);color:#fff;padding:4px 8px;border-radius:6px;font-size:13px"></div>
+<div id="invBanner" class="invBanner hide" role="alert"><div><b></b><span></span></div><button class="btn primary" id="invJoin" type="button">加入</button><button class="btn" id="invNo" type="button">略過</button></div>
+<!-- 市集：每日精選直購、免費補給 -->
+<div class="screen hide" id="scrShop">
+  <div class="sp">
+    <header class="dwTop">
+      <button class="icon" id="shopDone" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">市集</b>
+      <div class="lbCoin dwCoin"><span>金幣</span><b id="coinTag4">0</b></div>
+    </header>
+    <section class="spSec">
+      <div class="spHead"><b>免費補給</b><span>領完會倒數</span></div>
+      <div class="spGrid" id="spFree"></div>
+    </section>
+    <section class="spSec">
+      <div class="spHead"><b>每日精選</b><span id="spTimer">刷新倒數</span></div>
+      <div class="spGrid" id="spDaily"></div>
+    </section>
+  </div>
+</div>
+<div class="modal hide" id="spModal"><div class="panel small spBuy">
+  <canvas id="spCanvas" width="280" height="200" aria-hidden="true"></canvas>
+  <div class="dwIcon" id="spIcon"></div>
+  <span class="dwKind" id="spKind"></span>
+  <b class="mTitle" id="spName"></b>
+  <p id="spDesc"></p>
+  <div class="row"><button class="btn" id="spCancel" type="button">取消</button><button class="btn primary" id="spOk" type="button">購買</button></div>
+</div></div>
+
+<!-- 交易所：世界頻道與玩家掛單 -->
+<div class="arBox hide" id="arBox"><video id="arVideo" playsinline muted autoplay></video><canvas id="arCanvas"></canvas><div class="arRing"></div><div class="arTiming hide" id="arTiming"></div><div class="arArrow hide" id="arArrow"></div><div class="arTop"><span id="arCount"></span><button class="btn" id="arDexBtn" type="button">任務圖鑑</button><button class="btn" id="arClose" type="button">離開</button></div><div class="arName" id="arName"></div><div class="arDex hide" id="arDex"><b>今日 AR 任務</b><div class="arMis" id="arMis"></div><b>怪物圖鑑 <span id="arDexN"></span></b><div class="arDexGrid" id="arDexGrid"></div><small>點抓過的怪物，可以設成大廳展示（站在角色旁邊）。集滿 32 種送 300 金幣。</small><button class="btn primary" id="arDexClose" type="button">關閉</button></div><p class="arMsg" id="arMsg"></p><canvas class="arMap" id="arMap" width="120" height="120"></canvas><button class="arFwd" id="arFwd" type="button">按住前進</button><button class="btn primary arAgain hide" id="arAgain" type="button">再玩一次新迷宮</button><div class="arPick" id="arPick"><b>選擇 AR 玩法</b><button class="mcard" id="arPickCatch" type="button"><b>抓怪</b><span>轉手機找怪物，丟網抓起來，收集圖鑑</span></button><button class="mcard" id="arPickMaze" type="button"><b>迷宮</b><span>迷宮的牆出現在眼前，撿 3 個零件找出口</span></button></div><button class="arThrow" id="arThrow" type="button" aria-label="丟回收網">丟網<small>或往上滑</small></button></div>
+<div class="qrBox hide" id="qrBox" role="dialog" aria-label="好友 QR code"><div class="qrCard"><b id="qrName"></b><div id="qrImg"></div><span>好友代碼 <b id="qrCode"></b></span><small>用手機相機掃描，打開遊戲登入後就會自動加好友</small><button class="btn primary" id="qrClose" type="button">關閉</button></div></div>
+<!-- 國際象棋（同機雙人） -->
+<div class="screen hide" id="scrPlat">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="platBack" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">跳關</b>
+    </header>
+    <div class="duoNet"><button class="btn" id="platDuelHost" type="button">建立雙人房間</button><div class="row join"><input id="platDuelJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="platDuelJoin" type="button">加入</button></div><p class="note" id="platDuelCode"></p><p class="note" id="platDuelNote"></p><p class="chessStatus" id="platDuelState"></p><div class="row"><button class="btn" id="platNew" type="button">重新開始</button></div></div>
+    <div id="platHost" class="platHost"></div>
+    <p class="ccEmpty">左右移動；跳（按住跳得更高）；衝（撞碎脆石牆與碎石獸）。收集 12 個齒輪，就能打開回收點的門。</p>
+  </div>
+</div>
+<div class="screen hide" id="scrMarble">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="marbleBack" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">彈珠</b>
+    </header>
+    <div class="duoNet"><button class="btn" id="marbleDuelHost" type="button">建立雙人房間</button><div class="row join"><input id="marbleDuelJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="marbleDuelJoin" type="button">加入</button></div><p class="note" id="marbleDuelCode"></p><p class="note" id="marbleDuelNote"></p><p class="chessStatus" id="marbleDuelState"></p><div class="row"><button class="btn" id="marbleNew" type="button">重新開始</button></div></div>
+    <div id="marbleHost" class="platHost"></div>
+    <p class="ccEmpty">在下方拖曳瞄準，放開發射。每回合 5 顆彈珠，撐過 15 回合就過關。</p>
+  </div>
+</div>
+<div class="screen hide" id="scrBj">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="bjBack" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">21點（對莊家）</b>
+    </header>
+    <div class="duoNet"><button class="btn" id="bjDuelHost" type="button">建立雙人房間</button><div class="row join"><input id="bjDuelJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="bjDuelJoin" type="button">加入</button></div><p class="note" id="bjDuelCode"></p><p class="note" id="bjDuelNote"></p><p class="chessStatus" id="bjDuelState"></p><div class="row"><button class="btn" id="bjNew" type="button">重新開始</button></div></div>
+    <p class="chessStatus" id="bjStatus" aria-live="polite"></p>
+    <div class="bjTable" id="bjTable"></div>
+    <div class="bjBar"><button class="btn primary" id="bjDeal" type="button">發牌</button><button class="btn" id="bjHit" type="button">要牌</button><button class="btn" id="bjStand" type="button">停牌</button></div>
+  </div>
+</div>
+<div class="screen hide" id="scrOrb">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="orbBack" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">轉珠</b>
+      <button class="btn" id="orbNew" type="button">重新開始</button>
+    </header>
+    <p class="chessStatus" id="orbStatus" aria-live="polite"></p>
+    <div class="duoNet"><button class="btn" id="orbDuelHost" type="button">建立雙人房間</button><div class="row join"><input id="orbDuelJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="orbDuelJoin" type="button">加入</button></div><p class="note" id="orbDuelCode"></p><p class="note" id="orbDuelNote"></p><p class="chessStatus" id="orbDuelState"></p></div>
+    <div class="orbBoard" id="orbBoard"></div>
+    <p class="chessStatus" id="orbMsg" aria-live="polite"></p>
+    <div class="col"><button class="btn primary hide" id="orbNext" type="button">下一關</button></div>
+  </div>
+</div>
+<div class="screen hide" id="scrMj">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="mjBack" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">麻將</b>
+      <button class="btn" id="mjNew" type="button">重新開始</button>
+    </header>
+    <div class="duoNet"><button class="btn" id="mjDuelHost" type="button">建立雙人房間</button><div class="row join"><input id="mjDuelJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="mjDuelJoin" type="button">加入</button></div><p class="note" id="mjDuelCode"></p><p class="note" id="mjDuelNote"></p><p class="chessStatus" id="mjDuelState"></p></div>
+    <p class="chessStatus" id="mjCpu" aria-live="polite"></p>
+    <p class="chessStatus" id="mjDiscards"></p>
+    <div class="mjHand" id="mjHand"></div>
+    <p class="chessStatus" id="mjStatus" aria-live="polite"></p>
+    <div class="col mjAct"><button class="btn primary hide" id="mjRon" type="button">胡</button><button class="btn hide" id="mjPass" type="button">過</button></div>
+    <p class="chessStatus" id="mjMsg" aria-live="polite"></p>
+  </div>
+</div>
+<div class="screen hide" id="scr2048">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="g2048Back" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">方塊合併（無限板）</b>
+      <button class="btn" id="g2048New" type="button">重新開始</button>
+    </header>
+    <p class="chessStatus" id="g2048Status" aria-live="polite"></p>
+    <div class="duoNet"><button class="btn" id="g2048DuelHost" type="button">建立雙人房間</button><div class="row join"><input id="g2048DuelJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="g2048DuelJoin" type="button">加入</button></div><p class="note" id="g2048DuelCode"></p><p class="note" id="g2048DuelNote"></p><p class="chessStatus" id="g2048DuelState"></p></div>
+    <div class="g2048Board" id="g2048Board"></div>
+    <p class="ccEmpty">用方向鍵或在棋盤上滑動。貼到邊就會多開一排。</p>
+    <h3 class="sec">紀錄板（前 10 名）</h3>
+    <ol class="g2048Rec" id="g2048Rec"></ol>
+  </div>
+</div>
+<div class="screen hide" id="scrGomoku">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="gomokuBack" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">五子棋（同機雙人）</b>
+      <button class="btn" id="gomokuNew" type="button">重新開始</button>
+    </header>
+    <p class="chessStatus" id="gomokuStatus" aria-live="polite"></p>
+    <div class="duoNet"><button class="btn" id="gomokuHost" type="button">建立線上房間</button><div class="row join"><input id="gomokuJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="gomokuJoin" type="button">加入</button></div><p class="note" id="gomokuCode"></p><p class="note" id="gomokuNetNote"></p></div>
+    <div class="gmBoard" id="gomokuBoard"></div>
+    <p class="ccEmpty">黑先。點空格下子，先連成五子（或以上）者獲勝。</p>
+  </div>
+</div>
+<div class="screen hide" id="scrC4">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="c4Back" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">四子連珠（同機雙人）</b>
+      <button class="btn" id="c4New" type="button">重新開始</button>
+    </header>
+    <p class="chessStatus" id="c4Status" aria-live="polite"></p>
+    <div class="duoNet"><button class="btn" id="c4Host" type="button">建立線上房間</button><div class="row join"><input id="c4JoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="c4Join" type="button">加入</button></div><p class="note" id="c4Code"></p><p class="note" id="c4NetNote"></p></div>
+    <div class="c4Board" id="c4Board"></div>
+    <p class="ccEmpty">紅先。點欄位讓棋子落下，直、橫、斜先連四子者獲勝。</p>
+  </div>
+</div>
+<div class="screen hide" id="scrFlight">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="flightBack" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">飛行棋（同機）</b>
+      <button class="btn" id="flightNew" type="button">換人數</button>
+    </header>
+    <div id="flSetup" class="flSetup">
+      <p class="ccEmpty">選擇人數</p>
+      <div class="flSetupBtns"><button class="btn" type="button" data-flp="2">2 人</button><button class="btn" type="button" data-flp="3">3 人</button><button class="btn" type="button" data-flp="4">4 人</button></div>
+    </div>
+    <div id="flBoard" class="hide">
+      <p class="chessStatus" id="flightStatus" aria-live="polite"></p>
+      <div class="flRing" id="flRing"></div>
+      <div class="flBtns"><button class="btn" id="flightRoll" type="button">擲骰子</button></div>
+      <div class="flPlayers" id="flPlayers"></div>
+    </div>
+    <div class="duoNet"><button class="btn" id="flightHost" type="button">建立線上房間（2 人）</button><div class="row join"><input id="flightJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="flightJoin" type="button">加入</button></div><p class="note" id="flightCode"></p><p class="note" id="flightNetNote"></p></div>
+    <p class="ccEmpty">擲到 6 才能讓飛機出發。走完 56 步剛好到終點者勝。</p>
+  </div>
+</div>
+<div class="screen hide" id="scrPachi">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="pachiBack" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">彈珠台</b>
+      <button class="btn" id="pachiNew" type="button">重新開始</button>
+    </header>
+    <p class="chessStatus" id="pcStatus" aria-live="polite"></p>
+    <canvas class="pcCanvas" id="pcCanvas" width="300" height="400" aria-label="彈珠台球場"></canvas>
+    <div class="pcCtl hide">
+      <label>角度 <input type="range" id="pcAngle" min="-25" max="25" value="0"> <span id="pcAngleVal">0°</span></label>
+      <label>力道 <input type="range" id="pcPower" min="0" max="100" value="60"> <span id="pcPowerVal">60%</span></label>
+    </div>
+    <div class="duoNet"><button class="btn" id="pcHost" type="button">建立線上房間（2 人）</button><div class="row join"><input id="pcJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="pcJoin" type="button">加入</button></div><p class="note" id="pcCode"></p><p class="note" id="pcNetNote"></p></div>
+    <p class="ccEmpty">剩餘彈珠 <b id="pcBalls">30</b>　回收 <b id="pcWon">0</b></p>
+    <div class="flBtns hide"><button class="btn" id="pcFire" type="button">發射</button></div>
+  </div>
+</div>
+<div class="screen hide" id="scrKangle">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="kangleBack" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">康樂球（兩人同機）</b>
+      <button class="btn" id="kangleNew" type="button">重新開始</button>
+    </header>
+    <p class="chessStatus" id="kgStatus" aria-live="polite"></p>
+    <canvas class="kgCanvas" id="kgCanvas" width="400" height="400" aria-label="康樂球棋盤"></canvas>
+    <div class="pcCtl hide">
+      <label>射子位置 <input type="range" id="kgX" min="60" max="340" value="200"></label>
+      <label>角度 <input type="range" id="kgAngle" min="-40" max="40" value="0"> <span id="kgAngleVal">0°</span></label>
+      <label>力道 <input type="range" id="kgPower" min="0" max="100" value="60"> <span id="kgPowerVal">60%</span></label>
+    </div>
+    <div class="duoNet"><button class="btn" id="kgHost" type="button">建立線上房間（2 人）</button><div class="row join"><input id="kgJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="kgJoin" type="button">加入</button></div><p class="note" id="kgCode"></p><p class="note" id="kgNetNote"></p></div>
+    <p class="ccEmpty">比分：<b id="kgScore">紅 0　黑 0</b></p>
+    <div class="flBtns hide"><button class="btn" id="kgFire" type="button">撞擊</button></div>
+    <p class="ccEmpty">每人打入己方顏色棋子得 1 分並可再打一次；打入對方顏色棋子會放回中央並換人；射子落洞犯規。</p>
+  </div>
+</div>
+<div class="screen hide" id="scrRummi">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="rummiBack" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">德國麻將（拉密）</b>
+      <button class="btn" id="rummiNew" type="button">重新開始</button>
+    </header>
+    <p class="chessStatus" id="rummiStatus" aria-live="polite"></p>
+    <div class="duoNet"><button class="btn" id="rmHost" type="button">建立線上房間（2 人）</button><div class="row join"><input id="rmJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="rmJoin" type="button">加入</button></div><p class="note" id="rmCode"></p><p class="note" id="rmNetNote"></p></div>
+    <div class="rsTable" id="rummiTable"></div>
+    <div class="rsBtns">
+      <button class="btn" id="rummiMake" type="button">組成一組</button>
+      <button class="btn" id="rummiDraw" type="button">抽牌</button>
+      <button class="btn" id="rummiUndo" type="button">復原</button>
+      <button class="btn primary" id="rummiOk" type="button">出牌</button>
+    </div>
+    <div class="rsLoose hide" id="rummiLoose"></div>
+    <div class="rsHand" id="rummiHand"></div>
+    <p class="ccEmpty">選牌後按「組成一組」，或點桌上的組接上去；點桌上的牌可以拉起來重組（破冰後）。第一次出牌要湊到 30 點。</p>
+  </div>
+</div>
+<div class="screen hide" id="scrXq">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="xqBack" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">中國象棋（同機雙人）</b>
+      <button class="btn" id="xqNew" type="button">重新開始</button>
+    </header>
+    <p class="chessStatus" id="xqStatus" aria-live="polite"></p>
+    <div class="duoNet"><button class="btn" id="xqHost" type="button">建立線上房間</button><div class="row join"><input id="xqJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="xqJoin" type="button">加入</button></div><p class="note" id="xqCode"></p><p class="note" id="xqNetNote"></p></div>
+    <div class="xqBoard" id="xqBoard"></div>
+    <p class="ccEmpty">紅方先走。點棋子，再點要去的點。將帥不能照面，被將軍要解。</p>
+  </div>
+</div>
+<div class="screen hide" id="scrChess">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="chessBack" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">國際象棋（同機雙人）</b>
+      <button class="btn" id="chessNew" type="button">重新開始</button>
+    </header>
+    <p class="chessStatus" id="chessStatus" aria-live="polite"></p>
+    <div class="chessNet">
+      <button class="btn" id="chessHost" type="button">建立連線房間</button>
+      <div class="row join"><input id="chessJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="chessJoin" type="button">加入</button></div>
+      <p class="note" id="chessCode"></p><p class="note" id="chessNetNote"></p>
+    </div>
+    <div class="chessBoard" id="chessBoard"></div>
+    <p class="ccEmpty">白方先走。點棋子，再點要去的格子。升變自動升為后。</p>
+  </div>
+</div>
+<div class="screen hide" id="scrMarket">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="mkDone" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">聊天與組隊</b>
+      <div class="lbCoin dwCoin"><span>金幣</span><b id="coinTag6">0</b></div>
+    </header>
+    <div class="hubGrid">
+    <section class="hubChat">
+    <div class="mkTabs" role="tablist"><button type="button" class="on" data-tab="chat" role="tab">世界頻道</button><button type="button" data-tab="clan" role="tab">拾荒團</button><button type="button" data-tab="shop" role="tab">交易所</button><button type="button" data-tab="team" role="tab" class="hubTeamTab">組隊</button></div>
+    <div class="ccLog" id="wcLog" aria-live="polite"></div>
+    <form class="ccBar" id="wcForm" autocomplete="off">
+      <input id="wcInput" type="text" maxlength="80" placeholder="在世界頻道說話、喊價" enterkeyhint="send">
+      <button class="btn" type="submit">送出</button>
+    </form>
+    <div class="ccLog hide" id="mkList"></div>
+    <form class="ccBar hide" id="mkForm" autocomplete="off">
+      <select id="mkItem" aria-label="要賣的東西"></select>
+      <input id="mkPrice" type="number" min="1" max="1000" inputmode="numeric" placeholder="上限 1000" aria-label="價格（金幣，上限 1000）">
+      <button class="btn primary" type="submit">掛單</button>
+    </form>
+    </section>
+    <section class="hubTeam" id="hubTeam">
+      <div class="hubTeamHead"><b>快速組隊</b><button class="icon" id="tmRefresh" type="button" aria-label="重新整理">⟳</button></div>
+      <div class="ccLog tmList" id="tmList"></div>
+      <div class="tmBar"><button class="btn" id="tmCreate" type="button">建立房間</button><button class="btn primary" id="tmQuick" type="button">快速加入</button></div>
+    </section>
+    </div>
+  </div>
+</div>
+
+<!-- 拾荒團聊天 -->
+<div class="screen hide" id="scrClan">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="clanDone" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle" id="ccName">拾荒團聊天</b>
+      <div class="lbCoin dwCoin"><span>金幣</span><b id="coinTag5">0</b></div>
+    </header>
+    <div class="ccLog" id="ccLog" aria-live="polite"></div>
+    <form class="ccBar" id="ccForm" autocomplete="off">
+      <button class="btn primary ccAsk" id="ccAsk" type="button"><b>請求金幣</b><small id="ccAskT"></small></button>
+      <input id="ccInput" type="text" maxlength="80" placeholder="跟隊友說話" enterkeyhint="send">
+      <button class="btn" type="submit">送出</button>
+    </form>
+  </div>
+</div>
+
+<!-- 裝備與寶石（主選單與對局中共用，蓋在最上層） -->
+<div class="screen hide" id="scrGear">
+  <div class="panel lobby">
+    <div class="topbar">
+      <button class="icon" id="gearDone" type="button" aria-label="返回">‹</button>
+      <div class="who"><b class="ttl">裝備與寶石</b><div class="note">金幣 <b id="coinTag4">0</b>，已裝備 <b id="eqCount">0</b> / 2</div></div>
+    </div>
+    <details class="fold" data-fold="g_acc"><summary><b>配件</b><em>點一下購買、裝備或卸下</em></summary>
+      <div id="accList"></div>
+    </details>
+    <details class="fold" data-fold="g_gem"><summary><b>寶石</b><em>用金幣升級，最高 5 級</em></summary>
+      <div id="gemList"></div>
+    </details>
+  </div>
+</div>
+
+<!-- 設定與說明 -->
+<div class="screen hide" id="scrHelp">
+  <div class="panel lobby">
+    <div class="topbar">
+      <button class="icon" id="helpDone" type="button" aria-label="返回">‹</button>
+      <div class="who"><b class="ttl">設定與操作說明</b></div>
+      <button class="btn" id="tutAgain" type="button" style="flex:none;font-size:13px;padding:8px 10px">新手教學</button>
+    </div>
+    <div class="helpBody">
+      <details class="fold" data-fold="h_set"><summary><b>設定</b><em>畫質、按鈕、音量</em></summary>
+      <div class="col"><button class="btn hide" id="installBtn" type="button">安裝到主畫面（全螢幕、開得更快）</button></div>
+      <label class="field">畫質<select id="setQ"><option value="high">高（1080p）</option><option value="mid">標準（720p，手機預設）</option><option value="low">省電（480p）</option></select></label>
+      <label class="field">顯示 FPS（卡頓時回報用）<input id="setFps" type="checkbox"></label>
+      <label class="field">左手模式（手機按鍵左右對調）<input id="setLefty" type="checkbox"></label>
+      <label class="field">陀螺儀瞄準（轉動手機來轉視角）<input id="setGyro" type="checkbox"></label>
+      <label class="field">手機按鈕大小<input id="setBtn" type="range" min="0.8" max="1.4" step="0.05"></label>
+      <div class="col"><button class="btn" id="btnEditOpen" type="button">自訂手機按鈕位置</button></div>
+      <div class="field btnVisField"><span>手機上顯示的按鈕（取消勾選就暫時隱藏，「跑」一定會顯示）</span></div>
+      <div class="btnChks" id="btnChks"><label class="btnChk"><input type="checkbox" data-btn="atk" checked><span>打</span></label><label class="btnChk"><input type="checkbox" data-btn="gun" checked><span>槍</span></label><label class="btnChk"><input type="checkbox" data-btn="rescue" checked><span>救</span></label><label class="btnChk"><input type="checkbox" data-btn="jump" checked><span>跳</span></label><label class="btnChk"><input type="checkbox" data-btn="skill" checked><span>技</span></label><label class="btnChk"><input type="checkbox" data-btn="smoke" checked><span>煙</span></label><label class="btnChk"><input type="checkbox" data-btn="bomb" checked><span>炸</span></label><label class="btnChk"><input type="checkbox" data-btn="tower" checked><span>塔</span></label><label class="btnChk"><input type="checkbox" data-btn="veh" checked><span>車</span></label></div>
+      <div class="col"><button class="btn" id="setFull" type="button">全螢幕（電腦按 F11）</button></div>
+      <div class="field btnVisField"><span>電腦按鍵（點一下再按新的鍵）</span></div>
+      <div class="keyBinds" id="keyBinds"></div>
+      <div class="col"><button class="btn" id="keyReset" type="button">按鍵恢復預設</button></div>
+      <label class="field">視角靈敏度<input id="setSens" type="range" min="0.4" max="2" step="0.1"></label>
+      <label class="field">音效音量<input id="setSfx" type="range" min="0" max="1" step="0.05"></label>
+      <label class="field">背景音樂<input id="setMusic" type="range" min="0" max="1" step="0.05"></label>
+      <label class="field">語音音量<input id="setVoice" type="range" min="0" max="1.5" step="0.05"></label>
+      <div class="col"><button class="btn" id="delData" type="button" style="flex:none;font-size:13px;padding:8px 10px">刪除我的資料</button></div>
+      </details>
+      <details class="fold" data-fold="h_help"><summary><b>玩法說明</b><em>選一個主題</em></summary>
+      <div id="helpMenu">
+        <button class="hrow" type="button" data-topic="goal"><span class="htxt"><b>目標與流程</b><small>撿廢料、賣錢、達成當天目標</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="ctrl"><span class="htxt"><b>操作方式</b><small>手機按鈕與電腦按鍵對照</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="mon"><span class="htxt"><b>怪物</b><small>四種怪物與牠怎麼發現你</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="safe"><span class="htxt"><b>保命方法</b><small>技能、煙霧彈、櫃子、跳與衝、救隊友</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="char"><span class="htxt"><b>角色技能</b><small>六個角色的技能與特色</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="map"><span class="htxt"><b>地圖與小地圖</b><small>20 張地圖、小地圖上的標記</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="bonus"><span class="htxt"><b>加分與小遊戲</b><small>分類回收、圈圈叉叉、獎盃、傳送陣、抽獎機</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="grow"><span class="htxt"><b>星等與成長</b><small>星星、金幣、每日任務、頭飾</small></span><span class="go">›</span></button>
+        <button class="hrow" type="button" data-topic="team"><span class="htxt"><b>語音與隊友</b><small>麥克風、聊天、互相傷害、沒聲音時</small></span><span class="go">›</span></button>
+      </div>
+      </details>
+    </div>
+    <div id="helpTopic" class="hide">
+      <section class="htopic hide" data-topic="goal"><h2>目標與流程</h2>
+<ul><li>在時間內把廢料帶回<b>金色回收車</b>，賺到當天的目標金額就過關。</li>
+<li>走近發亮的廢料會自動撿起，背包容量依等級提升（Lv10 起每 10 等多 1 格，最多 13 件）；走回回收車自動賣出。</li>
+<li>回收物分等級：越值錢的東西，背包等級要夠高才撿得起來（例如金條要 Lv70）。</li>
+<li>畫面上方的箭頭指向回收車，左上的進度條是今天的進度。</li>
+<li>背包是空的時候走得比較快；背越多越慢。</li>
+<li>每過一天，目標更高、怪物更快；第 6 天起有 4 隻怪物。</li></ul>
+      </section>
+      <section class="htopic hide" data-topic="ctrl"><h2>操作方式</h2>
+<h3>手機</h3>
+<table><tr><td>移動</td><td>左半邊拖曳</td></tr><tr><td>轉視角</td><td>右半邊拖曳</td></tr>
+<tr><td>橫式</td><td>把手機轉橫就能橫著玩</td></tr>
+<tr><td>按鈕</td><td>設定裡可調大小、拖曳自訂位置、開啟「左手模式」整組左右對調</td></tr>
+<tr><td><kbd>跑</kbd></td><td>按住奔跑</td></tr><tr><td><kbd>跳</kbd> <kbd>衝</kbd></td><td>跳躍、衝刺</td></tr>
+<tr><td><kbd>技</kbd> <kbd>煙</kbd></td><td>角色技能、煙霧彈</td></tr><tr><td><kbd>槍</kbd></td><td>開槍</td></tr><tr><td><kbd>炸</kbd></td><td>炸開面前的牆</td></tr><tr><td><kbd>打</kbd> <kbd>救</kbd></td><td>揮武器、按住救隊友</td></tr></table>
+<h3>電腦</h3>
+<table><tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>移動（滑鼠轉視角）</td></tr><tr><td><kbd>Shift</kbd></td><td>奔跑</td></tr>
+<tr><td><kbd>空白鍵</kbd> <kbd>C</kbd></td><td>跳躍、衝刺</td></tr><tr><td><kbd>Y</kbd></td><td>靠近櫃子按一下躲進去（最多 8 秒），再按一下出來；裡面會拿到一把攻擊物</td></tr><tr><td><kbd>R</kbd> <kbd>Q</kbd></td><td>角色技能、煙霧彈</td></tr>
+<tr><td><kbd>左鍵</kbd> / <kbd>F</kbd></td><td>揮武器</td></tr><tr><td><kbd>右鍵</kbd> / <kbd>X</kbd></td><td>開槍</td></tr><tr><td><kbd>T</kbd></td><td>死守：蓋砲塔</td></tr><tr><td><kbd>B</kbd></td><td>炸藥：炸開面前的牆</td></tr><tr><td><kbd>E</kbd></td><td>按住救隊友、搶獎盃</td></tr>
+<tr><td><kbd>V</kbd></td><td>上／下推車</td></tr><tr><td><kbd>G</kbd></td><td>小遊戲</td></tr><tr><td><kbd>M</kbd> <kbd>Enter</kbd></td><td>麥克風、聊天</td></tr><tr><td><kbd>Esc</kbd></td><td>釋放滑鼠</td></tr></table>
+<h3>遊戲手把（Xbox／PS／Steam Deck）</h3>
+<table><tr><td>移動／轉視角</td><td>左搖桿／右搖桿</td></tr><tr><td>開槍（按住連射）／開鏡</td><td>RT／LT</td></tr><tr><td>跳／衝刺</td><td>A／B</td></tr><tr><td>切近戰（按住救人）／換槍</td><td>X／Y</td></tr><tr><td>煙霧彈／技能</td><td>LB／RB</td></tr><tr><td>切換跑步／近戰攻擊</td><td>按下左搖桿／按下右搖桿</td></tr><tr><td>UAV／櫃子／炸藥／空中掃射</td><td>十字鍵 上／下／左／右</td></tr><tr><td>上車／選單</td><td>Back／Start</td></tr></table>
+      </section>
+      <section class="htopic hide" data-topic="mon"><h2>怪物</h2>
+<table><tr><td><i class="dot" style="background:#ff5a2a"></i>火</td><td>追得比較快</td></tr>
+<tr><td><i class="dot" style="background:#5ad0ff"></i>冰</td><td>靠近牠你會變慢</td></tr>
+<tr><td><i class="dot" style="background:#8cff5a"></i>毒</td><td>走得慢，靠近會持續扣血（最低留 1）</td></tr>
+<tr><td><i class="dot" style="background:#b070ff"></i>暗影</td><td>追得更快</td></tr></table>
+<ul><li>怪物頭上有<b>血量條</b>（紅）和<b>護盾條</b>（藍）：先打掉護盾才會扣血；5 秒沒被打，護盾會慢慢回來。</li>
+<li>怪物<b>看得到</b>你，也<b>聽得到</b>跑步聲和太大聲的麥克風。</li>
+<li>背包滿時，附近的怪物會被引過來。</li>
+<li>心跳聲變快代表牠在附近；出現「發現你了！」就快跑。</li>
+<li>怪物靠近到 14 公尺內，小地圖才會出現牠的三角形。</li></ul>
+      </section>
+      <section class="htopic hide" data-topic="safe"><h2>保命方法</h2>
+<ul><li><b>槍</b>：在「出戰角色」的「武器」選槍（全部免費；槍枝造型到抽獎機抽）：手槍穩定、霰彈槍一次 6 顆近距離強、步槍和衝鋒槍按住連發、狙擊槍一發高傷害射最遠、破甲重狙更重更慢、機關槍按住狂射、弓弩慢但狠、三連發一次三顆、雙管霰彈近距離十顆、迷你衝鋒超快速連發、重機槍大彈匣慢速、雷射槍中遠距離高傷、燃燒槍一次兩顆、魔法杖、旋風巨炮（重砲，慢）、赤焰雙管與 遊騎兵步槍（連發）、冰紅茶（一次四顆）、水槍（超快、傷害很低）、魚槍（重擊）、貓咪槍、狗狗槍、大蔥槍。快速點兩下「槍」按鈕可以切換成近戰（副武器），按鈕會顯示「近」，再點兩下切回槍。回收任務每天子彈有限，打中怪物讓牠暈（打不死）；對準怪物、中間不能有牆。</li><li><b>↻ 切槍</b>：「槍」鍵只負責開火；旁邊的圓形「↻」鍵切換槍與近戰（電腦按 E）。</li><li><b>連殺</b>：自己擊倒怪物或玩家會累積連殺（15 秒內沒擊倒或死亡就歸零）。連殺 3 次解鎖「偵」無人機（15 秒內看到全圖敵人，電腦按 U）；連殺 6 次解鎖「空」空中掃射（在面前 12 公尺處轟炸 7 公尺範圍，消耗 6 連殺，冷卻 25 秒，電腦按 J）。</li>
+<li><b>配件與寶石</b>：主選單「裝備與寶石」購買。配件最多同時裝 2 個，對局中按右上角「背包」可以換；寶石升級後永久有效。</li>
+<li><b>炸藥</b>：不限數量。站在牆前按「炸」／B，面前 3.5 公尺內的那格牆會被炸開，變成新的路（最外圈炸不開）；面前沒有能炸的牆，就在面前爆炸。附近的怪物會暈 2 秒，但牠之後也能走這條新路。隔天牆會恢復。</li>
+<li><b>煙霧彈</b>：怪物走到煙附近會停下來。</li>
+<li><b>狙擊槍開鏡</b>：拿狙擊槍時出現「鏡」鍵（電腦按 Z），開鏡後視野縮小、有瞄準鏡框。</li>
+<li><b>櫃子</b>（小地圖藍點）：站在旁邊不要跑，怪物看不到你；貼太近還是會被抓。</li>
+<li><b>煙霧彈</b>：冒出一團煙約 6 秒，站在煙裡怪物看不到你。冷卻 20 秒。</li>
+<li><b>跑</b>：跑步一定比怪物快，體力約可跑 6～7 秒；跑到牠看不到你，約 3.5 秒後牠會放棄。</li>
+<li><b>跳</b>：人在空中時抓不到你，耗 18% 體力。</li><li><b>爬牆</b>：朝牆按兩次跳可以爬上牆頭，站上去後能走動。</li><li><b>基地造型</b>：房主在大廳按「基地」可切換回收車、信號塔、圓頂營地、四柱燈四種造型與光圈顏色。</li><li><b>櫃子</b>：靠近櫃子時才會出現「櫃」鍵，按下（電腦按 Y）躲進去最多 8 秒，怪物看不到你，但不能移動；出來後 10 秒內不能再躲。櫃子裡有一把攻擊物，拿到後當天的近戰數值會換成它（只對玩家生效）。</li><li><b>隱私</b>：收集哪些資料、怎麼刪除，見<a href="../privacy.html">隱私權政策</a>。</li><li><b>按鍵圖示</b>：子彈＝開火、刀＝近戰、跑步人形＝跑、雙箭頭往上＝跳、雙箭頭往右＝衝、雲＝煙霧彈、閃電＝技能、炸彈＝炸藥、雙向箭頭＝切槍、方向盤＝上車、置物櫃＝躲櫃子、門加箭頭＝出來／下車、十字＝救隊友。長按按鍵可看名稱（電腦滑鼠停在上面）。</li><li><b>換彈與換武器</b>：子彈打完會自動換彈；按迴轉箭頭鍵（電腦 H）提早換彈。換武器鍵（電腦 K）在出戰的主槍和副槍（手槍；主槍是手槍時副槍是步槍）之間切換，要 0.7 秒。</li><li><b>陀螺儀瞄準</b>：設定裡打開後，轉動手機就能轉視角（iPhone 會先詢問動作感應權限）。</li><li><b>推車載人</b>：有人開推車時，隊友靠近按方向盤鍵就能坐後座（最多 2 人），跟著車子走，可以開槍；再按一次下車。</li><li><b>技能提示</b>：開局和技能冷卻結束時，會自動跳出你的技能效果，閃電鍵也會閃一下。</li><li><b>個人戰績</b>：點大廳左上的頭像看自己的戰績（可分模式看勝率、擊倒、MVP）；在排行榜、好友、拾荒團、世界頻道、拾荒團聊天點別人的名字，可以看他的戰績。換頭像改到戰績頁右上角。</li><li><b>聊天與組隊</b>：大廳的「聊天與組隊」有世界頻道、拾荒團、交易所，右邊（手機在「組隊」分頁）是快速組隊：列出大家公開的房間，按「加入」或「快速加入」直接進房，按「建立房間」開房後別人就看得到。</li><li><b>交易所</b>：在「聊天與組隊」的「交易所」分頁。可以用金幣買賣造型、頭飾、配件和寶石等級；掛單時東西會先從你身上扣掉，下架才退回；賣出後下次打開交易所會收到金幣。</li><li><b>刪除資料</b>：登入後在「設定」最下面按「刪除我的資料」，會刪掉雲端進度、排行榜、好友、拾荒團發言與登入帳號（團長要先轉讓團長）。</li><li><b>毒圈</b>：開局 30 秒後，地圖外的黃色毒會慢慢往基地漫；毒區裡會持續扣血（最低留 1 血），毒圈越縮小傷害越高，基地光圈裡安全。</li><li><b>怪物倒下</b>：回收任務打到血量歸零會倒下，約 12 秒後在別處刷新（不給金幣）。</li>
+<li><b>衝</b>：瞬間往前衝約 4 公尺，耗 25% 體力，冷卻 2.5 秒。</li>
+<li><b>技能</b>：每個角色不同，見「角色技能」。按鈕上的數字是冷卻秒數。</li>
+<li><b>救隊友</b>：隊友倒地時靠近按住「救」2 秒。</li></ul>
+      </section>
+      <section class="htopic hide" data-topic="char"><h2>角色技能</h2>
+<table><tr><td>回收員</td><td><b>鼓舞</b>　6 公尺內隊友加速 5 秒</td></tr>
+<tr><td>機器人</td><td><b>護盾</b>　4 秒內不會被抓；攻擊力高</td></tr>
+<tr><td>太空人</td><td><b>月光波</b>　7 公尺內怪物暫停 3 秒；速度 +5%</td></tr>
+<tr><td>貓貓</td><td><b>潛行</b>　6 秒內較難被發現；速度 +10%</td></tr>
+<tr><td>南瓜頭</td><td><b>加血</b>　回復 35；揮擊較快</td></tr>
+<tr><td>紙箱人</td><td><b>隱身</b>　4 秒內怪物看不到你</td></tr>
+<tr><td>恐龍</td><td><b>咆哮</b>　6 公尺內怪物嚇呆 2.5 秒；速度 −3%</td></tr>
+<tr><td>外星人</td><td><b>瞬移</b>　往前瞬間移動 6 公尺；體力回復 +15%</td></tr></table>
+<ul><li>在主選單點「出戰角色」更換角色、攻擊物、頭飾、服裝和寵物。</li></ul>
+      </section>
+      <section class="htopic hide" data-topic="map"><h2>地圖與小地圖</h2>
+<ul><li><b>室內</b>：廢棄設施（最暗、最恐怖）、辦公室、地下停車場。</li>
+<li><b>開放場景</b>：海邊、城市、夜市、太空站、森林營地、雪地小鎮、廢棄遊樂園、建築工地，有天空、陽光和遠景。</li>
+<li>在大廳點「地圖」選擇；房主也能在大廳切換。</li></ul>
+<h3>小地圖（點一下放大）</h3>
+<table><tr><td>白色箭頭</td><td>你的位置與方向</td></tr><tr><td>彩色圓點</td><td>隊友</td></tr>
+<tr><td>金色方塊</td><td>回收車</td></tr><tr><td>藍色方塊</td><td>櫃子（躲藏點）</td></tr><tr><td>彩色三角</td><td>靠近的怪物（閃白圈代表正在追人）</td></tr></table>
+      </section>
+      <section class="htopic hide" data-topic="bonus"><h2>加分與小遊戲</h2>
+<ul><li><b>清剿行動</b>：沒有廢料，改成用槍清剿怪物。3 槍擊倒一隻得 $50，彈匣 12 發打完自動裝填；怪物 3 秒後在遠處重生。在時間內擊倒指定數量就過關，小地圖會顯示所有怪物。</li>
+<li><b>死守回收車</b>：怪物從遠處一波波走向回收車，每闖入一隻核心 -15，核心歸零就輸。開槍打怪（每隻 $50），按「塔」／T 花 $100 在腳邊蓋砲塔（最多 6 座，會自動射擊 11 公尺內的怪物）。清完整波就過關。這個模式怪物不會抓人。</li>
+<li><b>廢墟生存戰</b>：6 人各自為戰（人數不足由電腦補滿），用槍或近戰淘汰對手。白色圓圈是安全區，20 秒後開始縮小，圈外會持續扣血。補給箱：綠色 急救 +40、藍色 護甲（生命上限 150）、紅色 火力（傷害 ×1.5）。小地圖不顯示對手。多人由房主在大廳切換模式。</li>
+<li><b>天氣</b>（第 2 天起隨機）：下雨（雨聲蓋過腳步）、濃霧（大家都看不遠）、停電（室內很暗）、風暴（小地圖看不到怪物）。</li>
+<li><b>天然災害</b>（第 2 天起每天一次）：地震會讓所有人變慢、怪物站不穩；落石或隕石會先出現紅圈，2.5 秒後砸下，圈內扣 40 血，也能砸暈怪物。</li>
+<li><b>推車</b>：回收車旁有一台推車，靠近按「車」（電腦 V）推著走：速度很快、可多放 2 件廢料，但很吵會引來怪物，而且不能跳、衝、開槍。再按一次下車。</li>
+<li><b>獎盃</b>：地圖上有一座金色獎盃，站旁按住「救」／E 3 秒，團隊 +120。</li>
+<li><b>分類回收</b>：主選單「小遊戲」就能玩，不用進房間。30 秒內把廢棄物點進正確的桶子（紙類、塑膠、金屬、有害），分錯扣 2 秒，連續答對 5 個以上每個 2 分。每 3 分換 1 金幣，一局最多 10。</li>
+<li><b>圈圈叉叉（單機）</b>：主選單「小遊戲」可以和電腦下（簡單贏 +5、困難贏 +12 金幣），或兩人用同一支手機輪流。單機小遊戲每天最多拿 60 金幣。</li>
+<li><b>隊伍圈圈叉叉</b>：遊戲中按「小遊戲」。前兩位落子的人是 X 與 O，連成一線團隊 +150。</li>
+<li><b>回收抽獎機</b>：用金幣抽服裝、寵物、頭飾、造型、特效和槍枝造型（綜合、服裝、寵物、特效、槍械五台）。所有獎品都排在格子裡，點一格可以先預覽（服裝和寵物穿在角色身上、槍枝造型看 3D 槍），不想看動畫可以勾「跳過動畫」。每台機器的獎品和機率都列在下方，每格機率相同；綜合機每天免費一次，抽到已有的換成 25 金幣。</li>
+<li><b>傳送陣</b>：背包滿後附近會出現，踩上去直接傳回回收車。</li></ul>
+      </section>
+      <section class="htopic hide" data-topic="grow"><h2>星等與成長</h2>
+<ul><li>過關給 <b>1～3 顆星</b>：超過目標 30%、剩 60 秒以上各加一顆。</li>
+<li><b>地區排行榜</b>：第一次進遊戲會選台灣或香港，之後可在社群 → 賽季分頁改。</li>
+<li><b>雲端存檔</b>：用 Google 登入後，金幣、等級、造型會存到雲端，換手機也拿得回來。訪客的進度只跟著這台裝置。</li>
+<li><b>每日登入</b>：每天第一次進主選單送金幣，連續登入越多天送越多。</li>
+<li><b>轉移團長</b>：團長可以在拾荒團成員列按「轉移團長」，把團長位子給團員（你會變成團員）。</li><li><b>成就進度</b>：社群 → 成就分頁列出全部成就（共 32 個、分階段），未完成的會顯示「目前 / 目標」。</li><li><b>拾荒團加入</b>：社群的拾荒團排行榜每列右邊有「+」，按一下就加入該拾荒團（未滿 30 人、你還沒有拾荒團時才會出現）。</li><li><b>社群</b>（主選單）：各模式排行榜、每週區域賽季（上週前 10 名可領金幣）、好友（用 6 碼代碼互加，可看到誰在線上並直接加入他的房間）、拾荒團（建立要 200 金幣，用 4 碼代碼加入，每局得分會累積到拾荒團）、成就。</li>
+<li><b>跳上箱子</b>：靠牆的木箱、鐵桶可以跳上去站著（櫃子太高跳不上去）。</li>
+<li>過關拿<b>金幣</b>和<b>經驗</b>，經驗會提升等級。</li>
+<li>主選單有 3 個<b>每日任務</b>，完成另外給金幣。</li>
+<li><b>市集</b>（主選單）：「免費補給」每天送金幣和經驗，補給箱每 4 小時能領一次；「每日精選」每天 0 點換 6 件造型，用金幣直接買（點卡片先看預覽）。</li>
+<li><b>個人段位</b>：每局獲得的金幣會累積成本週積分，依積分分新秀、專家、達人、菁英、大師、宗師、傳奇。每週一重算。</li><li><b>地圖輪換</b>：每週有 6 張地圖標註「本週輪換」，在輪換地圖上的對局，段位積分 +20%（金幣不變）。</li><li><b>拾荒團段位</b>：每局金幣會累積成拾荒團的「本週積分」，依積分分青銅、白銀、黃金、白金、鑽石、大師、宗師。每週一重算，歷史最高段位會保留。社群 → 拾荒團可看本週排行。</li><li><b>拾荒團聊天</b>（主選單）：跟拾荒團隊友打字聊天。每 7 小時能「請求金幣」一次，隊友每次捐 10、最多收 100；捐的人每次得 10 經驗（每則最多捐 30）。收到的金幣按「領取」拿走。</li>
+<li>金幣可在「出戰角色」解鎖<b>頭飾</b>，隊友也看得到。</li>
+<li><b>寵物加成</b>：小狗 速度 +5%、貓頭鷹 怪物在小地圖顯示的距離 14→22 公尺、小機器人 賣出 +10%、史萊姆 體力回復 +20%。</li>
+<li>進度只存在這台裝置上。</li></ul>
+      </section>
+      <section class="htopic hide" data-topic="team"><h2>語音與隊友</h2>
+<ul><li>隊友語音音量固定，不會因為距離變小聲。</li>
+<li>麥克風太大聲會引來怪物，按鈕會變紅提醒。</li>
+<li>打隊友兩下會把他打倒，身上的廢料掉在原地；房主可在大廳關閉。</li>
+<li>麥克風<b>預設關閉</b>，不會打斷 Discord 等其他通話；要講話再按遊戲右上角「開麥克風」。</li>
+<li>網路無法直連時會自動改走伺服器中繼（遊戲照常，但語音可能不通）。</li>
+<li><b>聽不到聲音</b>：檢查手機靜音鍵（iPhone 側邊）並調高媒體音量。</li>
+<li><b>連不上房間</b>：免費伺服器閒置會休眠，第一次連線會自動等它醒來（最多約 1 分鐘，可按取消）。如果提示「伺服器是舊版本」，到 Render 後台按 Manual Deploy。</li>
+<li><b>怎麼開始</b>：主選單下方先點一張模式卡片（組隊回收、單人、清剿、死守、廢墟生存戰），旁邊的「地圖」可以換地圖，再按大大的「開始」。朋友給你房間代碼時，按最下面「用房間代碼加入」。</li>
+<li><b>回收車光圈是安全區</b>：站在黃色光圈裡怪物打不到你，還會每秒回 15 血（光圈會變綠）。廢墟生存戰沒有安全區。</li>
+<li><b>按鈕太多</b>：設定裡「手機上顯示的按鈕」取消勾選就能暫時隱藏（鍵盤快捷鍵照樣能用）。</li>
+<li><b>改名字</b>：主選單點自己的名字（旁邊有「改名」）直接輸入，按完成就會儲存。</li>
+<li><b>安裝成 App</b>：安卓 Chrome 在設定按「安裝到主畫面」；iPhone Safari 按分享 →「加入主畫面」。從主畫面開是全螢幕，第二次開會更快，沒網路也能打開（連線玩仍要網路）。</li>
+<li><b>畫面卡</b>：設定把畫質改「標準」或「省電」；太卡也會自動降畫質。可開「顯示 FPS」看每秒幾格，回報時附上。關掉其他 App、別開省電模式也有幫助。</li></ul>
+      </section>
+      <div class="col"><button class="btn" id="helpBack" type="button">‹ 回到主題選單</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- 小遊戲選擇（蓋在遊戲或主選單上面的獨立頁面） -->
+<div class="screen hide" id="scrMini">
+  <div class="panel lobby">
+    <div class="topbar">
+      <button class="icon" id="miniClose" type="button" aria-label="返回">‹</button>
+      <div class="who"><b class="ttl">小遊戲</b></div>
+    </div>
+    <div id="miniList" class="modes">
+      <button class="mode main" id="miniSortBtn" type="button"><b>分類回收</b><span>30 秒內把廢棄物點進正確的回收桶，分數越高金幣越多</span></button>
+      <button class="mode" id="miniLocalTTBtn" type="button"><b>圈圈叉叉</b><span>和電腦下，或兩人輪流</span></button>
+      <button class="mode" id="miniTT" type="button"><b>隊伍圈圈叉叉</b><span>遊戲中和隊友對下</span></button>
+      <div class="mode static"><b>搶獎盃</b><span>遊戲中在地圖上找金色獎盃，站旁按住 E（手機按住「救」）3 秒，團隊 +120</span></div>
+    </div>
+    <div id="miniLocalTT" class="hide">
+      <div class="tabs" id="ttMode"><button type="button" data-vs="easy">電腦・簡單</button><button type="button" data-vs="hard">電腦・困難</button><button type="button" data-vs="two">兩人輪流</button></div>
+      <div id="ttLocalSub" class="ttSub"></div>
+      <div id="ttLocal" class="ttBoard"></div>
+      <p id="ttLocalMsg" class="miniMsg"></p>
+      <div class="col"><button class="btn primary hide" id="ttAgain" type="button">再下一局</button><button class="btn miniHome" type="button">返回小遊戲選單</button></div>
+    </div>
+    <div id="miniSort" class="hide">
+      <div id="sortStartBox">
+        <p class="sortRule">畫面會出現廢棄物，點下面正確的回收桶。分錯會扣 2 秒，連續答對 5 個以上每個 2 分。</p>
+        <div class="stats sortBestRow"><span>最佳<b id="sortBest">0</b>分</span></div>
+        <p id="sortMsg" class="miniMsg"></p>
+        <div class="col"><button class="btn primary" id="sortGo" type="button">開始（30 秒）</button></div>
+      </div>
+      <div id="sortPlay" class="hide">
+        <div class="sortTop"><span>分數 <b id="sortScore">0</b></span><span id="sortTimeTxt">30 秒</span></div>
+        <div class="sortBar"><i id="sortTime"></i></div>
+        <div id="sortItem" class="sortItem"></div>
+        <p id="sortCombo" class="sortCombo"></p>
+        <div id="sortBins" class="sortBins">
+          <button type="button" data-bin="paper" class="b-paper">紙類</button><button type="button" data-bin="plastic" class="b-plastic">塑膠</button>
+          <button type="button" data-bin="metal" class="b-metal">金屬</button><button type="button" data-bin="haz" class="b-haz">有害</button>
+        </div>
+      </div>
+      <div class="col"><button class="btn miniHome" type="button">返回小遊戲選單</button></div>
+    </div>
+    <div id="miniTTBox" class="hide">
+      <div id="ttSub"></div>
+      <div id="ttGrid"></div>
+      <div class="col"><button class="btn" id="miniBack" type="button">返回小遊戲選單</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- 大廳 -->
+<div class="screen hide" id="scrLobby">
+  <div class="panel">
+    <h1 id="roomCode">-----</h1>
+    <button class="link" id="copyBtn" type="button">複製邀請連結</button>
+    <button class="link" id="inviteBtn" type="button">邀請朋友</button>
+    <input id="shareLink" class="hide" type="text" readonly>
+    <div id="lobbyList"></div>
+    <p class="note" id="micNote"></p>
+    <div class="col">
+      <button class="btn" id="lobbyMic" type="button">麥克風 開</button>
+      <button class="btn" id="pvpBtn" type="button">互相傷害：開</button>
+      <button class="btn" id="mapBtn" type="button">地圖</button>
+      <button class="btn" id="modeBtn" type="button">模式</button>
+      <button class="btn" id="baseBtn" type="button">基地</button>
+      <button class="btn primary hide" id="startBtn" type="button">開始遊戲</button>
+      <p class="note hide" id="waitHost">等待房主開始…</p>
+      <button class="link" id="lobbyLeave" type="button">離開房間</button>
+    </div>
+  </div>
+</div>
+
+<!-- 結算 -->
+<div class="screen hide" id="scrResult">
+  <div class="panel">
+    <h1 id="resTitle"></h1>
+    <div id="resStars"></div>
+    <p id="resText"></p>
+    <p id="resGain" class="gain"></p>
+    <div id="resStats" class="hide"></div>
+    <div class="col">
+      <button class="btn primary hide" id="resNext" type="button">下一天</button>
+      <button class="btn primary hide" id="resRetry" type="button">再來一次</button>
+      <button class="btn hide" id="resLobby" type="button">回大廳</button>
+      <p class="note hide" id="resWait">等待房主…</p>
+      <button class="link" id="resLeave" type="button">離開</button>
+    </div>
+  </div>
+</div>
+
+<!-- 自訂手機按鈕位置 -->
+<div id="btnEdit" class="hide">
+  <div class="panel small"><b>按住按鈕拖曳到你順手的位置</b><p class="note">畫面左半邊是移動搖桿區（不用擺）。直式和橫式會分開記住，轉手機可以分別調整。</p>
+    <div class="row"><button class="btn" id="btnEditReset" type="button">恢復預設</button><button class="btn primary" id="btnEditDone" type="button">完成</button></div></div>
+</div>
+
+<!-- 社群：排行榜、賽季、好友、拾荒團、成就 -->
+<div class="screen hide" id="scrSocial">
+  <div class="panel lobby">
+    <div class="topbar">
+      <button class="icon" id="socDone" type="button" aria-label="返回">‹</button>
+      <div class="who"><b class="ttl">社群</b></div>
+    </div>
+    <div class="tabs" id="socTabs">
+      <button type="button" data-tab="rank" class="on">排行榜</button><button type="button" data-tab="season">賽季</button><button type="button" data-tab="friends">好友</button><button type="button" data-tab="clan">拾荒團</button><button type="button" data-tab="ach">成就</button>
+    </div>
+    <div id="socBody"></div>
+  </div>
+</div>
+
+<!-- 個人戰績：點頭像打開，可以看任何玩家 -->
+<div class="screen hide" id="scrStats">
+  <div class="cc">
+    <header class="dwTop">
+      <button class="icon" id="stDone" type="button" aria-label="返回">‹</button>
+      <b class="dwTitle">個人戰績</b>
+      <button class="btn hide" id="stAva" type="button" style="flex:none;font-size:13px;padding:8px 10px">換頭像</button>
+      <button class="btn" id="stCfgBtn" type="button" style="flex:none;font-size:13px;padding:8px 10px">自訂</button>
+    </header>
+    <div class="stHead" id="stHead"></div>
+    <div class="mkTabs stTabs" id="stTabs" role="tablist"><button type="button" class="on" data-m="all">全部</button><button type="button" data-m="coop">回收</button><button type="button" data-m="hunt">清剿</button><button type="button" data-m="td">死守</button><button type="button" data-m="br">廢墟生存戰</button><button type="button" data-m="card">怪物卡牌</button></div>
+    <div class="stSum" id="stSum"></div>
+    <div class="ccLog stList" id="stList"></div>
+  </div>
+</div>
+
+<div class="modal hide" id="stCfg"><div class="panel small tut"><h2>戰績頁顯示</h2><p>勾選要顯示的項目，取消勾選即隱藏。</p><div class="stCfgList" id="stCfgList"></div><div class="row"><button class="btn primary" id="stCfgOk" type="button">完成</button></div></div></div>
+<!-- 新手教學（第一次進遊戲時出現） -->
+<div class="modal hide" id="avaPick"><div class="panel small tut"><h2>選擇頭像</h2><div class="avaGrid" id="avaGrid"></div><div class="row"><label class="btn" for="avaFile" style="cursor:pointer">用我的照片</label><input id="avaFile" type="file" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0"><button class="btn" id="avaReset" type="button">恢復底色</button></div><div class="row"><button class="btn" id="avaClose" type="button">關閉</button></div></div></div>
+<div class="modal hide" id="raceOpts"><div class="panel small tut"><h2>賽車</h2><p>單人計時練習，或和朋友 1 對 1 比誰先跑完 3 圈。</p><div class="row"><button class="btn primary" id="raceSolo" type="button">單人練習</button></div><div class="duoNet"><button class="btn" id="raceDuelHost" type="button">建立雙人房間</button><div class="row join"><input id="raceDuelJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="raceDuelJoin" type="button">加入</button></div></div><div class="row"><button class="btn" id="raceOptsOk" type="button">關閉</button></div></div></div>
+<div class="modal hide" id="cardOpts"><div class="panel small tut"><h2>怪物卡牌：玩法</h2><p>對手人數</p><div class="row optRow" id="coOpp"><button class="btn" type="button" data-v="1">1 人</button><button class="btn" type="button" data-v="2">2 人</button><button class="btn" type="button" data-v="3">3 人</button></div><p>起手張數</p><div class="row optRow" id="coHand"><button class="btn" type="button" data-v="7">標準 7 張</button><button class="btn" type="button" data-v="5">快速 5 張</button></div><div class="row"><button class="btn primary" id="coOk" type="button">確定</button></div><p>雙人線上（1 對 1）</p><div class="duoNet"><button class="btn" id="cardDuelHost" type="button">建立雙人房間</button><div class="row join"><input id="cardDuelJoinCode" type="text" maxlength="5" autocapitalize="characters" autocomplete="off" placeholder="房間代碼"><button class="btn primary" id="cardDuelJoin" type="button">加入</button></div><p class="note" id="cardDuelCode"></p><p class="note" id="cardDuelNote"></p><p class="chessStatus" id="cardDuelState"></p></div></div></div>
+<div class="modal hide" id="lvInfo"><div class="panel small tut lvPanel"><h2>玩家等級 Lv.1～100</h2><p id="lvNow"></p><div class="lvBody" id="lvBody"></div><div class="row"><button class="btn primary" id="lvClose" type="button">關閉</button></div></div></div>
+<button class="btn mailFab hide" id="mailBtn" type="button" aria-label="信箱">📬<b class="mailDot hide" id="mailDot"></b></button>
+<div class="modal hide" id="mailBox"><div class="panel small tut"><h2>信箱</h2><p class="ccEmpty">最多保留 30 封，超過會自動刪掉最舊的。</p><ul class="mailList" id="mailList"></ul><div class="row"><button class="btn" id="mailClear" type="button">清空信箱</button><button class="btn primary" id="mailClose" type="button">關閉</button></div></div></div>
+<div class="modal hide" id="updNote"><div class="panel small tut"><h2>更新了 <span id="updVer"></span></h2><ul id="updList"></ul><div class="row"><button class="btn primary" id="updOk" type="button">知道了</button></div></div></div>
+<div class="modal hide" id="regionAsk"><div class="panel small tut"><h2>選擇你的地區</h2><p>排行榜會依地區分開，你只會出現在自己的賽區。每週日 24:00 後可以在社群的賽季分頁換一次。</p><div class="row"><button class="btn primary" data-r="0" type="button">台灣</button><button class="btn primary" data-r="1" type="button">香港</button></div></div></div>
+<div class="modal hide" id="tut"><div class="panel small tut">
+  <div class="tag" id="tutN">1 / 4</div>
+  <h2 id="tutTitle"></h2>
+  <p id="tutText"></p>
+  <div class="row"><button class="btn" id="tutSkip" type="button">跳過</button><button class="btn primary" id="tutNext" type="button">下一步</button></div>
+</div></div>
+
+<!-- 訊息／確認／忙碌 -->
+<div class="modal hide" id="askDlg"><div class="panel small"><p id="askText"></p><div class="row"><button class="btn" id="askNo" type="button">取消</button><button class="btn primary" id="askYes" type="button">確定</button></div></div></div>
+<div class="modal hide" id="msg"><div class="panel small"><p id="msgText"></p><button class="btn primary" id="msgOk" type="button">好</button></div></div>
+<div class="modal hide" id="confirm"><div class="panel small"><p>確定要離開這場遊戲嗎？</p><div class="row"><button class="btn" id="confirmNo" type="button">取消</button><button class="btn primary" id="confirmYes" type="button">離開</button></div></div></div>
+<div class="modal hide" id="busy"><div class="panel small"><p id="busyText">請稍候…</p><button class="btn hide" id="busyCancel" type="button">取消</button></div></div>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/GLTFLoader.js"></script>
+<script src="vendor/SkeletonUtils.js"></script>
+<script src="vendor/peerjs.min.js"></script>
+<script src="vendor/firebase-app-compat.js"></script>
+<script src="vendor/firebase-auth-compat.js"></script>
+<script src="js/config.js?v=339"></script>
+<script src="js/race_tracks.js?v=339"></script>
+<script src="js/race_arenas.js?v=339"></script>
+<script src="js/sim.js?v=339"></script>
+<script src="js/audio.js?v=339"></script>
+<script src="js/auth.js?v=339"></script>
+<script src="js/cloud.js?v=339"></script>
+<script src="js/net.js?v=339"></script>
+<script src="js/game.js?v=339"></script>
+<script src="js/minigames.js?v=339"></script>
+<script src="js/ar.js?v=339"></script>
+<script src="js/padnav.js?v=339"></script>
+<script src="js/cards.js?v=339"></script>
+<script src="js/chess.js?v=339"></script>
+<script src="js/chess_art.js?v=339"></script>
+<script src="js/xiangqi.js?v=339"></script>
+<script src="js/rummi.js?v=339"></script>
+<script src="js/gomoku.js?v=339"></script>
+<script src="js/blackjack.js?v=339"></script>
+<script src="js/g2048.js?v=339"></script>
+<script src="js/orb.js?v=339"></script>
+<script src="js/mahjong.js?v=339"></script>
+<script src="js/connect4.js?v=339"></script>
+<script src="js/flight.js?v=339"></script>
+<script src="js/pachinko.js?v=339"></script>
+<script src="js/carrom.js?v=339"></script>
+<script src="js/platform.js?v=339"></script>
+<script src="js/marble.js?v=339"></script>
+<script src="js/main.js?v=339"></script>
+</body>
+</html>
