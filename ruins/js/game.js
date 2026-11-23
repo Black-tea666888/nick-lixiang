@@ -224,6 +224,24 @@ function buildRaceCar(col) {
   flame.rotation.x = Math.PI / 2; flame.visible = false; g.add(flame); g.userData.flame = flame;
   return g;
 }
+/* 賽車互撞：和 AI 車的距離小於兩車半徑就互相推開；速度夠快時撞掉車況 */
+const RACE_CAR_R = 0.9;
+function raceCarBump() {
+  if (view.mode !== 'race' || !me.alive || me.pauseT > 0) return;
+  raceAiCars.forEach(function (m) {
+    const dx = me.x - m.position.x, dz = me.z - m.position.z, d = Math.hypot(dx, dz);
+    if (d >= RACE_CAR_R || d < 1e-6) return;
+    const push = RACE_CAR_R - d, nx = me.x + dx / d * push, nz = me.z + dz / d * push;
+    if (!W.blocked(nx, nz, 0.42)) { me.x = nx; me.z = nz; }
+    const hit = Math.abs(me.spd || 0);
+    me.spd *= 0.5;
+    if (hit < 3 || (me.hitCd || 0) > 0) return;
+    me.hitCd = 0.3; me.hitFlash = 0.3;
+    me.hp = Math.max(0, (me.hp == null ? 100 : me.hp) - Math.min(12, hit * 0.8));
+    Sfx.noise(0.06, 0.08);
+    if (me.hp <= 0) raceExplode();
+  });
+}
 function syncRaceAi(list) {
   const seen = new Set();
   list.forEach(function (a, i) {
@@ -2615,6 +2633,7 @@ function updateMe(dt) {
   if ((onTop || inW || !W.blocked(me.x + dx, me.z, R)) && (inS || !hitSolid(me.x + dx, me.z, me.y))) me.x += dx;
   if ((onTop || inW || !W.blocked(me.x, me.z + dz, R)) && (inS || !hitSolid(me.x, me.z + dz, me.y))) me.z += dz;
   if (raceMove) raceImpact(bx0, bz0, dx, dz);
+  if (raceMove) raceCarBump();
   // 重力：腳下是地板或擺設頂端；走出箱子邊緣會掉下來
   { const gnd = groundAt(me.x, me.z);
     if (me.y > gnd || me.vy > 0) { me.vy -= 15 * dt; me.y += me.vy * dt; if (me.y <= gnd) { if (me.vy < -2) Sfx.noise(0.05, 0.06); me.y = gnd; me.vy = 0; me.air2 = false; } }
