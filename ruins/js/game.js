@@ -502,6 +502,15 @@ function makeTex(base, speck, lines) {
   if (lines) {
     g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = 1; g.strokeRect(0.5, 0.5, 127, 127);
     g.beginPath(); g.moveTo(0, 64); g.lineTo(128, 64); g.stroke();
+    // 牆面：下半段積灰、板縫、鉚釘、刮痕（看起來是用過的廢棄設施）
+    const grime = g.createLinearGradient(0, 92, 0, 128); grime.addColorStop(0, 'rgba(20,16,12,0)'); grime.addColorStop(1, 'rgba(20,16,12,.55)');
+    g.fillStyle = grime; g.fillRect(0, 80, 128, 48);
+    g.strokeStyle = 'rgba(0,0,0,.45)'; g.lineWidth = 2; g.beginPath(); g.moveTo(64, 0); g.lineTo(64, 128); g.stroke();
+    g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(0, 96); g.lineTo(128, 96); g.stroke();
+    g.fillStyle = 'rgba(255,236,200,.4)';
+    [[8, 32], [120, 32], [8, 96], [120, 96], [56, 32], [72, 32], [56, 96], [72, 96]].forEach(function (q) { g.beginPath(); g.arc(q[0], q[1], 2.2, 0, Math.PI * 2); g.fill(); });
+    g.strokeStyle = 'rgba(255,255,255,.1)'; g.lineWidth = 0.6;
+    for (let i = 0; i < 8; i++) { const x = Math.random() * 116, y = Math.random() * 124; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 4 + Math.random() * 9, y + (Math.random() - 0.5) * 3); g.stroke(); }
     for (let i = 0; i < 5; i++) {   // 水漬：由上往下淡出
       const x = Math.random() * 120, y = Math.random() * 60, w = 3 + Math.random() * 5, h = 30 + Math.random() * 60;
       const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, 'rgba(60,20,10,.22)'); gr.addColorStop(1, 'rgba(60,20,10,0)');
