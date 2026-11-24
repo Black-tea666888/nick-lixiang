@@ -1669,3 +1669,7 @@ html, body { overflow-x: hidden; max-width: 100%; }
 .cgCol { display: inline-flex; align-items: center; }
 .cgPickB svg { width: 30px; height: 30px; stroke-width: 2.2; }
 @media (orientation: portrait) { .cg { grid-template-columns: minmax(0, 1fr); } .cgHand, .cgRow { min-width: 0; max-width: 100%; } .cgTable { min-width: 0; max-width: 100%; } }
+
+/* v361: 線上房間的代碼與提示改成跟 installTip 一樣的深色方塊，不再是暗灰字 */
+p.note[id$="Code"], p.note[id$="NetNote"], p.note[id$="DuelNote"] { margin: 0 0 8px; padding: 8px 10px; font-size: 13px !important; line-height: 1.55; color: var(--chalk); background: var(--steel-d); border: 2px solid var(--ink); border-radius: 3px; box-shadow: 2px 2px 0 var(--ink); }
+p.note[id$="Code"]:empty, p.note[id$="NetNote"]:empty, p.note[id$="DuelNote"]:empty { display: none; }
