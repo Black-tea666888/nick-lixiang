@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v364', items: ['推車上隱藏準星與槍鍵，不能開槍時不再顯示'] };
+const UPD = { v: 'v365', items: ['休閒模式不再跳出主模式的新手教學'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1028,7 +1028,8 @@ function dispatch(msg) {
       break;
     case 'day':
       show(null); Game.setActive(true); Game.onDay(msg); chatOpen(false);
-      if (!ls('rr_tut')) tutShow(0);
+      // 新手教學只給主模式（組隊／單人／清剿／死守／生存）；休閒模式不跳出主模式的玩法說明
+      if (!ls('rr_tut') && HUB_CATS.main.indexOf(selMode()) >= 0) tutShow(0);
       break;
     case 's':
       Game.onSnapshot(msg);
