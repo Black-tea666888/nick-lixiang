@@ -2678,7 +2678,7 @@ function updateMe(dt) {
   const sniping = scopeOn && (settings.gun | 0) === 4;
   const fovT = sniping ? 24 : dashT > 0 ? 96 : wantRun ? 88 : 75;
   { const sb = $('scope'); if (sb) { sb.classList.toggle('hide', (settings.gun | 0) !== 4); sb.classList.toggle('on', sniping); } const sf = $('scopeFx'); if (sf) sf.classList.toggle('on', sniping);
-    const ai = $('aim'); if (ai) ai.classList.toggle('hide', !(canControl() && me.alive && wpnMode === 'gun' && !sniping)); }
+    const ai = $('aim'); if (ai) ai.classList.toggle('hide', !(canControl() && me.alive && wpnMode === 'gun' && !sniping && !me.riding)); }   // 推車上不能開槍，準星與槍鍵都隱藏
   if (Math.abs(camera.fov - fovT) > 0.1) { camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   if (gunT > 0) gunT -= dt;
   // 回收車光圈＝安全區：走進去提示一次，光圈變綠、會呼吸發亮
@@ -2836,7 +2836,7 @@ function updateHud() {
   $('bag').textContent = me.bagN;
   const bm = $('bombs'), bt = '∞'; if (bm.textContent !== bt) bm.textContent = bt;
   const am = $('ammo'), at = '∞'; if (am.textContent !== at) am.textContent = at;
-  const gb = $('gun'); setIcon('gun', wpnMode === 'melee' ? 'knife' : me.reloading ? 'reload' : 'gun'); gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0));
+  const gb = $('gun'); setIcon('gun', wpnMode === 'melee' ? 'knife' : me.reloading ? 'reload' : 'gun'); gb.classList.toggle('cd', !!me.reloading || !(me.ammo > 0)); gb.classList.toggle('hide', !!me.riding);
   // 近戰模式下「槍」鍵已經是近戰攻擊，攻擊鍵隱藏避免兩顆一樣
   $('atk').classList.toggle('hide', wpnMode === 'melee');
   const qf = $('qfill'), pct = view.mode === 'td' && view.td ? view.td[0] : view.quota ? Math.min(100, view.money / view.quota * 100) : 0;
