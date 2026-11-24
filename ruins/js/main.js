@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v350', items: ['全域輸出改 sRGB 伽瑪，材質與燈光層次更接近現代 3D 遊戲', '手機直式大廳留白加大，模式卡變薄，角色區有空間', '登入畫面加上廢墟場景主視覺（回收車、鐵網與警示條）', '太空站地板改成金屬面板格，有板縫、倒角與鉚釘', '醫院病房燈光再暗一點，白牆與地磚的層次更清楚', '室內燈光調暗、霧氣加重，牆面與手電筒的亮暗對比更明顯', '室內牆面加下方積灰、板縫、鉚釘與刮痕', '遊戲內畫面：資訊底板與按鈕加墨線與硬陰影，血條加粗', '模式選擇頁：卡片加厚、加方向箭頭，標題加壓印陰影', '整體畫面升級：紙張與鐵板紋理、面板加警示膠帶、標題加壓印陰影、按鈕加厚', '賽車新增碰撞：和 AI 車碰到會互相推開，速度快會扣車況', '中國象棋棋盤放大到和畫面內容一樣寬', '象棋（國際／中國）：對手離開後房號會換成新的隨機代碼', '中國象棋：棋盤會轉向，自己的棋在下方（線上照自己的方，同機雙人下完一步轉到對手面前）', '麻將：手牌放大並加上底板，胡／過改成大圓鈕，狀態列做成上方資訊條'].concat(['模式選擇頁最下方新增「人數」（2～4 人，記住上次選的；飛行棋的人數選擇會預設它）', '模式選擇頁最下方新增「下載到手機」提醒（可關掉，之後不再出現）', '廢墟地圖統一成同一個大小（不足的地圖在上下補牆，玩家範圍不變）', '第 4 天起，每隔一隻怪物變成「無眼雕像」：有人在 15 公尺內看得到牠時就停住不動', '廢墟生存戰的補給箱拿走後 30 秒會在空地重新出現', '地圖可以切成「隨機」：每局開始時從廢墟地圖中抽一張（房主設定，循環到最後一張後切換）']) };
+const UPD = { v: 'v351', items: ['休閒模式遊戲分成三頁並排，左右滑動切換', '全域輸出改 sRGB 伽瑪，材質與燈光層次更接近現代 3D 遊戲', '手機直式大廳留白加大，模式卡變薄，角色區有空間', '登入畫面加上廢墟場景主視覺（回收車、鐵網與警示條）', '太空站地板改成金屬面板格，有板縫、倒角與鉚釘', '醫院病房燈光再暗一點，白牆與地磚的層次更清楚', '室內燈光調暗、霧氣加重，牆面與手電筒的亮暗對比更明顯', '室內牆面加下方積灰、板縫、鉚釘與刮痕', '遊戲內畫面：資訊底板與按鈕加墨線與硬陰影，血條加粗', '模式選擇頁：卡片加厚、加方向箭頭，標題加壓印陰影', '整體畫面升級：紙張與鐵板紋理、面板加警示膠帶、標題加壓印陰影、按鈕加厚', '賽車新增碰撞：和 AI 車碰到會互相推開，速度快會扣車況', '中國象棋棋盤放大到和畫面內容一樣寬', '象棋（國際／中國）：對手離開後房號會換成新的隨機代碼', '中國象棋：棋盤會轉向，自己的棋在下方（線上照自己的方，同機雙人下完一步轉到對手面前）', '麻將：手牌放大並加上底板，胡／過改成大圓鈕，狀態列做成上方資訊條'].concat(['模式選擇頁最下方新增「人數」（2～4 人，記住上次選的；飛行棋的人數選擇會預設它）', '模式選擇頁最下方新增「下載到手機」提醒（可關掉，之後不再出現）', '廢墟地圖統一成同一個大小（不足的地圖在上下補牆，玩家範圍不變）', '第 4 天起，每隔一隻怪物變成「無眼雕像」：有人在 15 公尺內看得到牠時就停住不動', '廢墟生存戰的補給箱拿走後 30 秒會在空地重新出現', '地圖可以切成「隨機」：每局開始時從廢墟地圖中抽一張（房主設定，循環到最後一張後切換）']) };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -2597,11 +2597,39 @@ function casSetOpen() {
   $('casSfx').value = $('setSfx').value; $('casMusic').value = $('setMusic').value; $('casFps').checked = ls('rr_fps') === '1';
   $('casSetM').classList.remove('hide');
 }
+// 休閒模式：遊戲分成三頁並排，可左右滑動切換頁面
+const CAS_PAGES = [
+  { n: '卡牌・麻將', m: ['card', 'mj', 'bj', 'rummi', 'ar', 'race'] },
+  { n: '棋盤遊戲', m: ['chess', 'xq', 'gomoku', 'c4', 'flight'] },
+  { n: '街機小遊戲', m: ['g2048', 'orb', 'pachi', 'plat', 'marble', 'kangle'] }
+];
+let casOrig = null;   // 所有模式卡的原始順序（離開休閒模式時還原）
+function casPagesSync() {
+  const strip = $('modeStrip');
+  if (!casOrig) casOrig = Array.prototype.slice.call(strip.querySelectorAll('.mcard'));
+  const paged = strip.classList.contains('casPaged');
+  if (hubCat !== 'casual') {
+    if (paged) { strip.classList.remove('casPaged'); strip.textContent = ''; casOrig.forEach(function (c) { strip.appendChild(c); }); }
+    return;
+  }
+  if (paged) return;
+  strip.classList.add('casPaged'); strip.textContent = '';
+  const placed = [];
+  CAS_PAGES.forEach(function (p, i) {
+    const pg = document.createElement('section'); pg.className = 'casPage'; pg.setAttribute('aria-label', p.n);
+    const hd = document.createElement('div'); hd.className = 'casPageHd'; hd.textContent = p.n + '　' + (i + 1) + ' / ' + CAS_PAGES.length;
+    const grid = document.createElement('div'); grid.className = 'casGrid';
+    p.m.forEach(function (mode) { const c = casOrig.find(function (x) { return x.dataset.mode === mode; }); if (c) { grid.appendChild(c); placed.push(c); } });
+    pg.appendChild(hd); pg.appendChild(grid); strip.appendChild(pg);
+  });
+  casOrig.forEach(function (c) { if (placed.indexOf(c) < 0) strip.appendChild(c); });   // 主玩法卡保留在列內（隱藏）
+}
 function refreshLobby() {
   const m = selMode();
   $('scrMenu').classList.toggle('casualLobby', hubCat === 'casual');   // 休閒模式：隱藏主玩法的角色、抽獎、市集等
-  Array.prototype.forEach.call($('modeStrip').children, function (b) { const on = b.dataset.mode === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
-  Array.prototype.forEach.call($('modeStrip').children, function (b) { b.classList.toggle('hide', !!hubCat && HUB_CATS[hubCat].indexOf(b.dataset.mode) < 0); });
+  casPagesSync();
+  Array.prototype.forEach.call($('modeStrip').querySelectorAll('.mcard'), function (b) { const on = b.dataset.mode === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+  Array.prototype.forEach.call($('modeStrip').querySelectorAll('.mcard'), function (b) { b.classList.toggle('hide', !!hubCat && HUB_CATS[hubCat].indexOf(b.dataset.mode) < 0); });
   $('optChip').classList.toggle('hide', m !== 'coop');
   $('casHelp').classList.toggle('hide', hubCat !== 'casual');
   $('roomOpen').classList.toggle('hide', hubCat !== 'casual'); $('optName').textContent = recText();
@@ -3391,13 +3419,13 @@ function bind() {
   $('nick').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('nick').blur(); });
 
   $('soloBtn').addEventListener('click', function () { startSolo('coop'); });
-  Array.prototype.forEach.call($('modeStrip').children, function (b) { b.addEventListener('click', function () { lsSet('rr_mode', b.dataset.mode); Sfx.tone(520, 0.04, 'square', 0.04); refreshLobby(); }); });
+  Array.prototype.forEach.call($('modeStrip').querySelectorAll('.mcard'), function (b) { b.addEventListener('click', function () { lsSet('rr_mode', b.dataset.mode); Sfx.tone(520, 0.04, 'square', 0.04); refreshLobby(); }); });
   // 滑鼠滾輪：模式列與上方功能列都能橫向滑；模式列上滾輪＝上下切換模式
   const wheelX = function (el) { el.addEventListener('wheel', function (e) { if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return; e.preventDefault(); el.scrollLeft += e.deltaY; }, { passive: false }); };
   wheelX(document.querySelector('.lbSide'));
   $('modeStrip').addEventListener('wheel', function (e) {
     e.preventDefault();
-    const kids = Array.prototype.slice.call($('modeStrip').children), cur = Math.max(0, kids.findIndex(function (b) { return b.dataset.mode === selMode(); }));
+    const kids = Array.prototype.slice.call($('modeStrip').querySelectorAll('.mcard')).filter(function (b) { return !b.classList.contains('hide'); }), cur = Math.max(0, kids.findIndex(function (b) { return b.dataset.mode === selMode(); }));
     const next = kids[Math.max(0, Math.min(kids.length - 1, cur + (e.deltaY > 0 || e.deltaX > 0 ? 1 : -1)))];
     if (next && next.dataset.mode !== selMode()) { lsSet('rr_mode', next.dataset.mode); Sfx.tone(520, 0.04, 'square', 0.04); refreshLobby(); }
     next && next.scrollIntoView({ block: 'nearest', inline: 'nearest' });
