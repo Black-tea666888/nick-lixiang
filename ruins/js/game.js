@@ -3001,6 +3001,7 @@ RR.Game = {
       try {
         const W0 = canvas.width || 150, H0 = canvas.height || 170;
         const r = new THREE.WebGLRenderer({ canvas: canvas, antialias: !LITE, alpha: true });
+        r.outputEncoding = THREE.sRGBEncoding;   // v350：輸出 sRGB 伽瑪，材質與燈光更接近現代 3D 遊戲的層次
         r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); r.setSize(W0, H0, false);
         const sc = new THREE.Scene();
         sc.add(new THREE.AmbientLight(0xffffff, 0.7));
