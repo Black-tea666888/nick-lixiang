@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v362', items: ['方塊合併（無限板）：棋盤變長方形時格子大小一樣，不再忽大忽小'] };
+const UPD = { v: 'v363', items: ['彈珠台：球的落下速度放慢到看得清楚，畫面依螢幕解析度繪製不再模糊'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1861,12 +1861,18 @@ function pcSyncOnline() {
 function pcStartAnim(last) {
   if (pcRaf) cancelAnimationFrame(pcRaf);
   const r = RR.Pachinko.sim(last.angle, last.power, pcRng(last.seed));
-  pcA = { path: r.path, idx: 0, fx: null, payout: r.payout, pocket: r.pocket };
+  pcA = { path: r.path, idx: 0, fx: null, payout: r.payout, pocket: r.pocket, ts: null, acc: 0 };
   pcRaf = requestAnimationFrame(pcAStep);
 }
-function pcAStep() {
+// 物理每秒 120 步，播放用 0.6 倍速（原本每個畫格跳 3 步，高刷新螢幕會快到看不清）
+const PC_PLAY_STEPS_PER_SEC = 120 * 0.6;
+function pcAStep(ts) {
   if (!pcA.path) { pcRaf = 0; return; }
-  pcA.idx = Math.min(pcA.path.length - 1, pcA.idx + 3);
+  if (pcA.ts == null) pcA.ts = ts;
+  const dt = Math.min(0.1, (ts - pcA.ts) / 1000); pcA.ts = ts;
+  pcA.acc += dt * PC_PLAY_STEPS_PER_SEC;
+  const adv = Math.floor(pcA.acc); pcA.acc -= adv;
+  pcA.idx = Math.min(pcA.path.length - 1, pcA.idx + adv);
   pcDraw();
   if (pcA.idx < pcA.path.length - 1) { pcRaf = requestAnimationFrame(pcAStep); return; }
   pcRaf = 0; pcA.path = null;
@@ -1883,7 +1889,7 @@ function pcNew() {
 }
 // 拖曳瞄準：從發射點往想去的方向拉，距離就是力道，放開發射
 let pcAim = null, pcDragging = false;
-function pcPointer(ev) { const cv = $('pcCanvas'), r = cv.getBoundingClientRect(); return { x: (ev.clientX - r.left) * cv.width / r.width, y: (ev.clientY - r.top) * cv.height / r.height }; }
+function pcPointer(ev) { const P = RR.Pachinko, cv = $('pcCanvas'), r = cv.getBoundingClientRect(); return { x: (ev.clientX - r.left) * P.W / r.width, y: (ev.clientY - r.top) * P.H / r.height }; }
 function pcAimAt(p) {
   const P = RR.Pachinko, dx = p.x - P.W / 2, dy = p.y - 14;
   if (dy < 8) return null;
@@ -1931,6 +1937,11 @@ function pcFxRun() {
 }
 function pcDraw() {
   const P = RR.Pachinko, cv = $('pcCanvas'), ctx = cv.getContext('2d');
+  // 依螢幕實際像素決定解析度，再用變換把遊戲座標放大，避免手機上糊掉
+  const sc = Math.max(1, ((cv.clientWidth || P.W) * Math.min(3, window.devicePixelRatio || 1)) / P.W);
+  const bw = Math.round(P.W * sc), bh = Math.round(P.H * sc);
+  if (cv.width !== bw || cv.height !== bh) { cv.width = bw; cv.height = bh; }
+  ctx.setTransform(bw / P.W, 0, 0, bh / P.H, 0, 0);
   const online = pcOnline() && !!pcOn;
   if (online) pcSyncOnline();
   const an = online ? pcA : pcS;
