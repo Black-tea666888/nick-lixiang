@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v352', items: ['大廳移除沒有作用的「每場幾個人」列，選擇玩法頁更清爽', '休閒模式遊戲分成三頁並排，左右滑動切換', '全域輸出改 sRGB 伽瑪，材質與燈光層次更接近現代 3D 遊戲', '手機直式大廳留白加大，模式卡變薄，角色區有空間', '登入畫面加上廢墟場景主視覺（回收車、鐵網與警示條）', '太空站地板改成金屬面板格，有板縫、倒角與鉚釘', '醫院病房燈光再暗一點，白牆與地磚的層次更清楚', '室內燈光調暗、霧氣加重，牆面與手電筒的亮暗對比更明顯', '室內牆面加下方積灰、板縫、鉚釘與刮痕', '遊戲內畫面：資訊底板與按鈕加墨線與硬陰影，血條加粗', '模式選擇頁：卡片加厚、加方向箭頭，標題加壓印陰影', '整體畫面升級：紙張與鐵板紋理、面板加警示膠帶、標題加壓印陰影、按鈕加厚', '賽車新增碰撞：和 AI 車碰到會互相推開，速度快會扣車況', '中國象棋棋盤放大到和畫面內容一樣寬', '象棋（國際／中國）：對手離開後房號會換成新的隨機代碼', '中國象棋：棋盤會轉向，自己的棋在下方（線上照自己的方，同機雙人下完一步轉到對手面前）', '麻將：手牌放大並加上底板，胡／過改成大圓鈕，狀態列做成上方資訊條'].concat(['模式選擇頁最下方新增「人數」（2～4 人，記住上次選的；飛行棋的人數選擇會預設它）', '模式選擇頁最下方新增「下載到手機」提醒（可關掉，之後不再出現）', '廢墟地圖統一成同一個大小（不足的地圖在上下補牆，玩家範圍不變）', '第 4 天起，每隔一隻怪物變成「無眼雕像」：有人在 15 公尺內看得到牠時就停住不動', '廢墟生存戰的補給箱拿走後 30 秒會在空地重新出現', '地圖可以切成「隨機」：每局開始時從廢墟地圖中抽一張（房主設定，循環到最後一張後切換）']) };
+const UPD = { v: 'v353', items: ['兩人對弈（五子棋、四子連珠、象棋、康樂球）改為必須連線對手才能下，同機單人不能玩', '大廳移除沒有作用的「每場幾個人」列，選擇玩法頁更清爽', '休閒模式遊戲分成三頁並排，左右滑動切換', '全域輸出改 sRGB 伽瑪，材質與燈光層次更接近現代 3D 遊戲', '手機直式大廳留白加大，模式卡變薄，角色區有空間', '登入畫面加上廢墟場景主視覺（回收車、鐵網與警示條）', '太空站地板改成金屬面板格，有板縫、倒角與鉚釘', '醫院病房燈光再暗一點，白牆與地磚的層次更清楚', '室內燈光調暗、霧氣加重，牆面與手電筒的亮暗對比更明顯', '室內牆面加下方積灰、板縫、鉚釘與刮痕', '遊戲內畫面：資訊底板與按鈕加墨線與硬陰影，血條加粗', '模式選擇頁：卡片加厚、加方向箭頭，標題加壓印陰影', '整體畫面升級：紙張與鐵板紋理、面板加警示膠帶、標題加壓印陰影、按鈕加厚', '賽車新增碰撞：和 AI 車碰到會互相推開，速度快會扣車況', '中國象棋棋盤放大到和畫面內容一樣寬', '象棋（國際／中國）：對手離開後房號會換成新的隨機代碼', '中國象棋：棋盤會轉向，自己的棋在下方（線上照自己的方，同機雙人下完一步轉到對手面前）', '麻將：手牌放大並加上底板，胡／過改成大圓鈕，狀態列做成上方資訊條'].concat(['模式選擇頁最下方新增「人數」（2～4 人，記住上次選的；飛行棋的人數選擇會預設它）', '模式選擇頁最下方新增「下載到手機」提醒（可關掉，之後不再出現）', '廢墟地圖統一成同一個大小（不足的地圖在上下補牆，玩家範圍不變）', '第 4 天起，每隔一隻怪物變成「無眼雕像」：有人在 15 公尺內看得到牠時就停住不動', '廢墟生存戰的補給箱拿走後 30 秒會在空地重新出現', '地圖可以切成「隨機」：每局開始時從廢墟地圖中抽一張（房主設定，循環到最後一張後切換）']) };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -1358,6 +1358,7 @@ function chessTapNet(i) {
   chessDraw();
 }
 function chessTap(i) {
+  if (oppGate('chess')) return;
   const C = RR.Chess, s = chessS, st = C.status(s);
   if (st.k === 'mate' || st.k === 'stale') return;
   if (chessNet.on) return chessTapNet(i);
@@ -1374,6 +1375,7 @@ const XQ_GLYPH = { K: '帥', A: '仕', B: '相', N: '傌', R: '俥', C: '炮', P
 function xqOpen() { show('scrXq'); if (!xqS) xqS = RR.Xiangqi.start(); xqSel = -1; xqMoves = []; xqDraw(); }
 function xqNew() { if (duo.on && duo.g === 'xq') return duoNew(); xqS = RR.Xiangqi.start(); xqSel = -1; xqMoves = []; xqDraw(); }
 function xqTap(i) {
+  if (oppGate('xq')) return;
   const X = RR.Xiangqi, s = xqS, st = X.status(s);
   if (st.k === 'mate') return;
   const online = duo.on && duo.g === 'xq', mySide = online ? (duo.host ? DUO.xq.hostSide : DUO.xq.guestSide) : s.turn;
@@ -1609,6 +1611,12 @@ const DUO = {
   c4: { key: 'c4', lib: function () { return RR.Connect4; }, get: function () { return c4S; }, set: function (v) { c4S = v; }, draw: function () { c4Draw(); }, hostSide: 'r', guestSide: 'y', hostName: '紅', guestName: '黃' }
 };
 let duo = { on: false, host: false, g: null, guest: null };
+// 2 人對弈：一定要有連線對手（房主要等對方加入）才能下，不再允許同機單人或空房自己下
+function oppReady(g) {
+  if (g === 'chess') return chessNet.on && (!chessNet.host || !!chessNet.guest);
+  return duo.on && duo.g === g && (!duo.host || !!duo.guest);
+}
+function oppGate(g) { if (oppReady(g)) return false; mtoast('請先建立或加入線上房間，對手加入後才能下', 'warn'); return true; }
 function duoNote(msg) {
   const c = DUO[duo.g]; if (!c) return;
   $(c.key + 'NetNote').textContent = msg || '';
@@ -1626,6 +1634,7 @@ function duoMove(mv, side) {
 // 回傳 true 表示已交給線上流程處理（不走本機下子）
 function duoTap(mv) {
   if (!duo.on) return false;
+  if (duo.host && !duo.guest) { duoNote('等待對手加入後才能下。'); return true; }
   const c = DUO[duo.g], mySide = duo.host ? c.hostSide : c.guestSide;
   if (c.get().turn !== mySide) { duoNote('還沒輪到你。'); return true; }
   if (duo.host) duoMove(mv, mySide); else Net.send({ t: 'duo_mv', g: duo.g, mv: mv });
@@ -1674,6 +1683,7 @@ function duoJoin(g) {
 function gmOpen() { show('scrGomoku'); if (!gmS) gmS = RR.Gomoku.start(); gmDraw(); }
 function gmNew() { if (duo.on && duo.g === 'gm') return duoNew(); gmS = RR.Gomoku.start(); gmDraw(); }
 function gmTap(i) {
+  if (oppGate('gm')) return;
   if (duo.on && duo.g === 'gm') { duoTap(i); return; }
   const r = RR.Gomoku.move(gmS, i);
   if (r.ok) gmS = r.state;
@@ -1706,6 +1716,7 @@ let c4S = null;
 function c4Open() { show('scrC4'); if (!c4S) c4S = RR.Connect4.start(); c4Draw(); }
 function c4New() { if (duo.on && duo.g === 'c4') return duoNew(); c4S = RR.Connect4.start(); c4Draw(); }
 function c4Tap(col) {
+  if (oppGate('c4')) return;
   if (duo.on && duo.g === 'c4') { duoTap(col); return; }
   const r = RR.Connect4.move(c4S, col);
   if (r.ok) c4S = r.state;
@@ -2002,6 +2013,7 @@ let kgFlash = [];
 // 拖曳瞄準：在棋盤上往後（朝自己這邊）拉，射子從拉下的位置出發，往反方向射出，距離就是力道
 let kgAim = null, kgDragging = false, kgSx = 200;
 function kgShoot(mv) {
+  if (oppGate('kg')) return;
   if (!kgS || kgRaf || kgS.winner !== null) return;
   if (kgOnline()) {
     const mySide = duo.host ? DUO.kg.hostSide : DUO.kg.guestSide;
@@ -2079,7 +2091,7 @@ function kgCanShoot() {
   return true;
 }
 function kgPtrDown(ev) {
-  if (!kgCanShoot()) return;
+  if (oppGate('kg') || !kgCanShoot()) return;
   kgDragging = true; ev.target.setPointerCapture(ev.pointerId);
   const p = kgPointer(ev); kgSx = Math.max(60, Math.min(RR.Carrom.W - 60, p.x));
   kgAim = kgAimAt(kgSx, p); kgDraw();
@@ -2552,18 +2564,18 @@ const CAS_HELP = {
   race: '在廢墟賽道上計時跑圈，越快越好。\n按氮氣加速，撞牆會減速；跑完成績會記進排行。',
   marble: '在下方拖曳瞄準，放開發射彈珠。\n每回合 5 顆彈珠，撐過 15 回合就過關；彈珠落到底部就失敗。',
   plat: '橫向跳關，踩敵人、吃金幣。\n跳到終點旗子即過關；掉進坑裡或被敵人碰到就 GAME OVER。',
-  chess: '同一台裝置兩人輪流下棋。\n點選棋子再點目標格移動，把對方的王將死就獲勝。',
-  xq: '同一台裝置兩人輪流下棋。\n點選棋子再點目標格移動，把對方的將軍死就獲勝。',
+  chess: '兩人對弈，需用線上房間連線，對手加入後才能下。\n點選棋子再點目標格移動，把對方的王將死就獲勝。',
+  xq: '兩人對弈，需用線上房間連線，對手加入後才能下。\n點選棋子再點目標格移動，把對方的將軍死就獲勝。',
   rummi: '依拉密規則排出順子或同數字的組合，先出完手牌者獲勝。\n和電腦對戰；可以先摸牌或直接出牌。',
   bj: '每人發兩張牌，點數盡量接近 21 但不能超過。\nJ、Q、K 是 10 點，A 是 1 或 11。莊家點數低於 17 會補牌。',
   mj: '和電腦對戰的十六張麻將（不含花牌、不吃不碰）。你先摸成 17 張，湊成 5 組加 1 對即胡，可自摸或胡電腦打出的牌；先胡者獲勝。',
   orb: '拖動相鄰的珠子交換，連成 3 顆以上就會消除，珠子會掉落補位，連鎖越多分數越高。每關有步數上限，在步數內消除目標顆數就過關。',
   g2048: '滑動方向合併相同數字，拼越大分數越高。\n棋盤會隨著貼邊無限擴大，無法移動時結束，分數進紀錄板。',
-  gomoku: '同一台裝置兩人輪流下子。\n先在橫、直、斜任一方向連成五子者獲勝。',
-  c4: '同一台裝置兩人輪流投子，棋子會落到該欄最下方。\n先在橫、直、斜任一方向連成四子者獲勝。',
+  gomoku: '兩人對弈，需用線上房間連線，對手加入後才能下。\n先在橫、直、斜任一方向連成五子者獲勝。',
+  c4: '兩人對弈，需用線上房間連線，對手加入後才能下。棋子會落到該欄最下方。\n先在橫、直、斜任一方向連成四子者獲勝。',
   flight: '2～4 人同一台裝置輪流。\n擲骰 6 點出發，沿路前進；踩到別人就把對方送回基地，先到終點者獲勝。',
   pachi: '調整角度與力道發射彈珠。\n彈珠落進中間的袋子就是大獎，落在其他地方則依分數計算。',
-  kangle: '在桌上用球撞擊，兩人輪流。\n先把自己的 8 顆球打進洞者獲勝。',
+  kangle: '兩人對弈，需用線上房間連線，對手加入後才能下。在桌上用球撞擊，輪流出桿。\n先把自己的 8 顆球打進洞者獲勝。',
 };
 // 自訂房：共用的選遊戲面板；有線上房間的遊戲直接建房，其餘先說明
 const ROOM_GAMES = {

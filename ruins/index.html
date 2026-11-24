@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=352" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=353" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -377,7 +377,7 @@
 <!-- 交易所：世界頻道與玩家掛單 -->
 <div class="arBox hide" id="arBox"><video id="arVideo" playsinline muted autoplay></video><canvas id="arCanvas"></canvas><div class="arRing"></div><div class="arTiming hide" id="arTiming"></div><div class="arArrow hide" id="arArrow"></div><div class="arTop"><span id="arCount"></span><button class="btn" id="arDexBtn" type="button">任務圖鑑</button><button class="btn" id="arClose" type="button">離開</button></div><div class="arName" id="arName"></div><div class="arDex hide" id="arDex"><b>今日 AR 任務</b><div class="arMis" id="arMis"></div><b>怪物圖鑑 <span id="arDexN"></span></b><div class="arDexGrid" id="arDexGrid"></div><small>點抓過的怪物，可以設成大廳展示（站在角色旁邊）。集滿 32 種送 300 金幣。</small><button class="btn primary" id="arDexClose" type="button">關閉</button></div><p class="arMsg" id="arMsg"></p><canvas class="arMap" id="arMap" width="120" height="120"></canvas><button class="arFwd" id="arFwd" type="button">按住前進</button><button class="btn primary arAgain hide" id="arAgain" type="button">再玩一次新迷宮</button><div class="arPick" id="arPick"><b>選擇 AR 玩法</b><button class="mcard" id="arPickCatch" type="button"><b>抓怪</b><span>轉手機找怪物，丟網抓起來，收集圖鑑</span></button><button class="mcard" id="arPickMaze" type="button"><b>迷宮</b><span>迷宮的牆出現在眼前，撿 3 個零件找出口</span></button></div><button class="arThrow" id="arThrow" type="button" aria-label="丟回收網">丟網<small>或往上滑</small></button></div>
 <div class="qrBox hide" id="qrBox" role="dialog" aria-label="好友 QR code"><div class="qrCard"><b id="qrName"></b><div id="qrImg"></div><span>好友代碼 <b id="qrCode"></b></span><small>用手機相機掃描，打開遊戲登入後就會自動加好友</small><button class="btn primary" id="qrClose" type="button">關閉</button></div></div>
-<!-- 國際象棋（同機雙人） -->
+<!-- 國際象棋（線上雙人） -->
 <div class="screen hide" id="scrPlat">
   <div class="cc">
     <header class="dwTop">
@@ -461,7 +461,7 @@
   <div class="cc">
     <header class="dwTop">
       <button class="icon" id="gomokuBack" type="button" aria-label="返回">‹</button>
-      <b class="dwTitle">五子棋（同機雙人）</b>
+      <b class="dwTitle">五子棋（線上雙人）</b>
       <button class="btn" id="gomokuNew" type="button">重新開始</button>
     </header>
     <p class="chessStatus" id="gomokuStatus" aria-live="polite"></p>
@@ -474,7 +474,7 @@
   <div class="cc">
     <header class="dwTop">
       <button class="icon" id="c4Back" type="button" aria-label="返回">‹</button>
-      <b class="dwTitle">四子連珠（同機雙人）</b>
+      <b class="dwTitle">四子連珠（線上雙人）</b>
       <button class="btn" id="c4New" type="button">重新開始</button>
     </header>
     <p class="chessStatus" id="c4Status" aria-live="polite"></p>
@@ -526,7 +526,7 @@
   <div class="cc">
     <header class="dwTop">
       <button class="icon" id="kangleBack" type="button" aria-label="返回">‹</button>
-      <b class="dwTitle">康樂球（兩人同機）</b>
+      <b class="dwTitle">康樂球（線上雙人）</b>
       <button class="btn" id="kangleNew" type="button">重新開始</button>
     </header>
     <p class="chessStatus" id="kgStatus" aria-live="polite"></p>
@@ -567,7 +567,7 @@
   <div class="cc">
     <header class="dwTop">
       <button class="icon" id="xqBack" type="button" aria-label="返回">‹</button>
-      <b class="dwTitle">中國象棋（同機雙人）</b>
+      <b class="dwTitle">中國象棋（線上雙人）</b>
       <button class="btn" id="xqNew" type="button">重新開始</button>
     </header>
     <p class="chessStatus" id="xqStatus" aria-live="polite"></p>
@@ -580,7 +580,7 @@
   <div class="cc">
     <header class="dwTop">
       <button class="icon" id="chessBack" type="button" aria-label="返回">‹</button>
-      <b class="dwTitle">國際象棋（同機雙人）</b>
+      <b class="dwTitle">國際象棋（線上雙人）</b>
       <button class="btn" id="chessNew" type="button">重新開始</button>
     </header>
     <p class="chessStatus" id="chessStatus" aria-live="polite"></p>
@@ -969,34 +969,34 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=352"></script>
-<script src="js/race_tracks.js?v=352"></script>
-<script src="js/race_arenas.js?v=352"></script>
-<script src="js/sim.js?v=352"></script>
-<script src="js/audio.js?v=352"></script>
-<script src="js/auth.js?v=352"></script>
-<script src="js/cloud.js?v=352"></script>
-<script src="js/net.js?v=352"></script>
-<script src="js/game.js?v=352"></script>
-<script src="js/minigames.js?v=352"></script>
-<script src="js/ar.js?v=352"></script>
-<script src="js/padnav.js?v=352"></script>
-<script src="js/cards.js?v=352"></script>
-<script src="js/chess.js?v=352"></script>
-<script src="js/chess_art.js?v=352"></script>
-<script src="js/xiangqi.js?v=352"></script>
-<script src="js/rummi.js?v=352"></script>
-<script src="js/gomoku.js?v=352"></script>
-<script src="js/blackjack.js?v=352"></script>
-<script src="js/g2048.js?v=352"></script>
-<script src="js/orb.js?v=352"></script>
-<script src="js/mahjong.js?v=352"></script>
-<script src="js/connect4.js?v=352"></script>
-<script src="js/flight.js?v=352"></script>
-<script src="js/pachinko.js?v=352"></script>
-<script src="js/carrom.js?v=352"></script>
-<script src="js/platform.js?v=352"></script>
-<script src="js/marble.js?v=352"></script>
-<script src="js/main.js?v=352"></script>
+<script src="js/config.js?v=353"></script>
+<script src="js/race_tracks.js?v=353"></script>
+<script src="js/race_arenas.js?v=353"></script>
+<script src="js/sim.js?v=353"></script>
+<script src="js/audio.js?v=353"></script>
+<script src="js/auth.js?v=353"></script>
+<script src="js/cloud.js?v=353"></script>
+<script src="js/net.js?v=353"></script>
+<script src="js/game.js?v=353"></script>
+<script src="js/minigames.js?v=353"></script>
+<script src="js/ar.js?v=353"></script>
+<script src="js/padnav.js?v=353"></script>
+<script src="js/cards.js?v=353"></script>
+<script src="js/chess.js?v=353"></script>
+<script src="js/chess_art.js?v=353"></script>
+<script src="js/xiangqi.js?v=353"></script>
+<script src="js/rummi.js?v=353"></script>
+<script src="js/gomoku.js?v=353"></script>
+<script src="js/blackjack.js?v=353"></script>
+<script src="js/g2048.js?v=353"></script>
+<script src="js/orb.js?v=353"></script>
+<script src="js/mahjong.js?v=353"></script>
+<script src="js/connect4.js?v=353"></script>
+<script src="js/flight.js?v=353"></script>
+<script src="js/pachinko.js?v=353"></script>
+<script src="js/carrom.js?v=353"></script>
+<script src="js/platform.js?v=353"></script>
+<script src="js/marble.js?v=353"></script>
+<script src="js/main.js?v=353"></script>
 </body>
 </html>
