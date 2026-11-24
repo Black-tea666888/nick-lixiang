@@ -1610,3 +1610,18 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 
 /* ===== 標題主視覺（v348）：登入畫面上方的廢墟場景插圖 ===== */
 #scrLogin .keyArt { display: block; width: calc(100% + 4px); max-width: none; height: auto; margin: -22px -2px 14px; border: 2px solid var(--ink); border-radius: 3px; box-shadow: 0 4px 0 var(--ink); }
+
+/* ===== 手機直式大廳留白（v349）：陰影與卡片變薄，角色區有呼吸空間 ===== */
+@media (orientation: portrait) and (max-width: 480px) {
+  .lb { gap: 12px; }
+  .lbSide { min-height: 84px; gap: 8px; }
+  .tile { padding: 6px 10px; min-height: 0; }
+  .lbStage { min-height: 150px; }
+  #lobbyChar { height: min(26vh, 230px); }
+  .modeStrip { gap: 8px; max-height: 330px; }
+  .mcard { height: 78px; padding: 6px 10px 6px 14px; }
+  .mcard b { font-size: 14px; }
+  .mcard svg { width: 20px; height: 20px; top: 6px; right: 6px; }
+  .btn { box-shadow: 0 3px 0 var(--ink); }
+  .tile, .mcard, .mapChip, .lbCoin { box-shadow: 2px 2px 0 rgba(17,20,23,.5); }
+}
