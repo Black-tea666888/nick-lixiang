@@ -326,7 +326,7 @@ function tickRaceCars(dt) {
   const bn = document.getElementById('raceNitro'), br = document.getElementById('raceReset'), st = document.getElementById('raceStat');
   const rOn = view.mode === 'race' && me.alive;
   [bn, br, st].forEach(function (el) { if (el) el.classList.toggle('hide', !rOn); });
-  if (bn) { bn.disabled = (me.nitro || 0) < 1; bn.textContent = '氮氣 ' + Math.floor((me.nitro || 0) * 100) + '%'; }
+  if (bn) { bn.disabled = (me.nitro || 0) < 1; bn.textContent = '氮氣 ' + Math.floor((me.nitro || 0) * 100) + '%' + (isTouchDev() ? '' : '（N）'); }
   if (st && rOn) st.textContent = '車況 ' + Math.ceil(me.hp == null ? 100 : me.hp) + '%'
     + (me.drifting ? '　集氣 ' + Math.min(100, Math.floor((me.charge || 0) / 2.2 * 100)) + '%' : '')
     + (me.nitroT > 0 ? '　氮氣中' : '') + (me.pauseT > 0 ? '　爆炸復位中' : '');
@@ -2493,7 +2493,7 @@ function bindInput() {
  * 程式裡都用預設按鍵判斷；玩家改了按鍵，就把新按鍵翻譯成預設按鍵（keyCode），原本的預設按鍵則停用，避免一鍵兩用。 */
 const KEY_ACTIONS = [['前進', 'KeyW'], ['後退', 'KeyS'], ['左移', 'KeyA'], ['右移', 'KeyD'], ['跑步', 'ShiftLeft'], ['跳', 'Space'], ['衝刺', 'KeyC'],
   ['開槍', 'KeyX'], ['近戰攻擊', 'KeyF'], ['切近戰／救人', 'KeyE'], ['換槍', 'KeyK'], ['開鏡', 'KeyZ'], ['煙霧彈', 'KeyQ'], ['技能', 'KeyR'], ['炸藥', 'KeyB'],
-  ['躲櫃子', 'KeyY'], ['上車', 'KeyV'], ['無人機', 'KeyU'], ['空中掃射', 'KeyJ'], ['蓋塔（死守）', 'KeyT'], ['小遊戲', 'KeyG'], ['麥克風', 'KeyM']];
+  ['躲櫃子', 'KeyY'], ['上車', 'KeyV'], ['無人機', 'KeyU'], ['空中掃射', 'KeyJ'], ['蓋塔（死守）', 'KeyT'], ['小遊戲', 'KeyG'], ['麥克風', 'KeyM'], ['氮氣（賽車）', 'KeyN']];
 let keyMap = {}, keyBack = {}, keyCapture = null;
 function keyLoad() {
   keyMap = {}; keyBack = {};
