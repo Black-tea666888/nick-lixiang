@@ -1625,3 +1625,12 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
   .btn { box-shadow: 0 3px 0 var(--ink); }
   .tile, .mcard, .mapChip, .lbCoin { box-shadow: 2px 2px 0 rgba(17,20,23,.5); }
 }
+
+/* ===== 休閒模式分頁（v351）：三頁並排，左右滑動切換，每頁一組遊戲 ===== */
+.modeStrip.casPaged { display: flex !important; flex-direction: row; overflow-x: auto !important; overflow-y: hidden !important; max-height: none !important; height: auto; grid-template-columns: none !important; scroll-snap-type: x mandatory; gap: 0; padding: 2px 0 6px; overscroll-behavior-x: contain; }
+.modeStrip.casPaged > .mcard { flex: none; }
+.modeStrip.casPaged > .casPage { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; display: flex; flex-direction: column; gap: 6px; padding: 0 2px; box-sizing: border-box; }
+.casPageHd { font-size: 13px; font-weight: 900; color: var(--chalk); text-shadow: 1px 1px 0 var(--ink); padding: 2px 4px; letter-spacing: .04em; }
+.casGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-content: start; }
+.casGrid .mcard { width: auto; min-width: 0; height: auto; min-height: 72px; }
+.casGrid .mcard.hide { display: none; }
