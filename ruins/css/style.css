@@ -1361,7 +1361,10 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .xqPt.dot { width: 4%; height: 4%; min-width: 10px; min-height: 10px; background: #3fae5a; border: none; opacity: 0.85; }
 
 /* 德國麻將（拉密） */
-.rsTable { display: flex; flex-wrap: wrap; gap: 6px; min-height: 90px; padding: 8px; background: #f3e6c4; border: 2px solid #6b4a1e; border-radius: 8px; margin: 8px 0; }
+.rsTable { display: flex; flex-wrap: wrap; gap: 6px; min-height: 90px; max-height: 42vh; overflow-y: auto; contain: content; padding: 8px; background: #f3e6c4; border: 2px solid #6b4a1e; border-radius: 8px; margin: 8px 0; }
+.rsFoe { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; font-size: 13px; }
+.rsFoeRow { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
+.rmBack { width: 18px; height: 26px; border-radius: 3px; border: 2px solid #6b4a1e; background: repeating-linear-gradient(45deg, #6b4a1e 0 3px, #8a6330 3px 6px); }
 .rsSet { display: flex; gap: 2px; padding: 4px 6px; background: #fff7e6; border: 2px solid #6b4a1e; border-radius: 8px; cursor: pointer; }
 .rsSet.pend { border-style: dashed; cursor: default; }
 .rsHand { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 8px; }
