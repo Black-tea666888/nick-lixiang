@@ -1599,3 +1599,11 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .hubCard:hover { background-color: #fff3d6; transform: translateY(-2px); box-shadow: 0 8px 0 var(--ink); }
 .hubCard:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--ink); }
 .hubCard b { letter-spacing: .04em; }
+
+/* ===== 遊戲內 HUD 升級（v343）：底板與按鈕加墨線與硬陰影，跟選單同一套 ===== */
+.plate, #hudTop > div { background: var(--steel-d); border: 2px solid var(--ink); border-radius: 3px; box-shadow: 3px 3px 0 var(--ink); }
+#compass em { border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+#plist .prow { border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+#hudBtns button { border: 2px solid var(--ink); border-bottom-width: 4px; }
+#hp, #stam { height: 12px; border: 2px solid var(--ink); box-shadow: 0 3px 0 var(--ink); }
+#timer { text-shadow: 2px 2px 0 var(--ink); }
