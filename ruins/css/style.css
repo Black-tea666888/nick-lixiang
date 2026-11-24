@@ -1429,7 +1429,7 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 #scrPachi .pcCanvas, .screen .pcCanvas { max-width: min(100vw - 16px, (100dvh - 150px) * 3 / 4); }
 
 /* 2048（無限板） */
-.g2048Board { display: grid; gap: 6px; width: min(92vw, 420px); aspect-ratio: 1; margin: 12px auto; touch-action: none; user-select: none; -webkit-user-select: none; }
+.g2048Board { display: grid; gap: 6px; width: min(92vw, 420px, calc(60vh * var(--g2c, 4) / var(--g2r, 4))); aspect-ratio: var(--g2c, 4) / var(--g2r, 4); margin: 12px auto; touch-action: none; user-select: none; -webkit-user-select: none; }
 .g2Cell { position: relative; min-width: 0; min-height: 0; overflow: hidden; white-space: nowrap; display: grid; place-items: center; background: #2a2f3a; border: 3px solid #1d2b4a; font: 700 clamp(14px, 4vw, 26px)/1 system-ui, sans-serif; color: #1d2b4a; min-height: 0; }
 .g2Cell.big { font-size: clamp(10px, 2.8vw, 19px); }
 .g2Cell.v2 { background: #fff3d1; } .g2Cell.v4 { background: #ffe0a3; } .g2Cell.v8 { background: #ffc27a; color: #fff; }
