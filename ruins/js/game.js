@@ -1832,7 +1832,8 @@ function applyWeather(w) {
   view.weather = w | 0;
   const b = baseLight; if (!b) return;
   const fogK = [1, 1.6, b.open ? 5 : 3.2, 1.3, b.open ? 4.5 : 2.4][view.weather], lightK = [1, 0.8, 0.85, 0.32, 0.75][view.weather];
-  scene.fog.density = b.fog * fogK;
+  // 濃霧（2）：能見度約 1 米。FogExp2 在 1 米處約 90% 被霧遮住，3 米外幾乎全白
+  scene.fog.density = view.weather === 2 ? 1.6 : b.fog * fogK;
   const fc = view.weather === 4 ? (b.open ? 0xb58a5a : 0x3a2f28) : view.weather === 2 ? (b.open ? 0xc4ccd4 : 0x4a5258) : view.weather === 1 ? 0x6f7f90 : b.fogC;
   scene.fog.color.setHex(fc); scene.background.setHex(fc);
   if (skyDome) skyDome.visible = !view.weather;
