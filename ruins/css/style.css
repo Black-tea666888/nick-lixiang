@@ -1647,3 +1647,8 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .casPageHd span { flex: 1; text-align: center; }
 .casArrow { flex: none; width: 40px; height: 32px; font: inherit; font-size: 22px; font-weight: 900; line-height: 1; color: var(--chalk); background: var(--steel); border: 2px solid var(--ink); border-radius: 3px; box-shadow: 2px 2px 0 var(--ink); cursor: pointer; padding: 0; }
 .casArrow:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }
+
+/* ===== 防止整頁被橫向捲動造成邊緣切掉（v356）：只讓模式列自己橫捲 ===== */
+html, body { overflow-x: hidden; max-width: 100%; }
+#scrMenu, .screen { overflow-x: hidden; }
+.lb, .lbBottom, .modeStrip, .casPage { min-width: 0; max-width: 100%; }
