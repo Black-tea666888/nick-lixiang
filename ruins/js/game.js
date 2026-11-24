@@ -485,6 +485,22 @@ function makeWinTex(base, windows) {
   const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = maxAniso; return t;
 }
 // 材質貼圖：512px，柔和的色塊與細顆粒（不要一格一格的雜點），遠看是平滑的牆面／地面
+/* 太空站地板：金屬面板格、板縫、倒角反光與鉚釘（取代原本的糊狀斑點） */
+function makeSpaceFloorTex(base) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+  const g = cv.getContext('2d');
+  g.fillStyle = base; g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 1400; i++) { g.fillStyle = 'rgba(' + (Math.random() < 0.5 ? '0,0,0' : '255,255,255') + ',' + (Math.random() * 0.05).toFixed(3) + ')'; g.fillRect(Math.random() * 256, Math.random() * 256, 1, 1); }
+  for (let k = 0; k < 256; k += 64) {
+    g.strokeStyle = 'rgba(180,210,230,.2)'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(k + 2, 0); g.lineTo(k + 2, 256); g.moveTo(0, k + 2); g.lineTo(256, k + 2); g.stroke();
+    g.strokeStyle = 'rgba(8,12,18,.7)'; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(k, 0); g.lineTo(k, 256); g.moveTo(0, k); g.lineTo(256, k); g.stroke();
+    g.fillStyle = 'rgba(200,220,235,.4)';
+    for (let j = 0; j < 256; j += 64) for (const q of [[6, 6], [58, 6], [6, 58], [58, 58]]) { g.beginPath(); g.arc(j + q[0], k + q[1], 1.8, 0, Math.PI * 2); g.fill(); }
+  }
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = maxAniso; return t;
+}
 function makeTex(base, speck, lines) {
   const cv = document.createElement('canvas'); cv.width = cv.height = 512;
   const g = cv.getContext('2d'); g.scale(4, 4);
@@ -1034,7 +1050,7 @@ function buildLevel() {
   torchBase = T.torch != null ? T.torch : open ? 0.2 : 2.2;
   baseLight = { fog: scene.fog.density, fogC: skyC, amb: ambient ? ambient.intensity : 1, hemi: hemi ? hemi.intensity : 0.4, sun: sun ? sun.intensity : 0, torch: torchBase, open: open };
   const style = T.style || 'ruin', wallH = T.wallH || WH;
-  const floorTex = (open || FLOOR_STYLES.indexOf(style) >= 0) && style !== 'city' && style !== 'space' ? makeFloorTex(style, T.floor) : makeTex(T.floor, '0,0,0', false); floorTex.repeat.set(COLS, ROWS);
+  const floorTex = style === 'space' ? makeSpaceFloorTex(T.floor) : (open || FLOOR_STYLES.indexOf(style) >= 0) && style !== 'city' ? makeFloorTex(style, T.floor) : makeTex(T.floor, '0,0,0', false); floorTex.repeat.set(COLS, ROWS);
   const Wd = COLS * CS, D = ROWS * CS;
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(Wd, D, LITE ? COLS * 2 : 1, LITE ? ROWS * 2 : 1), litMat({ map: floorTex, shininess: style === 'space' ? 40 : 8 }));
   floor.rotation.x = -Math.PI / 2; floor.position.set(Wd / 2, 0, D / 2); level.add(floor);
