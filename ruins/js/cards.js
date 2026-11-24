@@ -17,6 +17,12 @@
     const teeth = lv >= 5 ? '<path d="M9 15l1 1.5 1-1.5 1 1.5 1-1.5 1 1.5 1-1.5"/>' : '<path d="M9.5 15.5q2.5 1.5 5 0"/>';
     return '<svg viewBox="0 0 24 24" aria-hidden="true">' + horns + '<path d="M5 20c0-8 2.5-13 7-13s7 5 7 13l-2-1.5-1.5 1.5-1.5-1.5-2 1.5-2-1.5-1.5 1.5-1.5-1.5z"/><circle cx="9.5" cy="11.5" r="1.4"/><circle cx="14.5" cy="11.5" r="1.4"/>' + teeth + '</svg>';
   }
+  const COL_SVG = [
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 3.5 5 5 5 10a5 5 0 0 1-10 0c0-2.2 1.2-3.6 2-4.6.4 1.6 1.2 2.4 2.2 2.8C11 8.5 11.6 5.6 12 3z"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3 4 6 7.2 6 11a6 6 0 0 1-12 0c0-3.8 3-7 6-11z"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 5 14h6l-1 8 8-12h-6z"/></svg>'
+  ];
   const ACT_SVG = {
     skip: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5l11-11"/></svg>',
     rev: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h12l-3-3M19 15H7l3 3"/></svg>',
@@ -164,8 +170,7 @@
     el.className = 'cgCard' + (k.c === 4 ? ' wild' : '') + (typeof k.v === 'number' ? ' num' : ' act');
     if (wc != null && wc < 4) el.style.setProperty('--cc', COLC[wc]);
     const big = typeof k.v === 'number' ? k.v : ACT[k.v].replace('王者 ', '');
-    el.innerHTML = '<span class="cgCor">' + (typeof k.v === 'number' ? k.v : k.v === 'w4' ? '+4' : k.v === 'd2' ? '+2' : '') + '</span><span class="cgArt">' + (typeof k.v === 'number' ? monSvg(k.v) : ACT_SVG[k.v]) + '</span><span class="cgNm"></span>';
-    el.querySelector('.cgNm').textContent = typeof k.v === 'number' ? MON[k.v] : (k.c === 4 && k.wc != null ? COL[k.wc] + '・' : '') + ACT[k.v];
+    el.innerHTML = '<span class="cgCor">' + (typeof k.v === 'number' ? k.v : k.v === 'w4' ? '+4' : k.v === 'd2' ? '+2' : '') + '</span><span class="cgArt">' + (typeof k.v === 'number' ? monSvg(k.v) : ACT_SVG[k.v]) + '</span>';
     el.setAttribute('aria-label', cardName(k)); void big;
     if (opts && opts.small) el.classList.add('sm');
     return el;
@@ -179,13 +184,13 @@
       o.innerHTML = '<b></b><span class="cgBacks"></span><small></small>';
       o.querySelector('b').textContent = G.names[i];
       const bk = o.querySelector('.cgBacks'); for (let j = 0; j < Math.min(8, G.hands[i].length); j++) bk.appendChild(document.createElement('i'));
-      o.querySelector('small').textContent = G.hands[i].length + ' 張' + (G.hands[i].length === 1 ? '・最後一張！' : '');
+      o.querySelector('small').textContent = G.hands[i].length + (G.hands[i].length === 1 ? ' !' : '');
       opp.appendChild(o);
     }
     const disc = $('.cgDisc'); disc.textContent = ''; const topEl = cardEl(top()); if (fx.land) topEl.classList.add('land'); disc.appendChild(topEl);
     const colEl = $('.cgCol'); if (fx.wild) { colEl.classList.remove('pulse'); void colEl.offsetWidth; colEl.classList.add('pulse'); }
-    colEl.style.setProperty('--cc', COLC[G.color]); $('.cgCol b').textContent = COL[G.color];
-    $('.cgDir').textContent = G.dir > 0 ? '順時針 ⟳' : '逆時針 ⟲';
+    colEl.style.setProperty('--cc', COLC[G.color]); $('.cgCol').innerHTML = COL_SVG[G.color]; $('.cgCol').setAttribute('aria-label', COL[G.color]);
+    $('.cgDir').textContent = G.dir > 0 ? '⟳' : '⟲';
     $('.cgDeckN').textContent = G.deck.length;
     const mine = G.turn === 0 && !G.busy && !G.over;
     root.classList.toggle('myTurn', mine);
@@ -217,13 +222,13 @@
       '<div class="cgTable">' +
       '<button class="cgDeck" type="button" aria-label="抽一張"><span class="cgBack"></span><small>抽牌 <b class="cgDeckN"></b></small></button>' +
       '<div class="cgDisc" aria-live="polite"></div>' +
-      '<div class="cgSide"><span class="cgCol">屬性 <b></b></span><span class="cgDir"></span><button class="btn cgPass hide" type="button">不出</button></div>' +
+      '<div class="cgSide"><span class="cgCol" role="img"></span><span class="cgDir"></span><button class="btn cgPass hide" type="button">不出</button></div>' +
       '</div>' +
       '<p class="cgMsg" role="status"></p>' +
       '<div class="cgMe"></div>' +
       '<div class="cgHand"></div>' +
       '</div>' +
-      '<div class="cgPick hide"><div class="panel small"><h2>王者怪物：指定屬性</h2><div class="cgPickRow">' + COL.map(function (c, i) { return '<button type="button" class="cgPickB" data-c="' + i + '" style="--cc:' + COLC[i] + '">' + c + '</button>'; }).join('') + '</div><button class="btn" type="button" data-a="pickNo">取消</button></div></div>' +
+      '<div class="cgPick hide"><div class="panel small"><h2>王者怪物：指定屬性</h2><div class="cgPickRow">' + COL.map(function (c, i) { return '<button type="button" class="cgPickB" data-c="' + i + '" style="--cc:' + COLC[i] + '" aria-label="' + c + '">' + COL_SVG[i] + '</button>'; }).join('') + '</div><button class="btn" type="button" data-a="pickNo">取消</button></div></div>' +
       '<div class="cgEnd hide"><div class="panel small"><h2 class="cgEndT"></h2><p class="cgEndS"></p><div class="row"><button class="btn" type="button" data-a="back2">回大廳</button><button class="btn primary" type="button" data-a="again">再來一局</button></div></div></div>' +
       '<div class="cgAsk hide"><div class="panel small"><h2>離開這局？</h2><p>離開這局卡牌，這局不算。</p><div class="row"><button class="btn" type="button" data-a="askNo">繼續玩</button><button class="btn primary" type="button" data-a="askYes">離開</button></div></div></div>' +
       '<div class="cgHelp hide"><div class="panel small tut"><h2>怪物卡牌規則</h2><ul>' +

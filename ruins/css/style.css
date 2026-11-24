@@ -1663,3 +1663,9 @@ html, body { overflow-x: hidden; max-width: 100%; }
 
 /* v359: 直向時側欄磁磚換行並縮寬，不再把大廳整體推出可視範圍 */
 @media (orientation: portrait) { .lbSide { flex-wrap: wrap; overflow-x: hidden; } .lbSide .tile { flex: 1 1 96px; width: auto; min-width: 0; } }
+
+/* v360: 怪物卡牌的屬性、方向、指定按鈕改用圖示 */
+.cgCol svg, .cgPickB svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; }
+.cgCol { display: inline-flex; align-items: center; }
+.cgPickB svg { width: 30px; height: 30px; stroke-width: 2.2; }
+@media (orientation: portrait) { .cg { grid-template-columns: minmax(0, 1fr); } .cgHand, .cgRow { min-width: 0; max-width: 100%; } .cgTable { min-width: 0; max-width: 100%; } }
