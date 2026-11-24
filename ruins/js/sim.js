@@ -212,7 +212,7 @@ const MAPS = [
     '#M.....#.....#.....M#',
     '#####################'
   ] },
-  { name: '醫院病房', theme: { wall: '#c7d6d0', floor: '#8fa39c', ceil: '#dfe8e5', fog: 0.06, amb: 0xdfeee8, style: 'hospital', bright: 0.7, torch: 0.3 }, rows: [
+  { name: '醫院病房', theme: { wall: '#c7d6d0', floor: '#8fa39c', ceil: '#dfe8e5', fog: 0.06, amb: 0xdfeee8, style: 'hospital', bright: 0.6, torch: 0.3 }, rows: [
     '#####################',
     '#S..................#',
     '#...#...#...#...#...#',
