@@ -1591,3 +1591,11 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .btn:hover { background-color: #fff3d6; }
 .btn.primary:hover { background-color: #ffd631; }
 .btn:active { box-shadow: 0 0 0 var(--ink); }
+
+/* ===== 模式選擇頁升級（v342）：卡片厚度、箭頭、標題壓印 ===== */
+.hubTitle { font-size: 30px; font-weight: 900; letter-spacing: .08em; color: var(--chalk); text-shadow: 3px 3px 0 var(--steel-d); margin: 4px 0 2px; }
+.hubCard { border: 3px solid var(--ink); border-radius: 6px; box-shadow: 0 6px 0 var(--ink); padding-right: 56px; transition: transform .12s, box-shadow .12s; }
+.hubCard::after { content: ""; position: absolute; right: 26px; top: 50%; width: 12px; height: 12px; border-right: 3px solid var(--ink); border-top: 3px solid var(--ink); transform: translateY(-50%) rotate(45deg); }
+.hubCard:hover { background-color: #fff3d6; transform: translateY(-2px); box-shadow: 0 8px 0 var(--ink); }
+.hubCard:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--ink); }
+.hubCard b { letter-spacing: .04em; }
