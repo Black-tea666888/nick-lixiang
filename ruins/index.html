@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="廢墟回收隊">
 <style>html:not(.css) body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/style.css?v=354" onload="document.documentElement.classList.add('css')">
+<link rel="stylesheet" href="css/style.css?v=355" onload="document.documentElement.classList.add('css')">
 <script>setTimeout(function(){document.documentElement.classList.add('css')},4000)</script>
 </head>
 <body>
@@ -184,16 +184,16 @@
         <button class="mcard" type="button" data-mode="race" data-go="raceBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16l3-6h8l4 3v3H3z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg><b>賽車</b><span>廢墟賽道計時跑圈</span></button>
         <button class="mcard" type="button" data-mode="marble" data-go="marbleBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="9" cy="10" r="1.6"/><circle cx="15" cy="10" r="1.6"/></svg><b>彈珠</b><span>拖曳瞄準，彈珠打怪物方塊</span><i class="mpc" data-pc="marble"></i></button>
         <button class="mcard" type="button" data-mode="plat" data-go="platBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="14" width="18" height="3"/><rect x="8" y="8" width="5" height="3"/><circle cx="17" cy="6" r="2"/></svg><b>跳關</b><span>橫向跳關，踩敵人、吃金幣</span><i class="mpc" data-pc="plat"></i></button>
-        <button class="mcard" type="button" data-mode="chess" data-go="chessBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 20h6M12 4a2.5 2.5 0 0 0-2 4l-1 2h6l-1-2a2.5 2.5 0 0 0-2-4zM8 16h8l-1-4H9z"/></svg><b>國際象棋</b><span>同機兩人對弈</span><i class="mpc" data-pc="chess"></i></button>
-        <button class="mcard" type="button" data-mode="xq" data-go="xqBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><path d="M9.5 12h5M12 9.5v5"/></svg><b>中國象棋</b><span>同機兩人對弈</span><i class="mpc" data-pc="xq"></i></button>
+        <button class="mcard" type="button" data-mode="chess" data-go="chessBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 20h6M12 4a2.5 2.5 0 0 0-2 4l-1 2h6l-1-2a2.5 2.5 0 0 0-2-4zM8 16h8l-1-4H9z"/></svg><b>國際象棋</b><span>兩人對弈</span><i class="mpc" data-pc="chess"></i></button>
+        <button class="mcard" type="button" data-mode="xq" data-go="xqBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><path d="M9.5 12h5M12 9.5v5"/></svg><b>中國象棋</b><span>兩人對弈</span><i class="mpc" data-pc="xq"></i></button>
         <button class="mcard" type="button" data-mode="rummi" data-go="rummiBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="7" height="11" rx="1.2"/><rect x="8" y="8" width="7" height="11" rx="1.2"/><path d="M11 12h2"/></svg><b>德國麻將</b><span>拉密規則，和電腦對戰</span></button>
-        <button class="mcard" type="button" data-mode="gomoku" data-go="gomokuBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16M4 12h16M4 16h16M8 4v16M12 4v16M16 4v16"/><circle cx="8" cy="8" r="2.2" fill="currentColor"/><circle cx="12" cy="12" r="2.2"/></svg><b>五子棋</b><span>同機兩人，先連五子者勝</span></button>
+        <button class="mcard" type="button" data-mode="gomoku" data-go="gomokuBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16M4 12h16M4 16h16M8 4v16M12 4v16M16 4v16"/><circle cx="8" cy="8" r="2.2" fill="currentColor"/><circle cx="12" cy="12" r="2.2"/></svg><b>五子棋</b><span>兩人對弈，先連五子者勝</span></button>
         <button class="mcard" type="button" data-mode="bj" data-go="bjBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="11" height="15" rx="1.5"/><path d="M9 9h11v12H9z"/></svg><b>21點</b></button>
         <button class="mcard" type="button" data-mode="g2048" data-go="g2048Btn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg><b>方塊合併</b><span>滑動合併數字，棋盤會無限擴大</span></button>
         <button class="mcard" type="button" data-mode="orb" data-go="orbBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="4"/><circle cx="16" cy="16" r="4"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/></svg><b>轉珠</b><span>拖動珠子連成 3 顆消除，步數內達標</span></button>
         <button class="mcard" type="button" data-mode="mj" data-go="mjBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 9h8M8 13h8M8 17h4"/></svg><b>麻將</b><span>和電腦對戰的十六張麻將，先胡者獲勝</span></button>
-        <button class="mcard" type="button" data-mode="c4" data-go="c4Btn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.6"/><circle cx="12" cy="8" r="1.6"/><circle cx="16" cy="8" r="1.6"/><circle cx="8" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="16" cy="16" r="1.6"/></svg><b>四子連珠</b><span>同機兩人，先連四子者勝</span></button>
-        <button class="mcard" type="button" data-mode="flight" data-go="flightBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l18-7-7 18-2-8z"/></svg><b>飛行棋</b><span>2～4 人同機，擲 6 出發，吃子送回基地</span></button>
+        <button class="mcard" type="button" data-mode="c4" data-go="c4Btn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.6"/><circle cx="12" cy="8" r="1.6"/><circle cx="16" cy="8" r="1.6"/><circle cx="8" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="16" cy="16" r="1.6"/></svg><b>四子連珠</b><span>兩人對弈，先連四子者勝</span></button>
+        <button class="mcard" type="button" data-mode="flight" data-go="flightBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l18-7-7 18-2-8z"/></svg><b>飛行棋</b><span>2～4 人輪流，擲 6 出發，吃子送回基地</span></button>
         <button class="mcard" type="button" data-mode="pachi" data-go="pachiBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><circle cx="9" cy="9" r="1.3"/><circle cx="13" cy="12" r="1.3"/><circle cx="9" cy="15" r="1.3"/><path d="M12 19v-2"/></svg><b>彈珠台</b><span>調整角度與力道發射，落進中間袋子為大獎</span></button>
         <button class="mcard" type="button" data-mode="kangle" data-go="kangleBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1.5"/><circle cx="12" cy="12" r="5"/><circle cx="7" cy="7" r="1.6"/><circle cx="17" cy="17" r="1.6"/></svg><b>康樂球</b><span>桌上撞擊，兩人輪流，先打完己方 8 顆者勝</span></button>
         <button class="mcard" type="button" data-mode="card" data-go="cardOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="11" height="15" rx="1.5" transform="rotate(-10 8 13)"/><rect x="10" y="3" width="11" height="15" rx="1.5"/><path d="M13 12l2-3 2 3-2 3z"/></svg><b>怪物卡牌</b><span>出牌對戰電腦</span></button>
@@ -969,34 +969,34 @@
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/firebase-app-compat.js"></script>
 <script src="vendor/firebase-auth-compat.js"></script>
-<script src="js/config.js?v=354"></script>
-<script src="js/race_tracks.js?v=354"></script>
-<script src="js/race_arenas.js?v=354"></script>
-<script src="js/sim.js?v=354"></script>
-<script src="js/audio.js?v=354"></script>
-<script src="js/auth.js?v=354"></script>
-<script src="js/cloud.js?v=354"></script>
-<script src="js/net.js?v=354"></script>
-<script src="js/game.js?v=354"></script>
-<script src="js/minigames.js?v=354"></script>
-<script src="js/ar.js?v=354"></script>
-<script src="js/padnav.js?v=354"></script>
-<script src="js/cards.js?v=354"></script>
-<script src="js/chess.js?v=354"></script>
-<script src="js/chess_art.js?v=354"></script>
-<script src="js/xiangqi.js?v=354"></script>
-<script src="js/rummi.js?v=354"></script>
-<script src="js/gomoku.js?v=354"></script>
-<script src="js/blackjack.js?v=354"></script>
-<script src="js/g2048.js?v=354"></script>
-<script src="js/orb.js?v=354"></script>
-<script src="js/mahjong.js?v=354"></script>
-<script src="js/connect4.js?v=354"></script>
-<script src="js/flight.js?v=354"></script>
-<script src="js/pachinko.js?v=354"></script>
-<script src="js/carrom.js?v=354"></script>
-<script src="js/platform.js?v=354"></script>
-<script src="js/marble.js?v=354"></script>
-<script src="js/main.js?v=354"></script>
+<script src="js/config.js?v=355"></script>
+<script src="js/race_tracks.js?v=355"></script>
+<script src="js/race_arenas.js?v=355"></script>
+<script src="js/sim.js?v=355"></script>
+<script src="js/audio.js?v=355"></script>
+<script src="js/auth.js?v=355"></script>
+<script src="js/cloud.js?v=355"></script>
+<script src="js/net.js?v=355"></script>
+<script src="js/game.js?v=355"></script>
+<script src="js/minigames.js?v=355"></script>
+<script src="js/ar.js?v=355"></script>
+<script src="js/padnav.js?v=355"></script>
+<script src="js/cards.js?v=355"></script>
+<script src="js/chess.js?v=355"></script>
+<script src="js/chess_art.js?v=355"></script>
+<script src="js/xiangqi.js?v=355"></script>
+<script src="js/rummi.js?v=355"></script>
+<script src="js/gomoku.js?v=355"></script>
+<script src="js/blackjack.js?v=355"></script>
+<script src="js/g2048.js?v=355"></script>
+<script src="js/orb.js?v=355"></script>
+<script src="js/mahjong.js?v=355"></script>
+<script src="js/connect4.js?v=355"></script>
+<script src="js/flight.js?v=355"></script>
+<script src="js/pachinko.js?v=355"></script>
+<script src="js/carrom.js?v=355"></script>
+<script src="js/platform.js?v=355"></script>
+<script src="js/marble.js?v=355"></script>
+<script src="js/main.js?v=355"></script>
 </body>
 </html>
