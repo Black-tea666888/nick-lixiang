@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v369', items: ['大霧天氣的能見度降到約 1 米，霧裡幾乎看不到遠處'] };
+const UPD = { v: 'v370', items: ['綜合抽獎機：隨機格的類別全部抽光後會進第二輪（以前綜合機永遠停在第一輪）'] };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -179,7 +179,8 @@ const CAT_LABEL = { o: '服裝', pet: '寵物', hat: '頭飾', is: '回收品造
 function owns(p, cat, i) { return cat === 'hat' ? p.hats.indexOf(i) >= 0 : p.own[cat].indexOf(i) >= 0; }
 /* ---------- 回收抽獎機 ---------- */
 const WHEELS = [
-  { n: '綜合', cost: 50, seg: [['o'], ['pet'], ['hat'], ['is'], ['coin', 30], ['ms'], ['fx'], ['gs']] },
+  { n: '綜合', cost: 50, seg: [['o'], ['pet'], ['hat'], ['is'], ['coin', 30], ['ms'], ['fx'], ['gs']],
+    seg2: [['fx'], ['gs'], ['fx', 4], ['fx', 5], ['fx', 6], ['fx', 7], ['gs', 7], ['gs', 8], ['gs', 9], ['gs', 10], ['gs', 11], ['coin', 50], ['coin', 80], ['coin', 100]] },
   { n: '服裝', cost: 80, seg: [['o', 1], ['o', 2], ['o', 3], ['o', 4], ['o', 5], ['coin', 30], ['coin', 60], ['coin', 100]] },
   { n: '寵物', cost: 80, seg: [['pet', 1], ['coin', 20], ['pet', 2], ['coin', 40], ['pet', 3], ['coin', 60], ['pet', 4], ['coin', 100]] },
   { n: '造型特效', cost: 60, seg: [['is', 1], ['is', 2], ['ms', 1], ['ms', 2], ['fx', 1], ['fx', 2], ['fx', 3], ['coin', 50]],
@@ -223,9 +224,16 @@ function segDesc(sg, p) {
   return extra + (own ? '你已經有了，抽到會換成 25 金幣。' : '你還沒有。');
 }
 /** 這台機器現在的獎品：第一輪全部抽到後自動進第二輪（只有有 seg2 的機器） */
+function isWheel2Only(cat, k) { return WHEEL2_ONLY[cat] != null && k >= WHEEL2_ONLY[cat]; }
+function catExhausted(p, cat) {
+  const names = catNames(cat);
+  for (let k = 1; k < names.length; k++) if (!(cat === 'hat' && k === LIMITED_HAT) && !isWheel2Only(cat, k) && !owns(p, cat, k)) return false;
+  return true;
+}
 function wheelSeg(p, i) {
   const w = WHEELS[i]; p.wr = Array.isArray(p.wr) ? p.wr : [];
-  if (!(p.wr[i] | 0) && w.seg2 && w.seg.every(function (sg) { return sg[0] === 'coin' || owns(p, sg[0], sg[1]); })) { p.wr[i] = 1; progSave(p); say('「' + w.n + '」第一輪全部抽到了，進入第二輪！'); }
+  // 第一輪完成：固定獎品全部到手，隨機格的類別也全部抽光（第二輪才有的造型不算）
+  if (!(p.wr[i] | 0) && w.seg2 && w.seg.every(function (sg) { return sg[0] === 'coin' || (sg.length > 1 ? owns(p, sg[0], sg[1]) : catExhausted(p, sg[0])); })) { p.wr[i] = 1; progSave(p); say('「' + w.n + '」第一輪全部抽到了，進入第二輪！'); }
   return (p.wr[i] | 0) && w.seg2 ? w.seg2 : w.seg;
 }
 function dwPreview(i) {
@@ -275,7 +283,7 @@ function wheelSpin() {
   else {
     const cat = sg[0], names = catNames(cat);
     let pickI = sg[1];
-    if (pickI == null) { const pool = []; for (let k = 1; k < names.length; k++) if (!owns(p, cat, k) && !(cat === 'hat' && k === LIMITED_HAT)) pool.push(k); pickI = pool.length ? pool[Math.floor(Math.random() * pool.length)] : 1 + Math.floor(Math.random() * (cat === 'hat' ? LIMITED_HAT - 1 : names.length - 1)); }
+    if (pickI == null) { const r2 = !!((p.wr[wheelI] | 0) && WHEELS[wheelI].seg2), pool = []; for (let k = 1; k < names.length; k++) if (!owns(p, cat, k) && !(cat === 'hat' && k === LIMITED_HAT) && (r2 || !isWheel2Only(cat, k))) pool.push(k); pickI = pool.length ? pool[Math.floor(Math.random() * pool.length)] : 1 + Math.floor(Math.random() * (cat === 'hat' ? LIMITED_HAT - 1 : names.length - 1)); }
     shown = [cat, pickI];
     if (owns(p, cat, pickI)) { p.coins += 25; msg = '「' + names[pickI] + '」已經有了，換成金幣 +25'; }
     else { if (cat === 'hat') p.hats.push(pickI); else p.own[cat].push(pickI); fresh = true; msg = '抽到' + CAT_LABEL[cat] + '「' + names[pickI] + '」'; }
