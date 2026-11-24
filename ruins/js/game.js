@@ -2845,6 +2845,9 @@ function updateHud() {
   for (let i = 0; i < 16; i++) { pp.children[i].className = i < me.bagN ? 'on' : ''; pp.children[i].style.display = i < cap ? '' : 'none'; } pp.className = (me.bagN >= cap ? 'full' : '') + (cap > 6 ? ' many' : '');
   $('day').textContent = view.day;
   const s = Math.max(0, Math.ceil(view.time)), mm = Math.floor(s / 60), ss = s % 60;
+  // 賽車沒有時間限制（內部用 99999 秒當作無限），不顯示倒數，避免看起來像有時限
+  const noLimit = view.mode === 'race', tb = $('timer').parentElement;
+  if (tb) tb.classList.toggle('hide', noLimit);
   $('timer').textContent = mm + ':' + (ss < 10 ? '0' : '') + ss;
   $('timer').className = s <= 30 ? 'low' : '';
 }
