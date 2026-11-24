@@ -1607,3 +1607,6 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 #hudBtns button { border: 2px solid var(--ink); border-bottom-width: 4px; }
 #hp, #stam { height: 12px; border: 2px solid var(--ink); box-shadow: 0 3px 0 var(--ink); }
 #timer { text-shadow: 2px 2px 0 var(--ink); }
+
+/* ===== 標題主視覺（v348）：登入畫面上方的廢墟場景插圖 ===== */
+#scrLogin .keyArt { display: block; width: calc(100% + 4px); max-width: none; height: auto; margin: -22px -2px 14px; border: 2px solid var(--ink); border-radius: 3px; box-shadow: 0 4px 0 var(--ink); }
