@@ -1560,14 +1560,9 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 
 /* 模式選擇頁底部：深色鐵板條，底邊警示條紋（不用奶油底、不用圓角卡） */
 .hubExtra { width: 100%; display: flex; flex-direction: column; gap: 0; }
-.peopleRow, .installTip { width: 100%; background: var(--steel-d); color: var(--chalk); border: 0; border-top: 3px solid var(--haz); position: relative; }
-.peopleRow::after, .installTip::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: repeating-linear-gradient(45deg, var(--haz) 0 10px, var(--steel-d) 10px 20px); }
-.peopleRow .pr-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px 18px; }
-.peopleRow > .pr-in > span { font-size: 15px; font-weight: 800; letter-spacing: .08em; }
-.peopleBtns { display: flex; }
-.peopleBtns .btn { min-height: 40px; min-width: 52px; padding: 6px 10px; background: transparent; color: var(--chalk); border: 2px solid var(--chalk); font-size: 15px; margin-left: -2px; }
-.peopleBtns .btn.on { background: var(--haz); color: var(--ink); border-color: var(--haz); position: relative; z-index: 1; }
-.installTip { display: flex; align-items: center; gap: 12px; padding: 12px 14px 18px; text-align: left; }
+.installTip { width: 100%; background: var(--steel-d); color: var(--chalk); border: 0; position: relative; }
+.installTip::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: repeating-linear-gradient(45deg, var(--haz) 0 10px, var(--steel-d) 10px 20px); }
+.installTip { display: flex; align-items: center; gap: 12px; padding: 12px 14px 16px; text-align: left; }
 .installTip p { flex: 1; margin: 0; font-size: 14px; line-height: 1.55; }
 .installTip p b { display: block; font-size: 16px; color: var(--haz); }
 .itIco { font-size: 24px; }
@@ -1634,3 +1629,5 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 .casGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-content: start; }
 .casGrid .mcard { width: auto; min-width: 0; height: auto; min-height: 72px; }
 .casGrid .mcard.hide { display: none; }
+
+/* v352：大廳移除沒有作用的「每場幾個人」列，安裝提示只留底部一條警示邊 */

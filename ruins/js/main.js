@@ -5,7 +5,7 @@ const RR = window.RR, W = RR.World, Net = RR.Net, Voice = RR.Voice, Sfx = RR.Sfx
 const $ = function (id) { return document.getElementById(id); };
 const CSSCOL = ['#ffb84a', '#6ecbff', '#c79bff', '#ff7eb6'];
 // 每次更新改這裡：版本號變了，主頁就會跳出一次更新提醒（記在 rr_upd_seen）
-const UPD = { v: 'v351', items: ['休閒模式遊戲分成三頁並排，左右滑動切換', '全域輸出改 sRGB 伽瑪，材質與燈光層次更接近現代 3D 遊戲', '手機直式大廳留白加大，模式卡變薄，角色區有空間', '登入畫面加上廢墟場景主視覺（回收車、鐵網與警示條）', '太空站地板改成金屬面板格，有板縫、倒角與鉚釘', '醫院病房燈光再暗一點，白牆與地磚的層次更清楚', '室內燈光調暗、霧氣加重，牆面與手電筒的亮暗對比更明顯', '室內牆面加下方積灰、板縫、鉚釘與刮痕', '遊戲內畫面：資訊底板與按鈕加墨線與硬陰影，血條加粗', '模式選擇頁：卡片加厚、加方向箭頭，標題加壓印陰影', '整體畫面升級：紙張與鐵板紋理、面板加警示膠帶、標題加壓印陰影、按鈕加厚', '賽車新增碰撞：和 AI 車碰到會互相推開，速度快會扣車況', '中國象棋棋盤放大到和畫面內容一樣寬', '象棋（國際／中國）：對手離開後房號會換成新的隨機代碼', '中國象棋：棋盤會轉向，自己的棋在下方（線上照自己的方，同機雙人下完一步轉到對手面前）', '麻將：手牌放大並加上底板，胡／過改成大圓鈕，狀態列做成上方資訊條'].concat(['模式選擇頁最下方新增「人數」（2～4 人，記住上次選的；飛行棋的人數選擇會預設它）', '模式選擇頁最下方新增「下載到手機」提醒（可關掉，之後不再出現）', '廢墟地圖統一成同一個大小（不足的地圖在上下補牆，玩家範圍不變）', '第 4 天起，每隔一隻怪物變成「無眼雕像」：有人在 15 公尺內看得到牠時就停住不動', '廢墟生存戰的補給箱拿走後 30 秒會在空地重新出現', '地圖可以切成「隨機」：每局開始時從廢墟地圖中抽一張（房主設定，循環到最後一張後切換）']) };
+const UPD = { v: 'v352', items: ['大廳移除沒有作用的「每場幾個人」列，選擇玩法頁更清爽', '休閒模式遊戲分成三頁並排，左右滑動切換', '全域輸出改 sRGB 伽瑪，材質與燈光層次更接近現代 3D 遊戲', '手機直式大廳留白加大，模式卡變薄，角色區有空間', '登入畫面加上廢墟場景主視覺（回收車、鐵網與警示條）', '太空站地板改成金屬面板格，有板縫、倒角與鉚釘', '醫院病房燈光再暗一點，白牆與地磚的層次更清楚', '室內燈光調暗、霧氣加重，牆面與手電筒的亮暗對比更明顯', '室內牆面加下方積灰、板縫、鉚釘與刮痕', '遊戲內畫面：資訊底板與按鈕加墨線與硬陰影，血條加粗', '模式選擇頁：卡片加厚、加方向箭頭，標題加壓印陰影', '整體畫面升級：紙張與鐵板紋理、面板加警示膠帶、標題加壓印陰影、按鈕加厚', '賽車新增碰撞：和 AI 車碰到會互相推開，速度快會扣車況', '中國象棋棋盤放大到和畫面內容一樣寬', '象棋（國際／中國）：對手離開後房號會換成新的隨機代碼', '中國象棋：棋盤會轉向，自己的棋在下方（線上照自己的方，同機雙人下完一步轉到對手面前）', '麻將：手牌放大並加上底板，胡／過改成大圓鈕，狀態列做成上方資訊條'].concat(['模式選擇頁最下方新增「人數」（2～4 人，記住上次選的；飛行棋的人數選擇會預設它）', '模式選擇頁最下方新增「下載到手機」提醒（可關掉，之後不再出現）', '廢墟地圖統一成同一個大小（不足的地圖在上下補牆，玩家範圍不變）', '第 4 天起，每隔一隻怪物變成「無眼雕像」：有人在 15 公尺內看得到牠時就停住不動', '廢墟生存戰的補給箱拿走後 30 秒會在空地重新出現', '地圖可以切成「隨機」：每局開始時從廢墟地圖中抽一張（房主設定，循環到最後一張後切換）']) };
 const SCREENS = ['scrBj', 'scr2048', 'scrOrb', 'scrMj', 'scrLogin', 'scrMenu', 'scrPick', 'scrWheel', 'scrLobby', 'scrResult', 'scrMap', 'scrShop', 'scrClan', 'scrMarket', 'scrLevel', 'scrCard', 'scrHub', 'scrChess', 'scrPlat', 'scrMarble', 'scrXq', 'scrRummi', 'scrGomoku', 'scrC4', 'scrFlight', 'scrPachi', 'scrKangle'];
 // 角色資料：技能名、技能說明、屬性
 const CINFO = [
@@ -4019,11 +4019,10 @@ window.addEventListener('appinstalled', function () { installEv = null; const b 
 // 模式選擇頁最下方的「下載到手機」提醒：安卓等 beforeinstallprompt；iPhone Safari 沒有該事件，改顯示加入主畫面的步驟
 function isStandaloneApp() { try { return !!(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)); } catch (e) { return false; } }
 function peopleN() { const n = parseInt(ls('rr_people') || '2', 10); return n >= 2 && n <= 4 ? n : 2; }   // 模式選擇頁的預設人數
-function paintPeople() { document.querySelectorAll('[data-hp]').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-hp') === peopleN()); }); document.querySelectorAll('[data-flp]').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-flp') === peopleN()); }); }
+function paintPeople() { document.querySelectorAll('[data-flp]').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-flp') === peopleN()); }); }
 function showInstallTip() { const t = $('installTip'); if (!t || isStandaloneApp()) return; t.classList.remove('hide'); }
 function hideInstallTip() { const t = $('installTip'); if (t) t.classList.add('hide'); }
 
-document.querySelectorAll('[data-hp]').forEach(function (b) { b.addEventListener('click', function () { lsSet('rr_people', b.getAttribute('data-hp')); paintPeople(); }); });
 paintPeople();
 { const tb = document.getElementById('installTipBtn'), tx = document.getElementById('installTipX');
   if (tb) tb.addEventListener('click', function () {
