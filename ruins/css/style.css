@@ -1652,3 +1652,7 @@ body.touch.playing #dash, body.btnedit #hud > #dash { display: none !important; 
 html, body { overflow-x: hidden; max-width: 100%; }
 #scrMenu, .screen { overflow-x: hidden; }
 .lb, .lbBottom, .modeStrip, .casPage { min-width: 0; max-width: 100%; }
+
+/* ===== 休閒大廳：選中的遊戲說明直接顯示在開始鍵上方（v357） ===== */
+.casInline { display: flex; flex-direction: column; gap: 4px; margin: 0 0 8px; padding: 8px 10px; font-size: 13px; line-height: 1.55; color: var(--chalk); background: var(--steel-d); border: 2px solid var(--ink); border-radius: 3px; box-shadow: 2px 2px 0 var(--ink); white-space: pre-line; }
+.casInline b { font-size: 14px; color: var(--haz); }
