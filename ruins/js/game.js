@@ -126,13 +126,27 @@ function skillHint(head) {
 let gyroOn = false, gyroT = 0;
 function gyroSet(on) {
   gyroOn = !!on; try { localStorage.setItem('rr_gyro', on ? '1' : '0'); } catch (e) {}
-  if (!on) return;
+  if (!on) { gyroUnlock(); return; }
   const D = window.DeviceMotionEvent;
   if (D && typeof D.requestPermission === 'function') D.requestPermission().then(function (r) { if (r !== 'granted') { gyroOn = false; const c = $('setGyro'); if (c) c.checked = false; toast('沒有取得動作感應權限，陀螺儀瞄準已關閉'); } }).catch(function () {});
 }
+/* 賽車用陀螺儀時鎖住目前的螢幕方向：手機一傾斜，自動旋轉不會把畫面轉向（Android 支援；iPhone 不能鎖，請開方向鎖定） */
+let gyroLocked = false;
+function gyroLock() {
+  if (gyroLocked || !gyroOn || view.mode !== 'race') return;
+  gyroLocked = true;
+  try { const o = screen.orientation; if (o && o.lock) o.lock(o.type).catch(function () {}); } catch (e) {}
+}
+function gyroUnlock() {
+  if (!gyroLocked) return;
+  gyroLocked = false;
+  try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
+}
 window.addEventListener('devicemotion', function (e) {
   const now = performance.now(), dt = Math.min(0.05, (now - (gyroT || now)) / 1000); gyroT = now;
+  if (gyroLocked && view.mode !== 'race') gyroUnlock();
   if (!gyroOn || !canControl() || !e.rotationRate || me.inLk) return;
+  gyroLock();
   const r = e.rotationRate, D2R = Math.PI / 180, k = 1.1 * (settings.sens || 1) * dt * D2R;
   const ang = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0);
   const b = r.beta || 0, g = r.gamma || 0;
