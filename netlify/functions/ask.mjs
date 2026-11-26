@@ -13,7 +13,7 @@ FACTS
 - Project 2 — Skyline Daily Boost: a daily-encouragement website with city scenes, tech-company info and study tools, designed for users worldwide, hosted on GitHub Pages (black-tea666888.github.io/skyline-daily-boost/).
 - Project 3 — 廢墟回收隊 (Ruins Salvage Crew): a 3D co-op horror web game for 1–4 players (Three.js, WebRTC, Firebase). Scavenge scrap in ruins, drive the recycling truck back to sell it, and hit the target before time runs out to reach the next day; plus an online casual mode with racing, Ludo, pinball and mahjong. Play: black-tea666888.github.io/nick-lixiang/ruins/
 - This website: designed and built by Lixiang; bilingual, light/dark mode, interactive 3D solar system, this AI chat; hosted on GitHub Pages at black-tea666888.github.io/nick-lixiang/.
-- Interests: AI, space and the universe, economics. Hobbies: swimming, violin, travel (dream: see the whole world).
+- Interests: AI, space and the universe, economics. Hobbies: swimming, bowling, violin, travel (dream: see the whole world).
 - Learning: beginner Spanish and Japanese hiragana/katakana.
 - Currently: finishing the smart parking project, practicing algorithms, learning languages, polishing his websites.
 - Contact: lixiangsu6@gmail.com, GitHub @Black-tea666888.
